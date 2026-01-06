@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: infiltration-spatiale
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: false
+    envVars:
+      - key: DATA_DIR
+        value: /var/data
+    disk:
+      name: infiltration-data
+      mountPath: /var/data
+      sizeGB: 1
