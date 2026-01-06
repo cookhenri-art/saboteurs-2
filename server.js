@@ -148,6 +148,8 @@ function newRoom(code, hostPlayerId) {
     day: 0,
     night: 0,
 
+    captainElected: false,
+
     players: new Map(),     // playerId -> player
     timers: new Map(),      // playerId -> {notifyTimer, removeTimer}
     matchLog: [],
@@ -234,6 +236,10 @@ function setPhase(room, phase, data = {}) {
   room.phaseAck = new Set();
   room.audio = computeAudioCue(room);
   logEvent(room, "phase", { phase });
+  try {
+    console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night}`);
+  } catch {}
+
 }
 
 function requiredPlayersForPhase(room) {
@@ -319,10 +325,97 @@ function checkWin(room) {
   return null;
 }
 
+
+function buildEndReport(room, winner) {
+  const players = Array.from(room.players.values()).map(p => ({
+    playerId: p.playerId,
+    name: p.name,
+    status: p.status,
+    role: p.role,
+    roleLabel: ROLES[p.role]?.label || p.role || null,
+    isCaptain: !!p.isCaptain
+  }));
+
+  // death order (first time each player died)
+  const deathOrder = [];
+  const seen = new Set();
+  for (const e of room.matchLog) {
+    if (e.type !== "player_died") continue;
+    if (seen.has(e.playerId)) continue;
+    seen.add(e.playerId);
+    const name = room.players.get(e.playerId)?.name || e.playerId;
+    deathOrder.push({ playerId: e.playerId, name, source: e.source || "?" });
+  }
+
+  // match-specific counters from matchLog
+  const counters = {};
+  const inc = (pid, k) => {
+    if (!pid) return;
+    counters[pid] = counters[pid] || {};
+    counters[pid][k] = (counters[pid][k] || 0) + 1;
+  };
+  for (const e of room.matchLog) {
+    if (e.type === "doctor_save") inc(e.by, "doctorSaves");
+    if (e.type === "doctor_kill") inc(e.by, "doctorKills");
+    if (e.type === "radar_inspect") inc(e.by, "radarInspects");
+    if (e.type === "chameleon_swap") inc(e.by, "chameleonSwaps");
+    if (e.type === "revenge_shot") inc(e.by, "revengeShots");
+    if (e.type === "ai_link") inc(e.by, "aiLinks");
+  }
+
+  const awardPick = (k, title, emptyText) => {
+    let bestPid = null;
+    let bestVal = 0;
+    for (const [pid, c] of Object.entries(counters)) {
+      const v = c[k] || 0;
+      if (v > bestVal) { bestVal = v; bestPid = pid; }
+    }
+    if (!bestPid || bestVal <= 0) return { title, text: emptyText || "—" };
+    const name = room.players.get(bestPid)?.name || bestPid;
+    return { title, text: `${name} (${bestVal})` };
+  };
+
+  const awards = [
+    awardPick("doctorSaves", "Meilleur docteur (sauvetages)", "Aucun sauvetage"),
+    awardPick("doctorKills", "Docteur (kills)", "Aucun kill docteur"),
+    awardPick("radarInspects", "Meilleur officier radar (inspections)", "Aucune inspection"),
+    awardPick("chameleonSwaps", "Meilleur caméléon (échanges)", "Aucun échange"),
+    awardPick("revengeShots", "Chef de sécurité (vengeance)", "Aucune vengeance"),
+    awardPick("aiLinks", "Agent IA (liaisons)", "Aucune liaison")
+  ];
+
+  // snapshot of persistent stats for present players
+  const statsByName = {};
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const s = statsDb[p.name] || ensurePlayerStats(p.name);
+    const wr = s.gamesPlayed ? Math.round((s.wins / s.gamesPlayed) * 100) : 0;
+    statsByName[p.name] = {
+      gamesPlayed: s.gamesPlayed,
+      wins: s.wins,
+      losses: s.losses,
+      winRatePct: wr,
+      winsByRole: s.winsByRole,
+      gamesByRole: s.gamesByRole,
+      doctorSaves: s.doctorSaves,
+      doctorKills: s.doctorKills,
+      radarInspects: s.radarInspects,
+      radarCorrect: s.radarCorrect,
+      chameleonSwaps: s.chameleonSwaps,
+      securityRevengeShots: s.securityRevengeShots
+    };
+  }
+
+  return { winner, players, deathOrder, awards, counters, statsByName };
+}
+
 function endGame(room, winner) {
   room.ended = true;
-  setPhase(room, "GAME_OVER", { winner });
+  const report = buildEndReport(room, winner);
+  room.endReport = report;
+  setPhase(room, "GAME_OVER", { winner, report });
   logEvent(room, "game_over", { winner });
+  console.log(`[${room.code}] game_over winner=${winner}`);
 
   // persist stats per name
   for (const p of room.players.values()) {
@@ -381,6 +474,7 @@ function resetForNewRound(room, keepStats) {
   room.phaseAck = new Set();
   room.day = 0;
   room.night = 0;
+  room.captainElected = false;
   room.matchLog = [];
   room.nightData = {};
   room.doctorLifeUsed = false;
@@ -413,6 +507,7 @@ function startGame(room) {
   room.aborted = false;
   room.day = 0;
   room.night = 0;
+  room.captainElected = false;
 
   // clear captain
   for (const p of room.players.values()) p.isCaptain = false;
@@ -468,6 +563,7 @@ function finishCaptainVote(room) {
   const cap = room.players.get(best[0]);
   if (cap) cap.isCaptain = true;
   logEvent(room, "captain_elected", { playerId: best[0] });
+  room.captainElected = true;
 
   beginNight(room);
 }
@@ -508,7 +604,12 @@ function nextNightPhase(room) {
   }
   if (room.config.rolesEnabled?.doctor && !room.nightData.doctorDone) {
     const doc = getRoleHolder(room, "doctor");
-    if (doc) { setPhase(room, "NIGHT_DOCTOR", { actorId: doc.playerId, lifeUsed: room.doctorLifeUsed, deathUsed: room.doctorDeathUsed }); return; }
+    if (doc) {
+      const tId = room.nightData?.saboteurTarget || null;
+      const tName = tId ? (room.players.get(tId)?.name || null) : null;
+      setPhase(room, "NIGHT_DOCTOR", { actorId: doc.playerId, lifeUsed: room.doctorLifeUsed, deathUsed: room.doctorDeathUsed, saboteurTargetId: tId, saboteurTargetName: tName });
+      return;
+    }
   }
   resolveNight(room);
 }
@@ -667,6 +768,13 @@ function publicRoomStateFor(room, viewerId) {
       isCaptain: !!p.isCaptain
     };
     if (!room.started) return base;
+
+    if (room.ended || room.phase === "GAME_OVER") {
+      base.role = p.role;
+      base.roleLabel = ROLES[p.role]?.label || p.role;
+      base.roleIcon = ROLES[p.role]?.icon || null;
+      return base;
+    }
 
     if (viewer && viewer.playerId === p.playerId) {
       base.role = p.role;
@@ -857,7 +965,15 @@ function handlePhaseCompletion(room) {
       break;
 
     case "ROLE_REVEAL":
-      beginCaptainElection(room);
+      // ROLE_REVEAL happens once at game start, and may happen again after Caméléon (re-check). Never re-run captain election.
+      if (!room.captainElected) {
+        beginCaptainElection(room);
+      } else {
+        // Resume flow (usually night) after a global role re-check.
+        if (room.phaseData?.resume === "night") {
+          nextNightPhase(room);
+        }
+      }
       break;
 
     case "CAPTAIN_CANDIDACY":
@@ -870,6 +986,10 @@ function handlePhaseCompletion(room) {
 
     case "NIGHT_START":
       nextNightPhase(room);
+      break;
+
+    case "NIGHT_RADAR":
+      if (room.nightData?.radarDone) nextNightPhase(room);
       break;
 
     case "NIGHT_RESULTS":
@@ -893,6 +1013,7 @@ io.on("connection", (socket) => {
       const code = genRoomCode(rooms);
       const room = newRoom(code, playerId);
       rooms.set(code, room);
+      console.log(`[${code}] room_created host=${name} (${playerId})`);
       joinRoomCommon(socket, room, playerId, name);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
@@ -905,6 +1026,7 @@ io.on("connection", (socket) => {
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
     if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    console.log(`[${code}] room_join name=${name} (${playerId})`);
     joinRoomCommon(socket, room, playerId, name);
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
@@ -955,6 +1077,7 @@ io.on("connection", (socket) => {
     if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok:false, error:"Only host" });
     if (room.players.size < 4) return cb && cb({ ok:false, error:"Min 4 joueurs" });
     if (alivePlayers(room).some(p => !p.ready)) return cb && cb({ ok:false, error:"Tous doivent être prêts" });
+    console.log(`[${room.code}] game_start by=${getPlayer(room, socket.data.playerId)?.name || socket.data.playerId}`);
     startGame(room);
     emitRoom(room);
     cb && cb({ ok:true });
@@ -1057,11 +1180,13 @@ io.on("connection", (socket) => {
       tP.role = a;
 
       room.chameleonUsed = true;
+      logEvent(room, "chameleon_swap", { by: playerId, targetId });
+      console.log(`[${room.code}] chameleon_swap by=${p.name} target=${tP.name}`);
       ensurePlayerStats(p.name).chameleonSwaps += 1;
       saveStats(statsDb);
 
       // everybody re-check role
-      setPhase(room, "ROLE_REVEAL", { notice: "Les rôles ont pu changer. Revérifiez." });
+      setPhase(room, "ROLE_REVEAL", { notice: "Les rôles ont pu changer. Revérifiez.", resume: "night" });
       emitRoom(room);
       return cb && cb({ ok:true });
     }
@@ -1069,14 +1194,32 @@ io.on("connection", (socket) => {
     // --- night: ai agent ---
     if (phase === "NIGHT_AI_AGENT") {
       if (!isActor(room.phaseData.actorId) || p.status !== "alive") return;
+
+      // Only night 1. After that, just skip.
       if (room.night !== 1) { room.nightData.aiLinked = true; nextNightPhase(room); emitRoom(room); return cb && cb({ ok:true }); }
-      const a = payload?.a, b = payload?.b;
-      if (!a || !b || a === b) return;
-      const pa = room.players.get(a), pb = room.players.get(b);
-      if (!pa || !pb || pa.status !== "alive" || pb.status !== "alive") return;
-      pa.linkedTo = pb.playerId; pa.linkedName = pb.name;
-      pb.linkedTo = pa.playerId; pb.linkedName = pa.name;
+
+      if (payload?.skip) {
+        room.nightData.aiLinked = true;
+        logEvent(room, "ai_link_skip", { by: playerId });
+        console.log(`[${room.code}] ai_link_skip by=${p.name}`);
+        nextNightPhase(room);
+        emitRoom(room);
+        return cb && cb({ ok:true });
+      }
+
+      const targetId = payload?.targetId || payload?.partnerId;
+      if (!targetId || targetId === playerId) return cb && cb({ ok:false, error:"Choisis un autre joueur." });
+      const tP = room.players.get(targetId);
+      if (!tP || tP.status !== "alive") return cb && cb({ ok:false, error:"Cible invalide." });
+
+      // Link the Agent IA with the chosen player (persistent banner for both).
+      p.linkedTo = tP.playerId; p.linkedName = tP.name;
+      tP.linkedTo = p.playerId; tP.linkedName = p.name;
+
       room.nightData.aiLinked = true;
+      logEvent(room, "ai_link", { by: playerId, targetId });
+      console.log(`[${room.code}] ai_link by=${p.name} target=${tP.name}`);
+
       nextNightPhase(room);
       emitRoom(room);
       return cb && cb({ ok:true });
@@ -1088,26 +1231,33 @@ io.on("connection", (socket) => {
       const targetId = payload?.targetId;
       const tP = room.players.get(targetId);
       if (!tP || tP.status !== "alive") return;
+
       const role = tP.role || "astronaut";
-      room.phaseData.lastRadarResult = { viewerId: playerId, text: `🔍 Radar: ${tP.name} = ${ROLES[role]?.label || role}` };
+      room.phaseData.lastRadarResult = { viewerId: playerId, targetId, roleKey: role, text: `🔍 Radar: ${tP.name} = ${ROLES[role]?.label || role}` };
+      room.phaseData.selectionDone = true;
+
+      logEvent(room, "radar_inspect", { by: playerId, targetId, role });
+      console.log(`[${room.code}] radar_inspect by=${p.name} target=${tP.name} role=${role}`);
 
       const st = ensurePlayerStats(p.name);
       st.radarInspects += 1;
       if (role === "saboteur") st.radarCorrect += 1;
       saveStats(statsDb);
 
+      // Important: stay on NIGHT_RADAR so the Radar can see the result, then ACK to continue.
       room.nightData.radarDone = true;
-      nextNightPhase(room);
       emitRoom(room);
       return cb && cb({ ok:true });
     }
 
-    // --- night: saboteurs (unanimity) ---
+    // --- night: saboteurs (unanimity) --- (unanimity) ---
     if (phase === "NIGHT_SABOTEURS") {
       if (p.status !== "alive" || p.role !== "saboteur") return;
       const targetId = payload?.targetId;
       const tP = room.players.get(targetId);
       if (!tP || tP.status !== "alive") return;
+      if (targetId === playerId) return cb && cb({ ok:false, error:"Cible invalide." });
+      if (tP.role === "saboteur") return cb && cb({ ok:false, error:"Les saboteurs ne peuvent pas viser un saboteur." });
       room.phaseData.votes[playerId] = targetId;
 
       const sabIds = (room.phaseData.actorIds || []).filter(id => room.players.get(id)?.status === "alive");
@@ -1131,19 +1281,36 @@ io.on("connection", (socket) => {
       const targetId = payload?.targetId || null;
 
       if (action === "save") {
-        if (room.doctorLifeUsed) return;
-        room.nightData.doctorSave = targetId;
+        if (room.doctorLifeUsed) return cb && cb({ ok:false, error:"Potion de vie déjà utilisée." });
+        const saveTarget = room.nightData?.saboteurTarget || null;
+        room.nightData.doctorSave = saveTarget;
         room.doctorLifeUsed = true;
-        ensurePlayerStats(p.name).doctorSaves += 1;
+        logEvent(room, "doctor_save", { by: playerId, targetId: saveTarget });
+        console.log(`[${room.code}] doctor_save by=${p.name} target=${room.players.get(saveTarget)?.name || "none"}`);
+
+        const st = ensurePlayerStats(p.name);
+        st.doctorSaves += 1;
         saveStats(statsDb);
       } else if (action === "kill") {
-        if (room.doctorDeathUsed) return;
-        if (!targetId) return;
+        if (room.doctorDeathUsed) return cb && cb({ ok:false, error:"Potion de mort déjà utilisée." });
+        if (!targetId) return cb && cb({ ok:false, error:"Cible manquante." });
+        const tP = room.players.get(targetId);
+        if (!tP || tP.status !== "alive") return cb && cb({ ok:false, error:"Cible invalide." });
         room.nightData.doctorKill = targetId;
         room.doctorDeathUsed = true;
-        ensurePlayerStats(p.name).doctorKills += 1;
+        logEvent(room, "doctor_kill", { by: playerId, targetId });
+        console.log(`[${room.code}] doctor_kill by=${p.name} target=${tP.name}`);
+
+        const st = ensurePlayerStats(p.name);
+        st.doctorKills += 1;
         saveStats(statsDb);
+      } else if (action === "none") {
+        logEvent(room, "doctor_none", { by: playerId });
+        console.log(`[${room.code}] doctor_none by=${p.name}`);
+      } else {
+        return cb && cb({ ok:false, error:"Action invalide." });
       }
+
       room.nightData.doctorDone = true;
       nextNightPhase(room);
       emitRoom(room);
@@ -1191,6 +1358,8 @@ io.on("connection", (socket) => {
       const tP = room.players.get(target);
       if (!tP || tP.status !== "alive") return;
       killPlayer(room, target, "revenge");
+      logEvent(room, "revenge_shot", { by: playerId, targetId: target });
+      console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
       ensurePlayerStats(p.name).securityRevengeShots += 1;
       saveStats(statsDb);
 

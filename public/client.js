@@ -113,6 +113,62 @@ function formatPhaseTitle(s) {
   return map[p] || p;
 }
 
+
+const ROLE_INFO = {
+  astronaut: {
+    title: "Astronaute",
+    desc: "Aucun pouvoir spécial. Observe, débat et vote pour protéger la station."
+  },
+  saboteur: {
+    title: "Saboteur",
+    desc: "Chaque nuit, les saboteurs votent UNANIMEMENT une cible (impossible de viser un saboteur)."
+  },
+  doctor: {
+    title: "Docteur bio",
+    desc: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible)."
+  },
+  security: {
+    title: "Chef de sécurité",
+    desc: "Si tu meurs, tu tires une dernière fois (vengeance)."
+  },
+  ai_agent: {
+    title: "Agent IA",
+    desc: "Nuit 1 : choisis un joueur à lier avec TOI. Si l’un meurt, l’autre meurt aussi."
+  },
+  radar: {
+    title: "Officier radar",
+    desc: "Chaque nuit, inspecte un joueur et découvre son rôle."
+  },
+  engineer: {
+    title: "Ingénieur",
+    desc: "Peut espionner à ses risques et périls. Rappel discret en début de nuit tant qu’il est vivant."
+  },
+  chameleon: {
+    title: "Caméléon",
+    desc: "Nuit 1 seulement : échange TON rôle avec un joueur. Après l’échange : revérification globale."
+  },
+};
+
+function getRoleInfo(roleKey, roleLabelFromServer) {
+  const k = roleKey || "";
+  const base = ROLE_INFO[k];
+  if (base) return base;
+  return { title: roleLabelFromServer || k || "Rôle", desc: "" };
+}
+
+function ensureRoleCardEl() {
+  let el = $("roleCard");
+  if (el) return el;
+  el = document.createElement("div");
+  el.id = "roleCard";
+  el.className = "role-display";
+  const phaseTitleEl = $("phaseTitle");
+  if (phaseTitleEl && phaseTitleEl.parentElement) {
+    phaseTitleEl.parentElement.insertBefore(el, phaseTitleEl);
+  }
+  return el;
+}
+
 function setBackdrop() {
   const el = $("gameBackdrop");
   if (!el || !state) return;
@@ -260,15 +316,30 @@ function renderGame() {
   $("hudRoom").textContent = state.roomCode;
   setBackdrop();
 
-  // role icons
+  // role card (big icon + title + description)
+  const roleCard = ensureRoleCardEl();
+  const info = getRoleInfo(state.you?.role, state.you?.roleLabel);
+  const roleIconSrc = state.you?.roleIcon || "";
+  const isCaptain = !!state.you?.isCaptain;
+  const captainIconSrc = isCaptain ? "/images/roles/capitaine.png" : "";
+
+  // hide legacy small icons container (kept for compatibility)
   const icons = $("roleIcons");
-  icons.innerHTML = "";
-  if (state.you?.roleIcon) {
-    icons.appendChild(makeIcon(state.you.roleIcon, state.you.roleLabel));
-  }
-  if (state.you?.isCaptain) {
-    icons.appendChild(makeIcon("/images/roles/capitaine.png", "Chef de station"));
-  }
+  if (icons) icons.innerHTML = "";
+
+  roleCard.innerHTML = `
+    <div class="role-card-inner">
+      <div class="role-card-icons">
+        ${roleIconSrc ? `<img class="role-card-icon" src="${roleIconSrc}" alt="role">` : ``}
+        ${captainIconSrc ? `<img class="role-card-icon captain" src="${captainIconSrc}" alt="capitaine">` : ``}
+      </div>
+      <div class="role-card-text">
+        <div class="role-card-title">${escapeHtml(info.title)} ${isCaptain ? `<span class="role-card-badge">⭐ Chef de station</span>` : ``}</div>
+        <div class="role-card-desc">${escapeHtml(info.desc)}</div>
+      </div>
+    </div>
+  `;
+
 
   // link banner
   const link = $("linkBanner");
@@ -317,6 +388,9 @@ function renderGame() {
   };
 
   if (state.phase === "ROLE_REVEAL" || state.phase === "NIGHT_START" || state.phase === "NIGHT_RESULTS" || state.phase === "DAY_WAKE") {
+    controls.appendChild(ackButton());
+  }
+  if (state.phase === "NIGHT_RADAR" && state.phaseData?.selectionDone) {
     controls.appendChild(ackButton());
   }
 
@@ -379,117 +453,108 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
   }
 
   if (state.phase === "NIGHT_AI_AGENT") {
-    const alive = state.players.filter(p => p.status === "alive");
-    const selectA = document.createElement("select");
-    const selectB = document.createElement("select");
-    selectA.style.width = "100%";
-    selectB.style.width = "100%";
-    selectA.style.marginTop = "8px";
-    selectB.style.marginTop = "8px";
+    const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
+    const sel = document.createElement("select");
+    sel.style.width = "100%";
+    sel.appendChild(new Option("Choisir le joueur à lier avec toi", ""));
+    for (const p of alive) sel.appendChild(new Option(p.name, p.playerId));
 
-    const opts = alive.map(p => ({ id: p.playerId, name: p.name }));
-    selectA.appendChild(new Option("Choisir le joueur A", ""));
-    selectB.appendChild(new Option("Choisir le joueur B", ""));
-    for (const o of opts) {
-      selectA.appendChild(new Option(o.name, o.id));
-      selectB.appendChild(new Option(o.name, o.id));
-    }
-    const btn = document.createElement("button");
-    btn.className = "btn btn-primary";
-    btn.style.marginTop = "10px";
-    btn.textContent = "🔗 Lier ces deux joueurs";
-    btn.onclick = () => {
-      const a = selectA.value, b = selectB.value;
-      if (!a || !b || a === b) return setError("Choisis 2 joueurs différents.");
-      socket.emit("phaseAction", { a, b });
+    const btnLink = document.createElement("button");
+    btnLink.className = "btn btn-primary";
+    btnLink.style.marginTop = "10px";
+    btnLink.textContent = "🔗 Lier";
+    btnLink.onclick = () => {
+      if (!sel.value) return setError("Choisis un joueur à lier.");
+      socket.emit("phaseAction", { targetId: sel.value }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
     };
-    controls.appendChild(selectA);
-    controls.appendChild(selectB);
-    controls.appendChild(btn);
+
+    const btnSkip = document.createElement("button");
+    btnSkip.className = "btn btn-secondary";
+    btnSkip.style.marginTop = "10px";
+    btnSkip.textContent = "⏭️ Ne pas lier (optionnel)";
+    btnSkip.onclick = () => socket.emit("phaseAction", { skip: true });
+
+    controls.appendChild(sel);
+    controls.appendChild(btnLink);
+    controls.appendChild(btnSkip);
+    controls.appendChild(makeHint("Nuit 1 uniquement. La liaison est entre toi (Agent IA) et le joueur choisi."));
   }
 
   if (state.phase === "NIGHT_RADAR") {
-    const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Inspecter", (id) => socket.emit("phaseAction", { targetId: id })));
+    if (state.phaseData?.selectionDone) {
+      controls.appendChild(makeHint("Résultat affiché en bas (journal privé). Valide pour continuer."));
+    } else {
+      const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
+      controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Inspecter", (id) => socket.emit("phaseAction", { targetId: id }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); })));
+      controls.appendChild(makeHint("Choisis un joueur à inspecter. Ensuite, lis le résultat puis valide."));
+    }
   }
 
   if (state.phase === "NIGHT_SABOTEURS") {
-    const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Cibler", (id) => socket.emit("phaseAction", { targetId: id })));
-    controls.appendChild(makeHint("Le vote doit être UNANIME entre saboteurs. Si vous n'êtes pas d'accord, revotez."));
+    const aliveTargets = state.players.filter(p =>
+      p.status === "alive" &&
+      p.playerId !== state.you?.playerId &&
+      p.role !== "saboteur" // visible to saboteurs for teammates
+    );
+    controls.appendChild(makeChoiceGrid(aliveTargets.map(p => p.playerId), "Cibler", (id) =>
+      socket.emit("phaseAction", { targetId: id }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); })
+    ));
+    controls.appendChild(makeHint("Vote UNANIME entre saboteurs. Impossible de viser un saboteur (ni toi-même)."));
   }
 
   if (state.phase === "NIGHT_DOCTOR") {
-    const alive = state.players.filter(p => p.status === "alive");
+    const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
     const lifeUsed = !!state.phaseData?.lifeUsed;
     const deathUsed = !!state.phaseData?.deathUsed;
+    const sabName = state.phaseData?.saboteurTargetName || null;
 
-    // save
     const section = document.createElement("div");
     section.style.marginTop = "8px";
 
     const title = document.createElement("div");
     title.style.fontWeight = "900";
     title.style.marginBottom = "8px";
-    title.textContent = "Choisis une action :";
+    title.textContent = "Action du docteur :";
     section.appendChild(title);
 
-    const grid = document.createElement("div");
-    grid.className = "choice-grid";
+    // Save (automatic target)
+    const btnSave = document.createElement("button");
+    btnSave.className = "btn btn-primary";
+    btnSave.disabled = lifeUsed || !sabName;
+    btnSave.textContent = lifeUsed ? "💚 Potion de vie (déjà utilisée)" : (sabName ? `💚 Sauver la cible attaquée : ${sabName}` : "💚 Sauver (aucune cible)");
+    btnSave.onclick = () => socket.emit("phaseAction", { action: "save" }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
 
-    const mk = (label, enabled, onClick) => {
-      const b = document.createElement("button");
-      b.className = enabled ? "btn btn-primary" : "btn btn-secondary";
-      b.disabled = !enabled;
-      b.textContent = label;
-      b.onclick = onClick;
-      return b;
-    };
-
-    // Save: choose a player then confirm
-    const wrapSave = document.createElement("div");
-    wrapSave.style.display = "flex";
-    wrapSave.style.flexDirection = "column";
-    wrapSave.style.gap = "8px";
-    const selSave = document.createElement("select");
-    selSave.style.width = "100%";
-    selSave.appendChild(new Option("Sauver (choisir un joueur)", ""));
-    for (const p of alive) selSave.appendChild(new Option(p.name, p.playerId));
-    const btnSave = mk(lifeUsed ? "Potion de vie (déjà utilisée)" : "💚 Utiliser potion de vie", !lifeUsed, () => {
-      if (!selSave.value) return setError("Choisis un joueur à sauver.");
-      socket.emit("phaseAction", { action: "save", targetId: selSave.value });
-    });
-    wrapSave.appendChild(selSave);
-    wrapSave.appendChild(btnSave);
-
-    // Kill
-    const wrapKill = document.createElement("div");
-    wrapKill.style.display = "flex";
-    wrapKill.style.flexDirection = "column";
-    wrapKill.style.gap = "8px";
+    // Kill (choose target)
     const selKill = document.createElement("select");
     selKill.style.width = "100%";
-    selKill.appendChild(new Option("Tuer (choisir une cible)", ""));
+    selKill.style.marginTop = "10px";
+    selKill.appendChild(new Option("Choisir une cible à tuer (potion de mort)", ""));
     for (const p of alive) selKill.appendChild(new Option(p.name, p.playerId));
-    const btnKill = mk(deathUsed ? "Potion de mort (déjà utilisée)" : "💀 Utiliser potion de mort", !deathUsed, () => {
+
+    const btnKill = document.createElement("button");
+    btnKill.className = "btn btn-primary";
+    btnKill.style.marginTop = "10px";
+    btnKill.disabled = deathUsed;
+    btnKill.textContent = deathUsed ? "💀 Potion de mort (déjà utilisée)" : "💀 Tuer la cible sélectionnée";
+    btnKill.onclick = () => {
+      if (deathUsed) return;
       if (!selKill.value) return setError("Choisis une cible à tuer.");
-      socket.emit("phaseAction", { action: "kill", targetId: selKill.value });
-    });
-    wrapKill.appendChild(selKill);
-    wrapKill.appendChild(btnKill);
+      socket.emit("phaseAction", { action: "kill", targetId: selKill.value }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
+    };
 
     const btnNone = document.createElement("button");
     btnNone.className = "btn btn-secondary";
+    btnNone.style.marginTop = "10px";
     btnNone.textContent = "🤷 Ne rien faire";
     btnNone.onclick = () => socket.emit("phaseAction", { action: "none" });
 
-    section.appendChild(wrapSave);
-    section.appendChild(document.createElement("div"));
-    section.appendChild(wrapKill);
-    section.appendChild(document.createElement("div"));
+    section.appendChild(btnSave);
+    section.appendChild(selKill);
+    section.appendChild(btnKill);
     section.appendChild(btnNone);
 
     controls.appendChild(section);
+    controls.appendChild(makeHint("La potion de vie protège automatiquement la cible des saboteurs (s’il y en a une)."));
   }
 
   if (state.phase === "DAY_CAPTAIN_TRANSFER") {
@@ -526,6 +591,38 @@ function renderEnd() {
     $("endSummary").innerHTML = `<div style="opacity:.9;">Stats persistées par NOM (serveur).</div>`;
   }
 
+
+  const rep = state.phaseData?.report;
+  if (rep) {
+    const deaths = (rep.deathOrder || []).map((d, i) => `${i + 1}. ${d.name} (${d.source || "?"})`).join("<br>");
+    const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
+    const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
+      return `<div class="player-item" style="margin:8px 0;">
+        <div class="player-left">
+          <div style="font-weight:900;">${escapeHtml(name)}</div>
+          <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
+        </div>
+      </div>`;
+    }).join("");
+
+    $("endSummary").innerHTML += `
+      <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(0,255,255,0.25); background: rgba(0,0,0,0.25);">
+        <div style="font-weight:900; margin-bottom:8px;">🏆 Awards</div>
+        ${awardsHtml || "<div>—</div>"}
+      </div>
+
+      <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
+        <div style="font-weight:900; margin-bottom:8px;">☠️ Ordre des morts</div>
+        <div style="opacity:.95;">${deaths || "—"}</div>
+      </div>
+
+      <div style="margin-top:14px;">
+        <div style="font-weight:900; margin-bottom:8px;">📈 Stats cumulées (par NOM)</div>
+        ${statsHtml || "<div>—</div>"}
+      </div>
+    `;
+  }
+
   // ranking table (show roles)
   const table = $("rankingTable");
   const players = [...state.players].filter(p => p.status !== "left");
@@ -553,10 +650,11 @@ function buildPhaseText(s) {
   if (p === "CAPTAIN_VOTE") return "Vote pour élire le capitaine. En cas d'égalité : revote.";
   if (p === "NIGHT_START") return "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.";
   if (p === "NIGHT_CHAMELEON") return "Caméléon : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).";
-  if (p === "NIGHT_AI_AGENT") return "Agent IA : lie deux joueurs (Nuit 1 uniquement).";
+  if (p === "NIGHT_AI_AGENT") return "Agent IA : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).";
   if (p === "NIGHT_RADAR") return "Radar : inspecte un joueur et découvre son rôle.";
   if (p === "NIGHT_SABOTEURS") return "Saboteurs : votez UNANIMEMENT une cible.";
-  if (p === "NIGHT_DOCTOR") return "Docteur : sauve une cible OU tue quelqu'un (1 fois chaque potion) OU rien.";
+  if (p === "NIGHT_DOCTOR") return "Docteur : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.";
+
   if (p === "NIGHT_RESULTS") return "Annonce des effets de la nuit, puis passage au jour.";
   if (p === "DAY_WAKE") return "Réveil de la station. Validez pour passer à la suite.";
   if (p === "DAY_CAPTAIN_TRANSFER") return "Le capitaine est mort : il transmet le capitaine à un joueur vivant.";
@@ -586,13 +684,13 @@ function makeChoiceGrid(ids, verb, onPick) {
   return grid;
 }
 
-function makeIcon(src, title) {
+function makeIcon(src, title, size=44) {
   const img = document.createElement("img");
   img.src = src;
   img.alt = title || "";
   img.title = title || "";
-  img.style.width = "44px";
-  img.style.height = "44px";
+  img.style.width = `${size}px`;
+  img.style.height = `${size}px`;
   img.style.objectFit = "contain";
   img.style.filter = "drop-shadow(0 0 10px rgba(0,255,255,0.5))";
   return img;
