@@ -5,6 +5,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 3000;
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-07";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -68,42 +69,193 @@ function ensurePlayerStats(name) {
 }
 
 // ----------------- assets auto-map (audio) -----------------
-function listPublicFiles(relDir) {
-  const full = path.join(__dirname, "public", relDir);
-  if (!fs.existsSync(full)) return [];
-  return fs.readdirSync(full).filter(f => !f.startsWith("."));
-}
-const soundFiles = listPublicFiles("sounds");
-const soundIndex = new Map(soundFiles.map(f => [normalize(f), f]));
-function findSoundByKeywords(keywords) {
-  const wants = (keywords || []).map(normalize).filter(Boolean);
-  for (const [normName, realName] of soundIndex.entries()) {
-    let ok = true;
-    for (const w of wants) { if (!normName.includes(w)) { ok = false; break; } }
-    if (ok) return "/sounds/" + realName;
+// Manifest-first: public/sounds/audio-manifest.json (key -> filename)
+// Fallback: scan public/sounds and keyword-match filenames/keys.
+const SOUNDS_DIR = path.join(__dirname, "public", "sounds");
+const AUDIO_MANIFEST_PATH = path.join(SOUNDS_DIR, "audio-manifest.json");
+
+function safeReadJSON(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch (e) {
+    console.warn("[audio] manifest read/parse failed:", e.message);
+    return null;
   }
-  return null;
 }
+
+function listSoundFilesFromDir() {
+  if (!fs.existsSync(SOUNDS_DIR)) return [];
+  return fs.readdirSync(SOUNDS_DIR).filter((f) => {
+    const lf = String(f).toLowerCase();
+    if (lf.startsWith(".")) return false;
+    if (lf === "readme.md") return false;
+    if (lf === "audio-manifest.json") return false;
+    return lf.endsWith(".mp3") || lf.endsWith(".wav") || lf.endsWith(".ogg");
+  });
+}
+
+function tokenizeForSearch(s) {
+  const norm = normalize(s).replace(/\s+/g, " ").trim();
+  return norm ? norm.split(" ") : [];
+}
+
+// soundIndex: key -> "/sounds/<file>"
+let soundIndex = Object.create(null);
+// keywordIndex: [{ url, tokens:Set<string> }]
+let soundKeywordsIndex = [];
+let audioManifestLoaded = false;
+
+function buildIndexFromManifest(manifestObj) {
+  const idx = Object.create(null);
+  const kw = [];
+  for (const [k, file] of Object.entries(manifestObj || {})) {
+    if (!k || !file) continue;
+    const key = String(k).trim();
+    const filename = String(file).trim();
+    const url = "/sounds/" + filename;
+    idx[key] = url;
+
+    const base = filename.replace(/\.[^.]+$/, "");
+    const toks = new Set([...tokenizeForSearch(key), ...tokenizeForSearch(base)]);
+    kw.push({ url, tokens: toks });
+  }
+  return { idx, kw };
+}
+
+function buildIndexFromScan(files) {
+  const idx = Object.create(null);
+  const kw = [];
+  for (const f of files) {
+    const base = String(f).replace(/\.[^.]+$/, "");
+    // best-effort key from filename: "RADAR_OFFICER_WAKE.mp3" => "RADAR_OFFICER_WAKE"
+    const key = base.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+    const url = "/sounds/" + f;
+    idx[key] = url;
+
+    const toks = new Set(tokenizeForSearch(base));
+    kw.push({ url, tokens: toks });
+  }
+  return { idx, kw };
+}
+
+function initAudioIndex() {
+  const manifest = safeReadJSON(AUDIO_MANIFEST_PATH);
+  if (manifest && typeof manifest === "object") {
+    const built = buildIndexFromManifest(manifest);
+    soundIndex = built.idx;
+    soundKeywordsIndex = built.kw;
+    audioManifestLoaded = true;
+    console.log(`[audio] manifest loaded: ${Object.keys(soundIndex).length} keys`);
+    return;
+  }
+  const files = listSoundFilesFromDir();
+  const built = buildIndexFromScan(files);
+  soundIndex = built.idx;
+  soundKeywordsIndex = built.kw;
+  audioManifestLoaded = false;
+  console.log(`[audio] manifest missing -> scanned: ${Object.keys(soundIndex).length} sounds`);
+}
+
+function findSoundByKey(key) {
+  if (!key) return null;
+  return soundIndex[String(key).trim()] || null;
+}
+
+function findSoundByKeywords(keywords) {
+  const wants = (keywords || []).flatMap((k) => tokenizeForSearch(k));
+  if (!wants.length) return null;
+
+  let bestUrl = null;
+  let bestScore = 0;
+
+  for (const entry of soundKeywordsIndex) {
+    let score = 0;
+    for (const w of wants) if (entry.tokens.has(w)) score++;
+    if (score > bestScore) {
+      bestScore = score;
+      bestUrl = entry.url;
+    }
+  }
+  return bestScore > 0 ? bestUrl : null;
+}
+
+function getSoundUrl(key, keywordsFallback = []) {
+  const direct = findSoundByKey(key);
+  if (direct) return direct;
+  return findSoundByKeywords([key, ...(keywordsFallback || [])]);
+}
+
+// Role wake/sleep keys
+function roleAudioKey(roleKey, mode /* "WAKE" | "SLEEP" */) {
+  const r = String(roleKey || "").toUpperCase();
+  const m = String(mode || "").toUpperCase();
+  if (!r || !m) return null;
+  const alias = {
+    CHAMELEON: "CHAMELEON",
+    RADAR: "RADAR",
+    DOCTOR: "DOCTOR",
+    SABOTEUR: "SABOTEURS",
+    SABOTEURS: "SABOTEURS",
+    SECURITY: "SECURITY",
+    AI_AGENT: "IA",
+    IA_AGENT: "IA",
+    IA: "IA",
+    ENGINEER: "ENGINEER"
+  };
+  const rr = alias[r] || r;
+  return `${rr}_${m}`;
+}
+
+// Initialize audio index once at boot
+initAudioIndex();
+
+// Canonical keys used by the game (manifest-first)
 const AUDIO = {
-  GENERIC_MAIN: findSoundByKeywords(["generique"]) || null,
-  INTRO_LOBBY: findSoundByKeywords(["attente", "lancement"]) || null,
-  ELECTION_CHIEF: findSoundByKeywords(["election", "chef"]) || findSoundByKeywords(["election"]) || null,
-  STATION_SLEEP: findSoundByKeywords(["station", "endort"]) || null,
-  CHAMELEON_WAKE: findSoundByKeywords(["cameleon", "reveil"]) || null,
-  RADAR_WAKE: findSoundByKeywords(["radar", "reveil"]) || null,
-  SABOTEURS_WAKE: findSoundByKeywords(["saboteurs", "reveil"]) || null,
-  DOCTOR_WAKE: findSoundByKeywords(["docteur", "reveil"]) || null,
-  WAIT_SABOTEURS: findSoundByKeywords(["attente", "saboteurs"]) || null,
-  STATION_VOTE: findSoundByKeywords(["station", "vote"]) || null,
-  WAIT_DAYVOTE: findSoundByKeywords(["attente", "journee"]) || null,
-  WAKE_LIGHT: findSoundByKeywords(["coeur", "leger"]) || null,
-  WAKE_HEAVY: findSoundByKeywords(["coeur", "lourd"]) || null,
-  REVENGE: findSoundByKeywords(["venge"]) || null,
-  END_SONG: findSoundByKeywords(["ecran", "fin"]) || null,
-  END_OUTRO: findSoundByKeywords(["outro", "fin"]) || null
+  // lobby / generic
+  GENERIC_MAIN: getSoundUrl("GENERIC_MAIN", ["generique"]) || null,
+  INTRO_LOBBY: getSoundUrl("INTRO_LOBBY", ["attente", "lancement"]) || null,
+  WAITING_LOOP: getSoundUrl("WAITING_LOOP", ["waiting", "loop", "attente"]) || null,
+
+  // captain election
+  ELECTION_CHIEF: getSoundUrl("ELECTION_CHIEF", ["election", "chef"]) || null,
+
+  // station sleep / wake
+  STATION_SLEEP: getSoundUrl("STATION_SLEEP", ["station", "endort"]) || null,
+  STATION_WAKE_LIGHT: getSoundUrl("STATION_WAKE_LIGHT", ["wake", "light", "leger"]) || getSoundUrl("WAKE_LIGHT", ["wake", "light"]) || null,
+  STATION_WAKE_HEAVY: getSoundUrl("STATION_WAKE_HEAVY", ["wake", "heavy", "lourd"]) || getSoundUrl("WAKE_HEAVY", ["wake", "heavy"]) || null,
+
+  // role wake/sleep (canonical)
+  CHAMELEON_WAKE: getSoundUrl("CHAMELEON_WAKE", ["cameleon", "wake", "reveil"]) || null,
+  CHAMELEON_SLEEP: getSoundUrl("CHAMELEON_SLEEP", ["cameleon", "sleep", "dort"]) || null,
+
+  RADAR_WAKE: getSoundUrl("RADAR_WAKE", ["radar", "wake", "reveil"]) || getSoundUrl("RADAR_OFFICER_WAKE", ["radar", "wake", "reveil"]) || null,
+  RADAR_SLEEP: getSoundUrl("RADAR_SLEEP", ["radar", "sleep", "dort"]) || getSoundUrl("RADAR_OFFICER_SLEEP", ["radar", "sleep", "dort"]) || null,
+
+  SABOTEURS_WAKE: getSoundUrl("SABOTEURS_WAKE", ["saboteurs", "wake", "reveil"]) || null,
+  SABOTEURS_SLEEP: getSoundUrl("SABOTEURS_SLEEP", ["saboteurs", "sleep", "dort"]) || null,
+  SABOTEURS_VOTE: getSoundUrl("SABOTEURS_VOTE", ["saboteurs", "vote"]) || null,
+
+  DOCTOR_WAKE: getSoundUrl("DOCTOR_WAKE", ["docteur", "wake", "reveil"]) || null,
+  DOCTOR_SLEEP: getSoundUrl("DOCTOR_SLEEP", ["docteur", "sleep", "dort"]) || null,
+
+  SECURITY_REVENGE: getSoundUrl("SECURITY_REVENGE", ["security", "revenge", "vengeance"]) || getSoundUrl("REVENGE", ["venge"]) || null,
+
+  VOTE_ANNONCE: getSoundUrl("VOTE_ANNONCE", ["vote", "annonce"]) || null,
+
+  // end screen / victory / stats outro
+  END_VICTORY: getSoundUrl("END_VICTORY", ["victory", "victoire"]) || getSoundUrl("END_SCREEN_SONG", ["ecran", "fin"]) || null,
+  END_STATS_OUTRO: getSoundUrl("END_STATS_OUTRO", ["stats", "outro"]) || getSoundUrl("OUTRO", ["outro", "fin"]) || null,
+
+  // legacy fallbacks (keep old keys usable)
+  END_SCREEN_SONG: getSoundUrl("END_SCREEN_SONG", ["ecran", "fin"]) || null,
+  OUTRO: getSoundUrl("OUTRO", ["outro", "fin"]) || null
 };
+// -----------------------------------------------------------------------------
+
 
 // ----------------- roles -----------------
+
 const ROLES = {
   astronaut: { label: "Astronaute", icon: "/images/roles/astronaute.png", team: "astronauts" },
   saboteur: { label: "Saboteur", icon: "/images/roles/saboteur.png", team: "saboteurs" },
@@ -142,6 +294,7 @@ function newRoom(code, hostPlayerId) {
     aborted: false,
 
     phase: "LOBBY",
+    prevPhase: null,
     phaseData: {},
     phaseAck: new Set(),
 
@@ -194,47 +347,90 @@ function computeTeams(room) {
 }
 
 function ensureMinPlayers(room) {
-  const alive = alivePlayers(room).length;
-  if (room.started && !room.ended && alive < 4) {
+  // Do NOT abort because players died. Only abort if too few ACTIVE players remain (left/disconnected removed).
+  const active = activePlayers(room).length;
+  if (room.started && !room.ended && active < 4) {
     room.aborted = true;
-    setPhase(room, "GAME_ABORTED", { reason: "Pas assez de joueurs (moins de 4)." });
-    logEvent(room, "game_aborted", { alive });
+    setPhase(room, "GAME_ABORTED", { reason: "Pas assez de joueurs actifs (moins de 4)." });
+    logEvent(room, "game_aborted", { active });
   }
 }
 
-function computeAudioCue(room) {
+function computeAudioCue(room, prevPhase) {
   const phase = room.phase;
   const data = room.phaseData || {};
+
+  const withDeaths = (baseTts) => {
+    const dt = data.deathsText || null;
+    if (dt && baseTts) return `${baseTts} ${dt}`;
+    if (dt && !baseTts) return dt;
+    return baseTts || null;
+  };
+
+  const prevSleep = () => {
+    switch (prevPhase) {
+      case "NIGHT_CHAMELEON": return AUDIO.CHAMELEON_SLEEP;
+      case "NIGHT_RADAR": return AUDIO.RADAR_SLEEP;
+      case "NIGHT_SABOTEURS": return AUDIO.SABOTEURS_SLEEP;
+      case "NIGHT_DOCTOR": return AUDIO.DOCTOR_SLEEP;
+      default: return null;
+    }
+  };
+
+  const seqIf = (wakeFile, tts, queueLoopFile = null) => {
+    const s = prevSleep();
+    const seq = [];
+    if (s) seq.push(s);
+    if (wakeFile) seq.push(wakeFile);
+    if (seq.length >= 2) return { sequence: seq, file: null, queueLoopFile, tts };
+    if (seq.length === 1) return { sequence: seq, file: null, queueLoopFile, tts };
+    return { file: wakeFile || null, queueLoopFile, tts };
+  };
+
   if (phase === "LOBBY") return { file: AUDIO.INTRO_LOBBY, queueLoopFile: null, tts: "Lobby. Préparez la mission." };
   if (phase === "MANUAL_ROLE_PICK") return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Mode manuel. Choisissez votre rôle." };
   if (phase === "ROLE_REVEAL") return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Vérifiez votre rôle." };
-  if (phase === "CAPTAIN_CANDIDACY" || phase === "CAPTAIN_VOTE") return { file: AUDIO.ELECTION_CHIEF, queueLoopFile: null, tts: "Élection du chef de station." };
+  if (phase === "CAPTAIN_CANDIDACY" || phase === "CAPTAIN_VOTE") return { file: AUDIO.ELECTION_CHIEF, queueLoopFile: null, tts: "Élection du capitaine." };
 
   if (phase === "NIGHT_START") return { file: AUDIO.STATION_SLEEP, queueLoopFile: null, tts: "La station s'endort." };
-  if (phase === "NIGHT_CHAMELEON") return { file: AUDIO.CHAMELEON_WAKE, queueLoopFile: null, tts: "Caméléon, réveille-toi." };
-  if (phase === "NIGHT_AI_AGENT") return { file: null, queueLoopFile: null, tts: "Agent IA, réveille-toi." };
-  if (phase === "NIGHT_RADAR") return { file: AUDIO.RADAR_WAKE, queueLoopFile: null, tts: "Officier radar, réveille-toi." };
-  if (phase === "NIGHT_SABOTEURS") return { file: AUDIO.SABOTEURS_WAKE, queueLoopFile: AUDIO.WAIT_SABOTEURS, tts: "Saboteurs, choisissez une cible. Unanimité requise." };
-  if (phase === "NIGHT_DOCTOR") return { file: AUDIO.DOCTOR_WAKE, queueLoopFile: null, tts: "Docteur bio, choisissez votre action." };
-  if (phase === "NIGHT_RESULTS") return { file: null, queueLoopFile: null, tts: "Résultats de la nuit." };
 
-  if (phase === "DAY_WAKE") return { file: data.anyDeaths ? AUDIO.WAKE_HEAVY : AUDIO.WAKE_LIGHT, queueLoopFile: null, tts: "La station se réveille." };
+  if (phase === "NIGHT_CHAMELEON") return seqIf(AUDIO.CHAMELEON_WAKE, "Caméléon, réveille-toi.");
+  if (phase === "NIGHT_AI_AGENT") return seqIf(null, "Agent IA, réveille-toi.");
+  if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, réveille-toi.");
+  if (phase === "NIGHT_SABOTEURS") return seqIf(AUDIO.SABOTEURS_WAKE, "Saboteurs, choisissez une cible. Unanimité requise.", AUDIO.WAITING_LOOP);
+  if (phase === "NIGHT_DOCTOR") return seqIf(AUDIO.DOCTOR_WAKE, "Docteur bio, choisissez votre action.");
+
+  if (phase === "NIGHT_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("Résultats de la nuit.") };
+
+  if (phase === "DAY_WAKE") return { file: data.anyDeaths ? AUDIO.STATION_WAKE_HEAVY : AUDIO.STATION_WAKE_LIGHT, queueLoopFile: null, tts: "La station se réveille." };
   if (phase === "DAY_CAPTAIN_TRANSFER") return { file: null, queueLoopFile: null, tts: "Transmission du capitaine." };
-  if (phase === "DAY_VOTE") return { file: AUDIO.STATION_VOTE, queueLoopFile: AUDIO.WAIT_DAYVOTE, tts: "Vote d'éjection." };
+  if (phase === "DAY_VOTE") return { file: AUDIO.VOTE_ANNONCE, queueLoopFile: AUDIO.WAITING_LOOP, tts: "Vote d'éjection." };
   if (phase === "DAY_TIEBREAK") return { file: null, queueLoopFile: null, tts: "Égalité. Capitaine, tranche." };
+  if (phase === "DAY_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("Résultats du jour.") };
 
-  if (phase === "REVENGE") return { file: AUDIO.REVENGE, queueLoopFile: null, tts: "Chef de sécurité, vengeance." };
-  if (phase === "GAME_OVER") return { file: AUDIO.END_SONG || AUDIO.END_OUTRO, queueLoopFile: null, tts: "Fin de partie." };
+  if (phase === "REVENGE") return { file: AUDIO.SECURITY_REVENGE, queueLoopFile: null, tts: "Chef de sécurité, vengeance." };
+
+  if (phase === "GAME_OVER") {
+    // Prefer a short victory sting then stats outro if available
+    const seq = [];
+    if (AUDIO.END_VICTORY) seq.push(AUDIO.END_VICTORY);
+    if (AUDIO.END_STATS_OUTRO) seq.push(AUDIO.END_STATS_OUTRO);
+    if (seq.length) return { sequence: seq, file: null, queueLoopFile: null, tts: "Fin de partie." };
+    return { file: AUDIO.END_SCREEN_SONG || AUDIO.OUTRO || null, queueLoopFile: null, tts: "Fin de partie." };
+  }
+
   if (phase === "GAME_ABORTED") return { file: null, queueLoopFile: null, tts: "Partie interrompue." };
 
   return { file: null, queueLoopFile: null, tts: null };
 }
 
 function setPhase(room, phase, data = {}) {
+  const prev = room.phase;
+  room.prevPhase = prev;
   room.phase = phase;
   room.phaseData = data;
   room.phaseAck = new Set();
-  room.audio = computeAudioCue(room);
+  room.audio = computeAudioCue(room, prev);
   logEvent(room, "phase", { phase });
   try {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night}`);
@@ -262,6 +458,7 @@ function requiredPlayersForPhase(room) {
     case "DAY_CAPTAIN_TRANSFER": return d.actorId ? [d.actorId] : [];
     case "DAY_VOTE": return alive;
     case "DAY_TIEBREAK": return d.actorId ? [d.actorId] : [];
+    case "DAY_RESULTS": return alive;
     case "REVENGE": return d.actorId ? [d.actorId] : [];
     case "GAME_OVER": return alive;
     case "GAME_ABORTED": return alive;
@@ -276,40 +473,76 @@ function ack(room, playerId) {
 }
 
 function applyLinkCascade(room) {
+  const newlyDead = [];
   let changed = true;
   const seen = new Set();
   while (changed) {
     changed = false;
     for (const p of room.players.values()) {
       if (!p.linkedTo) continue;
-      const key = [p.playerId, p.linkedTo].sort().join("-");
-      if (seen.has(key)) continue;
       const other = room.players.get(p.linkedTo);
       if (!other) continue;
+
+      const key = [p.playerId, other.playerId].sort().join("-");
+      if (seen.has(key)) continue;
+
       if (p.status !== "alive" && other.status === "alive") {
-        killPlayer(room, other.playerId, "link");
+        if (killPlayer(room, other.playerId, "link")) newlyDead.push(other.playerId);
         changed = true;
       } else if (other.status !== "alive" && p.status === "alive") {
-        killPlayer(room, p.playerId, "link");
+        if (killPlayer(room, p.playerId, "link")) newlyDead.push(p.playerId);
         changed = true;
       }
       seen.add(key);
     }
   }
+  return newlyDead;
+}
+
+
+function buildDeathsText(room, newlyDeadIds) {
+  const ids = (newlyDeadIds || []).filter(Boolean);
+  if (!ids.length) return null;
+  const names = ids
+    .map((id) => room.players.get(id)?.name)
+    .filter(Boolean);
+  if (!names.length) return null;
+  return `Les joueurs ${names.join(", ")} sont morts.`;
 }
 
 function killPlayer(room, playerId, source, extra = {}) {
   const p = room.players.get(playerId);
-  if (!p || p.status !== "alive") return;
+  if (!p || p.status !== "alive") return false;
   p.status = "dead";
   logEvent(room, "player_died", { playerId, source, ...extra });
+  return true;
 }
 
 function checkWin(room) {
-  if (room.aborted) return null;
+  if (room.aborted) return "ABORTED";
+
+  // abort only if too few ACTIVE players remain
+  ensureMinPlayers(room);
+  if (room.aborted) return "ABORTED";
+
+  const alive = alivePlayers(room);
   const { saboteurs, astronauts, aliveTotal } = computeTeams(room);
-  if (aliveTotal < 4) { ensureMinPlayers(room); if (room.aborted) return "ABORTED"; }
+
+  // Lovers mixed win: only two alive, linked together, and mixed teams
+  if (aliveTotal === 2) {
+    const a = alive[0];
+    const b = alive[1];
+    const linked = a.linkedTo === b.playerId && b.linkedTo === a.playerId;
+    if (linked) {
+      const teamA = ROLES[a.role]?.team || "astronauts";
+      const teamB = ROLES[b.role]?.team || "astronauts";
+      if (teamA !== teamB) return "AMOUREUX";
+    }
+  }
+
   if (saboteurs === 0) return "ASTRONAUTES";
+
+  // Saboteurs win on parity/superiority (classic)
   if (saboteurs >= astronauts) {
     // special 2v2 before night: allow if can flip
     if (aliveTotal === 4 && saboteurs === 2 && astronauts === 2) {
@@ -322,9 +555,9 @@ function checkWin(room) {
     }
     return "SABOTEURS";
   }
+
   return null;
 }
-
 
 function buildEndReport(room, winner) {
   const players = Array.from(room.players.values()).map(p => ({
@@ -406,33 +639,62 @@ function buildEndReport(room, winner) {
     };
   }
 
-  return { winner, players, deathOrder, awards, counters, statsByName };
+
+const detailedStatsByName = {};
+for (const [name, s] of Object.entries(statsByName)) {
+  const gamesByRole = s.gamesByRole || {};
+  const winsByRole = s.winsByRole || {};
+  const roleWinRates = {};
+  for (const [role, g] of Object.entries(gamesByRole)) {
+    const w = winsByRole[role] || 0;
+    roleWinRates[role] = g ? Math.round((w / g) * 100) : 0;
+  }
+  detailedStatsByName[name] = {
+    ...s,
+    roleWinRates
+  };
+}
+
+return { winner, players, deathOrder, awards, counters, statsByName, detailedStatsByName };
 }
 
 function endGame(room, winner) {
   room.ended = true;
+
+  // persist stats per name FIRST (so the end report reflects the updated totals)
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+
+    const st = ensurePlayerStats(p.name);
+    st.gamesPlayed += 1;
+
+    const role = p.role || "unknown";
+    st.gamesByRole[role] = (st.gamesByRole[role] || 0) + 1;
+
+    let win = false;
+    if (winner === "AMOUREUX") {
+      // only the two linked lovers win
+      win = (p.status === "alive") && !!p.linkedTo && (room.players.get(p.linkedTo)?.status === "alive");
+    } else {
+      const team = ROLES[role]?.team || "astronauts";
+      win = (winner === "ASTRONAUTES" && team === "astronauts") ||
+            (winner === "SABOTEURS" && team === "saboteurs");
+    }
+
+    if (win) st.wins += 1;
+    else st.losses += 1;
+
+    if (win) st.winsByRole[role] = (st.winsByRole[role] || 0) + 1;
+  }
+  saveStats(statsDb);
+
   const report = buildEndReport(room, winner);
   room.endReport = report;
   setPhase(room, "GAME_OVER", { winner, report });
   logEvent(room, "game_over", { winner });
   console.log(`[${room.code}] game_over winner=${winner}`);
-
-  // persist stats per name
-  for (const p of room.players.values()) {
-    if (p.status === "left") continue;
-    const st = ensurePlayerStats(p.name);
-    st.gamesPlayed += 1;
-    const role = p.role || "unknown";
-    st.gamesByRole[role] = (st.gamesByRole[role] || 0) + 1;
-    const team = ROLES[role]?.team || "astronauts";
-    const win = (winner === "ASTRONAUTES" && team === "astronauts") ||
-                (winner === "SABOTEURS" && team === "saboteurs");
-    if (win) st.wins += 1;
-    else st.losses += 1;
-    if (win) st.winsByRole[role] = (st.winsByRole[role] || 0) + 1;
-  }
-  saveStats(statsDb);
 }
+
 
 // ----------------- role assignment -----------------
 function buildRolePool(room) {
@@ -617,28 +879,36 @@ function nextNightPhase(room) {
 function resolveNight(room) {
   const nd = room.nightData || {};
   const killed = new Set();
+
   if (nd.saboteurTarget && nd.saboteurTarget !== nd.doctorSave) killed.add(nd.saboteurTarget);
   if (nd.doctorKill) killed.add(nd.doctorKill);
 
   const newlyDead = [];
   for (const pid of killed) {
-    const p = room.players.get(pid);
-    if (p && p.status === "alive") newlyDead.push(pid);
+    if (killPlayer(room, pid, "night")) newlyDead.push(pid);
   }
-  for (const pid of newlyDead) killPlayer(room, pid, "night");
 
-  const securityDied = newlyDead.find(pid => room.players.get(pid)?.role === "security");
+  // linked deaths cascade
+  const casc = applyLinkCascade(room);
+  for (const pid of casc) if (!newlyDead.includes(pid)) newlyDead.push(pid);
+
+  const deathsText = buildDeathsText(room, newlyDead);
+
+  const securityDied = newlyDead.find((pid) => room.players.get(pid)?.role === "security");
   if (securityDied) {
-    setPhase(room, "REVENGE", { actorId: securityDied, context: "night", options: alivePlayers(room).map(p => p.playerId) });
+    room.pendingAfterRevenge = { context: "night", newlyDead: newlyDead.slice(), deathsText };
+    setPhase(room, "REVENGE", { actorId: securityDied, context: "night", options: alivePlayers(room).map((p) => p.playerId) });
     return;
   }
 
-  applyLinkCascade(room);
-
   const winner = checkWin(room);
-  if (winner) { endGame(room, winner); return; }
+  if (winner) {
+    if (winner === "ABORTED") return;
+    endGame(room, winner);
+    return;
+  }
 
-  setPhase(room, "NIGHT_RESULTS", { newlyDead, anyDeaths: newlyDead.length > 0 });
+  setPhase(room, "NIGHT_RESULTS", { newlyDead, anyDeaths: newlyDead.length > 0, deathsText });
 }
 
 function beginDay(room, anyDeaths) {
@@ -711,32 +981,52 @@ function executeEjection(room, ejectedId, reason) {
   const p = room.players.get(ejectedId);
   if (!p || p.status !== "alive") return;
 
-  killPlayer(room, ejectedId, "day", { reason });
+  const newlyDead = [];
+  if (killPlayer(room, ejectedId, "day", { reason })) newlyDead.push(ejectedId);
 
-  if (p.role === "security") {
-    setPhase(room, "REVENGE", { actorId: ejectedId, context: "day", options: alivePlayers(room).map(p => p.playerId) });
+  const casc = applyLinkCascade(room);
+  for (const pid of casc) if (!newlyDead.includes(pid)) newlyDead.push(pid);
+
+  const deathsText = buildDeathsText(room, newlyDead);
+
+  const securityDied = newlyDead.find((pid) => room.players.get(pid)?.role === "security");
+  if (securityDied) {
+    room.pendingAfterRevenge = { context: "day", newlyDead: newlyDead.slice(), deathsText };
+    setPhase(room, "REVENGE", { actorId: securityDied, context: "day", options: alivePlayers(room).map((p) => p.playerId) });
     return;
   }
 
-  applyLinkCascade(room);
-
   const winner = checkWin(room);
-  if (winner) { endGame(room, winner); return; }
+  if (winner) {
+    if (winner === "ABORTED") return;
+    endGame(room, winner);
+    return;
+  }
 
-  beginNight(room);
+  setPhase(room, "DAY_RESULTS", { newlyDead, anyDeaths: newlyDead.length > 0, deathsText });
 }
 
 function afterRevenge(room, context) {
-  applyLinkCascade(room);
+  // integrate any pending deaths + revenge results (already applied)
+  const pending = room.pendingAfterRevenge || { context, newlyDead: [], deathsText: null };
 
   const winner = checkWin(room);
-  if (winner) { endGame(room, winner); return; }
+  if (winner) {
+    room.pendingAfterRevenge = null;
+    if (winner === "ABORTED") return;
+    endGame(room, winner);
+    return;
+  }
 
-  if (context === "night") setPhase(room, "NIGHT_RESULTS", { newlyDead: [], anyDeaths: true });
-  else beginNight(room);
+  const data = { newlyDead: pending.newlyDead || [], anyDeaths: (pending.newlyDead || []).length > 0, deathsText: pending.deathsText || null };
+  room.pendingAfterRevenge = null;
+
+  if (context === "night") setPhase(room, "NIGHT_RESULTS", data);
+  else setPhase(room, "DAY_RESULTS", data);
 }
 
 // ----------------- state for client -----------------
+
 function formatLogLine(room, e) {
   const t = new Date(e.t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const name = (id) => room.players.get(id)?.name || "???";
@@ -837,8 +1127,26 @@ function publicRoomStateFor(room, viewerId) {
 // ----------------- socket server -----------------
 const app = express();
 app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/api/health", (req, res) => res.json({ ok: true }));
-app.get("/api/assets/audio", (req, res) => res.json({ files: soundFiles, mapped: AUDIO }));
+
+app.get("/api/build", (req, res) => {
+  res.json({
+    ok: true,
+    buildId: BUILD_ID,
+    node: process.version,
+    manifest: "/sounds/audio-manifest.json"
+  });
+});
+
+app.get("/api/assets/audio", (req, res) => {
+  res.json({
+    manifestLoaded: !!audioManifestLoaded,
+    files: listSoundFilesFromDir(),
+    indexKeys: Object.keys(soundIndex || {}),
+    mapped: AUDIO
+  });
+});
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
@@ -998,6 +1306,10 @@ function handlePhaseCompletion(room) {
 
     case "DAY_WAKE":
       proceedDayAfterWake(room);
+      break;
+
+    case "DAY_RESULTS":
+      beginNight(room);
       break;
 
     default:
@@ -1351,24 +1663,42 @@ io.on("connection", (socket) => {
       return cb && cb({ ok:true });
     }
 
-    // --- revenge ---
-    if (phase === "REVENGE") {
-      if (playerId !== room.phaseData.actorId) return;
-      const target = payload?.targetId;
-      const tP = room.players.get(target);
-      if (!tP || tP.status !== "alive") return;
-      killPlayer(room, target, "revenge");
-      logEvent(room, "revenge_shot", { by: playerId, targetId: target });
-      console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
-      ensurePlayerStats(p.name).securityRevengeShots += 1;
-      saveStats(statsDb);
+    
+// --- revenge ---
+if (phase === "REVENGE") {
+  if (playerId !== room.phaseData.actorId) return;
+  const target = payload?.targetId;
+  const tP = room.players.get(target);
+  if (!tP || tP.status !== "alive") return;
 
-      afterRevenge(room, room.phaseData.context);
-      emitRoom(room);
-      return cb && cb({ ok:true });
-    }
+  const extraDead = [];
+  if (killPlayer(room, target, "revenge")) extraDead.push(target);
+  logEvent(room, "revenge_shot", { by: playerId, targetId: target });
+  console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
+  ensurePlayerStats(p.name).securityRevengeShots += 1;
+  saveStats(statsDb);
 
-    cb && cb({ ok:false, error:"Action invalide" });
+  const casc = applyLinkCascade(room);
+  for (const pid of casc) if (!extraDead.includes(pid)) extraDead.push(pid);
+
+  // merge with pending deaths (from the event that triggered revenge)
+  const pending = room.pendingAfterRevenge || { context: room.phaseData.context, newlyDead: [], deathsText: null };
+  const merged = [];
+  for (const pid of (pending.newlyDead || [])) if (!merged.includes(pid)) merged.push(pid);
+  for (const pid of extraDead) if (!merged.includes(pid)) merged.push(pid);
+
+  room.pendingAfterRevenge = {
+    context: room.phaseData.context,
+    newlyDead: merged,
+    deathsText: buildDeathsText(room, merged)
+  };
+
+  afterRevenge(room, room.phaseData.context);
+  emitRoom(room);
+  return cb && cb({ ok:true });
+}
+
+cb && cb({ ok:false, error:"Action invalide" });
   });
 
   socket.on("quitRoom", (_, cb) => {

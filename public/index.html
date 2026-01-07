@@ -13,17 +13,12 @@
     padding: 10px 16px; border-radius: 10px; font-weight: 800;
   ">📜 RÈGLES</button>
 
-  <button id="quitBtn" class="btn btn-secondary" style="
-    display:none; position: fixed; right: 20px; top: 20px; z-index: 9999;
-    padding: 10px 16px; border-radius: 10px; font-weight: 800;
-    border-color: #ff3333; color: #fff; background: linear-gradient(135deg, #ff0000, #cc0000);
-  ">🚪 QUITTER</button>
-
   <div class="container">
     <div class="header">
       <div class="logo"></div>
       <h1>INFILTRATION SPATIALE</h1>
       <div class="subtitle">⚡ MISSION TEMPS RÉEL ⚡</div>
+      <div id="buildBadge" style="margin-top:10px; opacity:.85; font-size:.95rem;"></div>
       <div id="topBanner" style="display:none; margin-top:12px; color: var(--neon-orange); font-weight:700; letter-spacing:1px;"></div>
     </div>
 
@@ -147,7 +142,10 @@
     <!-- GAME -->
     <div id="gameScreen" class="screen">
       <div id="gameBackdrop" style="width:100%; height:180px; border-radius:16px; overflow:hidden; border:2px solid var(--neon-cyan);
-        background-size:cover; background-position:center; margin-bottom: 16px;"></div>
+        background-size:cover; background-position:center; margin-bottom: 16px; position:relative;">
+        <img id="ejectionOverlay" src="/images/ejection.png" alt="ejection" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; pointer-events:none;">
+      </div>
+      <div id="deadBanner" style="display:none; margin-bottom: 12px; padding:10px 12px; border-radius:12px; border:2px solid var(--neon-red); color: var(--neon-red); font-weight:900; text-align:center;">💀 Vous êtes mort</div>
 
       <div class="control-panel" style="max-width: 900px;">
         <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center;">
