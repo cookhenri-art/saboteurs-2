@@ -186,10 +186,16 @@ function setBackdrop() {
   const p = state.phase || "";
   let img = null;
 
-  if (p === "LOBBY") img = "/images/cockpit-lobby.webp";
-  else if (p.includes("DAY") || p === "DAY_VOTE" || p === "DAY_TIEBREAK") img = "/images/vote-jour.png";
-  else if (p.includes("NIGHT") || p === "NIGHT_SABOTEURS") img = "/images/vote-nuit.png";
+  // Cockpit during role validation & election
+  const cockpitPhases = new Set(["LOBBY","MANUAL_ROLE_PICK","ROLE_REVEAL","CAPTAIN_CANDIDACY","CAPTAIN_VOTE"]);
+
+  // Death announcements should use ejection visuals (day or night)
+  const hasDeaths = !!(state.phaseData?.deathsText || state.phaseData?.anyDeaths || (Array.isArray(state.phaseData?.newlyDead) && state.phaseData.newlyDead.length));
+  if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && hasDeaths) img = "/images/ejection.png";
   else if (p === "GAME_OVER") img = "/images/ejection.png";
+  else if (cockpitPhases.has(p)) img = "/images/cockpit.png";
+  else if (p.startsWith("NIGHT")) img = "/images/vote-nuit.png";
+  else if (p.startsWith("DAY") || p === "DAY_VOTE" || p === "DAY_TIEBREAK") img = "/images/vote-jour.png";
 
   if (img) el.style.backgroundImage = `url('${img}')`;
   else el.style.backgroundImage = "none";
@@ -538,6 +544,18 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
   }
 
   if (state.phase === "NIGHT_SABOTEURS") {
+    // Coordination: show what each saboteur selected (server sends names)
+    const sv = state.phaseData?.saboteurVotes || null;
+    if (sv && typeof sv === "object") {
+      const box = document.createElement("div");
+      box.className = "hint";
+      box.style.marginBottom = "10px";
+      const lines = Object.keys(sv).sort().map(k => `🗡️ ${k} → ${sv[k] || "—"}`);
+      box.textContent = lines.length ? lines.join("\n") : "🗡️ Votes saboteurs : —";
+      box.style.whiteSpace = "pre-line";
+      controls.appendChild(box);
+    }
+
     const aliveTargets = state.players.filter(p =>
       p.status === "alive" &&
       p.playerId !== state.you?.playerId &&
@@ -799,6 +817,22 @@ class AudioManager {
     this.audio = null;
     this.loopAudio = null;
     this.token = null;
+    this.lastCue = null;
+    this.muted = false;
+  }
+  setMuted(v) {
+    this.muted = !!v;
+    try { window.speechSynthesis.cancel(); } catch {}
+    try {
+      if (this.audio) this.audio.muted = !!v;
+      if (this.loopAudio) this.loopAudio.muted = !!v;
+    } catch {}
+
+    // If unmuting, replay last cue (if any) so the user resumes the current phase audio
+    if (!this.muted && this.lastCue) {
+      this.token = null;
+      this.play(this.lastCue);
+    }
   }
   stopAll() {
     try {
@@ -811,9 +845,15 @@ class AudioManager {
   }
 
 play(cue) {
+  this.lastCue = cue || null;
   const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
   if (token === this.token) return;
   this.token = token;
+
+  if (this.muted) {
+    // Keep token/lastCue in sync, but don't emit any audio.
+    return;
+  }
 
   this.stopAll();
   if (!cue) return;
@@ -834,6 +874,7 @@ play(cue) {
       const url = seq[i++];
       const a = new Audio(url);
       a.volume = 1.0;
+      a.muted = !!this.muted;
       this.audio = a;
       a.play().catch(() => { if (ttsText) this.tts(ttsText); });
       a.onended = () => playNext();
@@ -849,6 +890,7 @@ play(cue) {
   if (primary) {
     const a = new Audio(primary);
     a.volume = 1.0;
+    a.muted = !!this.muted;
     this.audio = a;
     a.play().catch(() => { this.tts(ttsText); });
     a.onended = () => {
@@ -867,11 +909,13 @@ playLoop(url) {
     const a = new Audio(url);
     a.loop = true;
     a.volume = 1.0;
+    a.muted = !!this.muted;
     this.loopAudio = a;
     a.play().catch(() => {});
   }
   tts(text) {
     if (!text) return;
+    if (this.muted) return;
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "fr-FR";
@@ -880,6 +924,26 @@ playLoop(url) {
   }
 }
 const audioManager = new AudioManager();
+
+// ---------- Mute toggle (browser window only) ----------
+(function initMuteButton() {
+  const btn = $("muteBtn");
+  if (!btn) return;
+  const key = "infiltration_audio_muted";
+  // sessionStorage => per-tab (does not affect other tabs)
+  const initial = sessionStorage.getItem(key) === "1";
+  audioManager.setMuted(initial);
+  btn.textContent = initial ? "🔇" : "🔊";
+  btn.title = initial ? "Son coupé" : "Son activé";
+
+  btn.onclick = () => {
+    const now = !audioManager.muted;
+    audioManager.setMuted(now);
+    sessionStorage.setItem(key, now ? "1" : "0");
+    btn.textContent = now ? "🔇" : "🔊";
+    btn.title = now ? "Son coupé" : "Son activé";
+  };
+})();
 
 // ---------- Rules modal ----------
 function buildRulesHtml(cfg) {

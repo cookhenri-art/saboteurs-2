@@ -503,11 +503,17 @@ function applyLinkCascade(room) {
 function buildDeathsText(room, newlyDeadIds) {
   const ids = (newlyDeadIds || []).filter(Boolean);
   if (!ids.length) return null;
-  const names = ids
-    .map((id) => room.players.get(id)?.name)
+  const parts = ids
+    .map((id) => {
+      const p = room.players.get(id);
+      if (!p) return null;
+      const label = (p.role && (ROLES[p.role]?.label || p.role)) || "rôle inconnu";
+      return `${p.name} (${label})`;
+    })
     .filter(Boolean);
-  if (!names.length) return null;
-  return `Les joueurs ${names.join(", ")} sont morts.`;
+  if (!parts.length) return null;
+  if (parts.length === 1) return `Le joueur ${parts[0]} est mort.`;
+  return `Les joueurs ${parts.join(", ")} sont morts.`;
 }
 
 function killPlayer(room, playerId, source, extra = {}) {
@@ -1047,6 +1053,26 @@ function publicRoomStateFor(room, viewerId) {
   const viewer = getPlayer(room, viewerId);
   const required = requiredPlayersForPhase(room);
 
+  // Phase data can include sensitive internals (e.g., saboteur votes). Build a viewer-specific view.
+  let phaseDataOut = room.phaseData || {};
+  if (room.phase === "NIGHT_SABOTEURS") {
+    if (viewer && viewer.role === "saboteur") {
+      const sabIds = (room.phaseData?.actorIds || []).filter(id => room.players.get(id)?.status === "alive");
+      const view = {};
+      for (const sid of sabIds) {
+        const sp = room.players.get(sid);
+        const tid = room.phaseData?.votes?.[sid] || null;
+        const tp = tid ? room.players.get(tid) : null;
+        view[sp?.name || sid] = tp?.name || null;
+      }
+      phaseDataOut = { ...(room.phaseData || {}), saboteurVotes: view };
+    } else {
+      // Hide raw votes for non-saboteurs
+      const { votes, ...rest } = room.phaseData || {};
+      phaseDataOut = rest;
+    }
+  }
+
   const players = Array.from(room.players.values()).map(p => {
     const base = {
       playerId: p.playerId,
@@ -1107,7 +1133,7 @@ function publicRoomStateFor(room, viewerId) {
   return {
     roomCode: room.code,
     phase: room.phase,
-    phaseData: room.phaseData,
+    phaseData: phaseDataOut,
     started: room.started,
     ended: room.ended,
     aborted: room.aborted,
