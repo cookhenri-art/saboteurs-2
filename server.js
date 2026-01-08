@@ -503,17 +503,16 @@ function applyLinkCascade(room) {
 function buildDeathsText(room, newlyDeadIds) {
   const ids = (newlyDeadIds || []).filter(Boolean);
   if (!ids.length) return null;
-  const parts = ids
-    .map((id) => {
-      const p = room.players.get(id);
-      if (!p) return null;
-      const label = (p.role && (ROLES[p.role]?.label || p.role)) || "rôle inconnu";
-      return `${p.name} (${label})`;
-    })
-    .filter(Boolean);
-  if (!parts.length) return null;
-  if (parts.length === 1) return `Le joueur ${parts[0]} est mort.`;
-  return `Les joueurs ${parts.join(", ")} sont morts.`;
+  const items = ids.map((id) => {
+    const p = room.players.get(id);
+    if (!p) return null;
+    const roleLabel = ROLES[p.role]?.label || p.role || "?";
+    return `${p.name} (${roleLabel})`;
+  }).filter(Boolean);
+  if (!items.length) return null;
+
+  if (items.length === 1) return `Le joueur ${items[0]} a été éjecté.`;
+  return `Les joueurs ${items.join(", ")} ont été éjectés.`;
 }
 
 function killPlayer(room, playerId, source, extra = {}) {
@@ -595,10 +594,22 @@ function buildEndReport(room, winner) {
   };
   for (const e of room.matchLog) {
     if (e.type === "doctor_save") inc(e.by, "doctorSaves");
-    if (e.type === "doctor_kill") inc(e.by, "doctorKills");
+    if (e.type === "doctor_kill") {
+      inc(e.by, "doctorKills");
+      const tRole = room.players.get(e.targetId)?.role;
+      const team = ROLES[tRole]?.team || "astronauts";
+      if (team === "astronauts") inc(e.by, "doctorKillsAstronauts");
+      else inc(e.by, "doctorKillsSaboteurs");
+    }
     if (e.type === "radar_inspect") inc(e.by, "radarInspects");
     if (e.type === "chameleon_swap") inc(e.by, "chameleonSwaps");
-    if (e.type === "revenge_shot") inc(e.by, "revengeShots");
+    if (e.type === "revenge_shot") {
+      inc(e.by, "revengeShots");
+      const tRole = room.players.get(e.targetId)?.role;
+      const team = ROLES[tRole]?.team || "astronauts";
+      if (team === "saboteurs") inc(e.by, "revengeKillsSaboteurs");
+      else inc(e.by, "revengeKillsAstronauts");
+    }
     if (e.type === "ai_link") inc(e.by, "aiLinks");
   }
 
@@ -614,12 +625,49 @@ function buildEndReport(room, winner) {
     return { title, text: `${name} (${bestVal})` };
   };
 
+  const awardWorstDoctor = () => {
+    let worstPid = null;
+    let worstVal = 0;
+    for (const [pid, c] of Object.entries(counters)) {
+      const killsAst = c.doctorKillsAstronauts || 0;
+      const saves = c.doctorSaves || 0;
+      if (killsAst > 0 && saves === 0 && killsAst > worstVal) {
+        worstVal = killsAst;
+        worstPid = pid;
+      }
+    }
+    if (!worstPid) return {
+      title: "Pire docteur (a éjecté des astronautes sans potion de vie)",
+      text: "Aucun"
+    };
+    const name = room.players.get(worstPid)?.name || worstPid;
+    return {
+      title: "Pire docteur (a éjecté des astronautes sans potion de vie)",
+      text: `${name} (${worstVal})`
+    };
+  };
+
+  const awardSecurityByTeam = (key, title, emptyText) => {
+    let bestPid = null;
+    let bestVal = 0;
+    for (const [pid, c] of Object.entries(counters)) {
+      const v = c[key] || 0;
+      if (v > bestVal) { bestVal = v; bestPid = pid; }
+    }
+    if (!bestPid || bestVal <= 0) return { title, text: emptyText };
+    const name = room.players.get(bestPid)?.name || bestPid;
+    return { title, text: `${name} (${bestVal})` };
+  };
+
   const awards = [
     awardPick("doctorSaves", "Meilleur docteur (sauvetages)", "Aucun sauvetage"),
     awardPick("doctorKills", "Docteur (kills)", "Aucun kill docteur"),
+    awardWorstDoctor(),
     awardPick("radarInspects", "Meilleur officier radar (inspections)", "Aucune inspection"),
     awardPick("chameleonSwaps", "Meilleur caméléon (échanges)", "Aucun échange"),
     awardPick("revengeShots", "Chef de sécurité (vengeance)", "Aucune vengeance"),
+    awardSecurityByTeam("revengeKillsSaboteurs", "Meilleur chef de sécurité (vengeance sur saboteur)", "Aucune vengeance sur saboteur"),
+    awardSecurityByTeam("revengeKillsAstronauts", "Pire chef de sécurité (vengeance sur astronaute)", "Aucune vengeance sur astronaute"),
     awardPick("aiLinks", "Agent IA (liaisons)", "Aucune liaison")
   ];
 
@@ -1040,7 +1088,7 @@ function formatLogLine(room, e) {
     case "phase": return { kind: "info", text: `[${t}] ➜ Phase: ${e.phase}` };
     case "roles_assigned": return { kind: "info", text: `[${t}] Rôles attribués.` };
     case "captain_elected": return { kind: "info", text: `[${t}] ⭐ Capitaine: ${name(e.playerId)}` };
-    case "player_died": return { kind: "info", text: `[${t}] ☠️ ${name(e.playerId)} est mort.` };
+    case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éjecté.` };
     case "player_left": return { kind: "warn", text: `[${t}] 🚪 ${name(e.playerId)} peut revenir (30s).` };
     case "player_removed": return { kind: "warn", text: `[${t}] ⛔ ${name(e.playerId)} est sorti.` };
     case "reconnected": return { kind: "info", text: `[${t}] ✅ ${name(e.playerId)} est revenu.` };
@@ -1052,26 +1100,6 @@ function formatLogLine(room, e) {
 function publicRoomStateFor(room, viewerId) {
   const viewer = getPlayer(room, viewerId);
   const required = requiredPlayersForPhase(room);
-
-  // Phase data can include sensitive internals (e.g., saboteur votes). Build a viewer-specific view.
-  let phaseDataOut = room.phaseData || {};
-  if (room.phase === "NIGHT_SABOTEURS") {
-    if (viewer && viewer.role === "saboteur") {
-      const sabIds = (room.phaseData?.actorIds || []).filter(id => room.players.get(id)?.status === "alive");
-      const view = {};
-      for (const sid of sabIds) {
-        const sp = room.players.get(sid);
-        const tid = room.phaseData?.votes?.[sid] || null;
-        const tp = tid ? room.players.get(tid) : null;
-        view[sp?.name || sid] = tp?.name || null;
-      }
-      phaseDataOut = { ...(room.phaseData || {}), saboteurVotes: view };
-    } else {
-      // Hide raw votes for non-saboteurs
-      const { votes, ...rest } = room.phaseData || {};
-      phaseDataOut = rest;
-    }
-  }
 
   const players = Array.from(room.players.values()).map(p => {
     const base = {
@@ -1133,7 +1161,7 @@ function publicRoomStateFor(room, viewerId) {
   return {
     roomCode: room.code,
     phase: room.phase,
-    phaseData: phaseDataOut,
+    phaseData: room.phaseData,
     started: room.started,
     ended: room.ended,
     aborted: room.aborted,
