@@ -440,7 +440,11 @@ if (actorOnly.has(state.phase) && !isActorNow) {
     const b = document.createElement("button");
     b.className = "btn btn-primary";
     b.textContent = "✅ VALIDER";
-    b.onclick = () => socket.emit("phaseAck");
+    b.onclick = () => {
+      b.classList.add('selected');
+      lockControlsNow($('controls'));
+      socket.emit("phaseAck");
+    };
     return b;
   };
 
@@ -473,9 +477,15 @@ if (actorOnly.has(state.phase) && !isActorNow) {
 
     const card = document.createElement("div");
     card.className = "choice-card";
+    card.dataset.playerId = id;
     card.innerHTML = `<div style="font-weight:900; font-size:1.1rem;">${label}</div>
       <div style="opacity:.9; margin-top:6px;">Places restantes : <b>${count}</b></div>`;
-    card.onclick = () => socket.emit("phaseAction", { roleKey: rk }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
+    card.onclick = () => {
+      for (const el of grid.querySelectorAll('.choice-card')) el.classList.remove('selected');
+      card.classList.add('selected');
+      lockControlsNow(grid);
+      socket.emit("phaseAction", { roleKey: rk }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
+    };
     grid.appendChild(card);
   }
 
@@ -489,11 +499,19 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     const yes = document.createElement("button");
     yes.className = "btn btn-primary";
     yes.textContent = "🙋 Je me présente";
-    yes.onclick = () => socket.emit("phaseAction", { candidacy: true });
+    yes.onclick = () => {
+      yes.classList.add('selected');
+      lockControlsNow($("controls"));
+      socket.emit("phaseAction", { candidacy: true });
+    };
     const no = document.createElement("button");
     no.className = "btn btn-secondary";
     no.textContent = "🙅 Je ne me présente pas";
-    no.onclick = () => socket.emit("phaseAction", { candidacy: false });
+    no.onclick = () => {
+      no.classList.add('selected');
+      lockControlsNow($("controls"));
+      socket.emit("phaseAction", { candidacy: false });
+    };
     wrap.appendChild(yes); wrap.appendChild(no);
     controls.appendChild(wrap);
   }
@@ -522,6 +540,8 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     btnLink.textContent = "🔗 Lier";
     btnLink.onclick = () => {
       if (!sel.value) return setError("Choisis un joueur à lier.");
+      btnLink.classList.add('selected');
+      lockControlsNow($("controls"));
       socket.emit("phaseAction", { targetId: sel.value }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
     };
 
@@ -529,7 +549,11 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     btnSkip.className = "btn btn-secondary";
     btnSkip.style.marginTop = "10px";
     btnSkip.textContent = "⏭️ Ne pas lier (optionnel)";
-    btnSkip.onclick = () => socket.emit("phaseAction", { skip: true });
+    btnSkip.onclick = () => {
+      btnSkip.classList.add('selected');
+      lockControlsNow($("controls"));
+      socket.emit("phaseAction", { skip: true });
+    };
 
     controls.appendChild(sel);
     controls.appendChild(btnLink);
@@ -548,14 +572,36 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
   }
 
   if (state.phase === "NIGHT_SABOTEURS") {
+    // Show current team votes for coordination (saboteurs only).
+    const teamVotes = state.phaseData?.teamVotes || [];
+    if (teamVotes.length) {
+      const box = document.createElement("div");
+      box.style.marginTop = "10px";
+      box.style.padding = "10px";
+      box.style.borderRadius = "12px";
+      box.style.border = "1px solid rgba(0,255,255,0.25)";
+      box.style.background = "rgba(0,0,0,0.25)";
+      box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗳️ Votes des saboteurs</div>` +
+        teamVotes.map(v => `<div style="opacity:.95;">${escapeHtml(v.saboteurName)} → <b>${escapeHtml(v.targetName)}</b></div>`).join("");
+      controls.appendChild(box);
+    }
     const aliveTargets = state.players.filter(p =>
       p.status === "alive" &&
       p.playerId !== state.you?.playerId &&
       p.role !== "saboteur" // visible to saboteurs for teammates
     );
-    controls.appendChild(makeChoiceGrid(aliveTargets.map(p => p.playerId), "Cibler", (id) =>
+    const grid = makeChoiceGrid(aliveTargets.map(p => p.playerId), "Cibler", (id) =>
       socket.emit("phaseAction", { targetId: id }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); })
-    ));
+    , { lockOnPick: false });
+
+    // Re-apply current selection if any (without locking)
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) card.classList.add('selected');
+      }
+    }
+    controls.appendChild(grid);
     controls.appendChild(makeHint("Vote UNANIME entre saboteurs. Impossible de viser un saboteur (ni toi-même)."));
   }
 
@@ -579,7 +625,11 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     btnSave.className = "btn btn-primary";
     btnSave.disabled = lifeUsed || !sabName;
     btnSave.textContent = lifeUsed ? "💚 Potion de vie (déjà utilisée)" : (sabName ? `💚 Sauver la cible attaquée : ${sabName}` : "💚 Sauver (aucune cible)");
-    btnSave.onclick = () => socket.emit("phaseAction", { action: "save" }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
+    btnSave.onclick = () => {
+      btnSave.classList.add('selected');
+      lockControlsNow($("controls"));
+      socket.emit("phaseAction", { action: "save" }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
+    };
 
     // Kill (choose target)
     const selKill = document.createElement("select");
@@ -596,6 +646,8 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     btnKill.onclick = () => {
       if (deathUsed) return;
       if (!selKill.value) return setError("Choisis une cible à tuer.");
+      btnKill.classList.add('selected');
+      lockControlsNow($("controls"));
       socket.emit("phaseAction", { action: "kill", targetId: selKill.value }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
     };
 
@@ -603,7 +655,11 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     btnNone.className = "btn btn-secondary";
     btnNone.style.marginTop = "10px";
     btnNone.textContent = "🤷 Ne rien faire";
-    btnNone.onclick = () => socket.emit("phaseAction", { action: "none" });
+    btnNone.onclick = () => {
+      btnNone.classList.add('selected');
+      lockControlsNow($("controls"));
+      socket.emit("phaseAction", { action: "none" });
+    };
 
     section.appendChild(btnSave);
     section.appendChild(selKill);
@@ -661,9 +717,8 @@ function renderEnd() {
   const rep = state.phaseData?.report;
   if (rep) {
     const deaths = (rep.deathOrder || []).map((d, i) => {
-      const r = d.roleLabel || d.role || "?";
-      const src = d.source ? ` — ${d.source}` : "";
-      return `${i + 1}. ${escapeHtml(d.name)} (${escapeHtml(r)})${escapeHtml(src)}`;
+      const rl = d.roleLabel ? ` (${d.roleLabel})` : "";
+      return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
     }).join("<br>");
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
@@ -775,7 +830,8 @@ function buildPhaseText(s) {
   return "";
 }
 
-function makeChoiceGrid(ids, verb, onPick) {
+function makeChoiceGrid(ids, verb, onPick, opts = {}) {
+  const lockOnPick = opts.lockOnPick !== false;
   const grid = document.createElement("div");
   grid.className = "choice-grid";
 
@@ -785,12 +841,38 @@ function makeChoiceGrid(ids, verb, onPick) {
     if (!p) continue;
     const card = document.createElement("div");
     card.className = "choice-card";
+    card.dataset.playerId = id;
     card.innerHTML = `<div style="font-weight:900; font-size:1.1rem;">${escapeHtml(p.name)}</div>
       ${p.isCaptain ? `<div style="opacity:.85; margin-top:4px;">⭐ Capitaine</div>` : ""}`;
-    card.onclick = () => onPick(id);
+    card.onclick = () => {
+      // Highlight selection
+      for (const el of grid.querySelectorAll('.choice-card')) el.classList.remove('selected');
+      card.classList.add('selected');
+      // Optionally lock controls after selection
+      if (lockOnPick) lockControlsNow(grid);
+      onPick(id);
+    };
     grid.appendChild(card);
   }
   return grid;
+}
+
+function lockControlsNow(scopeEl = null) {
+  const root = scopeEl || document;
+  // Disable all interactive controls within the controls panel
+  const controls = $("controls") || root;
+  const container = controls.contains(root) ? root : controls;
+  for (const b of container.querySelectorAll('button')) {
+    b.disabled = true;
+  }
+  for (const s of container.querySelectorAll('select, input, textarea')) {
+    // do not disable the global name input on home screen
+    if (s.id === 'playerName') continue;
+    s.disabled = true;
+  }
+  for (const c of container.querySelectorAll('.choice-card')) {
+    c.classList.add('locked');
+  }
 }
 
 function makeIcon(src, title, size=44) {
@@ -824,50 +906,45 @@ class AudioManager {
     this.token = null;
     this.lastCue = null;
     this.pendingCue = null;
+    this.queuedCue = null;
     this.userUnlocked = false;
     this.muted = sessionStorage.getItem("is_muted") === "1";
 
-    this._manifest = null;
-    this._manifestPromise = null;
-    this._homeIntroPlayed = false;
-
     this.updateButton();
 
-    // Autoplay restrictions: unlock on first user gesture then replay pending cue.
-    const unlockOnce = () => this.unlock();
-    window.addEventListener("pointerdown", unlockOnce, { once: true, passive: true });
-    window.addEventListener("keydown", unlockOnce, { once: true });
+    // Autoplay restrictions: browsers may block audio. We re-unlock on ANY user gesture,
+    // and replay a pending cue as soon as we can.
+    const unlockAny = () => this.unlock();
+    window.addEventListener("pointerdown", unlockAny, { passive: true });
+    window.addEventListener("keydown", unlockAny);
   }
 
-  async loadManifest() {
-    if (this._manifest) return this._manifest;
-    if (this._manifestPromise) return this._manifestPromise;
-    this._manifestPromise = fetch("/sounds/audio-manifest.json", { cache: "no-store" })
-      .then(r => (r.ok ? r.json() : null))
-      .catch(() => null)
-      .then(obj => {
-        this._manifest = (obj && typeof obj === "object") ? obj : {};
-        return this._manifest;
-      });
-    return this._manifestPromise;
+  _createAudio(url, { loop = false } = {}) {
+    const a = new Audio(url);
+    a.preload = "auto";
+    a.loop = !!loop;
+    a.volume = 1.0;
+    // Some browsers start at a non-zero position on first load; force a reset once metadata is ready.
+    a.addEventListener("loadedmetadata", () => {
+      try { a.currentTime = 0; } catch {}
+    }, { once: true });
+    return a;
   }
 
-  async urlForKey(key) {
-    const m = await this.loadManifest();
-    const f = m?.[key];
-    if (!f) return null;
-    return `/sounds/${f}`;
-  }
-
-  async playHomeIntro() {
-    if (this._homeIntroPlayed) return;
-    if (this.muted) return;
-    // Avoid starting the intro if we're already in a room.
-    if (state?.roomCode) return;
-    const url = await this.urlForKey("INTRO_LOBBY");
-    if (!url) return;
-    this._homeIntroPlayed = true;
-    this.play({ file: url, queueLoopFile: null, tts: null }, true);
+  async _safePlay(a, cueForPending, fallbackTtsText = null) {
+    try {
+      try { a.currentTime = 0; } catch {}
+      try { a.load(); } catch {}
+      await a.play();
+      return true;
+    } catch (err) {
+      if (err && err.name === "NotAllowedError") {
+        this.pendingCue = cueForPending;
+        return false;
+      }
+      if (fallbackTtsText) this.tts(fallbackTtsText);
+      return false;
+    }
   }
   updateButton() {
     const btn = $("soundBtn");
@@ -892,6 +969,7 @@ class AudioManager {
     if (!this.muted && this.pendingCue) {
       const cue = this.pendingCue;
       this.pendingCue = null;
+      // do NOT clear queuedCue here; it is used to avoid cutting the lobby intro.
       this.play(cue, true);
     }
   }
@@ -907,8 +985,20 @@ class AudioManager {
 
   play(cue, force=false) {
     this.lastCue = cue;
-    const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
+    const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, cue?.ttsAfterSequence || null]);
     if (!force && token === this.token) return;
+
+    // If the lobby intro is currently playing, do not cut it: queue the next cue.
+    const isLobbyIntroUrl = (u) => !!u && /intro/i.test(u) && /lobby/i.test(u);
+    const currentUrl = this.audio?.src || null;
+    const currentIsIntro = isLobbyIntroUrl(currentUrl);
+    const nextPrimary = cue?.file || null;
+    const nextIsIntro = isLobbyIntroUrl(nextPrimary);
+    if (!force && currentIsIntro && !nextIsIntro && this.audio && !this.audio.ended) {
+      this.queuedCue = cue;
+      return;
+    }
+
     this.token = token;
 
     this.stopAll();
@@ -924,21 +1014,17 @@ class AudioManager {
       const playNext = () => {
         if (this.token !== token) return;
         if (i >= seq.length) {
+          if (cue.ttsAfterSequence) this.tts(cue.ttsAfterSequence);
           if (loop) this.playLoop(loop);
           return;
         }
         const url = seq[i++];
-        const a = new Audio(url);
-        a.volume = 1.0;
+        const a = this._createAudio(url);
         this.audio = a;
-        a.play().catch((err) => {
-          if (err && err.name === "NotAllowedError") {
-            this.pendingCue = cue;
-          } else if (ttsText) {
-            this.tts(ttsText);
-          }
+        this._safePlay(a, cue, ttsText).then((ok) => {
+          if (!ok) return;
+          a.onended = () => playNext();
         });
-        a.onended = () => playNext();
       };
       playNext();
       return;
@@ -947,20 +1033,22 @@ class AudioManager {
     const primary = cue.file || null;
 
     if (primary) {
-      const a = new Audio(primary);
-      a.volume = 1.0;
+      const a = this._createAudio(primary);
       this.audio = a;
-      a.play().catch((err) => {
-        if (err && err.name === "NotAllowedError") {
-          this.pendingCue = cue;
-        } else {
-          this.tts(ttsText);
-        }
-      });
-      a.onended = () => {
+      this._safePlay(a, cue, ttsText).then((ok) => {
+        if (!ok) return;
+        a.onended = () => {
         if (this.token !== token) return;
+        if (cue.ttsAfterSequence) this.tts(cue.ttsAfterSequence);
         if (loop) this.playLoop(loop);
-      };
+        if (this.queuedCue) {
+          const q = this.queuedCue;
+          this.queuedCue = null;
+          // play queued cue right after the intro finished
+          this.play(q, true);
+        }
+        };
+      });
     } else if (ttsText) {
       this.tts(ttsText);
       if (loop) this.playLoop(loop);
@@ -972,15 +1060,9 @@ class AudioManager {
   playLoop(url) {
     const token = this.token;
     if (this.muted) return;
-    const a = new Audio(url);
-    a.loop = true;
-    a.volume = 1.0;
+    const a = this._createAudio(url, { loop: true });
     this.loopAudio = a;
-    a.play().catch((err) => {
-      if (err && err.name === "NotAllowedError") {
-        this.pendingCue = this.lastCue || { queueLoopFile: url };
-      }
-    });
+    this._safePlay(a, this.lastCue || { queueLoopFile: url }, null);
   }
   tts(text) {
     if (!text || this.muted) return;
@@ -997,14 +1079,25 @@ const audioManager = new AudioManager();
 const soundBtn = $("soundBtn");
 if (soundBtn) soundBtn.onclick = () => audioManager.toggleMuted();
 
-// Home: start lobby intro as soon as the user starts typing their name (autoplay-safe).
-const nameInput = $("playerName");
-if (nameInput) {
-  const trigger = () => audioManager.playHomeIntro();
-  nameInput.addEventListener("focus", trigger, { passive: true });
-  nameInput.addEventListener("input", trigger, { passive: true });
-  nameInput.addEventListener("keydown", trigger);
-}
+// Home screen: start the lobby intro as soon as the user begins typing their name.
+// This also serves as a user-gesture "unlock" for autoplay restrictions.
+(() => {
+  const nameInput = $("playerName");
+  if (!nameInput) return;
+  const cue = { file: "/sounds/INTRO_LOBBY.mp3", queueLoopFile: null, tts: null, ttsAfterSequence: null };
+  let started = false;
+  const maybeStart = () => {
+    if (state?.roomCode) return;
+    const v = (nameInput.value || "").trim();
+    if (!v) return;
+    if (!started) {
+      started = true;
+      audioManager.play(cue, false);
+    }
+  };
+  nameInput.addEventListener("input", maybeStart);
+  nameInput.addEventListener("keydown", maybeStart);
+})();
 
 // ---------- Rules modal ----------
 function buildRulesHtml(cfg) {
@@ -1012,38 +1105,35 @@ function buildRulesHtml(cfg) {
   const on = (k) => !!enabled[k];
 
   const roleLines = [];
-  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir particulier. Vote le jour.</li>`);
-  roleLines.push(`<li><b>Saboteur</b> — vote la nuit avec les autres saboteurs pour éjecter une cible (unanimité).</li>`);
-  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — chaque nuit, inspecte un joueur et découvre son rôle (résultat visible dans le menu des phases).</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — 1 potion de vie (protège la cible attaquée) + 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
-  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — Nuit 1 : échange secrètement son rôle avec un joueur (une seule fois).</li>`);
-  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — s’il est éjecté, peut se venger en ciblant un joueur.</li>`);
-  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — Nuit 1 : se lie à un autre joueur (liaison permanente). Si l’un est éjecté, l’autre l’est aussi.</li>`);
-  if (on("engineer")) roleLines.push(`<li><b>Ingénieur</b> — peut espionner à ses risques et périls (rappel discret au début de la nuit).</li>`);
+  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir.</li>`);
+  roleLines.push(`<li><b>Saboteur</b> — vote unanimement une cible la nuit.</li>`);
+  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — inspecte un joueur et découvre son rôle.</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — 1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
+  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
+  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
+  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
 
   return `
     <div style="opacity:.95;">
       <h3 style="margin:10px 0;">Rôles</h3>
       <ul>${roleLines.join("")}</ul>
 
-      <h3 style="margin:10px 0;">Ordre de la nuit</h3>
+      <h3 style="margin:10px 0;">Chef de station (capitaine)</h3>
+      <ul>
+        <li><b>Élection obligatoire</b> au début de la mission.</li>
+        <li>En cas d'égalité au vote du jour, le capitaine <b>tranche</b> (sa voix compte double pour départager).</li>
+        <li>Dès que le capitaine est éjecté, il <b>transmet</b> le rôle de capitaine à un survivant <b>sans connaître son rôle</b>.</li>
+      </ul>
+
+      <h3 style="margin:10px 0;">Ordre de nuit</h3>
       <ol>
         <li>Caméléon (Nuit 1)</li>
         <li>Agent IA (Nuit 1)</li>
         <li>Officier radar</li>
         <li>Saboteurs (unanimité)</li>
         <li>Docteur bio</li>
-        <li>Résolution + vengeance + liaisons</li>
+        <li>Résolution + vengeance + liaison</li>
       </ol>
-
-      <h3 style="margin:10px 0;">Jour</h3>
-      <ul>
-        <li>Réveil de la station</li>
-        <li><b>Élection du Chef de station obligatoire</b> (capitaine)</li>
-        <li>En cas d’égalité, la voix du capitaine compte <b>double</b> / il tranche</li>
-        <li>Si le capitaine est éjecté : il transmet immédiatement le rôle de capitaine à un survivant <b>sans connaître son rôle</b></li>
-        <li>Vote d’éjection</li>
-      </ul>
 
       <h3 style="margin:10px 0;">Victoire</h3>
       <ul>
@@ -1147,30 +1237,26 @@ socket.on("roomState", (s) => {
   render();
 });
 
+let helloReconnectAttempted = false;
 socket.on("serverHello", () => {
-  // On reconnect, do NOT force the user back to the home screen.
-  // If we have a persisted session (name + room code), attempt a reconnect.
   clearError();
-
-  // If we already have a room state, keep the current screen.
+  // On websocket reconnect, avoid kicking the user back to home.
   if (state?.roomCode) return;
 
-  const savedName = (sessionStorage.getItem(STORAGE.name) || "").trim();
-  const savedRoom = (sessionStorage.getItem(STORAGE.room) || "").trim();
-
-  if (savedName && savedRoom) {
-    // Try to re-attach to the room without changing screens.
-    socket.emit("reconnectRoom", { playerId, name: savedName, roomCode: savedRoom }, (res) => {
+  const name = (sessionStorage.getItem(STORAGE.name) || "").trim();
+  const roomCode = (sessionStorage.getItem(STORAGE.room) || "").trim();
+  if (!helloReconnectAttempted && name && roomCode) {
+    helloReconnectAttempted = true;
+    socket.emit("reconnectRoom", { playerId, name, roomCode }, (res) => {
       if (!res?.ok) {
-        // If the room is gone, fall back to join screen with the code prefilled.
-        $("joinRoomCode").value = savedRoom;
+        $("joinRoomCode").value = roomCode;
         showScreen("joinScreen");
       }
     });
     return;
   }
 
-  // No session: default to home.
+  // Default fallback
   showScreen("homeScreen");
 });
 

@@ -10,7 +10,7 @@
 <body>
   <div id="topLeftButtons" style="
     position: fixed; left: 20px; top: 20px; z-index: 9999;
-    display:flex; gap:14px; align-items:center;
+    display:flex; gap:10px; align-items:center;
   ">
     <button id="rulesBtn" class="btn btn-secondary" style="
       padding: 10px 16px; border-radius: 10px; font-weight: 800;
@@ -18,7 +18,6 @@
     <button id="soundBtn" class="btn btn-secondary" style="
       padding: 10px 16px; border-radius: 10px; font-weight: 900;
       min-width: 56px;
-      margin-left: 6px;
     " title="Couper / réactiver le son">🔊</button>
   </div>
 
@@ -42,7 +41,6 @@
           <button class="btn btn-primary" id="createBtn">Créer une Mission</button>
           <button class="btn btn-secondary" id="joinBtn">Rejoindre une Mission</button>
         </div>
-        <!-- astuce supprimée -->
       </div>
     </div>
 
@@ -81,9 +79,10 @@
 
         <div style="text-align: center; margin-bottom: 40px; position: relative;">
           <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-              width: min(420px, 90vw); height: 60px; background: rgba(0,255,255,0.1);
+              width: min(380px, 86vw); height: 62px; background: rgba(0,255,255,0.1);
               border: 2px solid var(--neon-cyan); border-radius: 10px;"></div>
-          <h1 style="color: var(--neon-cyan); font-size: clamp(1.6rem, 5.2vw, 2.35rem); line-height: 1.05; margin: 0; padding: 10px;
+          <h1 style="color: var(--neon-cyan); font-size: clamp(1.3rem, 5vw, 1.9rem); margin: 0; padding: 10px; white-space: nowrap; line-height: 1.1; letter-spacing: 2px;
+              max-width: min(380px, 86vw); overflow: hidden; text-overflow: ellipsis;
               text-shadow: 0 0 30px var(--neon-cyan); position: relative;">
             STAR INFILTRATOR
           </h1>
