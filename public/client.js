@@ -32,14 +32,49 @@ const playerId = getOrCreatePlayerId();
 let state = null;
 let lastAudioToken = null;
 
+let autoReconnectAttempted = false;
+let disconnectReloadTimer = null;
+
+function attemptAutoReconnect() {
+  if (autoReconnectAttempted) return;
+  const name = (sessionStorage.getItem(STORAGE.name) || "").trim();
+  const roomCode = (sessionStorage.getItem(STORAGE.room) || "").trim();
+  if (!name || !roomCode) return;
+  if (state?.roomCode) return;
+  autoReconnectAttempted = true;
+  // Try to restore the session silently.
+  socket.emit("reconnectRoom", { playerId, name, roomCode }, (res) => {
+    if (!res?.ok) {
+      // Session invalid (room deleted, player not found, etc.)
+      autoReconnectAttempted = false;
+      try { $("joinRoomCode").value = roomCode; } catch {}
+      showScreen("joinScreen");
+    }
+  });
+}
+
 let isConnected = false;
 socket.on("connect", () => {
   isConnected = true;
   clearError();
+  if (disconnectReloadTimer) {
+    clearTimeout(disconnectReloadTimer);
+    disconnectReloadTimer = null;
+  }
+  attemptAutoReconnect();
 });
 socket.on("disconnect", () => {
   isConnected = false;
-  // avoid spamming the UI; the server handles the 30s grace logic
+  // If the socket stays disconnected for a bit, auto-refresh to recover.
+  if (disconnectReloadTimer) clearTimeout(disconnectReloadTimer);
+  const hasSession = !!(sessionStorage.getItem(STORAGE.name) && sessionStorage.getItem(STORAGE.room));
+  if (hasSession) {
+    disconnectReloadTimer = setTimeout(() => {
+      if (!isConnected) {
+        try { location.reload(); } catch {}
+      }
+    }, 5000);
+  }
 });
 socket.on("connect_error", () => {
   isConnected = false;
@@ -542,7 +577,20 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
       if (!sel.value) return setError("Choisis un joueur à lier.");
       btnLink.classList.add('selected');
       lockControlsNow($("controls"));
-      socket.emit("phaseAction", { targetId: sel.value }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); });
+      let responded = false;
+      const t = setTimeout(() => {
+        if (responded) return;
+        unlockControlsNow($("controls"));
+        setError("Action non prise en compte (connexion instable?). Réessaie.");
+      }, 1500);
+      socket.emit("phaseAction", { targetId: sel.value }, (r) => {
+        responded = true;
+        clearTimeout(t);
+        if (!r || r.ok === false) {
+          unlockControlsNow($("controls"));
+          setError(r?.error || "Erreur");
+        }
+      });
     };
 
     const btnSkip = document.createElement("button");
@@ -552,7 +600,20 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     btnSkip.onclick = () => {
       btnSkip.classList.add('selected');
       lockControlsNow($("controls"));
-      socket.emit("phaseAction", { skip: true });
+      let responded = false;
+      const t = setTimeout(() => {
+        if (responded) return;
+        unlockControlsNow($("controls"));
+        setError("Action non prise en compte (connexion instable?). Réessaie.");
+      }, 1500);
+      socket.emit("phaseAction", { skip: true }, (r) => {
+        responded = true;
+        clearTimeout(t);
+        if (!r || r.ok === false) {
+          unlockControlsNow($("controls"));
+          setError(r?.error || "Erreur");
+        }
+      });
     };
 
     controls.appendChild(sel);
@@ -872,6 +933,22 @@ function lockControlsNow(scopeEl = null) {
   }
   for (const c of container.querySelectorAll('.choice-card')) {
     c.classList.add('locked');
+  }
+}
+
+function unlockControlsNow(scopeEl = null) {
+  const root = scopeEl || document;
+  const controls = $("controls") || root;
+  const container = controls.contains(root) ? root : controls;
+  for (const b of container.querySelectorAll('button')) {
+    b.disabled = false;
+  }
+  for (const s of container.querySelectorAll('select, input, textarea')) {
+    if (s.id === 'playerName') continue;
+    s.disabled = false;
+  }
+  for (const c of container.querySelectorAll('.choice-card')) {
+    c.classList.remove('locked');
   }
 }
 
@@ -1207,20 +1284,6 @@ $("joinRoomBtn").onclick = () => {
   });
 };
 
-// auto reconnect on load
-window.addEventListener("load", () => {
-  const name = (sessionStorage.getItem(STORAGE.name) || "").trim();
-  const roomCode = (sessionStorage.getItem(STORAGE.room) || "").trim();
-  if (name && roomCode) {
-    socket.emit("reconnectRoom", { playerId, name, roomCode }, (res) => {
-      if (!res?.ok) {
-        // maybe removed after 30s; fallback to join screen with code prefilled
-        $("joinRoomCode").value = roomCode;
-        showScreen("joinScreen");
-      }
-    });
-  }
-});
 
 // receive state
 socket.on("roomState", (s) => {
@@ -1237,28 +1300,19 @@ socket.on("roomState", (s) => {
   render();
 });
 
-let helloReconnectAttempted = false;
 socket.on("serverHello", () => {
   clearError();
   // On websocket reconnect, avoid kicking the user back to home.
   if (state?.roomCode) return;
 
+  // Prefer silent auto-reconnect when possible.
+  attemptAutoReconnect();
+
+  // If no session is stored, show the home screen.
   const name = (sessionStorage.getItem(STORAGE.name) || "").trim();
   const roomCode = (sessionStorage.getItem(STORAGE.room) || "").trim();
-  if (!helloReconnectAttempted && name && roomCode) {
-    helloReconnectAttempted = true;
-    socket.emit("reconnectRoom", { playerId, name, roomCode }, (res) => {
-      if (!res?.ok) {
-        $("joinRoomCode").value = roomCode;
-        showScreen("joinScreen");
-      }
-    });
-    return;
-  }
-
-  // Default fallback
-  showScreen("homeScreen");
+  if (!name || !roomCode) showScreen("homeScreen");
 });
 
-// fallback render if no state yet
+// Initial screen: keep it simple, auto-reconnect will swap screens once roomState arrives.
 showScreen("homeScreen");
