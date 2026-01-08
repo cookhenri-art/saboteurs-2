@@ -8,10 +8,18 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <button id="rulesBtn" class="btn btn-secondary" style="
+  <div id="topLeftButtons" style="
     position: fixed; left: 20px; top: 20px; z-index: 9999;
-    padding: 10px 16px; border-radius: 10px; font-weight: 800;
-  ">📜 RÈGLES</button>
+    display:flex; gap:10px; align-items:center;
+  ">
+    <button id="rulesBtn" class="btn btn-secondary" style="
+      padding: 10px 16px; border-radius: 10px; font-weight: 800;
+    ">📜 RÈGLES</button>
+    <button id="soundBtn" class="btn btn-secondary" style="
+      padding: 10px 16px; border-radius: 10px; font-weight: 900;
+      min-width: 56px;
+    " title="Couper / réactiver le son">🔊</button>
+  </div>
 
   <div class="container">
     <div class="header">
@@ -32,6 +40,9 @@
         <div class="btn-group">
           <button class="btn btn-primary" id="createBtn">Créer une Mission</button>
           <button class="btn btn-secondary" id="joinBtn">Rejoindre une Mission</button>
+        </div>
+        <div style="margin-top:14px; opacity:.9; font-size:.95rem;">
+          Astuce : ouvre 8 onglets pour tester 8 joueurs (identité par onglet).
         </div>
       </div>
     </div>
@@ -71,9 +82,9 @@
 
         <div style="text-align: center; margin-bottom: 40px; position: relative;">
           <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-              width: min(520px, 92%); height: 60px; background: rgba(0,255,255,0.1);
+              width: 400px; height: 60px; background: rgba(0,255,255,0.1);
               border: 2px solid var(--neon-cyan); border-radius: 10px;"></div>
-          <h1 style="color: var(--neon-cyan); font-size: clamp(1.7rem, 4vw, 2.2rem); margin: 0; padding: 10px;
+          <h1 style="color: var(--neon-cyan); font-size: 2.5rem; margin: 0; padding: 10px;
               text-shadow: 0 0 30px var(--neon-cyan); position: relative;">
             STAR INFILTRATOR
           </h1>
@@ -82,7 +93,8 @@
         <div style="display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap;">
           <div>
             <div style="color: var(--neon-orange); font-size: 1rem; margin-bottom: 5px;">CODE MISSION</div>
-            <div id="displayRoomCode" style="color: var(--neon-cyan); font-size: 2.5rem; font-weight: bold; text-shadow: 0 0 20px var(--neon-cyan);">0000</div>
+            <div id="displayRoomCode" style="color: var(--neon-cyan); font-size: 2.5rem;
+                font-weight: bold; text-shadow: 0 0 20px var(--neon-cyan);">0000</div>
           </div>
           <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <button class="btn btn-secondary" id="readyBtn">✅ PRÊT</button>
@@ -141,7 +153,7 @@
         background-size:cover; background-position:center; margin-bottom: 16px; position:relative;">
         <img id="ejectionOverlay" src="/images/ejection.png" alt="ejection" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; pointer-events:none;">
       </div>
-      <div id="deadBanner" style="display:none; margin-bottom: 12px; padding:10px 12px; border-radius:12px; border:2px solid var(--neon-red); color: var(--neon-red); font-weight:900; text-align:center;">💀 Vous êtes mort</div>
+      <div id="deadBanner" style="display:none; margin-bottom: 12px; padding:10px 12px; border-radius:12px; border:2px solid var(--neon-red); color: var(--neon-red); font-weight:900; text-align:center;">💀 Vous avez été éjecté</div>
 
       <div class="control-panel" style="max-width: 900px;">
         <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center;">
@@ -169,6 +181,8 @@
 
     <!-- END -->
     <div id="endScreen" class="screen">
+      <div id="endBackdrop" style="width:100%; height:180px; border-radius:16px; overflow:hidden; border:2px solid var(--neon-cyan);
+        background-size:cover; background-position:center; margin-bottom: 16px;"></div>
       <div class="control-panel" style="max-width: 900px;">
         <h2 class="panel-title winner-title" id="winnerTitle"></h2>
         <div id="endSummary" style="margin-bottom:16px;"></div>

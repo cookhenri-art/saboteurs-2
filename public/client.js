@@ -186,10 +186,17 @@ function setBackdrop() {
   const p = state.phase || "";
   let img = null;
 
-  if (p === "LOBBY") img = "/images/cockpit-lobby.webp";
-  else if (p.includes("DAY") || p === "DAY_VOTE" || p === "DAY_TIEBREAK") img = "/images/vote-jour.png";
-  else if (p.includes("NIGHT") || p === "NIGHT_SABOTEURS") img = "/images/vote-nuit.png";
-  else if (p === "GAME_OVER") img = "/images/ejection.png";
+  // cockpit during lobby + role validation + captain election
+  if (p === "LOBBY" || p === "MANUAL_ROLE_PICK" || p === "ROLE_REVEAL" || p === "CAPTAIN_CANDIDACY" || p === "CAPTAIN_VOTE") {
+    img = "/images/cockpit.png";
+  }
+  // results: use ejection banner if there were ejections
+  else if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText)) {
+    img = "/images/ejection.png";
+  }
+  // day / night banners
+  else if (p.startsWith("DAY")) img = "/images/vote-jour.png";
+  else if (p.startsWith("NIGHT")) img = "/images/vote-nuit.png";
 
   if (img) el.style.backgroundImage = `url('${img}')`;
   else el.style.backgroundImage = "none";
@@ -261,7 +268,7 @@ function renderLobby() {
       ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
       ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
       ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">MORT</span>` : "")}
+      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
     `;
     const right = document.createElement("div");
     right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
@@ -326,7 +333,10 @@ function renderGame() {
 
   // results overlay (ejection)
   const ov = $("ejectionOverlay");
-  if (ov) ov.style.display = (state.phase === "NIGHT_RESULTS" || state.phase === "DAY_RESULTS") ? "block" : "none";
+  if (ov) {
+    const show = (state.phase === "NIGHT_RESULTS" || state.phase === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText);
+    ov.style.display = show ? "block" : "none";
+  }
 
   // dead banner (no actions, no ACK) — except if you are the actor of REVENGE / captain transfer
   const deadBanner = $("deadBanner");
@@ -629,6 +639,15 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
 function renderEnd() {
   const winner = state.phaseData?.winner;
+  const endBg = $("endBackdrop");
+  if (endBg) {
+    let img = null;
+    if (state.phase === "GAME_ABORTED") img = "/images/cockpit.png";
+    else if (winner === "SABOTEURS") img = "/images/image-fin-stats-explosion2.png";
+    else if (winner === "ASTRONAUTES") img = "/images/image-fin-stats-station2.png";
+    else if (winner === "AMOUREUX") img = "/images/image-fin-stats-station2.png";
+    endBg.style.backgroundImage = img ? `url('${img}')` : "none";
+  }
   const title = $("winnerTitle");
   if (state.phase === "GAME_ABORTED") {
     title.textContent = "Partie interrompue — pas assez de joueurs";
@@ -683,7 +702,7 @@ $("endSummary").innerHTML += `
     </div>
 
     <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
-      <div style="font-weight:900; margin-bottom:8px;">☠️ Ordre des morts</div>
+      <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éjections</div>
       <div style="opacity:.95;">${deaths || "—"}</div>
     </div>
 
@@ -718,7 +737,7 @@ if (tabSummaryBtn && tabDetailedBtn && tabSummary && tabDetailed) {
       <div class="player-left">
         <div style="font-weight:900;">${escapeHtml(p.name)}</div>
         ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.status === "alive" ? `<span class="pill ok">SURVIVANT</span>` : (p.status === "dead" ? `<span class="pill bad">MORT</span>` : `<span class="pill warn">SORTI</span>`)}
+        ${p.status === "alive" ? `<span class="pill ok">SURVIVANT</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : `<span class="pill warn">SORTI</span>`)}
       </div>
       <div style="opacity:.95; font-weight:800;">${escapeHtml(role || "")}</div>
     </div>`;
@@ -746,7 +765,7 @@ function buildPhaseText(s) {
   if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
   if (p === "DAY_TIEBREAK") return "Égalité : le capitaine choisit l'éjecté.";
   if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Résultats du jour, puis passage à la nuit.";
-  if (p === "REVENGE") return "Chef de sécurité : tu es mort, tu peux tirer sur quelqu'un.";
+  if (p === "REVENGE") return "Chef de sécurité : tu as été éjecté, tu peux tirer sur quelqu'un.";
   if (p === "MANUAL_ROLE_PICK") return "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.";
   if (p === "GAME_ABORTED") return "Partie interrompue.";
   return "";
@@ -799,6 +818,43 @@ class AudioManager {
     this.audio = null;
     this.loopAudio = null;
     this.token = null;
+    this.lastCue = null;
+    this.pendingCue = null;
+    this.userUnlocked = false;
+    this.muted = sessionStorage.getItem("is_muted") === "1";
+
+    this.updateButton();
+
+    // Autoplay restrictions: unlock on first user gesture then replay pending cue.
+    const unlockOnce = () => this.unlock();
+    window.addEventListener("pointerdown", unlockOnce, { once: true, passive: true });
+    window.addEventListener("keydown", unlockOnce, { once: true });
+  }
+  updateButton() {
+    const btn = $("soundBtn");
+    if (!btn) return;
+    btn.textContent = this.muted ? "🔇" : "🔊";
+    btn.title = this.muted ? "Son coupé (clic pour réactiver)" : "Son activé (clic pour couper)";
+  }
+  setMuted(v) {
+    this.muted = !!v;
+    sessionStorage.setItem("is_muted", this.muted ? "1" : "0");
+    this.updateButton();
+    if (this.muted) {
+      this.stopAll();
+    } else {
+      this.unlock();
+      if (this.lastCue) this.play(this.lastCue, true);
+    }
+  }
+  toggleMuted() { this.setMuted(!this.muted); }
+  unlock() {
+    this.userUnlocked = true;
+    if (!this.muted && this.pendingCue) {
+      const cue = this.pendingCue;
+      this.pendingCue = null;
+      this.play(cue, true);
+    }
   }
   stopAll() {
     try {
@@ -810,68 +866,85 @@ class AudioManager {
     try { window.speechSynthesis.cancel(); } catch {}
   }
 
-play(cue) {
-  const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
-  if (token === this.token) return;
-  this.token = token;
+  play(cue, force=false) {
+    this.lastCue = cue;
+    const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
+    if (!force && token === this.token) return;
+    this.token = token;
 
-  this.stopAll();
-  if (!cue) return;
+    this.stopAll();
+    if (!cue) return;
+    if (this.muted) return;
 
-  const loop = cue.queueLoopFile || null;
-  const ttsText = cue.tts || null;
+    const loop = cue.queueLoopFile || null;
+    const ttsText = cue.tts || null;
 
-  const seq = Array.isArray(cue.sequence) ? cue.sequence.filter(Boolean) : null;
-  if (seq && seq.length) {
-    // play sequentially, then (optionally) loop
-    let i = 0;
-    const playNext = () => {
-      if (this.token !== token) return;
-      if (i >= seq.length) {
-        if (loop) this.playLoop(loop);
-        return;
-      }
-      const url = seq[i++];
-      const a = new Audio(url);
+    const seq = Array.isArray(cue.sequence) ? cue.sequence.filter(Boolean) : null;
+    if (seq && seq.length) {
+      let i = 0;
+      const playNext = () => {
+        if (this.token !== token) return;
+        if (i >= seq.length) {
+          if (loop) this.playLoop(loop);
+          return;
+        }
+        const url = seq[i++];
+        const a = new Audio(url);
+        a.volume = 1.0;
+        this.audio = a;
+        a.play().catch((err) => {
+          if (err && err.name === "NotAllowedError") {
+            this.pendingCue = cue;
+          } else if (ttsText) {
+            this.tts(ttsText);
+          }
+        });
+        a.onended = () => playNext();
+      };
+      playNext();
+      return;
+    }
+
+    const primary = cue.file || null;
+
+    if (primary) {
+      const a = new Audio(primary);
       a.volume = 1.0;
       this.audio = a;
-      a.play().catch(() => { if (ttsText) this.tts(ttsText); });
-      a.onended = () => playNext();
-    };
-    // speak once at the beginning if no audio can play
-    playNext();
-    return;
-  }
-
-  const primary = cue.file || null;
-
-  // Prefer MP3, fallback to TTS
-  if (primary) {
-    const a = new Audio(primary);
-    a.volume = 1.0;
-    this.audio = a;
-    a.play().catch(() => { this.tts(ttsText); });
-    a.onended = () => {
-      if (this.token !== token) return;
+      a.play().catch((err) => {
+        if (err && err.name === "NotAllowedError") {
+          this.pendingCue = cue;
+        } else {
+          this.tts(ttsText);
+        }
+      });
+      a.onended = () => {
+        if (this.token !== token) return;
+        if (loop) this.playLoop(loop);
+      };
+    } else if (ttsText) {
+      this.tts(ttsText);
       if (loop) this.playLoop(loop);
-    };
-  } else if (ttsText) {
-    this.tts(ttsText);
-    if (loop) this.playLoop(loop);
-  } else if (loop) {
-    this.playLoop(loop);
+    } else if (loop) {
+      this.playLoop(loop);
+    }
   }
-}
-playLoop(url) {
+
+  playLoop(url) {
     const token = this.token;
+    if (this.muted) return;
     const a = new Audio(url);
     a.loop = true;
     a.volume = 1.0;
     this.loopAudio = a;
-    a.play().catch(() => {});
+    a.play().catch((err) => {
+      if (err && err.name === "NotAllowedError") {
+        this.pendingCue = this.lastCue || { queueLoopFile: url };
+      }
+    });
   }
   tts(text) {
-    if (!text) return;
+    if (!text || this.muted) return;
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "fr-FR";
@@ -881,35 +954,27 @@ playLoop(url) {
 }
 const audioManager = new AudioManager();
 
+// UI mute button
+const soundBtn = $("soundBtn");
+if (soundBtn) soundBtn.onclick = () => audioManager.toggleMuted();
+
 // ---------- Rules modal ----------
 function buildRulesHtml(cfg) {
   const enabled = cfg?.rolesEnabled || {};
   const on = (k) => !!enabled[k];
 
   const roleLines = [];
-  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir particulier. Vote le jour.</li>`);
-  roleLines.push(`<li><b>Saboteur</b> — la nuit, vote avec les autres saboteurs pour <b>éjecter</b> une cible (unanimité).</li>`);
-  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — chaque nuit, inspecte un joueur et découvre son rôle (visible dans le panneau de phase).</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — sur toute la partie : <b>1 potion de vie</b> (sauve une cible) et <b>1 potion de mort</b> (éjecte une cible). Chaque potion ne peut être utilisée qu’une fois.</li>`);
-  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — <b>Nuit 1</b> : échange secrètement son rôle avec celui d’un autre joueur (une seule fois).</li>`);
-  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — s’il est éjecté, peut se venger en choisissant un joueur à éjecter (une seule fois).</li>`);
-  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — <b>Nuit 1</b> : lie 2 joueurs pour toute la partie (si l’un est éjecté, l’autre aussi).</li>`);
-  if (on("engineer")) roleLines.push(`<li><b>Ingénieur</b> — pouvoir spécial activable selon la configuration (rappel discret au début de chaque nuit).</li>`);
-
-  const sabTable = `
-    <table style="width:100%; border-collapse: collapse; margin-top:8px; font-size:.98rem;">
-      <tr>
-        <th style="text-align:left; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.15);">Nombre total de joueurs</th>
-        <th style="text-align:left; padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.15);">Saboteurs</th>
-      </tr>
-      <tr><td style="padding:6px 8px;">5 – 6 joueurs</td><td style="padding:6px 8px;"><b>2</b></td></tr>
-      <tr><td style="padding:6px 8px;">7 – 8 joueurs</td><td style="padding:6px 8px;"><b>3</b></td></tr>
-      <tr><td style="padding:6px 8px;">9 – 10 joueurs</td><td style="padding:6px 8px;"><b>4</b></td></tr>
-    </table>
-  `;
+  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir.</li>`);
+  roleLines.push(`<li><b>Saboteur</b> — vote unanimement une cible la nuit.</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — 1 potion de vie (sauve) + 1 potion de mort (tue) sur toute la partie.</li>`);
+  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — si mort, tire une dernière fois (vengeance).</li>`);
+  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — Nuit 1 : lie 2 joueurs pour toute la partie (si l'un meurt, l'autre aussi).</li>`);
+  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — inspecte un joueur et voit son rôle.</li>`);
+  if (on("engineer")) roleLines.push(`<li><b>Ingénieur</b> — peut espionner à ses risques et périls (rappel discret au début de chaque nuit).</li>`);
+  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois).</li>`);
 
   return `
-    <div style="opacity:.95; line-height:1.35;">
+    <div style="opacity:.95;">
       <h3 style="margin:10px 0;">Rôles</h3>
       <ul>${roleLines.join("")}</ul>
 
@@ -926,21 +991,16 @@ function buildRulesHtml(cfg) {
       <h3 style="margin:10px 0;">Jour</h3>
       <ul>
         <li>Réveil</li>
-        <li><b>Élection obligatoire</b> du <b>Chef de station</b> (capitaine).</li>
-        <li>En cas d’égalité, la voix du capitaine compte <b>double</b> pour trancher.</li>
-        <li>Si le capitaine est éjecté, il doit <b>transmettre</b> immédiatement sa fonction à un survivant, <b>sans connaître son rôle</b>.</li>
-        <li>Vote d’éjection (égalité tranchée par le capitaine)</li>
+        <li>Transmission du capitaine si besoin</li>
+        <li>Vote d'éjection (égalité tranchée par le capitaine)</li>
       </ul>
 
       <h3 style="margin:10px 0;">Victoire</h3>
       <ul>
-        <li><b>Astronautes</b> : tous les saboteurs sont éjectés.</li>
+        <li><b>Astronautes</b> : tous les saboteurs éliminés.</li>
         <li><b>Saboteurs</b> : supériorité numérique (parité ou plus).</li>
-        <li><b>Association de malfaiteurs</b> : s’il ne reste que deux joueurs vivants, liés ensemble et de camps différents, ils gagnent ensemble.</li>
+        <li><b>Amoureux</b> : s’il ne reste que deux joueurs vivants, liés ensemble, et de camps différents.</li>
       </ul>
-
-      <h3 style="margin:10px 0;">Répartition des saboteurs (auto)</h3>
-      ${sabTable}
     </div>
   `;
 }
@@ -950,7 +1010,6 @@ $("rulesBtn").onclick = () => {
   $("rulesContent").innerHTML = buildRulesHtml(cfg);
   $("rulesModal").style.display = "block";
 };
-
 $("rulesClose").onclick = () => $("rulesModal").style.display = "none";
 $("rulesModal").addEventListener("click", (e) => {
   if (e.target === $("rulesModal")) $("rulesModal").style.display = "none";
