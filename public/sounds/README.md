@@ -11,6 +11,8 @@ Ajoute ces fichiers (mêmes noms) :
 - ELECTION_CHIEF.mp3
 - END_SCREEN_SONG.mp3
 - GENERIC_MAIN.mp3
+- IA_SLEEP.mp3
+- IA_WAKE.mp3
 - INTRO_LOBBY.mp3
 - OUTRO.mp3
 - RADAR_OFFICER_SLEEP.mp3
