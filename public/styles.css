@@ -1111,15 +1111,15 @@ input[type="checkbox"] { transform: scale(1.2); margin-right:8px; }
 }
 
 .role-card-icon {
-  width: 180px;
-  height: 180px;
+  width: 120px;
+  height: 120px;
   object-fit: contain;
   filter: drop-shadow(0 0 18px rgba(0,255,255,0.45));
 }
 
 .role-card-icon.captain {
-  width: 108px;
-  height: 108px;
+  width: 72px;
+  height: 72px;
   filter: drop-shadow(0 0 18px rgba(255,165,0,0.45));
 }
 
@@ -1154,7 +1154,7 @@ input[type="checkbox"] { transform: scale(1.2); margin-right:8px; }
 }
 
 @media (max-width: 560px) {
-  .role-card-icon { width: 144px; height: 144px; }
-  .role-card-icon.captain { width: 84px; height: 84px; }
+  .role-card-icon { width: 96px; height: 96px; }
+  .role-card-icon.captain { width: 56px; height: 56px; }
   .role-card-title { font-size: 1.25rem; }
 }

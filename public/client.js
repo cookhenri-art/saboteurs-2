@@ -186,16 +186,17 @@ function setBackdrop() {
   const p = state.phase || "";
   let img = null;
 
-  // Cockpit during role validation & election
-  const cockpitPhases = new Set(["LOBBY","MANUAL_ROLE_PICK","ROLE_REVEAL","CAPTAIN_CANDIDACY","CAPTAIN_VOTE"]);
-
-  // Death announcements should use ejection visuals (day or night)
-  const hasDeaths = !!(state.phaseData?.deathsText || state.phaseData?.anyDeaths || (Array.isArray(state.phaseData?.newlyDead) && state.phaseData.newlyDead.length));
-  if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && hasDeaths) img = "/images/ejection.png";
-  else if (p === "GAME_OVER") img = "/images/ejection.png";
-  else if (cockpitPhases.has(p)) img = "/images/cockpit.png";
+  // cockpit during lobby + role validation + captain election
+  if (p === "LOBBY" || p === "MANUAL_ROLE_PICK" || p === "ROLE_REVEAL" || p === "CAPTAIN_CANDIDACY" || p === "CAPTAIN_VOTE") {
+    img = "/images/cockpit.png";
+  }
+  // results: use ejection banner if there were ejections
+  else if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText)) {
+    img = "/images/ejection.png";
+  }
+  // day / night banners
+  else if (p.startsWith("DAY")) img = "/images/vote-jour.png";
   else if (p.startsWith("NIGHT")) img = "/images/vote-nuit.png";
-  else if (p.startsWith("DAY") || p === "DAY_VOTE" || p === "DAY_TIEBREAK") img = "/images/vote-jour.png";
 
   if (img) el.style.backgroundImage = `url('${img}')`;
   else el.style.backgroundImage = "none";
@@ -267,7 +268,7 @@ function renderLobby() {
       ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
       ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
       ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">MORT</span>` : "")}
+      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
     `;
     const right = document.createElement("div");
     right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
@@ -332,7 +333,10 @@ function renderGame() {
 
   // results overlay (ejection)
   const ov = $("ejectionOverlay");
-  if (ov) ov.style.display = (state.phase === "NIGHT_RESULTS" || state.phase === "DAY_RESULTS") ? "block" : "none";
+  if (ov) {
+    const show = (state.phase === "NIGHT_RESULTS" || state.phase === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText);
+    ov.style.display = show ? "block" : "none";
+  }
 
   // dead banner (no actions, no ACK) — except if you are the actor of REVENGE / captain transfer
   const deadBanner = $("deadBanner");
@@ -544,18 +548,6 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
   }
 
   if (state.phase === "NIGHT_SABOTEURS") {
-    // Coordination: show what each saboteur selected (server sends names)
-    const sv = state.phaseData?.saboteurVotes || null;
-    if (sv && typeof sv === "object") {
-      const box = document.createElement("div");
-      box.className = "hint";
-      box.style.marginBottom = "10px";
-      const lines = Object.keys(sv).sort().map(k => `🗡️ ${k} → ${sv[k] || "—"}`);
-      box.textContent = lines.length ? lines.join("\n") : "🗡️ Votes saboteurs : —";
-      box.style.whiteSpace = "pre-line";
-      controls.appendChild(box);
-    }
-
     const aliveTargets = state.players.filter(p =>
       p.status === "alive" &&
       p.playerId !== state.you?.playerId &&
@@ -647,6 +639,15 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
 function renderEnd() {
   const winner = state.phaseData?.winner;
+  const endBg = $("endBackdrop");
+  if (endBg) {
+    let img = null;
+    if (state.phase === "GAME_ABORTED") img = "/images/cockpit.png";
+    else if (winner === "SABOTEURS") img = "/images/image-fin-stats-explosion2.png";
+    else if (winner === "ASTRONAUTES") img = "/images/image-fin-stats-station2.png";
+    else if (winner === "AMOUREUX") img = "/images/image-fin-stats-station2.png";
+    endBg.style.backgroundImage = img ? `url('${img}')` : "none";
+  }
   const title = $("winnerTitle");
   if (state.phase === "GAME_ABORTED") {
     title.textContent = "Partie interrompue — pas assez de joueurs";
@@ -701,7 +702,7 @@ $("endSummary").innerHTML += `
     </div>
 
     <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
-      <div style="font-weight:900; margin-bottom:8px;">☠️ Ordre des morts</div>
+      <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éjections</div>
       <div style="opacity:.95;">${deaths || "—"}</div>
     </div>
 
@@ -736,7 +737,7 @@ if (tabSummaryBtn && tabDetailedBtn && tabSummary && tabDetailed) {
       <div class="player-left">
         <div style="font-weight:900;">${escapeHtml(p.name)}</div>
         ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.status === "alive" ? `<span class="pill ok">SURVIVANT</span>` : (p.status === "dead" ? `<span class="pill bad">MORT</span>` : `<span class="pill warn">SORTI</span>`)}
+        ${p.status === "alive" ? `<span class="pill ok">SURVIVANT</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : `<span class="pill warn">SORTI</span>`)}
       </div>
       <div style="opacity:.95; font-weight:800;">${escapeHtml(role || "")}</div>
     </div>`;
@@ -764,7 +765,7 @@ function buildPhaseText(s) {
   if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
   if (p === "DAY_TIEBREAK") return "Égalité : le capitaine choisit l'éjecté.";
   if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Résultats du jour, puis passage à la nuit.";
-  if (p === "REVENGE") return "Chef de sécurité : tu es mort, tu peux tirer sur quelqu'un.";
+  if (p === "REVENGE") return "Chef de sécurité : tu as été éjecté, tu peux tirer sur quelqu'un.";
   if (p === "MANUAL_ROLE_PICK") return "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.";
   if (p === "GAME_ABORTED") return "Partie interrompue.";
   return "";
@@ -818,20 +819,41 @@ class AudioManager {
     this.loopAudio = null;
     this.token = null;
     this.lastCue = null;
-    this.muted = false;
+    this.pendingCue = null;
+    this.userUnlocked = false;
+    this.muted = sessionStorage.getItem("is_muted") === "1";
+
+    this.updateButton();
+
+    // Autoplay restrictions: unlock on first user gesture then replay pending cue.
+    const unlockOnce = () => this.unlock();
+    window.addEventListener("pointerdown", unlockOnce, { once: true, passive: true });
+    window.addEventListener("keydown", unlockOnce, { once: true });
+  }
+  updateButton() {
+    const btn = $("soundBtn");
+    if (!btn) return;
+    btn.textContent = this.muted ? "🔇" : "🔊";
+    btn.title = this.muted ? "Son coupé (clic pour réactiver)" : "Son activé (clic pour couper)";
   }
   setMuted(v) {
     this.muted = !!v;
-    try { window.speechSynthesis.cancel(); } catch {}
-    try {
-      if (this.audio) this.audio.muted = !!v;
-      if (this.loopAudio) this.loopAudio.muted = !!v;
-    } catch {}
-
-    // If unmuting, replay last cue (if any) so the user resumes the current phase audio
-    if (!this.muted && this.lastCue) {
-      this.token = null;
-      this.play(this.lastCue);
+    sessionStorage.setItem("is_muted", this.muted ? "1" : "0");
+    this.updateButton();
+    if (this.muted) {
+      this.stopAll();
+    } else {
+      this.unlock();
+      if (this.lastCue) this.play(this.lastCue, true);
+    }
+  }
+  toggleMuted() { this.setMuted(!this.muted); }
+  unlock() {
+    this.userUnlocked = true;
+    if (!this.muted && this.pendingCue) {
+      const cue = this.pendingCue;
+      this.pendingCue = null;
+      this.play(cue, true);
     }
   }
   stopAll() {
@@ -844,78 +866,85 @@ class AudioManager {
     try { window.speechSynthesis.cancel(); } catch {}
   }
 
-play(cue) {
-  this.lastCue = cue || null;
-  const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
-  if (token === this.token) return;
-  this.token = token;
+  play(cue, force=false) {
+    this.lastCue = cue;
+    const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
+    if (!force && token === this.token) return;
+    this.token = token;
 
-  if (this.muted) {
-    // Keep token/lastCue in sync, but don't emit any audio.
-    return;
-  }
+    this.stopAll();
+    if (!cue) return;
+    if (this.muted) return;
 
-  this.stopAll();
-  if (!cue) return;
+    const loop = cue.queueLoopFile || null;
+    const ttsText = cue.tts || null;
 
-  const loop = cue.queueLoopFile || null;
-  const ttsText = cue.tts || null;
+    const seq = Array.isArray(cue.sequence) ? cue.sequence.filter(Boolean) : null;
+    if (seq && seq.length) {
+      let i = 0;
+      const playNext = () => {
+        if (this.token !== token) return;
+        if (i >= seq.length) {
+          if (loop) this.playLoop(loop);
+          return;
+        }
+        const url = seq[i++];
+        const a = new Audio(url);
+        a.volume = 1.0;
+        this.audio = a;
+        a.play().catch((err) => {
+          if (err && err.name === "NotAllowedError") {
+            this.pendingCue = cue;
+          } else if (ttsText) {
+            this.tts(ttsText);
+          }
+        });
+        a.onended = () => playNext();
+      };
+      playNext();
+      return;
+    }
 
-  const seq = Array.isArray(cue.sequence) ? cue.sequence.filter(Boolean) : null;
-  if (seq && seq.length) {
-    // play sequentially, then (optionally) loop
-    let i = 0;
-    const playNext = () => {
-      if (this.token !== token) return;
-      if (i >= seq.length) {
-        if (loop) this.playLoop(loop);
-        return;
-      }
-      const url = seq[i++];
-      const a = new Audio(url);
+    const primary = cue.file || null;
+
+    if (primary) {
+      const a = new Audio(primary);
       a.volume = 1.0;
-      a.muted = !!this.muted;
       this.audio = a;
-      a.play().catch(() => { if (ttsText) this.tts(ttsText); });
-      a.onended = () => playNext();
-    };
-    // speak once at the beginning if no audio can play
-    playNext();
-    return;
-  }
-
-  const primary = cue.file || null;
-
-  // Prefer MP3, fallback to TTS
-  if (primary) {
-    const a = new Audio(primary);
-    a.volume = 1.0;
-    a.muted = !!this.muted;
-    this.audio = a;
-    a.play().catch(() => { this.tts(ttsText); });
-    a.onended = () => {
-      if (this.token !== token) return;
+      a.play().catch((err) => {
+        if (err && err.name === "NotAllowedError") {
+          this.pendingCue = cue;
+        } else {
+          this.tts(ttsText);
+        }
+      });
+      a.onended = () => {
+        if (this.token !== token) return;
+        if (loop) this.playLoop(loop);
+      };
+    } else if (ttsText) {
+      this.tts(ttsText);
       if (loop) this.playLoop(loop);
-    };
-  } else if (ttsText) {
-    this.tts(ttsText);
-    if (loop) this.playLoop(loop);
-  } else if (loop) {
-    this.playLoop(loop);
+    } else if (loop) {
+      this.playLoop(loop);
+    }
   }
-}
-playLoop(url) {
+
+  playLoop(url) {
     const token = this.token;
+    if (this.muted) return;
     const a = new Audio(url);
     a.loop = true;
     a.volume = 1.0;
-    a.muted = !!this.muted;
     this.loopAudio = a;
-    a.play().catch(() => {});
+    a.play().catch((err) => {
+      if (err && err.name === "NotAllowedError") {
+        this.pendingCue = this.lastCue || { queueLoopFile: url };
+      }
+    });
   }
   tts(text) {
-    if (!text) return;
-    if (this.muted) return;
+    if (!text || this.muted) return;
     try {
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "fr-FR";
@@ -925,25 +954,9 @@ playLoop(url) {
 }
 const audioManager = new AudioManager();
 
-// ---------- Mute toggle (browser window only) ----------
-(function initMuteButton() {
-  const btn = $("muteBtn");
-  if (!btn) return;
-  const key = "infiltration_audio_muted";
-  // sessionStorage => per-tab (does not affect other tabs)
-  const initial = sessionStorage.getItem(key) === "1";
-  audioManager.setMuted(initial);
-  btn.textContent = initial ? "🔇" : "🔊";
-  btn.title = initial ? "Son coupé" : "Son activé";
-
-  btn.onclick = () => {
-    const now = !audioManager.muted;
-    audioManager.setMuted(now);
-    sessionStorage.setItem(key, now ? "1" : "0");
-    btn.textContent = now ? "🔇" : "🔊";
-    btn.title = now ? "Son coupé" : "Son activé";
-  };
-})();
+// UI mute button
+const soundBtn = $("soundBtn");
+if (soundBtn) soundBtn.onclick = () => audioManager.toggleMuted();
 
 // ---------- Rules modal ----------
 function buildRulesHtml(cfg) {
