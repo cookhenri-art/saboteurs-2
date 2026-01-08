@@ -5,7 +5,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 3000;
-const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-07";
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -311,7 +311,6 @@ function newRoom(code, hostPlayerId) {
     doctorLifeUsed: false,
     doctorDeathUsed: false,
     chameleonUsed: false,
-    afterChameleonReveal: false,
 
     nightData: {},
     audio: { file: null, queueLoopFile: null, tts: null }
@@ -374,7 +373,6 @@ function computeAudioCue(room, prevPhase) {
       case "NIGHT_RADAR": return AUDIO.RADAR_SLEEP;
       case "NIGHT_SABOTEURS": return AUDIO.SABOTEURS_SLEEP;
       case "NIGHT_DOCTOR": return AUDIO.DOCTOR_SLEEP;
-      case "ROLE_REVEAL": return room.afterChameleonReveal ? AUDIO.STATION_SLEEP : null;
       default: return null;
     }
   };
@@ -389,14 +387,13 @@ function computeAudioCue(room, prevPhase) {
     return { file: wakeFile || null, queueLoopFile, tts };
   };
 
-  if (phase === "LOBBY") return { file: AUDIO.INTRO_LOBBY, queueLoopFile: null, tts: null };
+  if (phase === "LOBBY") return { file: AUDIO.INTRO_LOBBY, queueLoopFile: null, tts: "Lobby. Préparez la mission." };
   if (phase === "MANUAL_ROLE_PICK") return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Mode manuel. Choisissez votre rôle." };
-  if (phase === "ROLE_REVEAL") {
-    if (data.resume === "night" && data.fromChameleon) {
-      return { sequence: [AUDIO.CHAMELEON_SLEEP], file: null, queueLoopFile: null, tts: null, ttsAfterSequence: "Tous les joueurs se réveillent pour vérifier leur rôle après l'échange du Caméléon." };
-    }
-    return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Vérifiez votre rôle." };
+  // Special case: after the Caméléon swap we ask everyone to re-check roles, but we want the Caméléon sleep sting.
+  if (phase === "ROLE_REVEAL" && data.resume === "night" && prevPhase === "NIGHT_CHAMELEON") {
+    return { sequence: [AUDIO.CHAMELEON_SLEEP].filter(Boolean), file: null, queueLoopFile: null, tts: "Les rôles ont pu changer. Revérifiez." };
   }
+  if (phase === "ROLE_REVEAL") return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Vérifiez votre rôle." };
   if (phase === "CAPTAIN_CANDIDACY" || phase === "CAPTAIN_VOTE") return { file: AUDIO.ELECTION_CHIEF, queueLoopFile: null, tts: "Élection du capitaine." };
 
   if (phase === "NIGHT_START") return { file: AUDIO.STATION_SLEEP, queueLoopFile: null, tts: "La station s'endort." };
@@ -438,7 +435,6 @@ function setPhase(room, phase, data = {}) {
   room.phaseData = data;
   room.phaseAck = new Set();
   room.audio = computeAudioCue(room, prev);
-  if (prev === "ROLE_REVEAL" && room.afterChameleonReveal) room.afterChameleonReveal = false;
   logEvent(room, "phase", { phase });
   try {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night}`);
@@ -526,8 +522,10 @@ function buildDeathsText(room, newlyDeadIds) {
 function killPlayer(room, playerId, source, extra = {}) {
   const p = room.players.get(playerId);
   if (!p || p.status !== "alive") return false;
+  const roleAtDeath = p.role || null;
+  const roleLabelAtDeath = ROLES[roleAtDeath]?.label || roleAtDeath || null;
   p.status = "dead";
-  logEvent(room, "player_died", { playerId, source, ...extra });
+  logEvent(room, "player_died", { playerId, source, role: roleAtDeath, roleLabel: roleLabelAtDeath, ...extra });
   return true;
 }
 
@@ -590,208 +588,192 @@ function buildEndReport(room, winner) {
     if (seen.has(e.playerId)) continue;
     seen.add(e.playerId);
     const name = room.players.get(e.playerId)?.name || e.playerId;
-    const role = room.players.get(e.playerId)?.role;
-    const roleLabel = ROLES[role]?.label || role || "?";
-    deathOrder.push({ playerId: e.playerId, name, roleLabel, source: e.source || "?" });
+    deathOrder.push({
+      playerId: e.playerId,
+      name,
+      source: e.source || "?",
+      role: e.role || room.players.get(e.playerId)?.role || null,
+      roleLabel: e.roleLabel || (ROLES[room.players.get(e.playerId)?.role]?.label || room.players.get(e.playerId)?.role || null)
+    });
   }
 
-  // match-specific counters from matchLog
-  const counters = {};
-  const inc = (pid, k) => {
-    if (!pid) return;
-    counters[pid] = counters[pid] || {};
-    counters[pid][k] = (counters[pid][k] || 0) + 1;
+  // --- Awards (match-specific) ---
+  const teamOfRole = (role) => ROLES[role]?.team || "astronauts";
+  const nameOf = (pid) => room.players.get(pid)?.name || pid;
+  const uniqNames = (arr) => Array.from(new Set((arr || []).filter(Boolean)));
+  const fmtList = (arr) => {
+    const u = uniqNames(arr);
+    if (!u.length) return "—";
+    return u.join(", ");
   };
+
+  const doctorSaves = new Map(); // pid -> [names]
+  const doctorKillsNonSab = new Map(); // pid -> [names]
+  const radarConfirmed = new Map(); // pid -> [saboteur names]
+  const chameleonStoleSab = new Map(); // pid -> [saboteur names]
+  const revengeOnSab = new Map(); // pid -> [names]
+  const revengeOnAst = new Map(); // pid -> [names]
+
   for (const e of room.matchLog) {
-    if (e.type === "doctor_save") inc(e.by, "doctorSaves");
+    if (e.type === "doctor_save") {
+      const role = e.targetRole || room.players.get(e.targetId)?.role || null;
+      if (role && teamOfRole(role) === "saboteurs") continue;
+      if (!doctorSaves.has(e.by)) doctorSaves.set(e.by, []);
+      doctorSaves.get(e.by).push(nameOf(e.targetId));
+    }
     if (e.type === "doctor_kill") {
-      inc(e.by, "doctorKills");
-      const tRole = room.players.get(e.targetId)?.role;
-      const team = ROLES[tRole]?.team || "astronauts";
-      if (team === "astronauts") inc(e.by, "doctorKillsAstronauts");
-      else inc(e.by, "doctorKillsSaboteurs");
+      const role = e.targetRole || room.players.get(e.targetId)?.role || null;
+      if (role && teamOfRole(role) !== "saboteurs") {
+        if (!doctorKillsNonSab.has(e.by)) doctorKillsNonSab.set(e.by, []);
+        doctorKillsNonSab.get(e.by).push(nameOf(e.targetId));
+      }
     }
-    if (e.type === "radar_inspect") inc(e.by, "radarInspects");
-    if (e.type === "chameleon_swap") inc(e.by, "chameleonSwaps");
+    if (e.type === "radar_inspect") {
+      const role = e.role || null;
+      if (role === "saboteur") {
+        const st = room.players.get(e.targetId)?.status;
+        if (st && st !== "alive") {
+          if (!radarConfirmed.has(e.by)) radarConfirmed.set(e.by, []);
+          radarConfirmed.get(e.by).push(nameOf(e.targetId));
+        }
+      }
+    }
+    if (e.type === "chameleon_swap") {
+      if (e.targetRoleBefore === "saboteur") {
+        if (!chameleonStoleSab.has(e.by)) chameleonStoleSab.set(e.by, []);
+        chameleonStoleSab.get(e.by).push(nameOf(e.targetId));
+      }
+    }
     if (e.type === "revenge_shot") {
-      inc(e.by, "revengeShots");
-      const tRole = room.players.get(e.targetId)?.role;
-      const team = ROLES[tRole]?.team || "astronauts";
-      if (team === "saboteurs") inc(e.by, "revengeKillsSaboteurs");
-      else inc(e.by, "revengeKillsAstronauts");
+      const role = e.targetRole || room.players.get(e.targetId)?.role || null;
+      const team = role ? teamOfRole(role) : "astronauts";
+      if (team === "saboteurs") {
+        if (!revengeOnSab.has(e.by)) revengeOnSab.set(e.by, []);
+        revengeOnSab.get(e.by).push(nameOf(e.targetId));
+      } else {
+        if (!revengeOnAst.has(e.by)) revengeOnAst.set(e.by, []);
+        revengeOnAst.get(e.by).push(nameOf(e.targetId));
+      }
     }
-    if (e.type === "ai_link") inc(e.by, "aiLinks");
   }
 
-  // ----------------- Awards (match) -----------------
-  // Helper formatters
-  const nameRole = (pid, roleOverride = null) => {
-    const p = room.players.get(pid);
-    if (!p) return null;
-    const role = roleOverride || p.role;
-    const roleLabel = ROLES[role]?.label || role || "?";
-    return `${p.name} (${roleLabel})`;
+  const pickBestByList = (m) => {
+    let bestPid = null;
+    let bestN = 0;
+    for (const [pid, list] of m.entries()) {
+      const n = uniqNames(list).length;
+      if (n > bestN) { bestN = n; bestPid = pid; }
+    }
+    return { pid: bestPid, n: bestN, list: bestPid ? uniqNames(m.get(bestPid)) : [] };
   };
 
-  const getDoctorActorIds = () => {
-    const ids = new Set();
-    for (const e of room.matchLog) if (e.type?.startsWith("doctor_") && e.by) ids.add(e.by);
-    return Array.from(ids);
+  const awards = [];
+
+  // 1) Best Doctor House
+  {
+    const best = pickBestByList(doctorSaves);
+    if (!best.pid) {
+      awards.push({ title: "Meilleur Docteur House", text: "Aucun sauvetage" });
+    } else {
+      awards.push({
+        title: "Meilleur Docteur House",
+        text: `${nameOf(best.pid)} : ${best.n} sauvetage(s) — ${fmtList(best.list)}`
+      });
+    }
+  }
+
+  // 2) Worst doctor: Boucher de la station (killed non-saboteurs and never used life potion)
+  {
+    const best = pickBestByList(doctorKillsNonSab);
+    if (!best.pid || room.doctorLifeUsed) {
+      awards.push({ title: "Boucher de la station", text: "Aucun" });
+    } else {
+      const nonSaved = room.matchLog
+        .filter(ev => ev.type === "player_died" && ev.source === "saboteurs")
+        .map(ev => nameOf(ev.playerId));
+      awards.push({
+        title: "Boucher de la station",
+        text: `${nameOf(best.pid)} : a éjecté ${best.n} non-saboteur(s) — ${fmtList(best.list)}. Non sauvés : ${fmtList(nonSaved)}`
+      });
+    }
+  }
+
+  // 3) Best radar: L’ŒIL DE LYNX
+  {
+    const best = pickBestByList(radarConfirmed);
+    if (!best.pid) {
+      awards.push({ title: "L’ŒIL DE LYNX", text: "Aucun saboteur confirmé" });
+    } else {
+      awards.push({
+        title: "L’ŒIL DE LYNX",
+        text: `${nameOf(best.pid)} : saboteur(s) repéré(s) puis éjecté(s) — ${fmtList(best.list)}`
+      });
+    }
+  }
+
+  // 4) Best chameleon: LE LUPIN D’OR
+  {
+    const best = pickBestByList(chameleonStoleSab);
+    if (!best.pid) {
+      awards.push({ title: "LE LUPIN D’OR", text: "Aucun saboteur volé" });
+    } else {
+      awards.push({
+        title: "LE LUPIN D’OR",
+        text: `${nameOf(best.pid)} : a volé le rôle de — ${fmtList(best.list)}`
+      });
+    }
+  }
+
+  // 5) Best security: TERMINATOR de la STATION
+  {
+    const best = pickBestByList(revengeOnSab);
+    if (!best.pid) {
+      awards.push({ title: "TERMINATOR de la STATION", text: "Aucune vengeance sur saboteur" });
+    } else {
+      awards.push({
+        title: "TERMINATOR de la STATION",
+        text: `${nameOf(best.pid)} : vengeance sur — ${fmtList(best.list)}`
+      });
+    }
+  }
+
+  // 6) Worst security: GÂCHETTE NERVEUSE
+  {
+    const best = pickBestByList(revengeOnAst);
+    if (!best.pid) {
+      awards.push({ title: "GÂCHETTE NERVEUSE", text: "Aucune vengeance sur astronaute" });
+    } else {
+      awards.push({
+        title: "GÂCHETTE NERVEUSE",
+        text: `${nameOf(best.pid)} : vengeance sur — ${fmtList(best.list)}`
+      });
+    }
+  }
+
+  // 7) Association de malfaiteurs (winning link)
+  {
+    if (winner !== "AMOUREUX") {
+      awards.push({ title: "ASSOCIATION DE MALFAITEURS", text: "Aucune association gagnante" });
+    } else {
+      const alive = alivePlayers(room);
+      let pair = null;
+      if (alive.length === 2) {
+        const a = alive[0];
+        const b = alive[1];
+        if (a.linkedTo === b.playerId && b.linkedTo === a.playerId) pair = [a.name, b.name];
+      }
+      awards.push({
+        title: "ASSOCIATION DE MALFAITEURS",
+        text: pair ? `${pair[0]} 🤝 ${pair[1]}` : "—"
+      });
+    }
+  }
+
+  // Keep a lightweight counters object for debugging / UI if needed.
+  const counters = {
+    doctorSaves: Object.fromEntries(Array.from(doctorSaves.entries()).map(([pid, list]) => [pid, uniqNames(list).length])),
+    radarConfirmed: Object.fromEntries(Array.from(radarConfirmed.entries()).map(([pid, list]) => [pid, uniqNames(list).length]))
   };
-
-  const awardDoctorHouse = () => {
-    const saves = [];
-    for (const e of room.matchLog) {
-      if (e.type !== "doctor_save") continue;
-      if (!e.by || !e.targetId) continue;
-      const tRole = e.targetRole || room.players.get(e.targetId)?.role || null;
-      if ((ROLES[tRole]?.team || "astronauts") === "saboteurs") continue;
-      const label = nameRole(e.targetId, tRole);
-      if (label) saves.push(label);
-    }
-    if (!saves.length) return { title: "Meilleur Docteur House", text: "Aucun sauvetage." };
-    const uniqSaves = Array.from(new Set(saves));
-    return { title: "Meilleur Docteur House", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
-  };
-
-  const awardBoucher = () => {
-    // Only if the doctor did NOT use the life potion during the match.
-    if (room.doctorLifeUsed) return { title: "Boucher de la station", text: "Aucun (potion de vie utilisée)." };
-
-    const doctorIds = getDoctorActorIds();
-    const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || "Docteur") : "Docteur";
-
-    // Astronauts wrongly ejected by doctor potion of death
-    const wrong = [];
-    for (const e of room.matchLog) {
-      if (e.type !== "doctor_kill") continue;
-      const tRole = e.targetRole || room.players.get(e.targetId)?.role || null;
-      if (!tRole) continue;
-      const team = ROLES[tRole]?.team || "astronauts";
-      if (team === "saboteurs") continue;
-      const label = nameRole(e.targetId, tRole);
-      if (label) wrong.push(label);
-    }
-
-    // "non sauvés": victims of saboteurs while life potion unused
-    const unsaved = [];
-    for (const e of room.matchLog) {
-      if (e.type !== "player_died") continue;
-      if (e.source !== "saboteurs") continue;
-      const label = nameRole(e.playerId);
-      if (label) unsaved.push(label);
-    }
-
-    if (!wrong.length && !unsaved.length) return { title: "Boucher de la station", text: "Aucun." };
-
-    const parts = [];
-    if (wrong.length) parts.push(`Éjections d'astronautes : ${Array.from(new Set(wrong)).join(", ")}`);
-    if (unsaved.length) parts.push(`Non sauvés : ${Array.from(new Set(unsaved)).join(", ")}`);
-    return { title: "Boucher de la station", text: `${doctorName} — ${parts.join(" • ")}` };
-  };
-
-  const awardOeilDeLynx = () => {
-    // Saboteurs inspected by radar who later got ejected
-    const diedAt = new Map();
-    for (const e of room.matchLog) {
-      if (e.type !== "player_died") continue;
-      if (!e.playerId) continue;
-      if (!diedAt.has(e.playerId)) diedAt.set(e.playerId, e.t || 0);
-    }
-
-    const found = [];
-    for (const e of room.matchLog) {
-      if (e.type !== "radar_inspect") continue;
-      if (e.role !== "saboteur") continue;
-      const dt = diedAt.get(e.targetId);
-      if (!dt) continue;
-      // must be "mort par la suite"
-      if ((dt || 0) <= (e.t || 0)) continue;
-      const label = room.players.get(e.targetId)?.name || e.targetId;
-      if (label) found.push(label);
-    }
-    const uniqFound = Array.from(new Set(found));
-    if (!uniqFound.length) return { title: "L'œil de Lynx", text: "Aucun saboteur repéré puis éjecté." };
-    return { title: "L'œil de Lynx", text: `Saboteur(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
-  };
-
-  const awardLupin = () => {
-    const names = [];
-    for (const e of room.matchLog) {
-      if (e.type !== "chameleon_swap") continue;
-      if (e.targetOldRole !== "saboteur") continue;
-      const n = room.players.get(e.targetId)?.name || e.targetId;
-      if (n) names.push(n);
-    }
-    const uniqNames = Array.from(new Set(names));
-    if (!uniqNames.length) return { title: "Le Lupin d'Or", text: "Aucun saboteur volé." };
-    return { title: "Le Lupin d'Or", text: `A volé le rôle de : ${uniqNames.join(", ")}` };
-  };
-
-  const awardSecurity = (teamWanted, title, emptyText) => {
-    const perShooter = new Map(); // shooterId -> {count, victims[]}
-    for (const e of room.matchLog) {
-      if (e.type !== "revenge_shot") continue;
-      const tRole = e.targetRole || room.players.get(e.targetId)?.role || null;
-      const team = ROLES[tRole]?.team || "astronauts";
-      const wanted = (teamWanted === "saboteurs") ? (team === "saboteurs") : (team !== "saboteurs");
-      if (!wanted) continue;
-      const shooter = e.by;
-      if (!shooter) continue;
-      if (!perShooter.has(shooter)) perShooter.set(shooter, { count: 0, victims: [] });
-      const o = perShooter.get(shooter);
-      o.count += 1;
-      const v = nameRole(e.targetId, tRole) || (room.players.get(e.targetId)?.name || e.targetId);
-      if (v) o.victims.push(v);
-    }
-    let best = null;
-    for (const [pid, o] of perShooter.entries()) {
-      if (!best || o.count > best.count) best = { pid, ...o };
-    }
-    if (!best) return { title, text: emptyText };
-    const shooterName = room.players.get(best.pid)?.name || best.pid;
-    const victims = Array.from(new Set(best.victims));
-    return { title, text: `${shooterName} — victime(s) : ${victims.join(", ")}` };
-  };
-
-  const awardAssociation = () => {
-    if (winner !== "AMOUREUX") return { title: "Association de Malfaiteurs", text: "—" };
-    const alive = alivePlayers(room);
-    if (alive.length !== 2) return { title: "Association de Malfaiteurs", text: "—" };
-    const a = alive[0], b = alive[1];
-    const linked = a.linkedTo === b.playerId && b.linkedTo === a.playerId;
-    if (!linked) return { title: "Association de Malfaiteurs", text: "—" };
-    return { title: "Association de Malfaiteurs", text: `${a.name} 🤝 ${b.name}` };
-  };
-
-  const awardSaboteurIncognito = () => {
-    if (winner !== "SABOTEURS") return { title: "Saboteur Incognito", text: "—" };
-
-    // Aggregate votes AGAINST each player across all day votes.
-    const votesAgainst = Object.create(null);
-    for (const e of room.matchLog) {
-      if (e.type !== "day_votes") continue;
-      const counts = e.counts || {};
-      for (const [pid, n] of Object.entries(counts)) votesAgainst[pid] = (votesAgainst[pid] || 0) + (n || 0);
-    }
-
-    const aliveSab = alivePlayers(room).filter(p => p.role === "saboteur");
-    const winners = aliveSab.filter(p => (votesAgainst[p.playerId] || 0) === 0).map(p => p.name);
-    const uniq = Array.from(new Set(winners));
-    if (!uniq.length) return { title: "Saboteur Incognito", text: "Aucun." };
-    return { title: "Saboteur Incognito", text: `0 vote contre lui : ${uniq.join(", ")}` };
-  };
-
-  const awards = [
-    awardDoctorHouse(),
-    awardBoucher(),
-    awardOeilDeLynx(),
-    awardLupin(),
-    awardSecurity("saboteurs", "Terminator de la Station", "Aucune vengeance sur saboteur."),
-    awardSecurity("astronauts", "Gâchette Nerveuse", "Aucune vengeance sur astronaute."),
-    awardAssociation(),
-    awardSaboteurIncognito()
-  ];
 
   // snapshot of persistent stats for present players
   const statsByName = {};
@@ -900,7 +882,6 @@ function assignRolesAuto(room) {
   room.doctorLifeUsed = false;
   room.doctorDeathUsed = false;
   room.chameleonUsed = false;
-  room.afterChameleonReveal = false;
   logEvent(room, "roles_assigned", {});
 }
 
@@ -919,7 +900,6 @@ function resetForNewRound(room, keepStats) {
   room.doctorLifeUsed = false;
   room.doctorDeathUsed = false;
   room.chameleonUsed = false;
-  room.afterChameleonReveal = false;
 
   for (const p of room.players.values()) {
     p.ready = false;
@@ -1056,20 +1036,17 @@ function nextNightPhase(room) {
 
 function resolveNight(room) {
   const nd = room.nightData || {};
-  const killed = new Set();
-
-  if (nd.saboteurTarget && nd.saboteurTarget !== nd.doctorSave) killed.add(nd.saboteurTarget);
-  if (nd.doctorKill) killed.add(nd.doctorKill);
+  // Keep sources distinct for end stats/awards (saboteurs vs doctor).
+  const killedBy = new Map(); // pid -> source
+  if (nd.saboteurTarget && nd.saboteurTarget !== nd.doctorSave) killedBy.set(nd.saboteurTarget, "saboteurs");
+  if (nd.doctorKill) killedBy.set(nd.doctorKill, "doctor");
 
   const newlyDead = [];
-  for (const pid of killed) {
-    // Distinguish sources for stats/awards.
-    let source = "night";
-    if (nd.doctorKill && pid === nd.doctorKill) source = "doctor";
-    else if (nd.saboteurTarget && pid === nd.saboteurTarget && pid !== nd.doctorSave) source = "saboteurs";
+  for (const [pid, source] of killedBy.entries()) {
     if (killPlayer(room, pid, source)) newlyDead.push(pid);
   }
-// linked deaths cascade
+
+  // linked deaths cascade
   const casc = applyLinkCascade(room);
   for (const pid of casc) if (!newlyDead.includes(pid)) newlyDead.push(pid);
 
@@ -1144,9 +1121,6 @@ function finishDayVote(room) {
     else if (n === bestN) best.push(pid);
   }
   if (bestN <= 0) best = alive.slice();
-
-  // log votes for awards (e.g. Saboteur Incognito)
-  logEvent(room, "day_votes", { day: room.day, votes: JSON.parse(JSON.stringify(votes || {})), counts: JSON.parse(JSON.stringify(counts || {})) });
 
   if (best.length !== 1) {
     const cap = getCaptain(room);
@@ -1463,7 +1437,6 @@ function handlePhaseCompletion(room) {
       } else {
         // Resume flow (usually night) after a global role re-check.
         if (room.phaseData?.resume === "night") {
-          if (room.phaseData?.fromChameleon) room.afterChameleonReveal = true;
           nextNightPhase(room);
         }
       }
@@ -1672,20 +1645,19 @@ io.on("connection", (socket) => {
       const tP = room.players.get(targetId);
       if (!tP || tP.status !== "alive") return;
       // swap roles
-      const byOldRole = p.role;
-      const targetOldRole = tP.role;
-      const a = p.role;
-      p.role = tP.role;
-      tP.role = a;
+      const byRoleBefore = p.role;
+      const targetRoleBefore = tP.role;
+      p.role = targetRoleBefore;
+      tP.role = byRoleBefore;
 
       room.chameleonUsed = true;
-      logEvent(room, "chameleon_swap", { by: playerId, targetId, byOldRole, targetOldRole });
+      logEvent(room, "chameleon_swap", { by: playerId, targetId, byRoleBefore, targetRoleBefore });
       console.log(`[${room.code}] chameleon_swap by=${p.name} target=${tP.name}`);
       ensurePlayerStats(p.name).chameleonSwaps += 1;
       saveStats(statsDb);
 
       // everybody re-check role
-      setPhase(room, "ROLE_REVEAL", { notice: "Les rôles ont pu changer. Revérifiez.", resume: "night", fromChameleon: true });
+      setPhase(room, "ROLE_REVEAL", { notice: "Les rôles ont pu changer. Revérifiez.", resume: "night" });
       emitRoom(room);
       return cb && cb({ ok:true });
     }
@@ -1784,7 +1756,8 @@ io.on("connection", (socket) => {
         const saveTarget = room.nightData?.saboteurTarget || null;
         room.nightData.doctorSave = saveTarget;
         room.doctorLifeUsed = true;
-        logEvent(room, "doctor_save", { by: playerId, targetId: saveTarget, targetRole: room.players.get(saveTarget)?.role || null });
+        const saveRole = saveTarget ? (room.players.get(saveTarget)?.role || null) : null;
+        logEvent(room, "doctor_save", { by: playerId, targetId: saveTarget, targetRole: saveRole });
         console.log(`[${room.code}] doctor_save by=${p.name} target=${room.players.get(saveTarget)?.name || "none"}`);
 
         const st = ensurePlayerStats(p.name);
