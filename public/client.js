@@ -661,8 +661,9 @@ function renderEnd() {
   const rep = state.phaseData?.report;
   if (rep) {
     const deaths = (rep.deathOrder || []).map((d, i) => {
-      const rl = d.roleLabel ? ` (${d.roleLabel})` : "";
-      return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
+      const r = d.roleLabel || d.role || "?";
+      const src = d.source ? ` — ${d.source}` : "";
+      return `${i + 1}. ${escapeHtml(d.name)} (${escapeHtml(r)})${escapeHtml(src)}`;
     }).join("<br>");
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
@@ -823,9 +824,12 @@ class AudioManager {
     this.token = null;
     this.lastCue = null;
     this.pendingCue = null;
-    this.queuedCue = null;
     this.userUnlocked = false;
     this.muted = sessionStorage.getItem("is_muted") === "1";
+
+    this._manifest = null;
+    this._manifestPromise = null;
+    this._homeIntroPlayed = false;
 
     this.updateButton();
 
@@ -833,6 +837,37 @@ class AudioManager {
     const unlockOnce = () => this.unlock();
     window.addEventListener("pointerdown", unlockOnce, { once: true, passive: true });
     window.addEventListener("keydown", unlockOnce, { once: true });
+  }
+
+  async loadManifest() {
+    if (this._manifest) return this._manifest;
+    if (this._manifestPromise) return this._manifestPromise;
+    this._manifestPromise = fetch("/sounds/audio-manifest.json", { cache: "no-store" })
+      .then(r => (r.ok ? r.json() : null))
+      .catch(() => null)
+      .then(obj => {
+        this._manifest = (obj && typeof obj === "object") ? obj : {};
+        return this._manifest;
+      });
+    return this._manifestPromise;
+  }
+
+  async urlForKey(key) {
+    const m = await this.loadManifest();
+    const f = m?.[key];
+    if (!f) return null;
+    return `/sounds/${f}`;
+  }
+
+  async playHomeIntro() {
+    if (this._homeIntroPlayed) return;
+    if (this.muted) return;
+    // Avoid starting the intro if we're already in a room.
+    if (state?.roomCode) return;
+    const url = await this.urlForKey("INTRO_LOBBY");
+    if (!url) return;
+    this._homeIntroPlayed = true;
+    this.play({ file: url, queueLoopFile: null, tts: null }, true);
   }
   updateButton() {
     const btn = $("soundBtn");
@@ -857,7 +892,6 @@ class AudioManager {
     if (!this.muted && this.pendingCue) {
       const cue = this.pendingCue;
       this.pendingCue = null;
-    this.queuedCue = null;
       this.play(cue, true);
     }
   }
@@ -873,20 +907,8 @@ class AudioManager {
 
   play(cue, force=false) {
     this.lastCue = cue;
-    const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, cue?.ttsAfterSequence || null]);
+    const token = JSON.stringify([cue?.sequence || null, cue?.file || null, cue?.queueLoopFile || null, cue?.tts || null, state?.phase || null]);
     if (!force && token === this.token) return;
-
-    // If the lobby intro is currently playing, do not cut it: queue the next cue.
-    const isLobbyIntroUrl = (u) => !!u && /intro/i.test(u) && /lobby/i.test(u);
-    const currentUrl = this.audio?.src || null;
-    const currentIsIntro = isLobbyIntroUrl(currentUrl);
-    const nextPrimary = cue?.file || null;
-    const nextIsIntro = isLobbyIntroUrl(nextPrimary);
-    if (!force && currentIsIntro && !nextIsIntro && this.audio && !this.audio.ended) {
-      this.queuedCue = cue;
-      return;
-    }
-
     this.token = token;
 
     this.stopAll();
@@ -902,7 +924,6 @@ class AudioManager {
       const playNext = () => {
         if (this.token !== token) return;
         if (i >= seq.length) {
-          if (cue.ttsAfterSequence) this.tts(cue.ttsAfterSequence);
           if (loop) this.playLoop(loop);
           return;
         }
@@ -938,14 +959,7 @@ class AudioManager {
       });
       a.onended = () => {
         if (this.token !== token) return;
-        if (cue.ttsAfterSequence) this.tts(cue.ttsAfterSequence);
         if (loop) this.playLoop(loop);
-        if (this.queuedCue) {
-          const q = this.queuedCue;
-          this.queuedCue = null;
-          // play queued cue right after the intro finished
-          this.play(q, true);
-        }
       };
     } else if (ttsText) {
       this.tts(ttsText);
@@ -983,41 +997,53 @@ const audioManager = new AudioManager();
 const soundBtn = $("soundBtn");
 if (soundBtn) soundBtn.onclick = () => audioManager.toggleMuted();
 
+// Home: start lobby intro as soon as the user starts typing their name (autoplay-safe).
+const nameInput = $("playerName");
+if (nameInput) {
+  const trigger = () => audioManager.playHomeIntro();
+  nameInput.addEventListener("focus", trigger, { passive: true });
+  nameInput.addEventListener("input", trigger, { passive: true });
+  nameInput.addEventListener("keydown", trigger);
+}
+
 // ---------- Rules modal ----------
 function buildRulesHtml(cfg) {
   const enabled = cfg?.rolesEnabled || {};
   const on = (k) => !!enabled[k];
 
   const roleLines = [];
-  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir.</li>`);
-  roleLines.push(`<li><b>Saboteur</b> — vote unanimement une cible la nuit.</li>`);
-  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — inspecte un joueur et découvre son rôle.</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — 1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
-  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
-  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
-  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
+  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir particulier. Vote le jour.</li>`);
+  roleLines.push(`<li><b>Saboteur</b> — vote la nuit avec les autres saboteurs pour éjecter une cible (unanimité).</li>`);
+  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — chaque nuit, inspecte un joueur et découvre son rôle (résultat visible dans le menu des phases).</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — 1 potion de vie (protège la cible attaquée) + 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
+  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — Nuit 1 : échange secrètement son rôle avec un joueur (une seule fois).</li>`);
+  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — s’il est éjecté, peut se venger en ciblant un joueur.</li>`);
+  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — Nuit 1 : se lie à un autre joueur (liaison permanente). Si l’un est éjecté, l’autre l’est aussi.</li>`);
+  if (on("engineer")) roleLines.push(`<li><b>Ingénieur</b> — peut espionner à ses risques et périls (rappel discret au début de la nuit).</li>`);
 
   return `
     <div style="opacity:.95;">
       <h3 style="margin:10px 0;">Rôles</h3>
       <ul>${roleLines.join("")}</ul>
 
-      <h3 style="margin:10px 0;">Chef de station (capitaine)</h3>
-      <ul>
-        <li><b>Élection obligatoire</b> au début de la mission.</li>
-        <li>En cas d'égalité au vote du jour, le capitaine <b>tranche</b> (sa voix compte double pour départager).</li>
-        <li>Dès que le capitaine est éjecté, il <b>transmet</b> le rôle de capitaine à un survivant <b>sans connaître son rôle</b>.</li>
-      </ul>
-
-      <h3 style="margin:10px 0;">Ordre de nuit</h3>
+      <h3 style="margin:10px 0;">Ordre de la nuit</h3>
       <ol>
         <li>Caméléon (Nuit 1)</li>
         <li>Agent IA (Nuit 1)</li>
         <li>Officier radar</li>
         <li>Saboteurs (unanimité)</li>
         <li>Docteur bio</li>
-        <li>Résolution + vengeance + liaison</li>
+        <li>Résolution + vengeance + liaisons</li>
       </ol>
+
+      <h3 style="margin:10px 0;">Jour</h3>
+      <ul>
+        <li>Réveil de la station</li>
+        <li><b>Élection du Chef de station obligatoire</b> (capitaine)</li>
+        <li>En cas d’égalité, la voix du capitaine compte <b>double</b> / il tranche</li>
+        <li>Si le capitaine est éjecté : il transmet immédiatement le rôle de capitaine à un survivant <b>sans connaître son rôle</b></li>
+        <li>Vote d’éjection</li>
+      </ul>
 
       <h3 style="margin:10px 0;">Victoire</h3>
       <ul>
@@ -1122,9 +1148,30 @@ socket.on("roomState", (s) => {
 });
 
 socket.on("serverHello", () => {
-  // show home by default; state will move screens
-  showScreen("homeScreen");
+  // On reconnect, do NOT force the user back to the home screen.
+  // If we have a persisted session (name + room code), attempt a reconnect.
   clearError();
+
+  // If we already have a room state, keep the current screen.
+  if (state?.roomCode) return;
+
+  const savedName = (sessionStorage.getItem(STORAGE.name) || "").trim();
+  const savedRoom = (sessionStorage.getItem(STORAGE.room) || "").trim();
+
+  if (savedName && savedRoom) {
+    // Try to re-attach to the room without changing screens.
+    socket.emit("reconnectRoom", { playerId, name: savedName, roomCode: savedRoom }, (res) => {
+      if (!res?.ok) {
+        // If the room is gone, fall back to join screen with the code prefilled.
+        $("joinRoomCode").value = savedRoom;
+        showScreen("joinScreen");
+      }
+    });
+    return;
+  }
+
+  // No session: default to home.
+  showScreen("homeScreen");
 });
 
 // fallback render if no state yet
