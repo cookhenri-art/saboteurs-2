@@ -235,11 +235,11 @@ function formatPhaseTitle(s) {
 const ROLE_INFO = {
   astronaut: {
     title: "Astronaute",
-    desc: "Aucun pouvoir spécial. Observe, débat et vote pour protéger la station."
+    desc: () => `Aucun pouvoir spécial. Observe, débat et vote pour protéger la ${t('station')}.`
   },
   saboteur: {
     title: "Saboteur",
-    desc: "Chaque nuit, les saboteurs votent UNANIMEMENT une cible (impossible de viser un saboteur)."
+    desc: () => `Chaque nuit, les ${t('saboteurs').toLowerCase()} votent UNANIMEMENT une cible (impossible de viser un ${t('saboteurs').toLowerCase().slice(0, -1)}).`
   },
   doctor: {
     title: "Docteur bio",
@@ -270,7 +270,12 @@ const ROLE_INFO = {
 function getRoleInfo(roleKey, roleLabelFromServer) {
   const k = roleKey || "";
   const base = ROLE_INFO[k];
-  if (base) return base;
+  if (base) {
+    return {
+      title: base.title,
+      desc: typeof base.desc === 'function' ? base.desc() : base.desc
+    };
+  }
   return { title: roleLabelFromServer || k || "Rôle", desc: "" };
 }
 
@@ -482,7 +487,7 @@ function renderGame() {
         ${captainIconSrc ? `<img class="role-card-icon captain" src="${captainIconSrc}" alt="capitaine">` : ``}
       </div>
       <div class="role-card-text">
-        <div class="role-card-title">${escapeHtml(info.title)} ${isCaptain ? `<span class="role-card-badge">⭐ Chef de station</span>` : ``}</div>
+        <div class="role-card-title">${escapeHtml(info.title)} ${isCaptain ? `<span class="role-card-badge">⭐ ${t('captain')}</span>` : ``}</div>
         <div class="role-card-desc">${escapeHtml(info.desc)}</div>
       </div>
     </div>
@@ -851,7 +856,7 @@ function renderEnd() {
     title.textContent = "Partie interrompue — pas assez de joueurs";
     $("endSummary").innerHTML = `<div style="color: var(--neon-orange); font-weight:800;">${escapeHtml(state.phaseData?.reason || "")}</div>`;
   } else {
-    title.textContent = winner === "SABOTEURS" ? "⚔️ VICTOIRE DES SABOTEURS" : (winner === "AMOUREUX" ? "🤝 ASSOCIATION DE MALFAITEURS" : "👨‍🚀 VICTOIRE DES ASTRONAUTES");
+    title.textContent = winner === "SABOTEURS" ? `⚔️ VICTOIRE DES ${t('saboteurs').toUpperCase()}` : (winner === "AMOUREUX" ? "🤝 ASSOCIATION DE MALFAITEURS" : `👨‍🚀 VICTOIRE DES ${t('astronauts').toUpperCase()}`);
     $("endSummary").innerHTML = `<div style="opacity:.9;">Stats persistées par NOM (serveur).</div>`;
   }
 
@@ -951,17 +956,17 @@ if (tabSummaryBtn && tabDetailedBtn && tabSummary && tabDetailed) {
 function buildPhaseText(s) {
   const p = s.phase;
   if (p === "ROLE_REVEAL") return (s.phaseData?.notice ? s.phaseData.notice + " " : "") + "Regarde ton rôle et valide.";
-  if (p === "CAPTAIN_CANDIDACY") return "Choisis si tu te présentes au poste de Chef de station (capitaine).";
-  if (p === "CAPTAIN_VOTE") return "Vote pour élire le capitaine. En cas d'égalité : revote.";
+  if (p === "CAPTAIN_CANDIDACY") return `Choisis si tu te présentes au poste de ${t('captain')}.`;
+  if (p === "CAPTAIN_VOTE") return `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`;
   if (p === "NIGHT_START") return "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.";
   if (p === "NIGHT_CHAMELEON") return "Caméléon : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).";
   if (p === "NIGHT_AI_AGENT") return "Agent IA : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).";
   if (p === "NIGHT_RADAR") return "Radar : inspecte un joueur et découvre son rôle.";
-  if (p === "NIGHT_SABOTEURS") return "Saboteurs : votez UNANIMEMENT une cible.";
+  if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
   if (p === "NIGHT_DOCTOR") return "Docteur : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.";
 
   if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Annonce des effets de la nuit, puis passage au jour.";
-  if (p === "DAY_WAKE") return "Réveil de la station. Validez pour passer à la suite.";
+  if (p === "DAY_WAKE") return `Réveil de la ${t('station')}. Validez pour passer à la suite.`;
   if (p === "DAY_CAPTAIN_TRANSFER") return "Le capitaine est mort : il transmet le capitaine à un joueur vivant.";
   if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
   if (p === "DAY_TIEBREAK") return "Égalité : le capitaine choisit l'éjecté.";
@@ -1132,6 +1137,7 @@ class AudioManager {
     } catch (err) {
       if (err && err.name === "NotAllowedError") {
         this.pendingCue = cueForPending;
+        this.showUnlockOverlay();
         return false;
       }
       if (fallbackTtsText) this.tts(fallbackTtsText);
@@ -1158,11 +1164,22 @@ class AudioManager {
   toggleMuted() { this.setMuted(!this.muted); }
   unlock() {
     this.userUnlocked = true;
+    // Cacher l'overlay audio si visible
+    const overlay = document.getElementById('audioUnlockOverlay');
+    if (overlay) overlay.style.display = 'none';
+    
     if (!this.muted && this.pendingCue) {
       const cue = this.pendingCue;
       this.pendingCue = null;
       // do NOT clear queuedCue here; it is used to avoid cutting the lobby intro.
       this.play(cue, true);
+    }
+  }
+  showUnlockOverlay() {
+    if (this.userUnlocked) return;
+    const overlay = document.getElementById('audioUnlockOverlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
     }
   }
   stopAll() {
@@ -1271,6 +1288,14 @@ const audioManager = new AudioManager();
 const soundBtn = $("soundBtn");
 if (soundBtn) soundBtn.onclick = () => audioManager.toggleMuted();
 
+// Audio unlock overlay button
+const audioUnlockBtn = $("audioUnlockBtn");
+if (audioUnlockBtn) {
+  audioUnlockBtn.onclick = () => {
+    audioManager.unlock();
+  };
+}
+
 // Home screen: start the lobby intro as soon as the user begins typing their name.
 // This also serves as a user-gesture "unlock" for autoplay restrictions.
 (() => {
@@ -1310,11 +1335,11 @@ function buildRulesHtml(cfg) {
       <h3 style="margin:10px 0;">Rôles</h3>
       <ul>${roleLines.join("")}</ul>
 
-      <h3 style="margin:10px 0;">Chef de station (capitaine)</h3>
+      <h3 style="margin:10px 0;">${t('captain')}</h3>
       <ul>
-        <li><b>Élection obligatoire</b> au début de la mission.</li>
-        <li>En cas d'égalité au vote du jour, le capitaine <b>tranche</b> (sa voix compte double pour départager).</li>
-        <li>Dès que le capitaine est éjecté, il <b>transmet</b> le rôle de capitaine à un survivant <b>sans connaître son rôle</b>.</li>
+        <li><b>Élection obligatoire</b> au début de la ${t('mission')}.</li>
+        <li>En cas d'égalité au vote du jour, le ${t('captain').toLowerCase()} <b>tranche</b> (sa voix compte double pour départager).</li>
+        <li>Dès que le ${t('captain').toLowerCase()} est éjecté, il <b>transmet</b> le rôle à un survivant <b>sans connaître son rôle</b>.</li>
       </ul>
 
       <h3 style="margin:10px 0;">Ordre de nuit</h3>
@@ -1322,24 +1347,24 @@ function buildRulesHtml(cfg) {
         <li>Caméléon (Nuit 1)</li>
         <li>Agent IA (Nuit 1)</li>
         <li>Officier radar</li>
-        <li>Saboteurs (unanimité)</li>
+        <li>${t('saboteurs')} (unanimité)</li>
         <li>Docteur bio</li>
         <li>Résolution + vengeance + liaison</li>
       </ol>
 
       <h3 style="margin:10px 0;">Victoire</h3>
       <ul>
-        <li><b>Astronautes</b> : tous les saboteurs sont éjectés.</li>
-        <li><b>Saboteurs</b> : supériorité numérique (parité ou plus).</li>
+        <li><b>${t('astronauts')}</b> : tous les ${t('saboteurs').toLowerCase()} sont éjectés.</li>
+        <li><b>${t('saboteurs')}</b> : supériorité numérique (parité ou plus).</li>
         <li><b>Association de malfaiteurs</b> : s’il ne reste que 2 joueurs vivants, liés ensemble, et de camps différents, ils gagnent ensemble.</li>
       </ul>
 
-      <h3 style="margin:10px 0;">Nombre de saboteurs</h3>
-      <div>Le nombre de saboteurs est automatique :</div>
+      <h3 style="margin:10px 0;">Nombre de ${t('saboteurs').toLowerCase()}</h3>
+      <div>Le nombre de ${t('saboteurs').toLowerCase()} est automatique :</div>
       <ul>
-        <li>0–6 joueurs : <b>1</b> saboteur</li>
-        <li>7–11 joueurs : <b>2</b> saboteurs</li>
-        <li>12+ joueurs : <b>3</b> saboteurs</li>
+        <li>0–6 joueurs : <b>1</b> ${t('saboteurs').toLowerCase()}</li>
+        <li>7–11 joueurs : <b>2</b> ${t('saboteurs').toLowerCase()}</li>
+        <li>12+ joueurs : <b>3</b> ${t('saboteurs').toLowerCase()}</li>
       </ul>
     </div>
   `;
@@ -1481,6 +1506,24 @@ function getThemeAudioPath(filename) {
   return `/sounds/${themeId}/${filename}`;
 }
 
+// Fonction de traduction des termes selon le thème actif
+function t(key) {
+  if (!currentTheme || !currentTheme.terms) {
+    // Fallback: termes par défaut
+    const defaults = {
+      captain: "Chef de station",
+      station: "station",
+      crew: "équipage",
+      mission: "mission",
+      title: "Infiltration Spatiale",
+      saboteurs: "Saboteurs",
+      astronauts: "Astronautes"
+    };
+    return defaults[key] || key;
+  }
+  return currentTheme.terms[key] || key;
+}
+
 // Charger la liste des thèmes disponibles
 fetch("/api/themes")
   .then(r => r.json())
@@ -1491,12 +1534,22 @@ fetch("/api/themes")
       const defaultTheme = availableThemes.find(t => t.id === "default");
       if (defaultTheme) {
         currentTheme = defaultTheme;
+        applyThemeTranslations();
       }
     }
   })
   .catch(e => console.error("[themes] failed to load", e));
 
 // Détecte et applique automatiquement le changement de thème
+/**
+ * Applique les styles CSS du thème actif (polices, couleurs, effets)
+ */
+function applyThemeStyles(themeId) {
+  // Définir l'attribut data-theme sur l'élément racine
+  document.documentElement.setAttribute('data-theme', themeId);
+  console.log("[theme-styles] Applied visual theme:", themeId);
+}
+
 function checkAndApplyTheme() {
   const themeId = state?.themeId || "default";
   
@@ -1506,8 +1559,32 @@ function checkAndApplyTheme() {
     if (newTheme) {
       currentTheme = newTheme;
       console.log("[theme] Applied theme:", themeId);
+      
+      // Appliquer les styles visuels du thème
+      applyThemeStyles(themeId);
+      
+      // Appliquer les traductions
+      applyThemeTranslations();
     }
   }
+}
+
+// Applique les traductions du thème actif sur les éléments visibles
+function applyThemeTranslations() {
+  // Titre principal
+  const h1 = document.querySelector('h1');
+  if (h1 && !state?.roomCode) {
+    h1.textContent = t('title').toUpperCase();
+  }
+  
+  // Titres des écrans
+  const createTitle = document.getElementById('createMissionTitle');
+  if (createTitle) createTitle.textContent = `CRÉER UNE ${t('mission').toUpperCase()}`;
+  
+  const joinTitle = document.getElementById('joinMissionTitle');
+  if (joinTitle) joinTitle.textContent = `REJOINDRE UNE ${t('mission').toUpperCase()}`;
+  
+  // Note: Les autres traductions sont appliquées dynamiquement dans les fonctions de render
 }
 
 function renderThemeSelector(isHost) {

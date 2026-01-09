@@ -4,7 +4,18 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>⚡ INFILTRATION SPATIALE ⚡</title>
+  <!-- Polices pour thème Default (Spatial) -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Polices pour thème Werewolf (Village) -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Polices pour thème Wizard Academy (Académie) -->
+  <link href="https://fonts.googleapis.com/css2?family=Philosopher:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Polices pour thème Mythic Realms (Royaume) -->
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Uncial+Antiqua:wght@700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+  
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -22,6 +33,33 @@
   </div>
 
   <div class="container">
+    <!-- Audio Unlock Overlay -->
+    <div id="audioUnlockOverlay" style="
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 99999;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 20px;
+    ">
+      <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🔊</div>
+      <div style="font-size: 1.5rem; color: var(--neon-cyan); font-weight: 800; text-align: center;">
+        CLIQUEZ POUR ACTIVER LE SON
+      </div>
+      <button id="audioUnlockBtn" class="btn btn-primary" style="
+        padding: 20px 40px;
+        font-size: 1.3rem;
+        font-weight: 900;
+        animation: glow 1.5s infinite;
+      ">🎵 ACTIVER L'AUDIO</button>
+    </div>
+    
     <div class="header">
       <div class="logo"></div>
       <h1>INFILTRATION SPATIALE</h1>
@@ -47,7 +85,7 @@
     <!-- CREATE -->
     <div id="createScreen" class="screen">
       <div class="control-panel">
-        <h2 class="panel-title">CRÉER UNE MISSION</h2>
+        <h2 class="panel-title" id="createMissionTitle">CRÉER UNE MISSION</h2>
         <div class="btn-group">
           <button class="btn btn-primary" id="createRoomBtn">Générer Code Mission</button>
           <button class="btn btn-secondary" id="backFromCreate">Retour</button>
@@ -58,7 +96,7 @@
     <!-- JOIN -->
     <div id="joinScreen" class="screen">
       <div class="control-panel">
-        <h2 class="panel-title">REJOINDRE UNE MISSION</h2>
+        <h2 class="panel-title" id="joinMissionTitle">REJOINDRE UNE MISSION</h2>
         <div class="form-group">
           <label for="joinRoomCode">Numéro de salle</label>
           <input type="text" id="joinRoomCode" placeholder="0000" maxlength="4">
