@@ -1,0 +1,141 @@
+{
+  "id": "werewolf",
+  "name": "Loups-Garous de Thiercelieux",
+  "homeTitle": "LES LOUPS-GAROUS",
+  "description": "Le village contre les loups-garous - adaptation classique",
+  
+  "roles": {
+    "saboteur": {
+      "name": "Loup-Garou",
+      "namePlural": "Loups-Garous",
+      "description": "Créatures qui dévorent les villageois la nuit. Ils agissent ensemble."
+    },
+    "astronaut": {
+      "name": "Villageois",
+      "namePlural": "Villageois",
+      "description": "Habitants innocents qui doivent identifier et éliminer les loups-garous."
+    },
+    "radar": {
+      "name": "Voyante",
+      "description": "Chaque nuit, peut consulter les cartes pour savoir si un joueur est loup ou non."
+    },
+    "doctor": {
+      "name": "Sorcière",
+      "description": "Possède une potion de vie et une potion de mort (usage unique)."
+    },
+    "security": {
+      "name": "Chasseur",
+      "description": "Si dévoré par les loups, peut tirer sur un joueur de son choix."
+    },
+    "ai_agent": {
+      "name": "Cupidon",
+      "description": "La première nuit, lie deux joueurs amoureux. Si l'un meurt, l'autre aussi."
+    },
+    "engineer": {
+      "name": "Petit Garçon",
+      "description": "Simple villageois qui observe discrètement."
+    },
+    "chameleon": {
+      "name": "Loup Métamorphe",
+      "description": "Une fois dans la partie, peut échanger son rôle avec un autre joueur."
+    }
+  },
+  
+  "phases": {
+    "LOBBY": "Le village se prépare",
+    "ROLE_REVEAL": "Découvrez votre rôle",
+    "CAPTAIN_CANDIDACY": "Candidatures pour être le maire",
+    "CAPTAIN_VOTE": "Élection du maire",
+    "NIGHT_START": "Le village s'endort",
+    "NIGHT_CHAMELEON": "Loup métamorphe, réveille-toi",
+    "NIGHT_AI_AGENT": "Cupidon, réveille-toi",
+    "NIGHT_RADAR": "Voyante, réveille-toi",
+    "NIGHT_SABOTEURS": "Loups-garous, choisissez votre proie",
+    "NIGHT_DOCTOR": "Sorcière, choisissez votre action",
+    "NIGHT_RESULTS": "Résultats de la nuit",
+    "DAY_WAKE": "Le village se réveille",
+    "DAY_CAPTAIN_TRANSFER": "Passation du titre de maire",
+    "DAY_VOTE": "Vote pour éliminer un suspect",
+    "DAY_TIEBREAK": "Égalité - Le maire tranche",
+    "DAY_RESULTS": "Résultats du vote",
+    "REVENGE": "Chasseur - Dernier souffle",
+    "GAME_OVER": "Fin de partie",
+    "GAME_ABORTED": "Partie interrompue"
+  },
+
+  "phaseTitles": {
+    "LOBBY": "LE VILLAGE",
+    "ROLE_REVEAL": "DÉCOUVERTE DU RÔLE",
+    "CAPTAIN_CANDIDACY": "CANDIDATURES MAIRE",
+    "CAPTAIN_VOTE": "ÉLECTION DU MAIRE",
+    "NIGHT_START": "NUIT {night} — LE VILLAGE DORT",
+    "NIGHT_CHAMELEON": "NUIT — LOUP MÉTAMORPHE",
+    "NIGHT_AI_AGENT": "NUIT — CUPIDON (LIAISON)",
+    "NIGHT_RADAR": "NUIT — VOYANTE",
+    "NIGHT_SABOTEURS": "NUIT — LOUPS-GAROUS (UNANIMITÉ)",
+    "NIGHT_DOCTOR": "NUIT — SORCIÈRE",
+    "NIGHT_RESULTS": "RÉSULTATS NUIT {night}",
+    "DAY_WAKE": "JOUR {day} — LE VILLAGE S'ÉVEILLE",
+    "DAY_CAPTAIN_TRANSFER": "JOUR {day} — PASSATION DU MAIRE",
+    "DAY_VOTE": "JOUR {day} — VOTE D'ÉLIMINATION",
+    "DAY_TIEBREAK": "JOUR {day} — DÉPARTAGE (MAIRE)",
+    "DAY_RESULTS": "JOUR {day} — RÉSULTATS",
+    "REVENGE": "VENGEANCE — CHASSEUR",
+    "GAME_OVER": "FIN DE PARTIE",
+    "GAME_ABORTED": "PARTIE INTERROMPUE",
+    "MANUAL_ROLE_PICK": "CHOIX MANUEL DES RÔLES"
+  },
+
+  "phaseWaitTexts": {
+    "NIGHT_CHAMELEON": "En attente du Loup Métamorphe...",
+    "NIGHT_AI_AGENT": "En attente de Cupidon...",
+    "NIGHT_RADAR": "En attente de la Voyante...",
+    "NIGHT_SABOTEURS": "En attente des Loups-Garous...",
+    "NIGHT_DOCTOR": "En attente de la Sorcière...",
+    "DAY_VOTE": "En attente des votes...",
+    "DAY_TIEBREAK": "En attente du Maire...",
+    "REVENGE": "En attente du Chasseur..."
+  },
+  
+  "audio": {
+    "INTRO_LOBBY": "intro-village",
+    "STATION_SLEEP": "village-sleep",
+    "STATION_WAKE_LIGHT": "village-wake-light",
+    "STATION_WAKE_HEAVY": "village-wake-heavy",
+    "CHAMELEON_WAKE": "werewolf-metamorph-wake",
+    "CHAMELEON_SLEEP": "werewolf-metamorph-sleep",
+    "IA_WAKE": "cupid-wake",
+    "IA_SLEEP": "cupid-sleep",
+    "RADAR_WAKE": "seer-wake",
+    "RADAR_SLEEP": "seer-sleep",
+    "SABOTEURS_WAKE": "werewolves-wake",
+    "SABOTEURS_SLEEP": "werewolves-sleep",
+    "DOCTOR_WAKE": "witch-wake",
+    "DOCTOR_SLEEP": "witch-sleep",
+    "ELECTION_CHIEF": "mayor-election",
+    "VOTE_ANNONCE": "vote-announce",
+    "SECURITY_REVENGE": "hunter-revenge",
+    "WAITING_LOOP": "waiting-loop",
+    "CHECK_ROLE": "check-role",
+    "END_VICTORY": "end-victory",
+    "END_STATS_OUTRO": "end-stats",
+    "END_SCREEN_SONG": "end-song",
+    "OUTRO": "outro",
+    "GENERIC_MAIN": "generic"
+  },
+  
+  "images": {
+    "logo": "logo-werewolf.png",
+    "background": "bg-village.jpg"
+  },
+  
+  "cssVars": {
+    "primary-bg": "#1a1a1a",
+    "secondary-bg": "#2d2d2d",
+    "accent-color": "#ff4444",
+    "neon-red": "#cc0000",
+    "neon-green": "#44ff44",
+    "text-primary": "#f5f5f5",
+    "text-secondary": "#cccccc"
+  }
+}

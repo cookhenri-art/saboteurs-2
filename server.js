@@ -3,9 +3,11 @@ const fs = require("fs");
 const http = require("http");
 const express = require("express");
 const { Server } = require("socket.io");
+const logger = require("./logger");
+const RateLimiter = require("./rate-limiter");
 
 const PORT = process.env.PORT || 3000;
-const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v25";
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v26-2026-01-09";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -62,7 +64,13 @@ function ensurePlayerStats(name) {
       winsByRole: {}, gamesByRole: {},
       doctorSaves: 0, doctorKills: 0,
       radarInspects: 0, radarCorrect: 0,
-      chameleonSwaps: 0, securityRevengeShots: 0
+      chameleonSwaps: 0, securityRevengeShots: 0,
+      // Nouvelles stats avancées (Phase 2)
+      ejectedBySaboteurs: 0,  // Tué la nuit par saboteurs
+      ejectedByVote: 0,        // Éjecté par vote du jour
+      captainElected: 0,       // Nombre de fois élu capitaine
+      aiAgentLinks: 0,         // Nombre de liens créés
+      matchHistory: []         // Historique des dernières 20 parties
     };
   }
   return statsDb[name];
@@ -294,6 +302,7 @@ function newRoom(code, hostPlayerId) {
     code,
     hostPlayerId,
     config: defaultConfig(),
+    themeId: "default",  // Thème sélectionné par l'hôte
 
     started: false,
     ended: false,
@@ -303,6 +312,7 @@ function newRoom(code, hostPlayerId) {
     prevPhase: null,
     phaseData: {},
     phaseAck: new Set(),
+    phaseStartTime: Date.now(),  // Pour tracking durée phase (mode hôte)
 
     day: 0,
     night: 0,
@@ -310,6 +320,7 @@ function newRoom(code, hostPlayerId) {
     captainElected: false,
 
     players: new Map(),     // playerId -> player
+    playerTokens: new Map(), // playerToken -> playerId (pour reconnexion robuste)
     timers: new Map(),      // playerId -> {notifyTimer, removeTimer}
     matchLog: [],
 
@@ -454,9 +465,16 @@ function setPhase(room, phase, data = {}) {
   room.phase = phase;
   room.phaseData = data;
   room.phaseAck = new Set();
+  room.phaseStartTime = Date.now(); // Tracker le début de phase
   room.audio = computeAudioCue(room, prev);
   if (prev === "ROLE_REVEAL" && room.afterChameleonReveal) room.afterChameleonReveal = false;
+  
   logEvent(room, "phase", { phase });
+  
+  // Log structuré
+  const alive = alivePlayers(room).length;
+  logger.phaseStart(room.code, phase, room.day, room.night, alive);
+  
   try {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night}`);
   } catch {}
@@ -880,11 +898,27 @@ function endGame(room, winner) {
     if (win) st.winsByRole[role] = (st.winsByRole[role] || 0) + 1;
   }
   saveStats(statsDb);
+  
+  // V26: Vérifier et attribuer les badges
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const st = ensurePlayerStats(p.name);
+    const newBadges = badges.checkAndAwardBadges(p.name, st, st.matchHistory || []);
+    
+    // Envoyer les nouveaux badges au joueur
+    if (newBadges.length > 0 && p.connected && p.socketId) {
+      const sock = io.sockets.sockets.get(p.socketId);
+      if (sock) {
+        sock.emit("newBadges", { badges: newBadges });
+      }
+    }
+  }
 
   const report = buildEndReport(room, winner);
   room.endReport = report;
   setPhase(room, "GAME_OVER", { winner, report });
   logEvent(room, "game_over", { winner });
+  logger.endGame(room.code, winner, Date.now() - room.startTime, room.players.size);
   console.log(`[${room.code}] game_over winner=${winner}`);
 }
 
@@ -965,6 +999,7 @@ function startGame(room) {
   room.day = 0;
   room.night = 0;
   room.captainElected = false;
+  room.startTime = Date.now();  // V26: Pour calcul durée partie
 
   // clear captain
   for (const p of room.players.values()) p.isCaptain = false;
@@ -1336,8 +1371,14 @@ function publicRoomStateFor(room, viewerId) {
     day: room.day,
     night: room.night,
     config: room.config,
+    themeId: room.themeId || "default",  // V26: Thème sélectionné
+    phaseStartTime: room.phaseStartTime || Date.now(),  // V26: Pour timer hôte
     audio: room.audio,
-    ack: { done: room.phaseAck.size, total: required.length },
+    ack: { 
+      done: room.phaseAck.size, 
+      total: required.length,
+      pending: required.filter(pid => !room.phaseAck.has(pid))  // V26: Liste des AFK
+    },
     teams,
     players,
     you,
@@ -1350,6 +1391,18 @@ function publicRoomStateFor(room, viewerId) {
 const app = express();
 app.use(express.static(path.join(__dirname, "public")));
 
+// Initialiser les systèmes
+const rateLimiter = new RateLimiter();
+const BadgeSystem = require("./badge-system");
+const badges = new BadgeSystem(DATA_DIR);
+const ThemeManager = require("./theme-manager");
+const themeManager = new ThemeManager(path.join(__dirname, "themes"));
+
+// Garbage collection périodique du rate limiter
+setInterval(() => rateLimiter.gc(), 60000); // Toutes les minutes
+
+logger.info("server_start", { port: PORT, build: BUILD_ID });
+
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 app.get("/api/build", (req, res) => {
@@ -1358,6 +1411,13 @@ app.get("/api/build", (req, res) => {
     buildId: BUILD_ID,
     node: process.version,
     manifest: "/sounds/audio-manifest.json"
+  });
+});
+
+app.get("/api/themes", (req, res) => {
+  res.json({
+    ok: true,
+    themes: themeManager.getAllThemes()
   });
 });
 
@@ -1413,8 +1473,10 @@ function isNameTaken(room, name, exceptPlayerId = null) {
   return false;
 }
 
-function joinRoomCommon(socket, room, playerId, name) {
+function joinRoomCommon(socket, room, playerId, name, playerToken = null) {
   let p = getPlayer(room, playerId);
+  const now = Date.now();
+  
   if (!p) {
     p = {
       playerId,
@@ -1426,13 +1488,38 @@ function joinRoomCommon(socket, room, playerId, name) {
       role: null,
       isCaptain: false,
       linkedTo: null,
-      linkedName: null
+      linkedName: null,
+      playerToken,           // Token pour reconnexion
+      lastSeenAt: now,       // Dernière activité
+      joinedAt: now          // Date de première connexion
     };
     room.players.set(playerId, p);
+    
+    // Associer token -> playerId si fourni
+    if (playerToken) {
+      room.playerTokens.set(playerToken, playerId);
+    }
+    
+    logger.join(room.code, playerId, p.name, socket.id);
   } else {
+    // Reconnexion
+    const oldSocketId = p.socketId;
     if (name != null) p.name = String(name).trim() || p.name;
     p.socketId = socket.id;
     p.connected = true;
+    p.lastSeenAt = now;
+    
+    // Mettre à jour le token si fourni
+    if (playerToken && playerToken !== p.playerToken) {
+      // Supprimer l'ancien mapping
+      if (p.playerToken) {
+        room.playerTokens.delete(p.playerToken);
+      }
+      p.playerToken = playerToken;
+      room.playerTokens.set(playerToken, playerId);
+    }
+    
+    logger.reconnect(room.code, playerId, p.name, oldSocketId, socket.id);
   }
 
   socket.data.playerId = playerId;
@@ -1564,40 +1651,92 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken }, cb) => {
+    // Rate limiting
+    if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
+      return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
+    }
+    
     try {
       const code = genRoomCode(rooms);
       const room = newRoom(code, playerId);
       rooms.set(code, room);
-      console.log(`[${code}] room_created host=${name} (${playerId})`);
-      joinRoomCommon(socket, room, playerId, name);
+      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name });
+      joinRoomCommon(socket, room, playerId, name, playerToken);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
-      console.error(e);
+      logger.error("createRoom_failed", { error: e.message, playerId });
       cb && cb({ ok: false, error: "createRoom failed" });
     }
   });
 
-  socket.on("joinRoom", ({ playerId, name, roomCode }, cb) => {
+  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken }, cb) => {
+    // Rate limiting
+    if (!rateLimiter.check(socket.id, "joinRoom", playerId)) {
+      return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
+    }
+    
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
-    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (!room) {
+      logger.reject(code, "room_not_found", { playerId });
+      return cb && cb({ ok: false, error: "Room introuvable" });
+    }
+    
+    // Vérifier si le token correspond à un joueur existant dans cette room
+    if (playerToken && room.playerTokens.has(playerToken)) {
+      const existingPlayerId = room.playerTokens.get(playerToken);
+      const existingPlayer = getPlayer(room, existingPlayerId);
+      
+      // Si c'est le même joueur (reconnexion) -> OK
+      if (existingPlayerId === playerId) {
+        joinRoomCommon(socket, room, playerId, name, playerToken);
+        cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
+        return;
+      }
+      
+      // Si un autre joueur avec ce token -> possible conflit, vérifier le nom
+      if (existingPlayer && existingPlayer.status !== "left") {
+        logger.reject(code, "token_conflict", { playerId, existingPlayerId, playerToken });
+        return cb && cb({ ok: false, error: "Session déjà active avec ce token." });
+      }
+    }
+    
+    // Vérifier si le nom est pris par un autre joueur
     if (isNameTaken(room, name, playerId)) {
+      logger.reject(code, "name_taken", { playerId, name });
       return cb && cb({ ok: false, error: "Ce nom est déjà utilisé dans cette mission." });
     }
-    console.log(`[${code}] room_join name=${name} (${playerId})`);
-    joinRoomCommon(socket, room, playerId, name);
+    
+    joinRoomCommon(socket, room, playerId, name, playerToken);
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
 
-  socket.on("reconnectRoom", ({ playerId, name, roomCode }, cb) => {
+  socket.on("reconnectRoom", ({ playerId, name, roomCode, playerToken }, cb) => {
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
     if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
     const p = getPlayer(room, playerId);
     if (!p) return cb && cb({ ok: false, error: "Joueur introuvable dans la room" });
-    joinRoomCommon(socket, room, playerId, name || p.name);
+    joinRoomCommon(socket, room, playerId, name || p.name, playerToken);
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
+  });
+  
+  // Heartbeat pour maintenir la session vivante
+  socket.on("heartbeat", ({ playerId, roomCode }, cb) => {
+    if (!rateLimiter.check(socket.id, "heartbeat", playerId)) {
+      return cb && cb({ ok: false });
+    }
+    
+    const room = rooms.get(roomCode);
+    if (room) {
+      const p = getPlayer(room, playerId);
+      if (p) {
+        p.lastSeenAt = Date.now();
+        logger.heartbeat(playerId, roomCode, p.lastSeenAt);
+      }
+    }
+    cb && cb({ ok: true });
   });
 
   socket.on("setReady", ({ ready }, cb) => {
@@ -1629,6 +1768,60 @@ io.on("connection", (socket) => {
     emitRoom(room);
     cb && cb({ ok:true });
   });
+  
+  // Sélection de thème (Phase 3 - uniquement l'hôte avant le start)
+  socket.on("setTheme", ({ themeId }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut choisir le thème" });
+    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
+    
+    const theme = themeManager.getTheme(themeId);
+    if (!theme) return cb && cb({ ok: false, error: "Thème introuvable" });
+    
+    room.themeId = themeId;
+    logger.info("theme_selected", { roomCode: room.code, themeId, hostId: socket.data.playerId });
+    emitRoom(room);
+    cb && cb({ ok: true, themeId });
+  });
+  
+  // Force advance (Phase 1 - S4 Mode hôte amélioré)
+  socket.on("forceAdvance", (_, cb) => {
+    if (!rateLimiter.check(socket.data.playerId, "forceAdvance", socket.data.playerId)) {
+      return cb && cb({ ok: false, error: "Trop de tentatives" });
+    }
+    
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut forcer" });
+    if (!room.started || room.ended) return cb && cb({ ok: false, error: "Partie non active" });
+    
+    // Vérifier qu'un délai minimum est écoulé (20s)
+    const phaseElapsed = Date.now() - room.phaseStartTime;
+    if (phaseElapsed < 20000) {
+      return cb && cb({ ok: false, error: "Attendez au moins 20 secondes" });
+    }
+    
+    // Identifier les joueurs en attente
+    const required = requiredPlayersForPhase(room);
+    const pending = required.filter(pid => !room.phaseAck.has(pid));
+    
+    // Logger l'événement
+    logger.forceAdvance(room.code, room.phase, socket.data.playerId, pending);
+    
+    // Auto-ack les joueurs manquants
+    for (const pid of pending) {
+      room.phaseAck.add(pid);
+    }
+    
+    // Vérifier si c'est maintenant complété
+    if (room.phaseAck.size >= required.length) {
+      handlePhaseCompletion(room);
+    }
+    
+    emitRoom(room);
+    cb && cb({ ok: true });
+  });
 
   socket.on("startGame", (_, cb) => {
     const room = rooms.get(socket.data.roomCode);
@@ -1643,13 +1836,25 @@ io.on("connection", (socket) => {
   });
 
   socket.on("phaseAck", (_, cb) => {
+    if (!rateLimiter.check(socket.id, "ack", socket.data.playerId)) {
+      return cb && cb({ ok: false, error: "Trop rapide" });
+    }
+    
     const room = rooms.get(socket.data.roomCode);
     if (!room) return;
     const playerId = socket.data.playerId;
     const p = getPlayer(room, playerId);
     if (!p || p.status !== "alive") return;
+    
+    // Mettre à jour lastSeenAt
+    p.lastSeenAt = Date.now();
 
     const done = ack(room, playerId);
+    
+    // Log avec progression
+    const required = requiredPlayersForPhase(room);
+    logger.phaseAck(room.code, room.phase, playerId, `${room.phaseAck.size}/${required.length}`);
+    
     emitRoom(room);
     if (done) {
       handlePhaseCompletion(room);

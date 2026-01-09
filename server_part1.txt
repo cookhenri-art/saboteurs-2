@@ -1,0 +1,200 @@
+const path = require("path");
+const fs = require("fs");
+const http = require("http");
+const express = require("express");
+const { Server } = require("socket.io");
+
+const PORT = process.env.PORT || 3000;
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v25";
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
+const STATS_FILE = path.join(DATA_DIR, "stats.json");
+fs.mkdirSync(DATA_DIR, { recursive: true });
+
+// ----------------- helpers -----------------
+const nowMs = () => Date.now();
+function normalize(str) {
+  return String(str || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = randInt(0, i);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function uniq(arr) { return Array.from(new Set(arr)); }
+function countSaboteursFor(n) { return n <= 6 ? 1 : (n <= 11 ? 2 : 3); }
+function genRoomCode(existing) {
+  for (let i = 0; i < 2000; i++) {
+    const code = String(randInt(0, 9999)).padStart(4, "0");
+    if (!existing.has(code)) return code;
+  }
+  return String(randInt(0, 999999)).padStart(6, "0");
+}
+
+// ----------------- stats persistence -----------------
+function loadStats() {
+  try {
+    if (!fs.existsSync(STATS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(STATS_FILE, "utf-8")) || {};
+  } catch {
+    return {};
+  }
+}
+function saveStats(db) {
+  try {
+    fs.writeFileSync(STATS_FILE, JSON.stringify(db, null, 2), "utf-8");
+  } catch (e) {
+    console.error("[stats] save error", e);
+  }
+}
+const statsDb = loadStats();
+function ensurePlayerStats(name) {
+  if (!statsDb[name]) {
+    statsDb[name] = {
+      gamesPlayed: 0, wins: 0, losses: 0,
+      winsByRole: {}, gamesByRole: {},
+      doctorSaves: 0, doctorKills: 0,
+      radarInspects: 0, radarCorrect: 0,
+      chameleonSwaps: 0, securityRevengeShots: 0
+    };
+  }
+  return statsDb[name];
+}
+
+// ----------------- assets auto-map (audio) -----------------
+// Manifest-first: public/sounds/audio-manifest.json (key -> filename)
+// Fallback: scan public/sounds and keyword-match filenames/keys.
+const SOUNDS_DIR = path.join(__dirname, "public", "sounds");
+const AUDIO_MANIFEST_PATH = path.join(SOUNDS_DIR, "audio-manifest.json");
+
+function safeReadJSON(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch (e) {
+    console.warn("[audio] manifest read/parse failed:", e.message);
+    return null;
+  }
+}
+
+function listSoundFilesFromDir() {
+  if (!fs.existsSync(SOUNDS_DIR)) return [];
+  return fs.readdirSync(SOUNDS_DIR).filter((f) => {
+    const lf = String(f).toLowerCase();
+    if (lf.startsWith(".")) return false;
+    if (lf === "readme.md") return false;
+    if (lf === "audio-manifest.json") return false;
+    return lf.endsWith(".mp3") || lf.endsWith(".wav") || lf.endsWith(".ogg");
+  });
+}
+
+function tokenizeForSearch(s) {
+  const norm = normalize(s).replace(/\s+/g, " ").trim();
+  return norm ? norm.split(" ") : [];
+}
+
+// soundIndex: key -> "/sounds/<file>"
+let soundIndex = Object.create(null);
+// keywordIndex: [{ url, tokens:Set<string> }]
+let soundKeywordsIndex = [];
+let audioManifestLoaded = false;
+
+function buildIndexFromManifest(manifestObj) {
+  const idx = Object.create(null);
+  const kw = [];
+  for (const [k, file] of Object.entries(manifestObj || {})) {
+    if (!k || !file) continue;
+    const key = String(k).trim();
+    const filename = String(file).trim();
+    const url = "/sounds/" + filename;
+    idx[key] = url;
+
+    const base = filename.replace(/\.[^.]+$/, "");
+    const toks = new Set([...tokenizeForSearch(key), ...tokenizeForSearch(base)]);
+    kw.push({ url, tokens: toks });
+  }
+  return { idx, kw };
+}
+
+function buildIndexFromScan(files) {
+  const idx = Object.create(null);
+  const kw = [];
+  for (const f of files) {
+    const base = String(f).replace(/\.[^.]+$/, "");
+    // best-effort key from filename: "RADAR_OFFICER_WAKE.mp3" => "RADAR_OFFICER_WAKE"
+    const key = base.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+    const url = "/sounds/" + f;
+    idx[key] = url;
+
+    const toks = new Set(tokenizeForSearch(base));
+    kw.push({ url, tokens: toks });
+  }
+  return { idx, kw };
+}
+
+function initAudioIndex() {
+  const manifest = safeReadJSON(AUDIO_MANIFEST_PATH);
+  if (manifest && typeof manifest === "object") {
+    const built = buildIndexFromManifest(manifest);
+    soundIndex = built.idx;
+    soundKeywordsIndex = built.kw;
+    audioManifestLoaded = true;
+    console.log(`[audio] manifest loaded: ${Object.keys(soundIndex).length} keys`);
+    return;
+  }
+  const files = listSoundFilesFromDir();
+  const built = buildIndexFromScan(files);
+  soundIndex = built.idx;
+  soundKeywordsIndex = built.kw;
+  audioManifestLoaded = false;
+  console.log(`[audio] manifest missing -> scanned: ${Object.keys(soundIndex).length} sounds`);
+}
+
+function findSoundByKey(key) {
+  if (!key) return null;
+  return soundIndex[String(key).trim()] || null;
+}
+
+function findSoundByKeywords(keywords) {
+  const wants = (keywords || []).flatMap((k) => tokenizeForSearch(k));
+  if (!wants.length) return null;
+
+  let bestUrl = null;
+  let bestScore = 0;
+
+  for (const entry of soundKeywordsIndex) {
+    let score = 0;
+    for (const w of wants) if (entry.tokens.has(w)) score++;
+    if (score > bestScore) {
+      bestScore = score;
+      bestUrl = entry.url;
+    }
+  }
+  return bestScore > 0 ? bestUrl : null;
+}
+
+function getSoundUrl(key, keywordsFallback = []) {
+  const direct = findSoundByKey(key);
+  if (direct) return direct;
+  return findSoundByKeywords([key, ...(keywordsFallback || [])]);
+}
+
+// Role wake/sleep keys
+function roleAudioKey(roleKey, mode /* "WAKE" | "SLEEP" */) {
+  const r = String(roleKey || "").toUpperCase();
+  const m = String(mode || "").toUpperCase();
+  if (!r || !m) return null;
+  const alias = {
+    CHAMELEON: "CHAMELEON",
+    RADAR: "RADAR",
+    DOCTOR: "DOCTOR",
+    SABOTEUR: "SABOTEURS",
+    SABOTEURS: "SABOTEURS",
+    SECURITY: "SECURITY",
