@@ -271,16 +271,16 @@ const AUDIO = {
 // ----------------- roles -----------------
 
 const ROLES = {
-  astronaut: { label: "Astronaute", icon: "/images/roles/astronaute.png", team: "astronauts" },
-  saboteur: { label: "Saboteur", icon: "/images/roles/saboteur.png", team: "saboteurs" },
-  doctor: { label: "Docteur bio", icon: "/images/roles/docteur.png", team: "astronauts" },
-  security: { label: "Chef de sécurité", icon: "/images/roles/chef-securite.png", team: "astronauts" },
-  ai_agent: { label: "Agent IA", icon: "/images/roles/liaison-ia.png", team: "astronauts" },
-  radar: { label: "Officier radar", icon: "/images/roles/radar.png", team: "astronauts" },
-  engineer: { label: "Ingénieur", icon: "/images/roles/ingenieur.png", team: "astronauts" },
-  chameleon: { label: "Caméléon", icon: "/images/roles/cameleon.png", team: "astronauts" }
+  astronaut: { label: "Astronaute", icon: "astronaute.png", team: "astronauts" },
+  saboteur: { label: "Saboteur", icon: "saboteur.png", team: "saboteurs" },
+  doctor: { label: "Docteur bio", icon: "docteur.png", team: "astronauts" },
+  security: { label: "Chef de sécurité", icon: "chef-securite.png", team: "astronauts" },
+  ai_agent: { label: "Agent IA", icon: "liaison-ia.png", team: "astronauts" },
+  radar: { label: "Officier radar", icon: "radar.png", team: "astronauts" },
+  engineer: { label: "Ingénieur", icon: "ingenieur.png", team: "astronauts" },
+  chameleon: { label: "Caméléon", icon: "cameleon.png", team: "astronauts" }
 };
-const CAPTAIN_ICON = "/images/roles/capitaine.png";
+const CAPTAIN_ICON = "capitaine.png";
 
 function defaultConfig() {
   return {
@@ -1695,10 +1695,23 @@ io.on("connection", (socket) => {
         return;
       }
       
-      // Si un autre joueur avec ce token -> possible conflit, vérifier le nom
+      // Si un autre joueur ACTIF avec ce token -> c'est probablement une reconnexion
+      // On va réutiliser l'ancien playerId au lieu de bloquer
       if (existingPlayer && existingPlayer.status !== "left") {
-        logger.reject(code, "token_conflict", { playerId, existingPlayerId, playerToken });
-        return cb && cb({ ok: false, error: "Session déjà active avec ce token." });
+        // Vérifier si le joueur est vraiment actif (dernière activité < 2 min)
+        const isRecentlyActive = existingPlayer.lastSeenAt && (Date.now() - existingPlayer.lastSeenAt) < 120000;
+        
+        if (isRecentlyActive) {
+          // Joueur vraiment actif -> bloquer pour éviter les conflits
+          logger.reject(code, "token_conflict", { playerId, existingPlayerId, playerToken });
+          return cb && cb({ ok: false, error: "Session déjà active. Si c'est vous, fermez l'autre onglet et réessayez." });
+        } else {
+          // Joueur inactif -> on considère que c'est une reconnexion, on réutilise son ancien ID
+          logger.info(`[joinRoom] Token reconnection: ${playerId} -> ${existingPlayerId}`);
+          joinRoomCommon(socket, room, existingPlayerId, name, playerToken);
+          cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === existingPlayerId, reconnectedAs: existingPlayerId });
+          return;
+        }
       }
     }
     
