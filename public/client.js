@@ -83,8 +83,15 @@ function attemptAutoReconnect() {
     if (!res?.ok) {
       // Session invalid (room deleted, player not found, etc.)
       autoReconnectAttempted = false;
-      try { $("joinRoomCode").value = roomCode; } catch {}
-      showScreen("joinScreen");
+      
+      // Nettoyer la session invalide
+      sessionStorage.removeItem(STORAGE.room);
+      
+      // Afficher un message explicatif
+      setError(`Mission ${roomCode} introuvable (expirée ou terminée). Créez une nouvelle mission ou rejoignez-en une autre.`);
+      
+      try { $("joinRoomCode").value = ""; } catch {}
+      showScreen("homeScreen");
     } else {
       startHeartbeat();
     }
