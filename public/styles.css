@@ -1169,3 +1169,57 @@ input[type="checkbox"] { transform: scale(1.2); margin-right:8px; }
   .role-card-icon.captain { width: 56px; height: 56px; }
   .role-card-title { font-size: 1.25rem; }
 }
+
+/* V26 - Animations et améliorations */
+
+@keyframes badgePop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Variables CSS pour le thème purple (badges, tutoriel) */
+:root {
+  --neon-purple: #9d4edd;
+}
+
+/* Respect de prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Accessibilité - Focus visible */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--neon-cyan);
+  outline-offset: 2px;
+}
+
+/* Mode compact automatique */
+@media (max-width: 420px) {
+  .btn {
+    padding: 10px 14px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .panel-title {
+    font-size: 1.3rem !important;
+  }
+  
+  body {
+    font-size: 0.95rem;
+  }
+}

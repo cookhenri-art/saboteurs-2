@@ -1,4 +1,4 @@
-/* Infiltration Spatiale — client (vanilla) */
+/* Infiltration Spatiale — client (vanilla) V26 */
 
 // Socket.IO: index.html ensures the client library is loaded (local first, CDN fallback).
 // If the server isn't running, we still want the UI to work and show a clear message.
@@ -15,9 +15,20 @@ const $ = (id) => document.getElementById(id);
 
 const STORAGE = {
   playerId: "is_playerId",
+  playerToken: "is_playerToken",  // Nouveau: token persistant
   name: "is_name",
   room: "is_roomCode",
 };
+
+// Générer ou récupérer le playerToken (localStorage pour persistence entre sessions)
+function getOrCreatePlayerToken() {
+  let token = localStorage.getItem(STORAGE.playerToken);
+  if (!token) {
+    token = crypto.randomUUID();
+    localStorage.setItem(STORAGE.playerToken, token);
+  }
+  return token;
+}
 
 function getOrCreatePlayerId() {
   let id = sessionStorage.getItem(STORAGE.playerId);
@@ -27,13 +38,38 @@ function getOrCreatePlayerId() {
   }
   return id;
 }
+
 const playerId = getOrCreatePlayerId();
+const playerToken = getOrCreatePlayerToken();
 
 let state = null;
 let lastAudioToken = null;
 
 let autoReconnectAttempted = false;
 let disconnectReloadTimer = null;
+let heartbeatInterval = null;
+
+// Heartbeat pour maintenir la session vivante
+function startHeartbeat() {
+  if (heartbeatInterval) return;
+  heartbeatInterval = setInterval(() => {
+    const roomCode = sessionStorage.getItem(STORAGE.room);
+    if (roomCode && isConnected) {
+      socket.emit("heartbeat", { playerId, roomCode }, (res) => {
+        if (!res?.ok) {
+          console.warn("[heartbeat] failed");
+        }
+      });
+    }
+  }, 30000); // Toutes les 30 secondes
+}
+
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
 
 function attemptAutoReconnect() {
   if (autoReconnectAttempted) return;
@@ -42,13 +78,15 @@ function attemptAutoReconnect() {
   if (!name || !roomCode) return;
   if (state?.roomCode) return;
   autoReconnectAttempted = true;
-  // Try to restore the session silently.
-  socket.emit("reconnectRoom", { playerId, name, roomCode }, (res) => {
+  // Try to restore the session silently with playerToken
+  socket.emit("reconnectRoom", { playerId, name, roomCode, playerToken }, (res) => {
     if (!res?.ok) {
       // Session invalid (room deleted, player not found, etc.)
       autoReconnectAttempted = false;
       try { $("joinRoomCode").value = roomCode; } catch {}
       showScreen("joinScreen");
+    } else {
+      startHeartbeat();
     }
   });
 }
@@ -65,6 +103,7 @@ socket.on("connect", () => {
 });
 socket.on("disconnect", () => {
   isConnected = false;
+  stopHeartbeat();
   // If the socket stays disconnected for a bit, auto-refresh to recover.
   if (disconnectReloadTimer) clearTimeout(disconnectReloadTimer);
   const hasSession = !!(sessionStorage.getItem(STORAGE.name) && sessionStorage.getItem(STORAGE.room));
@@ -133,29 +172,41 @@ function formatPhaseTitle(s) {
   const night = s.night || 0;
   const day = s.day || 0;
 
-  const map = {
-    LOBBY: "LOBBY",
-    ROLE_REVEAL: "VÉRIFICATION DU RÔLE",
-    CAPTAIN_CANDIDACY: "CANDIDATURE CAPITAINE",
-    CAPTAIN_VOTE: "VOTE CAPITAINE",
-    NIGHT_START: `NUIT ${night} — DÉBUT`,
-    NIGHT_CHAMELEON: "NUIT — CAMÉLÉON",
-    NIGHT_AI_AGENT: "NUIT — AGENT IA (LIAISON)",
-    NIGHT_RADAR: "NUIT — OFFICIER RADAR",
-    NIGHT_SABOTEURS: "NUIT — SABOTEURS (UNANIMITÉ)",
-    NIGHT_DOCTOR: "NUIT — DOCTEUR BIO",
-    NIGHT_RESULTS: `RÉSULTATS NUIT ${night}`,
-    DAY_WAKE: `JOUR ${day} — RÉVEIL`,
-    DAY_CAPTAIN_TRANSFER: `JOUR ${day} — TRANSMISSION DU CAPITAINE`,
-    DAY_VOTE: `JOUR ${day} — VOTE D'ÉJECTION`,
-    DAY_TIEBREAK: `JOUR ${day} — DÉPARTAGE (CAPITAINE)`,
-    DAY_RESULTS: `JOUR ${day} — RÉSULTATS`,
-    REVENGE: "VENGEANCE — CHEF DE SÉCURITÉ",
-    GAME_OVER: "FIN DE PARTIE",
-    GAME_ABORTED: "PARTIE INTERROMPUE",
-    MANUAL_ROLE_PICK: "CHOIX MANUEL DES RÔLES"
-  };
-  return map[p] || p;
+  // Essayer d'abord d'obtenir le titre depuis le thème
+  let title = getPhaseTitleTemplate(p);
+  
+  // Si pas de thème chargé, utiliser les valeurs par défaut
+  if (!title || title === p) {
+    const map = {
+      LOBBY: "LOBBY",
+      ROLE_REVEAL: "VÉRIFICATION DU RÔLE",
+      CAPTAIN_CANDIDACY: "CANDIDATURE CAPITAINE",
+      CAPTAIN_VOTE: "VOTE CAPITAINE",
+      NIGHT_START: `NUIT ${night} — DÉBUT`,
+      NIGHT_CHAMELEON: "NUIT — CAMÉLÉON",
+      NIGHT_AI_AGENT: "NUIT — AGENT IA (LIAISON)",
+      NIGHT_RADAR: "NUIT — OFFICIER RADAR",
+      NIGHT_SABOTEURS: "NUIT — SABOTEURS (UNANIMITÉ)",
+      NIGHT_DOCTOR: "NUIT — DOCTEUR BIO",
+      NIGHT_RESULTS: `RÉSULTATS NUIT ${night}`,
+      DAY_WAKE: `JOUR ${day} — RÉVEIL`,
+      DAY_CAPTAIN_TRANSFER: `JOUR ${day} — TRANSMISSION DU CAPITAINE`,
+      DAY_VOTE: `JOUR ${day} — VOTE D'ÉJECTION`,
+      DAY_TIEBREAK: `JOUR ${day} — DÉPARTAGE (CAPITAINE)`,
+      DAY_RESULTS: `JOUR ${day} — RÉSULTATS`,
+      REVENGE: "VENGEANCE — CHEF DE SÉCURITÉ",
+      GAME_OVER: "FIN DE PARTIE",
+      GAME_ABORTED: "PARTIE INTERROMPUE",
+      MANUAL_ROLE_PICK: "CHOIX MANUEL DES RÔLES"
+    };
+    title = map[p] || p;
+  }
+  
+  // Remplacer les placeholders dynamiques
+  title = title.replace(/\{night\}/g, night);
+  title = title.replace(/\{day\}/g, day);
+  
+  return title;
 }
 
 
@@ -196,6 +247,19 @@ const ROLE_INFO = {
 
 function getRoleInfo(roleKey, roleLabelFromServer) {
   const k = roleKey || "";
+  
+  // Essayer d'abord d'obtenir le nom et la description depuis le thème actif
+  const themeName = getRoleName(k);
+  const themeDesc = getRoleDesc(k);
+  
+  if (themeName && themeName !== k) {
+    return { 
+      title: themeName, 
+      desc: themeDesc || ROLE_INFO[k]?.desc || ""
+    };
+  }
+  
+  // Sinon utiliser les valeurs par défaut
   const base = ROLE_INFO[k];
   if (base) return base;
   return { title: roleLabelFromServer || k || "Rôle", desc: "" };
@@ -342,6 +406,9 @@ function renderLobby() {
   box.appendChild(makeCheckbox("chameleon", "Caméléon (Nuit 1)", rolesEnabled.chameleon));
   box.appendChild(document.createElement("hr"));
   box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true));
+  
+  // Theme selector (host only)
+  renderThemeSelector(isHost);
 
   function makeCheckbox(key, label, checked, isRoot=false) {
     const row = document.createElement("div");
@@ -986,8 +1053,10 @@ class AudioManager {
     this.queuedCue = null;
     this.userUnlocked = false;
     this.muted = sessionStorage.getItem("is_muted") === "1";
+    this.audioManifest = null; // Manifeste des fichiers audio disponibles
 
     this.updateButton();
+    this.loadAudioManifest();
 
     // Autoplay restrictions: browsers may block audio. We re-unlock on ANY user gesture,
     // and replay a pending cue as soon as we can.
@@ -996,7 +1065,42 @@ class AudioManager {
     window.addEventListener("keydown", unlockAny);
   }
 
-  _createAudio(url, { loop = false } = {}) {
+  async loadAudioManifest() {
+    try {
+      const res = await fetch("/sounds/audio-manifest.json");
+      this.audioManifest = await res.json();
+    } catch (e) {
+      console.warn("[AudioManager] Failed to load audio manifest", e);
+      this.audioManifest = {};
+    }
+  }
+
+  // Résout une clé audio en URL réelle selon le thème actif et le manifeste
+  resolveAudioUrl(keyOrUrl) {
+    if (!keyOrUrl) return null;
+    
+    // Si c'est déjà une URL complète (commence par / ou http), on la retourne telle quelle
+    if (keyOrUrl.startsWith("/") || keyOrUrl.startsWith("http")) {
+      return keyOrUrl;
+    }
+    
+    // Sinon, on cherche dans le manifeste
+    const filename = this.audioManifest?.[keyOrUrl];
+    if (filename) {
+      return `/sounds/${filename}`;
+    }
+    
+    // Fallback: essayer de construire l'URL avec .mp3
+    return `/sounds/${keyOrUrl}.mp3`;
+  }
+
+  _createAudio(urlOrKey, { loop = false } = {}) {
+    const url = this.resolveAudioUrl(urlOrKey);
+    if (!url) {
+      console.warn("[AudioManager] Cannot resolve audio:", urlOrKey);
+      return null;
+    }
+    
     const a = new Audio(url);
     a.preload = "auto";
     a.loop = !!loop;
@@ -1278,9 +1382,10 @@ function createRoomFlow() {
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
 
-  socket.emit("createRoom", { playerId, name }, (res) => {
+  socket.emit("createRoom", { playerId, name, playerToken }, (res) => {
     if (!res?.ok) return setError(res?.error || "Erreur création");
     sessionStorage.setItem(STORAGE.room, res.roomCode);
+    startHeartbeat();
     clearError();
     // The server will push roomState next; render() will switch to the lobby.
   });
@@ -1299,8 +1404,9 @@ $("joinRoomBtn").onclick = () => {
   sessionStorage.setItem(STORAGE.name, name);
   sessionStorage.setItem(STORAGE.room, roomCode);
 
-  socket.emit("joinRoom", { playerId, name, roomCode }, (res) => {
+  socket.emit("joinRoom", { playerId, name, roomCode, playerToken }, (res) => {
     if (!res?.ok) return setError(res?.error || "Erreur connexion");
+    startHeartbeat();
     clearError();
   });
 };
@@ -1313,6 +1419,9 @@ socket.on("roomState", (s) => {
 
   // If we are in lobby/game and the server thinks we have no room (rare), reset
   if (!state?.roomCode) return;
+
+  // Appliquer le thème automatiquement si changé
+  checkAndApplyTheme();
 
   // audio per phase
   audioManager.play(state.audio);
@@ -1337,3 +1446,412 @@ socket.on("serverHello", () => {
 
 // Initial screen: keep it simple, auto-reconnect will swap screens once roomState arrives.
 showScreen("homeScreen");
+
+// ============================================================================
+// V26 - NOUVELLES FONCTIONNALITÉS
+// ============================================================================
+
+// --- GESTION DES THÈMES ---
+
+let availableThemes = [];
+let currentTheme = null;
+
+// Charger la liste des thèmes disponibles
+fetch("/api/themes")
+  .then(r => r.json())
+  .then(data => {
+    if (data.ok && data.themes) {
+      availableThemes = data.themes;
+      // Appliquer le thème par défaut immédiatement
+      const defaultTheme = availableThemes.find(t => t.id === "default");
+      if (defaultTheme) {
+        applyTheme(defaultTheme);
+      }
+    }
+  })
+  .catch(e => console.error("[themes] failed to load", e));
+
+// Applique un thème complet : CSS vars + images de fond
+function applyTheme(theme) {
+  if (!theme) return;
+  currentTheme = theme;
+  
+  // 1. Appliquer les CSS variables
+  if (theme.cssVars) {
+    const root = document.documentElement;
+    for (const [key, value] of Object.entries(theme.cssVars)) {
+      root.style.setProperty(`--${key}`, value);
+    }
+  }
+  
+  // 2. Appliquer l'image de fond si définie
+  if (theme.images?.background) {
+    document.body.style.backgroundImage = `url("/images/${theme.images.background}")`;
+  }
+  
+  // 3. Mettre à jour le logo si défini
+  if (theme.images?.logo) {
+    const logoElements = document.querySelectorAll('.theme-logo');
+    logoElements.forEach(el => {
+      el.src = `/images/${theme.images.logo}`;
+    });
+  }
+  
+  // 4. Mettre à jour le titre de la page
+  if (theme.homeTitle) {
+    const titleElements = document.querySelectorAll('.home-title, #homeTitle');
+    titleElements.forEach(el => {
+      el.textContent = theme.homeTitle;
+    });
+  }
+}
+
+// Détecte automatiquement les changements de thème dans roomState
+function checkAndApplyTheme() {
+  if (!state?.themeId) return;
+  
+  const themeId = state.themeId;
+  
+  // Si le thème a changé, on l'applique
+  if (!currentTheme || currentTheme.id !== themeId) {
+    const theme = availableThemes.find(t => t.id === themeId);
+    if (theme) {
+      applyTheme(theme);
+    }
+  }
+}
+
+// Récupère le nom d'un rôle selon le thème actif
+function getRoleName(roleKey, plural = false) {
+  if (!currentTheme?.roles?.[roleKey]) return roleKey;
+  const role = currentTheme.roles[roleKey];
+  return plural ? (role.namePlural || role.name) : role.name;
+}
+
+// Récupère la description d'un rôle selon le thème actif
+function getRoleDesc(roleKey) {
+  if (!currentTheme?.roles?.[roleKey]) return "";
+  return currentTheme.roles[roleKey].description || "";
+}
+
+// Récupère le titre d'une phase selon le thème actif
+function getPhaseTitleTemplate(phaseKey) {
+  if (!currentTheme?.phaseTitles?.[phaseKey]) {
+    // Fallback sur phases si phaseTitles n'existe pas
+    return currentTheme?.phases?.[phaseKey] || phaseKey;
+  }
+  return currentTheme.phaseTitles[phaseKey];
+}
+
+// Récupère le texte d'attente d'une phase selon le thème actif
+function getPhaseWaitText(phaseKey) {
+  if (!currentTheme?.phaseWaitTexts?.[phaseKey]) return "";
+  return currentTheme.phaseWaitTexts[phaseKey];
+}
+
+function renderThemeSelector(isHost) {
+  const selector = $("themeSelector");
+  if (!selector) return;
+  
+  if (!isHost || state.started) {
+    selector.style.display = "none";
+    return;
+  }
+  
+  selector.style.display = "block";
+  const buttonsContainer = $("themeButtons");
+  const descContainer = $("themeDescription");
+  
+  buttonsContainer.innerHTML = "";
+  
+  const currentThemeId = state.themeId || "default";
+  
+  for (const theme of availableThemes) {
+    const btn = document.createElement("button");
+    btn.className = "btn";
+    btn.textContent = theme.name;
+    btn.style.padding = "10px 18px";
+    btn.style.fontSize = "0.95rem";
+    
+    if (theme.id === currentThemeId) {
+      btn.style.background = "var(--neon-purple, #9d4edd)";
+      btn.style.color = "#fff";
+      btn.style.fontWeight = "800";
+      btn.style.boxShadow = "0 0 20px rgba(157,78,221,0.6)";
+    } else {
+      btn.style.background = "rgba(157,78,221,0.2)";
+      btn.style.border = "2px solid rgba(157,78,221,0.5)";
+      btn.style.color = "#ccc";
+    }
+    
+    btn.onclick = () => {
+      socket.emit("setTheme", { themeId: theme.id }, (res) => {
+        if (!res?.ok) {
+          setError(res?.error || "Erreur changement thème");
+        }
+      });
+    };
+    
+    buttonsContainer.appendChild(btn);
+  }
+  
+  // Afficher la description du thème actuel
+  const theme = availableThemes.find(t => t.id === currentThemeId);
+  if (theme) {
+    descContainer.textContent = theme.description || "";
+  }
+}
+
+// --- MODE HÔTE : FORCER LA SUITE ---
+
+let phaseTimerInterval = null;
+
+function updateHostControls() {
+  const hostControls = $("hostControls");
+  if (!hostControls) return;
+  
+  const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.isHost;
+  const inGame = state.started && !state.ended;
+  
+  if (!isHost || !inGame) {
+    hostControls.style.display = "none";
+    if (phaseTimerInterval) {
+      clearInterval(phaseTimerInterval);
+      phaseTimerInterval = null;
+    }
+    return;
+  }
+  
+  hostControls.style.display = "block";
+  
+  // Démarrer le timer de phase
+  if (!phaseTimerInterval) {
+    phaseTimerInterval = setInterval(updatePhaseTimer, 1000);
+  }
+  
+  updatePhaseTimer();
+  updatePendingPlayers();
+}
+
+function updatePhaseTimer() {
+  const elapsed = $("phaseElapsed");
+  if (!elapsed || !state.phaseStartTime) return;
+  
+  const elapsedSeconds = Math.floor((Date.now() - state.phaseStartTime) / 1000);
+  elapsed.textContent = `${elapsedSeconds}s`;
+  
+  // Activer le bouton après 20s
+  const forceBtn = $("forceAdvanceBtn");
+  if (forceBtn) {
+    if (elapsedSeconds >= 20) {
+      forceBtn.disabled = false;
+      forceBtn.style.opacity = "1";
+      forceBtn.style.cursor = "pointer";
+    } else {
+      forceBtn.disabled = true;
+      forceBtn.style.opacity = "0.5";
+      forceBtn.style.cursor = "not-allowed";
+    }
+  }
+}
+
+function updatePendingPlayers() {
+  const pending = $("pendingPlayers");
+  if (!pending) return;
+  
+  const ack = state.ack || { done: 0, total: 0, pending: [] };
+  
+  if (ack.pending && ack.pending.length > 0) {
+    const names = ack.pending.map(pid => {
+      const p = state.players?.find(pl => pl.playerId === pid);
+      return p ? p.name : "?";
+    }).join(", ");
+    pending.textContent = `⏳ En attente de : ${names}`;
+    pending.style.display = "block";
+  } else {
+    pending.textContent = "";
+    pending.style.display = "none";
+  }
+}
+
+// Bouton forcer la suite
+const forceAdvanceBtn = $("forceAdvanceBtn");
+if (forceAdvanceBtn) {
+  forceAdvanceBtn.onclick = () => {
+    if (forceAdvanceBtn.disabled) return;
+    
+    if (!confirm("Forcer la suite va valider automatiquement pour les joueurs en attente. Continuer ?")) {
+      return;
+    }
+    
+    socket.emit("forceAdvance", {}, (res) => {
+      if (!res?.ok) {
+        setError(res?.error || "Impossible de forcer");
+      }
+    });
+  };
+}
+
+// --- TUTORIEL EXPRESS ---
+
+let currentTutorialScreen = 1;
+const tutorialDontShowKey = "is_tutorialDontShow";
+
+// Vérifier si on doit afficher le tutoriel au premier lancement
+if (!localStorage.getItem(tutorialDontShowKey)) {
+  // Afficher après un court délai
+  setTimeout(() => {
+    if ($("homeScreen").classList.contains("active")) {
+      showTutorial();
+    }
+  }, 1000);
+}
+
+function showTutorial() {
+  $("tutorialModal").style.display = "block";
+  currentTutorialScreen = 1;
+  updateTutorialScreen();
+}
+
+function hideTutorial() {
+  $("tutorialModal").style.display = "none";
+  
+  // Sauvegarder la préférence si cochée
+  if ($("tutorialDontShow")?.checked) {
+    localStorage.setItem(tutorialDontShowKey, "true");
+  }
+}
+
+function updateTutorialScreen() {
+  // Afficher le bon écran
+  document.querySelectorAll(".tutorial-screen").forEach(screen => {
+    const screenNum = parseInt(screen.dataset.screen);
+    screen.style.display = screenNum === currentTutorialScreen ? "block" : "none";
+  });
+  
+  // Mettre à jour les dots
+  document.querySelectorAll(".tutorial-dot").forEach(dot => {
+    const dotNum = parseInt(dot.dataset.dot);
+    if (dotNum === currentTutorialScreen) {
+      dot.style.background = "var(--neon-cyan)";
+      dot.style.boxShadow = "0 0 10px var(--neon-cyan)";
+    } else {
+      dot.style.background = "rgba(0,255,255,0.3)";
+      dot.style.boxShadow = "none";
+    }
+  });
+  
+  // Gérer les boutons prev/next
+  const prevBtn = $("tutorialPrev");
+  const nextBtn = $("tutorialNext");
+  
+  if (prevBtn) {
+    prevBtn.style.visibility = currentTutorialScreen === 1 ? "hidden" : "visible";
+  }
+  
+  if (nextBtn) {
+    if (currentTutorialScreen === 4) {
+      nextBtn.textContent = "Commencer ! 🚀";
+    } else {
+      nextBtn.textContent = "Suivant →";
+    }
+  }
+}
+
+// Event listeners tutoriel
+$("tutorialBtn")?.addEventListener("click", showTutorial);
+$("tutorialClose")?.addEventListener("click", hideTutorial);
+
+$("tutorialPrev")?.addEventListener("click", () => {
+  if (currentTutorialScreen > 1) {
+    currentTutorialScreen--;
+    updateTutorialScreen();
+  }
+});
+
+$("tutorialNext")?.addEventListener("click", () => {
+  if (currentTutorialScreen < 4) {
+    currentTutorialScreen++;
+    updateTutorialScreen();
+  } else {
+    hideTutorial();
+  }
+});
+
+// Dots cliquables
+document.querySelectorAll(".tutorial-dot").forEach(dot => {
+  dot.addEventListener("click", () => {
+    currentTutorialScreen = parseInt(dot.dataset.dot);
+    updateTutorialScreen();
+  });
+});
+
+// --- BADGES ---
+
+function displayNewBadges(badges) {
+  if (!badges || badges.length === 0) return;
+  
+  const section = $("newBadgesSection");
+  const list = $("newBadgesList");
+  
+  if (!section || !list) return;
+  
+  section.style.display = "block";
+  list.innerHTML = "";
+  
+  const badgeDefinitions = {
+    saboteur_streak_3: { icon: "🔥", name: "Saboteur implacable" },
+    astronaut_streak_3: { icon: "🚀", name: "Astronaute vigilant" },
+    perfect_doctor: { icon: "⚕️", name: "Docteur parfait" },
+    radar_master: { icon: "📡", name: "Radar implacable" },
+    decisive_captain: { icon: "⭐", name: "Capitaine décisif" },
+    ghost_saboteur: { icon: "👻", name: "Saboteur fantôme" },
+    ai_cupid: { icon: "💕", name: "Cupidon IA" },
+    security_avenger: { icon: "⚔️", name: "Vengeur implacable" },
+    chameleon_master: { icon: "🦎", name: "Maître du déguisement" },
+    veteran_player: { icon: "🎖️", name: "Vétéran spatial" }
+  };
+  
+  for (const badgeId of badges) {
+    const def = badgeDefinitions[badgeId];
+    if (!def) continue;
+    
+    const card = document.createElement("div");
+    card.style.cssText = `
+      padding: 15px 20px;
+      background: linear-gradient(135deg, rgba(157,78,221,0.3), rgba(255,165,0,0.3));
+      border: 2px solid var(--neon-purple, #9d4edd);
+      border-radius: 12px;
+      text-align: center;
+      min-width: 140px;
+      box-shadow: 0 0 15px rgba(157,78,221,0.4);
+      animation: badgePop 0.5s ease;
+    `;
+    
+    card.innerHTML = `
+      <div style="font-size: 2.5rem; margin-bottom: 8px;">${def.icon}</div>
+      <div style="font-weight: 800; color: var(--neon-purple, #9d4edd); font-size: 1.05rem;">${def.name}</div>
+    `;
+    
+    list.appendChild(card);
+  }
+}
+
+// --- INTÉGRATION DANS RENDER ---
+
+// Ajouter l'appel updateHostControls dans renderGame
+const originalRenderGame = renderGame;
+renderGame = function() {
+  originalRenderGame();
+  updateHostControls();
+};
+
+// Ajouter l'affichage des badges dans renderEnd
+socket.on("newBadges", (data) => {
+  if (data.badges && data.badges.length > 0) {
+    displayNewBadges(data.badges);
+  }
+});
+
+console.log("[V26] Nouvelles fonctionnalités chargées !");
+

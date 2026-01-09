@@ -137,6 +137,14 @@
             <div id="rolesConfig"></div>
           </div>
         </div>
+
+        <!-- Sélection de thème (hôte uniquement) -->
+        <div id="themeSelector" style="display:none; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
+            border: 2px solid var(--neon-purple, #9d4edd); box-shadow: 0 0 20px rgba(157,78,221,0.3);">
+          <h3 style="color: var(--neon-purple, #9d4edd); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">🎨 THÈME (HÔTE)</h3>
+          <div id="themeButtons" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;"></div>
+          <div id="themeDescription" style="margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; color: #ccc; font-size: 0.95rem; text-align: center; min-height: 40px;"></div>
+        </div>
       </div>
 
       <div class="control-panel" style="margin-top: 20px;">
@@ -172,6 +180,21 @@
         </div>
 
         <div id="controls" style="margin-top: 18px;"></div>
+        
+        <!-- Panneau de contrôle hôte (force advance) -->
+        <div id="hostControls" style="display:none; margin-top: 18px; padding: 15px; background: rgba(255,165,0,0.1); border: 2px solid var(--neon-orange); border-radius: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <div style="color: var(--neon-orange); font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">⚡ CONTRÔLES HÔTE</div>
+              <div id="phaseTimer" style="color: #ccc; font-size: 0.9rem;">Phase active depuis : <span id="phaseElapsed">0s</span></div>
+              <div id="pendingPlayers" style="margin-top: 5px; color: #999; font-size: 0.85rem;"></div>
+            </div>
+            <button id="forceAdvanceBtn" class="btn" style="background: var(--neon-orange); color: #000; font-weight: 800; padding: 12px 20px; opacity: 0.5; cursor: not-allowed;" disabled>
+              ⏭️ Forcer la suite (20s min)
+            </button>
+          </div>
+        </div>
+        
         <div id="log" style="margin-top:16px; max-height:220px; overflow:auto; padding:10px; border-radius:12px;
           background: rgba(0,0,0,0.35); border:1px solid rgba(0,255,255,0.25);"></div>
       </div>
@@ -184,6 +207,13 @@
       <div class="control-panel" style="max-width: 900px;">
         <h2 class="panel-title winner-title" id="winnerTitle"></h2>
         <div id="endSummary" style="margin-bottom:16px;"></div>
+        
+        <!-- Badges débloqués cette partie -->
+        <div id="newBadgesSection" style="display:none; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, rgba(157,78,221,0.2), rgba(255,165,0,0.2)); border: 2px solid var(--neon-purple, #9d4edd); border-radius: 15px;">
+          <h3 style="color: var(--neon-purple, #9d4edd); margin: 0 0 15px 0; text-align: center; font-size: 1.4rem;">🏆 BADGES DÉBLOQUÉS</h3>
+          <div id="newBadgesList" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;"></div>
+        </div>
+        
         <div class="ranking-table" id="rankingTable"></div>
 
         <div class="btn-group" style="margin-top: 18px;">
@@ -203,6 +233,105 @@
       <button id="rulesClose" class="btn btn-secondary" style="position:absolute; right:12px; top:12px;">✖</button>
       <div class="panel-title">RÈGLES</div>
       <div id="rulesContent" style="line-height:1.45; font-size:1.05rem; max-height: 75vh; overflow:auto; padding-right:10px;"></div>
+      <button id="tutorialBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%;">📖 Voir le tutoriel rapide</button>
+    </div>
+  </div>
+
+  <!-- Tutorial modal -->
+  <div id="tutorialModal" style="display:none; position:fixed; inset:0; z-index:10001; background: rgba(0,0,0,0.85);">
+    <div style="max-width: 700px; margin: 10vh auto; background: linear-gradient(135deg, #0a0e27, #1a1e3f);
+      border:3px solid var(--neon-cyan); border-radius: 20px; padding: 30px; position: relative; box-shadow: 0 0 60px rgba(0,255,255,0.5);">
+      <button id="tutorialClose" class="btn btn-secondary" style="position:absolute; right:15px; top:15px;">✖</button>
+      
+      <div id="tutorialContent">
+        <!-- Écran 1 -->
+        <div class="tutorial-screen" data-screen="1" style="display:block;">
+          <div style="text-align:center; margin-bottom: 25px;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
+            <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Bienvenue !</h2>
+          </div>
+          <p style="font-size: 1.1rem; line-height: 1.6; color: #e0e6ed;">
+            <strong>Infiltration Spatiale</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">saboteurs</span> 
+            tentent d'éliminer les <span style="color: var(--neon-cyan);">astronautes</span> sans être découverts.
+          </p>
+          <p style="font-size: 1.05rem; line-height: 1.6; color: #ccc;">
+            Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).
+          </p>
+        </div>
+
+        <!-- Écran 2 -->
+        <div class="tutorial-screen" data-screen="2" style="display:none;">
+          <div style="text-align:center; margin-bottom: 25px;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
+            <h2 style="color: var(--neon-purple, #9d4edd); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
+          </div>
+          <ul style="font-size: 1.05rem; line-height: 1.8; color: #e0e6ed; padding-left: 25px;">
+            <li><strong style="color: var(--neon-red);">Saboteurs</strong> : choisissent une victime (unanimité requise)</li>
+            <li><strong style="color: var(--neon-cyan);">Officier Radar</strong> : inspecte un joueur (saboteur ou non ?)</li>
+            <li><strong style="color: var(--neon-green);">Docteur Bio</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
+            <li><strong style="color: var(--neon-orange);">Rôles spéciaux</strong> : Caméléon, Agent IA, etc.</li>
+          </ul>
+        </div>
+
+        <!-- Écran 3 -->
+        <div class="tutorial-screen" data-screen="3" style="display:none;">
+          <div style="text-align:center; margin-bottom: 25px;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">☀️</div>
+            <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
+          </div>
+          <ul style="font-size: 1.05rem; line-height: 1.8; color: #e0e6ed; padding-left: 25px;">
+            <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
+            <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
+            <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
+            <li>Le <strong>Capitaine</strong> tranche en cas d'égalité</li>
+          </ul>
+          <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: #ccc;">
+            <strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !
+          </p>
+        </div>
+
+        <!-- Écran 4 -->
+        <div class="tutorial-screen" data-screen="4" style="display:none;">
+          <div style="text-align:center; margin-bottom: 25px;">
+            <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
+            <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
+              <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
+              <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">Astronautes gagnent</div>
+              <div style="font-size: 0.95rem; color: #ccc;">Tous les saboteurs sont éjectés</div>
+            </div>
+            <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
+              <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
+              <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">Saboteurs gagnent</div>
+              <div style="font-size: 0.95rem; color: #ccc;">Nombre de saboteurs ≥ astronautes</div>
+            </div>
+          </div>
+          <p style="text-align: center; font-size: 1.1rem; color: var(--neon-green); font-weight: 800;">
+            Prêt à jouer ? Créez ou rejoignez une mission ! 🚀
+          </p>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(0,255,255,0.3);">
+        <button id="tutorialPrev" class="btn btn-secondary">← Précédent</button>
+        <div style="display: flex; gap: 8px;">
+          <div class="tutorial-dot" data-dot="1" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); cursor: pointer;"></div>
+          <div class="tutorial-dot" data-dot="2" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
+          <div class="tutorial-dot" data-dot="3" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
+          <div class="tutorial-dot" data-dot="4" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
+        </div>
+        <button id="tutorialNext" class="btn btn-primary">Suivant →</button>
+      </div>
+
+      <div style="text-align: center; margin-top: 15px;">
+        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc; font-size: 0.95rem;">
+          <input type="checkbox" id="tutorialDontShow" style="width: 18px; height: 18px; cursor: pointer;">
+          <span>Ne plus afficher ce tutoriel</span>
+        </label>
+      </div>
     </div>
   </div>
 
