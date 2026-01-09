@@ -6,6 +6,7 @@ Ajoute ces fichiers (mêmes noms) :
 
 - CHAMELEON_SLEEP.mp3
 - CHAMELEON_WAKE.mp3
+- CHECK_ROLE.mp3
 - DOCTOR_SLEEP.mp3
 - DOCTOR_WAKE.mp3
 - ELECTION_CHIEF.mp3

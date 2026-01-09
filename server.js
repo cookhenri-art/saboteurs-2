@@ -5,7 +5,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 3000;
-const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v23";
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v24";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -217,6 +217,9 @@ const AUDIO = {
   INTRO_LOBBY: getSoundUrl("INTRO_LOBBY", ["attente", "lancement"]) || null,
   WAITING_LOOP: getSoundUrl("WAITING_LOOP", ["waiting", "loop", "attente"]) || null,
 
+  // generic prompts
+  CHECK_ROLE: getSoundUrl("CHECK_ROLE", ["check", "role", "verifiez", "verifier", "roles"]) || null,
+
   // captain election
   ELECTION_CHIEF: getSoundUrl("ELECTION_CHIEF", ["election", "chef"]) || null,
 
@@ -397,7 +400,9 @@ function computeAudioCue(room, prevPhase) {
   if (phase === "MANUAL_ROLE_PICK") return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Mode manuel. Choisissez votre rôle." };
   if (phase === "ROLE_REVEAL") {
     if (data.resume === "night" && data.fromChameleon) {
-      return { sequence: [AUDIO.CHAMELEON_SLEEP], file: null, queueLoopFile: null, tts: null, ttsAfterSequence: "Tous les joueurs se réveillent pour vérifier leur rôle après l'échange du Caméléon." };
+      // After the Caméléon swap: play Caméléon sleep then a dedicated "check role" prompt (MP3).
+      // (No TTS here; CHECK_ROLE is provided as an audio asset.)
+      return { sequence: [AUDIO.CHAMELEON_SLEEP, AUDIO.CHECK_ROLE].filter(Boolean), file: null, queueLoopFile: null, tts: null };
     }
     return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Vérifiez votre rôle." };
   }
