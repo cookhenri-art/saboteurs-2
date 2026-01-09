@@ -172,41 +172,29 @@ function formatPhaseTitle(s) {
   const night = s.night || 0;
   const day = s.day || 0;
 
-  // Essayer d'abord d'obtenir le titre depuis le thème
-  let title = getPhaseTitleTemplate(p);
-  
-  // Si pas de thème chargé, utiliser les valeurs par défaut
-  if (!title || title === p) {
-    const map = {
-      LOBBY: "LOBBY",
-      ROLE_REVEAL: "VÉRIFICATION DU RÔLE",
-      CAPTAIN_CANDIDACY: "CANDIDATURE CAPITAINE",
-      CAPTAIN_VOTE: "VOTE CAPITAINE",
-      NIGHT_START: `NUIT ${night} — DÉBUT`,
-      NIGHT_CHAMELEON: "NUIT — CAMÉLÉON",
-      NIGHT_AI_AGENT: "NUIT — AGENT IA (LIAISON)",
-      NIGHT_RADAR: "NUIT — OFFICIER RADAR",
-      NIGHT_SABOTEURS: "NUIT — SABOTEURS (UNANIMITÉ)",
-      NIGHT_DOCTOR: "NUIT — DOCTEUR BIO",
-      NIGHT_RESULTS: `RÉSULTATS NUIT ${night}`,
-      DAY_WAKE: `JOUR ${day} — RÉVEIL`,
-      DAY_CAPTAIN_TRANSFER: `JOUR ${day} — TRANSMISSION DU CAPITAINE`,
-      DAY_VOTE: `JOUR ${day} — VOTE D'ÉJECTION`,
-      DAY_TIEBREAK: `JOUR ${day} — DÉPARTAGE (CAPITAINE)`,
-      DAY_RESULTS: `JOUR ${day} — RÉSULTATS`,
-      REVENGE: "VENGEANCE — CHEF DE SÉCURITÉ",
-      GAME_OVER: "FIN DE PARTIE",
-      GAME_ABORTED: "PARTIE INTERROMPUE",
-      MANUAL_ROLE_PICK: "CHOIX MANUEL DES RÔLES"
-    };
-    title = map[p] || p;
-  }
-  
-  // Remplacer les placeholders dynamiques
-  title = title.replace(/\{night\}/g, night);
-  title = title.replace(/\{day\}/g, day);
-  
-  return title;
+  const map = {
+    LOBBY: "LOBBY",
+    ROLE_REVEAL: "VÉRIFICATION DU RÔLE",
+    CAPTAIN_CANDIDACY: "CANDIDATURE CAPITAINE",
+    CAPTAIN_VOTE: "VOTE CAPITAINE",
+    NIGHT_START: `NUIT ${night} — DÉBUT`,
+    NIGHT_CHAMELEON: "NUIT — CAMÉLÉON",
+    NIGHT_AI_AGENT: "NUIT — AGENT IA (LIAISON)",
+    NIGHT_RADAR: "NUIT — OFFICIER RADAR",
+    NIGHT_SABOTEURS: "NUIT — SABOTEURS (UNANIMITÉ)",
+    NIGHT_DOCTOR: "NUIT — DOCTEUR BIO",
+    NIGHT_RESULTS: `RÉSULTATS NUIT ${night}`,
+    DAY_WAKE: `JOUR ${day} — RÉVEIL`,
+    DAY_CAPTAIN_TRANSFER: `JOUR ${day} — TRANSMISSION DU CAPITAINE`,
+    DAY_VOTE: `JOUR ${day} — VOTE D'ÉJECTION`,
+    DAY_TIEBREAK: `JOUR ${day} — DÉPARTAGE (CAPITAINE)`,
+    DAY_RESULTS: `JOUR ${day} — RÉSULTATS`,
+    REVENGE: "VENGEANCE — CHEF DE SÉCURITÉ",
+    GAME_OVER: "FIN DE PARTIE",
+    GAME_ABORTED: "PARTIE INTERROMPUE",
+    MANUAL_ROLE_PICK: "CHOIX MANUEL DES RÔLES"
+  };
+  return map[p] || p;
 }
 
 
@@ -247,19 +235,6 @@ const ROLE_INFO = {
 
 function getRoleInfo(roleKey, roleLabelFromServer) {
   const k = roleKey || "";
-  
-  // Essayer d'abord d'obtenir le nom et la description depuis le thème actif
-  const themeName = getRoleName(k);
-  const themeDesc = getRoleDesc(k);
-  
-  if (themeName && themeName !== k) {
-    return { 
-      title: themeName, 
-      desc: themeDesc || ROLE_INFO[k]?.desc || ""
-    };
-  }
-  
-  // Sinon utiliser les valeurs par défaut
   const base = ROLE_INFO[k];
   if (base) return base;
   return { title: roleLabelFromServer || k || "Rôle", desc: "" };
@@ -1053,10 +1028,8 @@ class AudioManager {
     this.queuedCue = null;
     this.userUnlocked = false;
     this.muted = sessionStorage.getItem("is_muted") === "1";
-    this.audioManifest = null; // Manifeste des fichiers audio disponibles
 
     this.updateButton();
-    this.loadAudioManifest();
 
     // Autoplay restrictions: browsers may block audio. We re-unlock on ANY user gesture,
     // and replay a pending cue as soon as we can.
@@ -1065,42 +1038,7 @@ class AudioManager {
     window.addEventListener("keydown", unlockAny);
   }
 
-  async loadAudioManifest() {
-    try {
-      const res = await fetch("/sounds/audio-manifest.json");
-      this.audioManifest = await res.json();
-    } catch (e) {
-      console.warn("[AudioManager] Failed to load audio manifest", e);
-      this.audioManifest = {};
-    }
-  }
-
-  // Résout une clé audio en URL réelle selon le thème actif et le manifeste
-  resolveAudioUrl(keyOrUrl) {
-    if (!keyOrUrl) return null;
-    
-    // Si c'est déjà une URL complète (commence par / ou http), on la retourne telle quelle
-    if (keyOrUrl.startsWith("/") || keyOrUrl.startsWith("http")) {
-      return keyOrUrl;
-    }
-    
-    // Sinon, on cherche dans le manifeste
-    const filename = this.audioManifest?.[keyOrUrl];
-    if (filename) {
-      return `/sounds/${filename}`;
-    }
-    
-    // Fallback: essayer de construire l'URL avec .mp3
-    return `/sounds/${keyOrUrl}.mp3`;
-  }
-
-  _createAudio(urlOrKey, { loop = false } = {}) {
-    const url = this.resolveAudioUrl(urlOrKey);
-    if (!url) {
-      console.warn("[AudioManager] Cannot resolve audio:", urlOrKey);
-      return null;
-    }
-    
+  _createAudio(url, { loop = false } = {}) {
     const a = new Audio(url);
     a.preload = "auto";
     a.loop = !!loop;
@@ -1420,9 +1358,6 @@ socket.on("roomState", (s) => {
   // If we are in lobby/game and the server thinks we have no room (rare), reset
   if (!state?.roomCode) return;
 
-  // Appliquer le thème automatiquement si changé
-  checkAndApplyTheme();
-
   // audio per phase
   audioManager.play(state.audio);
 
@@ -1462,92 +1397,9 @@ fetch("/api/themes")
   .then(data => {
     if (data.ok && data.themes) {
       availableThemes = data.themes;
-      // Appliquer le thème par défaut immédiatement
-      const defaultTheme = availableThemes.find(t => t.id === "default");
-      if (defaultTheme) {
-        applyTheme(defaultTheme);
-      }
     }
   })
   .catch(e => console.error("[themes] failed to load", e));
-
-// Applique un thème complet : CSS vars + images de fond
-function applyTheme(theme) {
-  if (!theme) return;
-  currentTheme = theme;
-  
-  // 1. Appliquer les CSS variables
-  if (theme.cssVars) {
-    const root = document.documentElement;
-    for (const [key, value] of Object.entries(theme.cssVars)) {
-      root.style.setProperty(`--${key}`, value);
-    }
-  }
-  
-  // 2. Appliquer l'image de fond si définie
-  if (theme.images?.background) {
-    document.body.style.backgroundImage = `url("/images/${theme.images.background}")`;
-  }
-  
-  // 3. Mettre à jour le logo si défini
-  if (theme.images?.logo) {
-    const logoElements = document.querySelectorAll('.theme-logo');
-    logoElements.forEach(el => {
-      el.src = `/images/${theme.images.logo}`;
-    });
-  }
-  
-  // 4. Mettre à jour le titre de la page
-  if (theme.homeTitle) {
-    const titleElements = document.querySelectorAll('.home-title, #homeTitle');
-    titleElements.forEach(el => {
-      el.textContent = theme.homeTitle;
-    });
-  }
-}
-
-// Détecte automatiquement les changements de thème dans roomState
-function checkAndApplyTheme() {
-  if (!state?.themeId) return;
-  
-  const themeId = state.themeId;
-  
-  // Si le thème a changé, on l'applique
-  if (!currentTheme || currentTheme.id !== themeId) {
-    const theme = availableThemes.find(t => t.id === themeId);
-    if (theme) {
-      applyTheme(theme);
-    }
-  }
-}
-
-// Récupère le nom d'un rôle selon le thème actif
-function getRoleName(roleKey, plural = false) {
-  if (!currentTheme?.roles?.[roleKey]) return roleKey;
-  const role = currentTheme.roles[roleKey];
-  return plural ? (role.namePlural || role.name) : role.name;
-}
-
-// Récupère la description d'un rôle selon le thème actif
-function getRoleDesc(roleKey) {
-  if (!currentTheme?.roles?.[roleKey]) return "";
-  return currentTheme.roles[roleKey].description || "";
-}
-
-// Récupère le titre d'une phase selon le thème actif
-function getPhaseTitleTemplate(phaseKey) {
-  if (!currentTheme?.phaseTitles?.[phaseKey]) {
-    // Fallback sur phases si phaseTitles n'existe pas
-    return currentTheme?.phases?.[phaseKey] || phaseKey;
-  }
-  return currentTheme.phaseTitles[phaseKey];
-}
-
-// Récupère le texte d'attente d'une phase selon le thème actif
-function getPhaseWaitText(phaseKey) {
-  if (!currentTheme?.phaseWaitTexts?.[phaseKey]) return "";
-  return currentTheme.phaseWaitTexts[phaseKey];
-}
 
 function renderThemeSelector(isHost) {
   const selector = $("themeSelector");
