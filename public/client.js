@@ -1522,6 +1522,11 @@ function t(key) {
  * @returns {string} - Le nom traduit du rôle
  */
 function tRole(roleKey, plural = false) {
+  // Debug
+  if (!currentTheme) {
+    console.warn("[tRole] currentTheme is null! Using defaults for:", roleKey);
+  }
+  
   if (!currentTheme || !currentTheme.roles || !currentTheme.roles[roleKey]) {
     // Fallback: noms par défaut
     const defaults = {
@@ -1550,10 +1555,18 @@ fetch("/api/themes")
   .then(data => {
     if (data.ok && data.themes) {
       availableThemes = data.themes;
+      console.log("[themes] Loaded themes:", availableThemes.map(t => t.id));
+      
       // Appliquer le thème par défaut au chargement
       const defaultTheme = availableThemes.find(t => t.id === "default");
       if (defaultTheme) {
         currentTheme = defaultTheme;
+        console.log("[themes] Set default theme:", currentTheme.id);
+        
+        // Appliquer les styles CSS
+        applyThemeStyles("default");
+        
+        // Appliquer les traductions
         applyThemeTranslations();
       }
     }
@@ -1586,10 +1599,8 @@ function checkAndApplyTheme() {
       // Appliquer les traductions sur les éléments fixes
       applyThemeTranslations();
       
-      // Re-render uniquement le lobby si on y est (évite la boucle infinie)
-      if (state && state.phase === "LOBBY") {
-        renderLobby();
-      }
+      // NOTE: renderLobby() sera appelé juste après par render() si on est en phase LOBBY
+      // Pas besoin de l'appeler ici pour éviter le double rendu
     }
   }
 }
