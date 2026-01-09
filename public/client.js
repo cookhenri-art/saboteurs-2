@@ -363,7 +363,7 @@ function renderLobby() {
   const n = state.players.filter(p => p.status !== "left").length;
   const sab = (n <= 6) ? 1 : (n <= 11 ? 2 : 3);
   const ast = Math.max(0, n - sab);
-  $("autoAllocation").innerHTML = `<div>${sab}️⃣ SABOTEUR(S)</div><div>${ast}️⃣ ASTRONAUTE(S)</div>`;
+  $("autoAllocation").innerHTML = `<div>${sab}️⃣ ${tRole('saboteur', true).toUpperCase()}</div><div>${ast}️⃣ ${tRole('astronaut', true).toUpperCase()}</div>`;
 
   // balance indicator
   const ratio = n ? (ast / n) : 0.5;
@@ -1583,12 +1583,12 @@ function checkAndApplyTheme() {
       // Appliquer les styles visuels du thème
       applyThemeStyles(themeId);
       
-      // Appliquer les traductions
+      // Appliquer les traductions sur les éléments fixes
       applyThemeTranslations();
       
-      // Forcer le re-render pour mettre à jour tous les textes
-      if (state) {
-        render(state);
+      // Re-render uniquement le lobby si on y est (évite la boucle infinie)
+      if (state && state.phase === "LOBBY") {
+        renderLobby();
       }
     }
   }
