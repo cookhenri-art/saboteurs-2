@@ -4,19 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>⚡ INFILTRATION SPATIALE ⚡</title>
-  
-  <!-- Polices pour thème Default (Spatial) -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Polices pour thème Werewolf (Village) -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Polices pour thème Wizard Academy (Académie) -->
-  <link href="https://fonts.googleapis.com/css2?family=Philosopher:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Polices pour thème Mythic Realms (Royaume) -->
-  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Uncial+Antiqua:wght@700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
-  
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -50,7 +38,7 @@
       gap: 20px;
     ">
       <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🔊</div>
-      <div style="font-size: 1.5rem; color: var(--neon-main); font-weight: 800; text-align: center;">
+      <div style="font-size: 1.5rem; color: var(--neon-cyan); font-weight: 800; text-align: center;">
         CLIQUEZ POUR ACTIVER LE SON
       </div>
       <button id="audioUnlockBtn" class="btn btn-primary" style="
@@ -63,7 +51,7 @@
     
     <div class="header">
       <div class="logo"></div>
-      <h1 id="mainTitle">INFILTRATION SPATIALE</h1>
+      <h1>INFILTRATION SPATIALE</h1>
       <div class="subtitle">⚡ MISSION TEMPS RÉEL ⚡</div>
       <div id="buildBadge" style="margin-top:10px; opacity:.85; font-size:.95rem;"></div>
       <div id="topBanner" style="display:none; margin-top:12px; color: var(--neon-orange); font-weight:700; letter-spacing:1px;"></div>

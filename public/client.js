@@ -234,35 +234,35 @@ function formatPhaseTitle(s) {
 
 const ROLE_INFO = {
   astronaut: {
-    title: "Astronaute",
+    get title() { return tRole('astronaut'); },
     desc: () => `Aucun pouvoir spécial. Observe, débat et vote pour protéger la ${t('station')}.`
   },
   saboteur: {
-    title: "Saboteur",
+    get title() { return tRole('saboteur'); },
     desc: () => `Chaque nuit, les ${t('saboteurs').toLowerCase()} votent UNANIMEMENT une cible (impossible de viser un ${t('saboteurs').toLowerCase().slice(0, -1)}).`
   },
   doctor: {
-    title: "Docteur bio",
+    get title() { return tRole('doctor'); },
     desc: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible)."
   },
   security: {
-    title: "Chef de sécurité",
+    get title() { return tRole('security'); },
     desc: "Si tu meurs, tu tires une dernière fois (vengeance)."
   },
   ai_agent: {
-    title: "Agent IA",
+    get title() { return tRole('ai_agent'); },
     desc: "Nuit 1 : choisis un joueur à lier avec TOI. Si l’un meurt, l’autre meurt aussi."
   },
   radar: {
-    title: "Officier radar",
+    get title() { return tRole('radar'); },
     desc: "Chaque nuit, inspecte un joueur et découvre son rôle."
   },
   engineer: {
-    title: "Ingénieur",
+    get title() { return tRole('engineer'); },
     desc: "Peut espionner à ses risques et périls. Rappel discret en début de nuit tant qu’il est vivant."
   },
   chameleon: {
-    title: "Caméléon",
+    get title() { return tRole('chameleon'); },
     desc: "Nuit 1 seulement : échange TON rôle avec un joueur. Après l’échange : revérification globale."
   },
 };
@@ -416,12 +416,12 @@ function renderLobby() {
     return;
   }
 
-  box.appendChild(makeCheckbox("doctor", "Docteur bio", rolesEnabled.doctor));
-  box.appendChild(makeCheckbox("security", "Chef de sécurité", rolesEnabled.security));
-  box.appendChild(makeCheckbox("radar", "Officier radar", rolesEnabled.radar));
-  box.appendChild(makeCheckbox("ai_agent", "Agent IA", rolesEnabled.ai_agent));
-  box.appendChild(makeCheckbox("engineer", "Ingénieur", rolesEnabled.engineer));
-  box.appendChild(makeCheckbox("chameleon", "Caméléon (Nuit 1)", rolesEnabled.chameleon));
+  box.appendChild(makeCheckbox("doctor", tRole('doctor'), rolesEnabled.doctor));
+  box.appendChild(makeCheckbox("security", tRole('security'), rolesEnabled.security));
+  box.appendChild(makeCheckbox("radar", tRole('radar'), rolesEnabled.radar));
+  box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), rolesEnabled.ai_agent));
+  box.appendChild(makeCheckbox("engineer", tRole('engineer'), rolesEnabled.engineer));
+  box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, rolesEnabled.chameleon));
   box.appendChild(document.createElement("hr"));
   box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true));
   
@@ -585,16 +585,7 @@ if (actorOnly.has(state.phase) && !isActorNow) {
   for (const rk of rolesOrder) {
     const count = remaining[rk] ?? 0;
     if (count <= 0) continue;
-    const label = ({
-      astronaut: "Astronaute",
-      saboteur: "Saboteur",
-      doctor: "Docteur bio",
-      security: "Chef de sécurité",
-      radar: "Officier radar",
-      ai_agent: "Agent IA",
-      engineer: "Ingénieur",
-      chameleon: "Caméléon"
-    })[rk] || rk;
+    const label = tRole(rk) || rk;
 
     const card = document.createElement("div");
     card.className = "choice-card";
@@ -645,7 +636,7 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
   if (state.phase === "NIGHT_CHAMELEON") {
     const alive = state.players.filter(p => p.status === "alive");
     controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Échanger", (id) => socket.emit("phaseAction", { targetId: id })));
-    controls.appendChild(makeHint("Caméléon : Nuit 1 uniquement. Un seul usage dans toute la partie."));
+    controls.appendChild(makeHint(`${tRole('chameleon')} : Nuit 1 uniquement. Un seul usage dans toute la partie.`));
   }
 
   if (state.phase === "NIGHT_AI_AGENT") {
@@ -959,11 +950,11 @@ function buildPhaseText(s) {
   if (p === "CAPTAIN_CANDIDACY") return `Choisis si tu te présentes au poste de ${t('captain')}.`;
   if (p === "CAPTAIN_VOTE") return `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`;
   if (p === "NIGHT_START") return "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.";
-  if (p === "NIGHT_CHAMELEON") return "Caméléon : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).";
-  if (p === "NIGHT_AI_AGENT") return "Agent IA : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).";
-  if (p === "NIGHT_RADAR") return "Radar : inspecte un joueur et découvre son rôle.";
+  if (p === "NIGHT_CHAMELEON") return `${tRole('chameleon')} : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).`;
+  if (p === "NIGHT_AI_AGENT") return `${tRole('ai_agent')} : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).`;
+  if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
   if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
-  if (p === "NIGHT_DOCTOR") return "Docteur : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.";
+  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.`;
 
   if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Annonce des effets de la nuit, puis passage au jour.";
   if (p === "DAY_WAKE") return `Réveil de la ${t('station')}. Validez pour passer à la suite.`;
@@ -1322,13 +1313,13 @@ function buildRulesHtml(cfg) {
   const on = (k) => !!enabled[k];
 
   const roleLines = [];
-  roleLines.push(`<li><b>Astronaute</b> — aucun pouvoir.</li>`);
-  roleLines.push(`<li><b>Saboteur</b> — vote unanimement une cible la nuit.</li>`);
-  if (on("radar")) roleLines.push(`<li><b>Officier radar</b> — inspecte un joueur et découvre son rôle.</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>Docteur bio</b> — 1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
-  if (on("chameleon")) roleLines.push(`<li><b>Caméléon</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
-  if (on("security")) roleLines.push(`<li><b>Chef de sécurité</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
-  if (on("ai_agent")) roleLines.push(`<li><b>Agent IA</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
+  roleLines.push(`<li><b>${tRole('astronaut')}</b> — aucun pouvoir.</li>`);
+  roleLines.push(`<li><b>${tRole('saboteur')}</b> — vote unanimement une cible la nuit.</li>`);
+  if (on("radar")) roleLines.push(`<li><b>${tRole('radar')}</b> — inspecte un joueur et découvre son rôle.</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
+  if (on("chameleon")) roleLines.push(`<li><b>${tRole('chameleon')}</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
+  if (on("security")) roleLines.push(`<li><b>${tRole('security')}</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
+  if (on("ai_agent")) roleLines.push(`<li><b>${tRole('ai_agent')}</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
 
   return `
     <div style="opacity:.95;">
@@ -1344,11 +1335,11 @@ function buildRulesHtml(cfg) {
 
       <h3 style="margin:10px 0;">Ordre de nuit</h3>
       <ol>
-        <li>Caméléon (Nuit 1)</li>
-        <li>Agent IA (Nuit 1)</li>
-        <li>Officier radar</li>
+        <li>${tRole('chameleon')} (Nuit 1)</li>
+        <li>${tRole('ai_agent')} (Nuit 1)</li>
+        <li>${tRole('radar')}</li>
         <li>${t('saboteurs')} (unanimité)</li>
-        <li>Docteur bio</li>
+        <li>${tRole('doctor')}</li>
         <li>Résolution + vengeance + liaison</li>
       </ol>
 
@@ -1524,6 +1515,35 @@ function t(key) {
   return currentTheme.terms[key] || key;
 }
 
+/**
+ * Traduit un nom de rôle selon le thème actif
+ * @param {string} roleKey - La clé du rôle (saboteur, astronaut, radar, doctor, etc.)
+ * @param {boolean} plural - Si true, retourne la forme plurielle si disponible
+ * @returns {string} - Le nom traduit du rôle
+ */
+function tRole(roleKey, plural = false) {
+  if (!currentTheme || !currentTheme.roles || !currentTheme.roles[roleKey]) {
+    // Fallback: noms par défaut
+    const defaults = {
+      saboteur: plural ? "Saboteurs" : "Saboteur",
+      astronaut: plural ? "Astronautes" : "Astronaute",
+      radar: "Officier radar",
+      doctor: "Docteur bio",
+      security: "Chef de sécurité",
+      ai_agent: "Agent IA",
+      engineer: "Ingénieur",
+      chameleon: "Caméléon"
+    };
+    return defaults[roleKey] || roleKey;
+  }
+  
+  const role = currentTheme.roles[roleKey];
+  if (plural && role.namePlural) {
+    return role.namePlural;
+  }
+  return role.name || roleKey;
+}
+
 // Charger la liste des thèmes disponibles
 fetch("/api/themes")
   .then(r => r.json())
@@ -1541,15 +1561,6 @@ fetch("/api/themes")
   .catch(e => console.error("[themes] failed to load", e));
 
 // Détecte et applique automatiquement le changement de thème
-/**
- * Applique les styles CSS du thème actif (polices, couleurs, effets)
- */
-function applyThemeStyles(themeId) {
-  // Définir l'attribut data-theme sur l'élément racine
-  document.documentElement.setAttribute('data-theme', themeId);
-  console.log("[theme-styles] Applied visual theme:", themeId);
-}
-
 function checkAndApplyTheme() {
   const themeId = state?.themeId || "default";
   
@@ -1560,9 +1571,6 @@ function checkAndApplyTheme() {
       currentTheme = newTheme;
       console.log("[theme] Applied theme:", themeId);
       
-      // Appliquer les styles visuels du thème
-      applyThemeStyles(themeId);
-      
       // Appliquer les traductions
       applyThemeTranslations();
     }
@@ -1571,10 +1579,10 @@ function checkAndApplyTheme() {
 
 // Applique les traductions du thème actif sur les éléments visibles
 function applyThemeTranslations() {
-  // Titre principal
-  const h1 = document.querySelector('h1');
-  if (h1 && !state?.roomCode) {
-    h1.textContent = t('title').toUpperCase();
+  // Titre principal (h1)
+  const mainTitle = document.getElementById('mainTitle');
+  if (mainTitle) {
+    mainTitle.textContent = t('title').toUpperCase();
   }
   
   // Titres des écrans
@@ -1584,7 +1592,8 @@ function applyThemeTranslations() {
   const joinTitle = document.getElementById('joinMissionTitle');
   if (joinTitle) joinTitle.textContent = `REJOINDRE UNE ${t('mission').toUpperCase()}`;
   
-  // Note: Les autres traductions sont appliquées dynamiquement dans les fonctions de render
+  // Note: Les autres traductions (rôles, phases, etc.) sont appliquées dynamiquement 
+  // dans les fonctions de render quand elles utilisent t() et tRole()
 }
 
 function renderThemeSelector(isHost) {
