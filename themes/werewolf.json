@@ -38,7 +38,7 @@
       "description": "Si dévoré par les loups, peut tirer sur un joueur de son choix."
     },
     "ai_agent": {
-      "name": "Cupidon",
+      "name": "L'Amoureux",
       "description": "La première nuit, lie deux joueurs amoureux. Si l'un meurt, l'autre aussi."
     },
     "engineer": {
@@ -58,7 +58,7 @@
     "CAPTAIN_VOTE": "Élection du maire",
     "NIGHT_START": "Le village s'endort",
     "NIGHT_CHAMELEON": "Loup métamorphe, réveille-toi",
-    "NIGHT_AI_AGENT": "Cupidon, réveille-toi",
+    "NIGHT_AI_AGENT": "L'Amoureux, réveille-toi",
     "NIGHT_RADAR": "Voyante, réveille-toi",
     "NIGHT_SABOTEURS": "Loups-garous, choisissez votre proie",
     "NIGHT_DOCTOR": "Sorcière, choisissez votre action",
