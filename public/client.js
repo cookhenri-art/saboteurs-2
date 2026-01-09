@@ -1541,15 +1541,6 @@ fetch("/api/themes")
   .catch(e => console.error("[themes] failed to load", e));
 
 // Détecte et applique automatiquement le changement de thème
-/**
- * Applique les styles CSS du thème actif (polices, couleurs, effets)
- */
-function applyThemeStyles(themeId) {
-  // Définir l'attribut data-theme sur l'élément racine
-  document.documentElement.setAttribute('data-theme', themeId);
-  console.log("[theme-styles] Applied visual theme:", themeId);
-}
-
 function checkAndApplyTheme() {
   const themeId = state?.themeId || "default";
   
@@ -1559,9 +1550,6 @@ function checkAndApplyTheme() {
     if (newTheme) {
       currentTheme = newTheme;
       console.log("[theme] Applied theme:", themeId);
-      
-      // Appliquer les styles visuels du thème
-      applyThemeStyles(themeId);
       
       // Appliquer les traductions
       applyThemeTranslations();

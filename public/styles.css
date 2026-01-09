@@ -4,262 +4,20 @@
     box-sizing: border-box;
 }
 
-/* ========================================
-   VARIABLES CSS PAR THÈME
-   ======================================== */
-
-/* THÈME 1 : INFILTRATION SPATIALE (Default) */
-:root[data-theme="default"],
 :root {
-    /* Couleurs de fond */
-    --primary-bg: #0a0e1a;
-    --secondary-bg: #1a1f35;
-    --tertiary-bg: #243447;
+    --neon-cyan: #00ffff;
+    --neon-red: #ff0033;
+    --neon-orange: #ff8800;
+    --neon-green: #00ff88;
     --deep-space: #000B18;
     --dark-panel: #0a1628;
-    
-    /* Couleurs néon/accent */
-    --neon-cyan: #00ffff;
-    --neon-blue: #00d9ff;
-    --neon-purple: #9d4edd;
-    --neon-green: #00ff88;
-    --neon-orange: #ff6b35;
-    --neon-red: #ff0055;
-    --neon-main: #00ffff;
-    
-    /* Couleurs texte */
-    --text-primary: #e0f4ff;
-    --text-secondary: #8ab4d5;
-    --text-muted: #5a7a95;
-    
-    /* Couleurs fonctionnelles */
     --metal-grey: #3a4a5a;
-    
-    /* Polices */
-    --font-title: 'Orbitron', sans-serif;
-    --font-body: 'Rajdhani', sans-serif;
-    
-    /* Effets */
-    --border-radius: 0px;
-    --glow-intensity: 0.8;
 }
-
-/* THÈME 2 : LA CHASSE AU LOUP (Werewolf) */
-:root[data-theme="werewolf"] {
-    /* Couleurs de fond */
-    --primary-bg: #0f1419;
-    --secondary-bg: #1a2332;
-    --tertiary-bg: #2d3e52;
-    --deep-space: #0f1419;
-    --dark-panel: #1a2332;
-    
-    /* Couleurs néon/accent */
-    --neon-cyan: #4a7c9b;
-    --neon-blue: #5a9bd4;
-    --neon-purple: #7b68ee;
-    --neon-red: #dc143c;
-    --neon-orange: #ff8c42;
-    --neon-green: #4ecdc4;
-    --neon-main: #4a7c9b;
-    
-    /* Couleurs texte */
-    --text-primary: #f0e7d8;
-    --text-secondary: #c9b99b;
-    --text-muted: #8a7a6a;
-    
-    /* Couleurs fonctionnelles */
-    --metal-grey: #5a6a7a;
-    
-    /* Polices */
-    --font-title: 'Cinzel', serif;
-    --font-body: 'Crimson Text', serif;
-    
-    /* Effets */
-    --border-radius: 8px;
-    --glow-intensity: 0.6;
-}
-
-/* THÈME 3 : L'ACADÉMIE DES SORCIERS (Wizard Academy) */
-:root[data-theme="wizard-academy"] {
-    /* Couleurs de fond */
-    --primary-bg: #1a0f2e;
-    --secondary-bg: #2d1b4e;
-    --tertiary-bg: #4a2e6e;
-    --deep-space: #1a0f2e;
-    --dark-panel: #2d1b4e;
-    
-    /* Couleurs néon/accent */
-    --neon-purple: #c77dff;
-    --neon-pink: #ff66cc;
-    --neon-blue: #7c3aed;
-    --neon-cyan: #06ffa5;
-    --neon-gold: #ffd700;
-    --neon-red: #ff006e;
-    --neon-main: #c77dff;
-    --neon-orange: #ff66cc;
-    --neon-green: #06ffa5;
-    
-    /* Couleurs texte */
-    --text-primary: #f0e6ff;
-    --text-secondary: #c0b3d8;
-    --text-muted: #8a7aa8;
-    
-    /* Couleurs fonctionnelles */
-    --metal-grey: #5a4a7a;
-    
-    /* Polices */
-    --font-title: 'Philosopher', sans-serif;
-    --font-body: 'Cormorant Garamond', serif;
-    
-    /* Effets */
-    --border-radius: 12px;
-    --glow-intensity: 0.9;
-}
-
-/* THÈME 4 : LA CONFRÉRIE FANTASTIQUE (Mythic Realms) */
-:root[data-theme="mythic-realms"] {
-    /* Couleurs de fond */
-    --primary-bg: #0d1b2a;
-    --secondary-bg: #1b263b;
-    --tertiary-bg: #2d3e52;
-    --deep-space: #0d1b2a;
-    --dark-panel: #1b263b;
-    
-    /* Couleurs néon/accent */
-    --neon-gold: #fca311;
-    --neon-orange: #ff8c42;
-    --neon-red: #d62828;
-    --neon-green: #80b918;
-    --neon-blue: #4a90e2;
-    --neon-purple: #9b59b6;
-    --neon-main: #fca311;
-    --neon-cyan: #fca311;
-    
-    /* Couleurs texte */
-    --text-primary: #e5e5e5;
-    --text-secondary: #b8bec9;
-    --text-muted: #7a8495;
-    
-    /* Couleurs fonctionnelles */
-    --metal-grey: #4a5a6a;
-    
-    /* Polices */
-    --font-title: 'MedievalSharp', 'Uncial Antiqua', serif;
-    --font-body: 'Lora', serif;
-    
-    /* Effets */
-    --border-radius: 6px;
-    --glow-intensity: 0.8;
-}
-
-/* ========================================
-   ANIMATIONS SPÉCIFIQUES PAR THÈME
-   ======================================== */
-
-/* Animations DEFAULT : Néon pulsant */
-:root[data-theme="default"] h1,
-:root h1 {
-    animation: neonPulse 2s ease-in-out infinite;
-}
-
-@keyframes neonPulse {
-    0%, 100% { 
-        text-shadow: 0 0 10px rgba(0, 255, 255, 0.8),
-                     0 0 20px rgba(0, 255, 255, 0.6);
-    }
-    50% { 
-        text-shadow: 0 0 20px rgba(0, 255, 255, 1),
-                     0 0 40px rgba(0, 255, 255, 0.8);
-    }
-}
-
-/* Animations WEREWOLF : Lueur lunaire */
-:root[data-theme="werewolf"] h1 {
-    animation: moonGlow 3s ease-in-out infinite;
-}
-
-@keyframes moonGlow {
-    0%, 100% { 
-        text-shadow: 0 0 10px rgba(74, 124, 155, 0.8),
-                     0 0 20px rgba(90, 155, 212, 0.5),
-                     2px 2px 4px rgba(0, 0, 0, 0.8);
-    }
-    50% { 
-        text-shadow: 0 0 20px rgba(74, 124, 155, 1),
-                     0 0 30px rgba(90, 155, 212, 0.8),
-                     2px 2px 4px rgba(0, 0, 0, 0.8);
-    }
-}
-
-/* Animations WIZARD : Magie changeante */
-:root[data-theme="wizard-academy"] h1 {
-    animation: magicGlow 3s ease-in-out infinite;
-}
-
-@keyframes magicGlow {
-    0%, 100% { 
-        text-shadow: 0 0 10px rgba(199, 125, 255, 1),
-                     0 0 20px rgba(199, 125, 255, 0.8),
-                     0 0 40px rgba(124, 58, 237, 0.6);
-    }
-    50% { 
-        text-shadow: 0 0 20px rgba(255, 102, 204, 1),
-                     0 0 40px rgba(199, 125, 255, 1),
-                     0 0 60px rgba(124, 58, 237, 0.8);
-    }
-}
-
-/* Animations MYTHIC : Feu/Or scintillant */
-:root[data-theme="mythic-realms"] h1 {
-    animation: fireGlow 2s ease-in-out infinite;
-}
-
-@keyframes fireGlow {
-    0%, 100% { 
-        text-shadow: 0 0 10px rgba(252, 163, 17, 1),
-                     0 0 20px rgba(255, 140, 66, 0.8),
-                     2px 2px 5px rgba(0, 0, 0, 0.9);
-    }
-    50% { 
-        text-shadow: 0 0 20px rgba(252, 163, 17, 1),
-                     0 0 30px rgba(255, 140, 66, 1),
-                     0 0 40px rgba(214, 40, 40, 0.6),
-                     2px 2px 5px rgba(0, 0, 0, 0.9);
-    }
-}
-
-/* Animation des boutons WIZARD : Shimmer magique */
-:root[data-theme="wizard-academy"] .btn-primary {
-    background: linear-gradient(135deg, #7c3aed, #c77dff, #ff66cc);
-    background-size: 200% 200%;
-    animation: magicShimmer 3s ease infinite;
-}
-
-@keyframes magicShimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
-
-/* Animation des boutons MYTHIC : Shimmer épique */
-:root[data-theme="mythic-realms"] .btn-primary {
-    background: linear-gradient(135deg, #fca311, #ff8c42, #d62828);
-    background-size: 200% 200%;
-    animation: epicShimmer 3s ease infinite;
-}
-
-@keyframes epicShimmer {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-}
-
-/* ========================================
-   STYLES DE BASE (utilisant les variables)
-   ======================================== */
 
 body {
-    font-family: var(--font-body);
+    font-family: 'Rajdhani', sans-serif;
     background: var(--deep-space);
-    color: var(--text-primary);
+    color: var(--neon-cyan);
     overflow-x: hidden;
     min-height: 100vh;
     position: relative;
@@ -340,13 +98,22 @@ body::before {
 }
 
 h1 {
-    font-family: var(--font-title);
+    font-family: 'Orbitron', sans-serif;
     font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 900;
     letter-spacing: 8px;
     text-transform: uppercase;
-    color: var(--neon-main);
-    text-shadow: 0 0 30px var(--neon-main);
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green), var(--neon-cyan));
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-flow 3s linear infinite;
+    text-shadow: 0 0 30px var(--neon-cyan);
+}
+
+@keyframes gradient-flow {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
 }
 
 .subtitle {
@@ -372,9 +139,9 @@ h1 {
 }
 
 .control-panel {
-    background: linear-gradient(135deg, var(--dark-panel), var(--secondary-bg));
-    border: 2px solid var(--neon-main);
-    border-radius: var(--border-radius);
+    background: linear-gradient(135deg, var(--dark-panel), #0d1f3a);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 15px;
     padding: 30px;
     margin: 20px auto;
     max-width: 600px;
@@ -389,8 +156,8 @@ h1 {
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, var(--neon-main), var(--neon-green), var(--neon-main));
-    border-radius: var(--border-radius);
+    background: linear-gradient(45deg, var(--neon-cyan), var(--neon-green), var(--neon-cyan));
+    border-radius: 15px;
     z-index: -1;
     opacity: 0.5;
     filter: blur(10px);
@@ -399,7 +166,7 @@ h1 {
 .panel-title {
     text-align: center;
     margin-bottom: 30px;
-    font-family: var(--font-title);
+    font-family: 'Orbitron', sans-serif;
     letter-spacing: 3px;
     font-size: 1.5rem;
 }
@@ -410,13 +177,13 @@ h1 {
 
 label {
     display: block;
-    font-family: var(--font-title);
+    font-family: 'Orbitron', sans-serif;
     font-size: 0.9rem;
     font-weight: 700;
     letter-spacing: 2px;
     margin-bottom: 10px;
     text-transform: uppercase;
-    color: var(--neon-main);
+    color: var(--neon-cyan);
 }
 
 input[type="text"],
@@ -424,10 +191,10 @@ input[type="password"] {
     width: 100%;
     padding: 15px 20px;
     background: rgba(0, 0, 0, 0.5);
-    border: 2px solid var(--neon-main);
-    border-radius: var(--border-radius);
-    color: var(--text-primary);
-    font-family: var(--font-body);
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    color: var(--neon-cyan);
+    font-family: 'Rajdhani', sans-serif;
     font-size: 1.1rem;
     font-weight: 500;
     letter-spacing: 1px;
@@ -459,54 +226,14 @@ input:focus {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--neon-main), var(--neon-green));
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
     color: var(--deep-space);
-    box-shadow: 0 0 20px var(--neon-main);
-    font-weight: 900;
-}
-
-/* Styles spécifiques des boutons WEREWOLF */
-:root[data-theme="werewolf"] .btn-primary {
-    background: linear-gradient(135deg, #4a7c9b, #5a9bd4);
-    color: #f0e7d8;
-    border: 2px solid #7b68ee;
-    box-shadow: 0 4px 15px rgba(74, 124, 155, 0.5), inset 0 2px 5px rgba(255, 255, 255, 0.2);
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-}
-
-:root[data-theme="werewolf"] .btn-primary:hover {
-    background: linear-gradient(135deg, #5a9bd4, #7b68ee);
-    box-shadow: 0 6px 25px rgba(123, 104, 238, 0.7);
-}
-
-/* Styles spécifiques des boutons MYTHIC */
-:root[data-theme="mythic-realms"] .btn-primary {
-    color: #0d1b2a;
-    border: 2px solid #ffd700;
-    box-shadow: 0 4px 20px rgba(252, 163, 17, 0.7), inset 0 2px 10px rgba(255, 255, 255, 0.3);
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-}
-
-:root[data-theme="mythic-realms"] .btn-primary:hover {
-    box-shadow: 0 6px 30px rgba(252, 163, 17, 1);
-    transform: scale(1.05) translateY(-2px);
-}
-
-/* Styles spécifiques des boutons WIZARD */
-:root[data-theme="wizard-academy"] .btn-primary {
-    color: #fff;
-    border: 2px solid #ffd700;
-    box-shadow: 0 0 30px rgba(199, 125, 255, 0.8);
-}
-
-:root[data-theme="wizard-academy"] .btn-primary:hover {
-    box-shadow: 0 0 50px rgba(255, 102, 204, 1);
-    transform: scale(1.05);
+    box-shadow: 0 0 20px var(--neon-cyan);
 }
 
 .btn-primary:hover {
     transform: translateY(-3px);
-    box-shadow: 0 0 40px var(--neon-main);
+    box-shadow: 0 0 40px var(--neon-cyan);
 }
 
 .btn-secondary {
@@ -549,7 +276,7 @@ input:focus {
 
 .player-item {
     background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
-    border-left: 4px solid var(--neon-main);
+    border-left: 4px solid var(--neon-cyan);
     padding: 12px 20px;
     margin: 10px 0;
     border-radius: 5px;
