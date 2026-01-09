@@ -20,8 +20,18 @@ const STORAGE = {
   room: "is_roomCode",
 };
 
+// Mode debug: ajouter ?debug=1 dans l'URL pour créer un nouveau token à chaque session
+const isDebugMode = new URLSearchParams(window.location.search).get('debug') === '1';
+
 // Générer ou récupérer le playerToken (localStorage pour persistence entre sessions)
 function getOrCreatePlayerToken() {
+  // En mode debug, créer un nouveau token à chaque fois pour tester avec plusieurs fenêtres
+  if (isDebugMode) {
+    const token = crypto.randomUUID();
+    console.log('[DEBUG MODE] New playerToken generated:', token);
+    return token;
+  }
+  
   let token = localStorage.getItem(STORAGE.playerToken);
   if (!token) {
     token = crypto.randomUUID();
@@ -41,6 +51,16 @@ function getOrCreatePlayerId() {
 
 const playerId = getOrCreatePlayerId();
 const playerToken = getOrCreatePlayerToken();
+
+// Afficher un indicateur visuel en mode debug
+if (isDebugMode) {
+  window.addEventListener('DOMContentLoaded', () => {
+    const indicator = document.createElement('div');
+    indicator.textContent = '🔧 MODE DEBUG';
+    indicator.style.cssText = 'position:fixed;top:10px;right:10px;background:red;color:white;padding:5px 10px;border-radius:5px;font-size:12px;z-index:99999;';
+    document.body.appendChild(indicator);
+  });
+}
 
 let state = null;
 let lastAudioToken = null;
