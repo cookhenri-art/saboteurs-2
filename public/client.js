@@ -1010,8 +1010,29 @@ class AudioManager {
 
   async _safePlay(a, cueForPending, fallbackTtsText = null) {
     try {
-      try { a.currentTime = 0; } catch {}
+      // Ensure metadata is available so resetting currentTime to 0 is reliable.
+      // This prevents "starting near the end" glitches on some browsers.
       try { a.load(); } catch {}
+      if (a.readyState < 1) {
+        await new Promise((resolve) => {
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
+            cleanup();
+            resolve();
+          };
+          const cleanup = () => {
+            a.removeEventListener("loadedmetadata", finish);
+            a.removeEventListener("canplay", finish);
+            clearTimeout(t);
+          };
+          a.addEventListener("loadedmetadata", finish);
+          a.addEventListener("canplay", finish);
+          const t = setTimeout(finish, 600);
+        });
+      }
+      try { a.currentTime = 0; } catch {}
       await a.play();
       return true;
     } catch (err) {
