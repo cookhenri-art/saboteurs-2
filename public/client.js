@@ -269,15 +269,15 @@ function setBackdrop() {
 
   // cockpit during lobby + role validation + captain election
   if (p === "LOBBY" || p === "MANUAL_ROLE_PICK" || p === "ROLE_REVEAL" || p === "CAPTAIN_CANDIDACY" || p === "CAPTAIN_VOTE") {
-    img = "/images/cockpit.png";
+    img = getThemeImagePath("cockpit.png");
   }
   // results: use ejection banner if there were ejections
   else if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText)) {
-    img = "/images/ejection.png";
+    img = getThemeImagePath("ejection.png");
   }
   // day / night banners
-  else if (p.startsWith("DAY")) img = "/images/vote-jour.png";
-  else if (p.startsWith("NIGHT")) img = "/images/vote-nuit.png";
+  else if (p.startsWith("DAY")) img = getThemeImagePath("vote-jour.png");
+  else if (p.startsWith("NIGHT")) img = getThemeImagePath("vote-nuit.png");
 
   if (img) el.style.backgroundImage = `url('${img}')`;
   else el.style.backgroundImage = "none";
@@ -285,6 +285,10 @@ function setBackdrop() {
 
 function render() {
   if (!state) return;
+  
+  // Vérifier et appliquer le thème actif
+  checkAndApplyTheme();
+  
   // top buttons (quit removed)
 
   // engineer reminder banner at night start
@@ -435,9 +439,10 @@ function renderGame() {
   // role card (big icon + title + description)
   const roleCard = ensureRoleCardEl();
   const info = getRoleInfo(state.you?.role, state.you?.roleLabel);
-  const roleIconSrc = state.you?.roleIcon || "";
+  const roleIconFilename = state.you?.roleIcon || "";
+  const roleIconSrc = getRoleImagePath(roleIconFilename);
   const isCaptain = !!state.you?.isCaptain;
-  const captainIconSrc = isCaptain ? "/images/roles/capitaine.png" : "";
+  const captainIconSrc = isCaptain ? getRoleImagePath("capitaine.png") : "";
 
   // hide legacy small icons container (kept for compatibility)
   const icons = $("roleIcons");
@@ -808,10 +813,10 @@ function renderEnd() {
   const endBg = $("endBackdrop");
   if (endBg) {
     let img = null;
-    if (state.phase === "GAME_ABORTED") img = "/images/cockpit.png";
-    else if (winner === "SABOTEURS") img = "/images/image-fin-stats-explosion2.png";
-    else if (winner === "ASTRONAUTES") img = "/images/image-fin-stats-station2.png";
-    else if (winner === "AMOUREUX") img = "/images/image-fin-stats-station2.png";
+    if (state.phase === "GAME_ABORTED") img = getThemeImagePath("cockpit.png");
+    else if (winner === "SABOTEURS") img = getThemeImagePath("victory-saboteurs.png");
+    else if (winner === "ASTRONAUTES") img = getThemeImagePath("victory-astronauts.png");
+    else if (winner === "AMOUREUX") img = getThemeImagePath("victory-astronauts.png");
     endBg.style.backgroundImage = img ? `url('${img}')` : "none";
   }
   const title = $("winnerTitle");
@@ -1045,7 +1050,20 @@ class AudioManager {
     window.addEventListener("keydown", unlockAny);
   }
 
-  _createAudio(url, { loop = false } = {}) {
+  resolveAudioUrl(urlOrFilename) {
+    if (!urlOrFilename) return null;
+    // Si c'est déjà une URL complète, la retourner telle quelle
+    if (urlOrFilename.startsWith("http") || urlOrFilename.startsWith("/sounds/")) {
+      return urlOrFilename;
+    }
+    // Sinon, construire le chemin avec le thème actif
+    return getThemeAudioPath(urlOrFilename);
+  }
+
+  _createAudio(urlOrFilename, { loop = false } = {}) {
+    const url = this.resolveAudioUrl(urlOrFilename);
+    if (!url) return null;
+    
     const a = new Audio(url);
     a.preload = "auto";
     a.loop = !!loop;
@@ -1350,7 +1368,18 @@ $("joinRoomBtn").onclick = () => {
   sessionStorage.setItem(STORAGE.room, roomCode);
 
   socket.emit("joinRoom", { playerId, name, roomCode, playerToken }, (res) => {
-    if (!res?.ok) return setError(res?.error || "Erreur connexion");
+    if (!res?.ok) {
+      const error = res?.error || "Erreur connexion";
+      setError(error);
+      
+      // Si c'est un conflit de token, donner des conseils
+      if (error.includes("Session déjà active")) {
+        setTimeout(() => {
+          setError(error + " Conseil : Fermez tous les autres onglets de ce jeu et rafraîchissez cette page.");
+        }, 100);
+      }
+      return;
+    }
     startHeartbeat();
     clearError();
   });
@@ -1398,15 +1427,61 @@ showScreen("homeScreen");
 let availableThemes = [];
 let currentTheme = null;
 
+// Résout le chemin d'une image de rôle selon le thème actif
+function getRoleImagePath(filename) {
+  if (!filename) return "";
+  if (filename.startsWith("/") || filename.startsWith("http")) return filename;
+  
+  const themeId = currentTheme?.id || "default";
+  return `/images/${themeId}/roles/${filename}`;
+}
+
+// Résout le chemin d'une image générique selon le thème actif
+function getThemeImagePath(filename) {
+  if (!filename) return "";
+  if (filename.startsWith("/") || filename.startsWith("http")) return filename;
+  
+  const themeId = currentTheme?.id || "default";
+  return `/images/${themeId}/${filename}`;
+}
+
+// Résout le chemin d'un fichier audio selon le thème actif
+function getThemeAudioPath(filename) {
+  if (!filename) return "";
+  if (filename.startsWith("/") || filename.startsWith("http")) return filename;
+  
+  const themeId = currentTheme?.id || "default";
+  return `/sounds/${themeId}/${filename}`;
+}
+
 // Charger la liste des thèmes disponibles
 fetch("/api/themes")
   .then(r => r.json())
   .then(data => {
     if (data.ok && data.themes) {
       availableThemes = data.themes;
+      // Appliquer le thème par défaut au chargement
+      const defaultTheme = availableThemes.find(t => t.id === "default");
+      if (defaultTheme) {
+        currentTheme = defaultTheme;
+      }
     }
   })
   .catch(e => console.error("[themes] failed to load", e));
+
+// Détecte et applique automatiquement le changement de thème
+function checkAndApplyTheme() {
+  const themeId = state?.themeId || "default";
+  
+  // Si le thème a changé, l'appliquer
+  if (!currentTheme || currentTheme.id !== themeId) {
+    const newTheme = availableThemes.find(t => t.id === themeId);
+    if (newTheme) {
+      currentTheme = newTheme;
+      console.log("[theme] Applied theme:", themeId);
+    }
+  }
+}
 
 function renderThemeSelector(isHost) {
   const selector = $("themeSelector");
