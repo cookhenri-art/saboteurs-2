@@ -10,19 +10,19 @@
     "crew": "Engagés",
     "mission": "périple",
     "title": "La Confrérie Fantastique",
-    "saboteurs": "Orques",
+    "saboteurs": "Orques Maléfiques",
     "astronauts": "Humains"
   },
   "roles": {
     "saboteur": {
-      "name": "Orque",
-      "namePlural": "Orques",
+      "name": "Ogre",
+      "namePlural": "Ogres",
       "description": "Créatures brutales infiltrées parmi les habitants du royaume."
     },
     "astronaut": {
-      "name": "Humain",
-      "namePlural": "Humains",
-      "description": "Citoyens du royaume qui doivent identifier et bannir les orques."
+      "name": "Habitant",
+      "namePlural": "Habitants",
+      "description": "Citoyens du royaume qui doivent identifier et bannir les ogres."
     },
     "radar": {
       "name": "Éclaireur",
