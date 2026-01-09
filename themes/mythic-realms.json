@@ -1,9 +1,18 @@
 {
   "id": "mythic-realms",
   "name": "Royaumes Mythiques",
-  "homeTitle": "ROYAUMES MYTHIQUES",
+  "homeTitle": "LA CONFRÉRIE FANTASTIQUE",
   "description": "Un royaume fantastique menacé par des ogres infiltrés",
   
+  "terms": {
+    "captain": "Guide Sacré",
+    "station": "La Confrérie",
+    "crew": "Engagés",
+    "mission": "périple",
+    "title": "La Confrérie Fantastique",
+    "saboteurs": "Orques Maléfiques",
+    "astronauts": "Humains"
+  },
   "roles": {
     "saboteur": {
       "name": "Ogre",

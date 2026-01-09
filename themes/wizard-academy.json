@@ -1,9 +1,18 @@
 {
   "id": "wizard-academy",
   "name": "Académie des Sorciers",
-  "homeTitle": "ACADÉMIE DES SORCIERS",
+  "homeTitle": "L'ACADÉMIE DES SORCIERS",
   "description": "École de magie infiltrée par des sorciers maléfiques",
   
+  "terms": {
+    "captain": "Maître Mage",
+    "station": "école de sorcellerie",
+    "crew": "Inscrits",
+    "mission": "expédition",
+    "title": "L'Académie des Sorciers",
+    "saboteurs": "Sorciers Maléfiques",
+    "astronauts": "Mages Blancs"
+  },
   "roles": {
     "saboteur": {
       "name": "Sorcier Maléfique",

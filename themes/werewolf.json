@@ -1,8 +1,18 @@
 {
   "id": "werewolf",
   "name": "Loups-Garous de Thiercelieux",
-  "homeTitle": "LES LOUPS-GAROUS",
+  "homeTitle": "LA CHASSE AU LOUP",
   "description": "Le village contre les loups-garous - adaptation classique",
+  
+  "terms": {
+    "captain": "Maire",
+    "station": "village",
+    "crew": "Enrôlés",
+    "mission": "traque",
+    "title": "La Chasse au Loup",
+    "saboteurs": "Lycanthropes",
+    "astronauts": "Citadins"
+  },
   
   "roles": {
     "saboteur": {
@@ -96,12 +106,16 @@
   },
   
   "cssVars": {
-    "primary-bg": "#1a1a1a",
-    "secondary-bg": "#2d2d2d",
-    "accent-color": "#ff4444",
-    "neon-red": "#cc0000",
-    "neon-green": "#44ff44",
-    "text-primary": "#f5f5f5",
-    "text-secondary": "#cccccc"
+    "primary-bg": "#1a1a2d",
+    "secondary-bg": "#16213e",
+    "accent-color": "#4a7c9b",
+    "neon-cyan": "#4a7c9b",
+    "neon-blue": "#5a9bd4",
+    "neon-purple": "#7b68ee",
+    "neon-red": "#dc143c",
+    "neon-orange": "#ff6b35",
+    "neon-green": "#4ecdc4",
+    "text-primary": "#f0e7d8",
+    "text-secondary": "#c9b99b"
   }
 }

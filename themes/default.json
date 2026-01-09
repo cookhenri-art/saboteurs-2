@@ -4,6 +4,15 @@
   "homeTitle": "INFILTRATION SPATIALE",
   "description": "Le thème spatial original avec saboteurs vs astronautes",
   
+  "terms": {
+    "captain": "Chef de station",
+    "station": "station",
+    "crew": "équipage",
+    "mission": "mission",
+    "title": "Infiltration Spatiale",
+    "saboteurs": "Saboteurs",
+    "astronauts": "Astronautes"
+  },
   "roles": {
     "saboteur": {
       "name": "Saboteur",
