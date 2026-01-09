@@ -1585,16 +1585,21 @@ function checkAndApplyTheme() {
       
       // Appliquer les traductions
       applyThemeTranslations();
+      
+      // Forcer le re-render pour mettre à jour tous les textes
+      if (state) {
+        render(state);
+      }
     }
   }
 }
 
 // Applique les traductions du thème actif sur les éléments visibles
 function applyThemeTranslations() {
-  // Titre principal
-  const h1 = document.querySelector('h1');
-  if (h1 && !state?.roomCode) {
-    h1.textContent = t('title').toUpperCase();
+  // Titre principal (avec ID)
+  const mainTitle = document.getElementById('mainTitle');
+  if (mainTitle) {
+    mainTitle.textContent = t('title').toUpperCase();
   }
   
   // Titres des écrans
@@ -1604,7 +1609,7 @@ function applyThemeTranslations() {
   const joinTitle = document.getElementById('joinMissionTitle');
   if (joinTitle) joinTitle.textContent = `REJOINDRE UNE ${t('mission').toUpperCase()}`;
   
-  // Note: Les autres traductions sont appliquées dynamiquement dans les fonctions de render
+  // Note: Les autres traductions (rôles) sont appliquées dynamiquement dans render()
 }
 
 function renderThemeSelector(isHost) {
