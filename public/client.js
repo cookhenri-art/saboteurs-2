@@ -841,9 +841,9 @@ function renderEnd() {
   if (endBg) {
     let img = null;
     if (state.phase === "GAME_ABORTED") img = getThemeImagePath("cockpit.png");
-    else if (winner === "SABOTEURS") img = getThemeImagePath("victory-saboteurs.png");
-    else if (winner === "ASTRONAUTES") img = getThemeImagePath("victory-astronauts.png");
-    else if (winner === "AMOUREUX") img = getThemeImagePath("victory-astronauts.png");
+    else if (winner === "SABOTEURS") img = getThemeImagePath("image-fin-stats-explosion2.png");
+    else if (winner === "ASTRONAUTES") img = getThemeImagePath("image-fin-stats-station2.png");
+    else if (winner === "AMOUREUX") img = getThemeImagePath("image-fin-stats-station2.png");
     endBg.style.backgroundImage = img ? `url('${img}')` : "none";
   }
   const title = $("winnerTitle");
