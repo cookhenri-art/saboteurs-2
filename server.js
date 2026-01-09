@@ -190,8 +190,18 @@ function findSoundByKeywords(keywords) {
 
 function getSoundUrl(key, keywordsFallback = []) {
   const direct = findSoundByKey(key);
-  if (direct) return direct;
-  return findSoundByKeywords([key, ...(keywordsFallback || [])]);
+  if (direct) {
+    // Extraire juste le nom du fichier depuis l'URL complète
+    // Ex: "/sounds/INTRO_LOBBY.mp3" -> "INTRO_LOBBY.mp3"
+    const filename = direct.split('/').pop();
+    return filename;
+  }
+  const fallback = findSoundByKeywords([key, ...(keywordsFallback || [])]);
+  if (fallback) {
+    const filename = fallback.split('/').pop();
+    return filename;
+  }
+  return null;
 }
 
 // Role wake/sleep keys
