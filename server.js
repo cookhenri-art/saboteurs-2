@@ -5,7 +5,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 3000;
-const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v22";
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v23";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
