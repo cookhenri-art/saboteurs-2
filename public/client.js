@@ -41,6 +41,13 @@ function getOrCreatePlayerToken() {
 }
 
 function getOrCreatePlayerId() {
+  // En mode debug, créer un nouveau playerId à chaque fois
+  if (isDebugMode) {
+    const id = crypto.randomUUID();
+    console.log('[DEBUG MODE] New playerId generated:', id);
+    return id;
+  }
+  
   let id = sessionStorage.getItem(STORAGE.playerId);
   if (!id) {
     id = crypto.randomUUID();
