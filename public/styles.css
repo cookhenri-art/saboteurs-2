@@ -1,1246 +1,893 @@
+/* ============================================
+   VARIABLES CSS PAR THÈME
+   ============================================ */
+
+/* THÈME DEFAULT - INFILTRATION SPATIALE (Spatial Sci-Fi) */
+:root[data-theme="default"] {
+    /* Couleurs principales */
+    --primary-color: #00ffff;
+    --secondary-color: #ff00ff;
+    --accent-color: #00ff88;
+    --danger-color: #ff3366;
+    --warning-color: #ffaa00;
+    
+    /* Couleurs de fond */
+    --bg-primary: #0a0e27;
+    --bg-secondary: #1a1f3a;
+    --bg-tertiary: #2a2f4a;
+    --bg-overlay: rgba(10, 14, 39, 0.95);
+    
+    /* Couleurs de texte */
+    --text-primary: #ffffff;
+    --text-secondary: #b0b8d4;
+    --text-muted: #6b7394;
+    
+    /* Effets néon */
+    --neon-glow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color), 0 0 30px var(--primary-color);
+    --neon-glow-strong: 0 0 20px var(--primary-color), 0 0 40px var(--primary-color), 0 0 60px var(--primary-color), 0 0 80px var(--primary-color);
+    
+    /* Polices */
+    --font-title: 'Orbitron', sans-serif;
+    --font-body: 'Rajdhani', sans-serif;
+    
+    /* Bordures */
+    --border-width: 2px;
+    --border-radius: 8px;
+    --border-style: solid var(--primary-color);
+}
+
+/* THÈME WEREWOLF - LA CHASSE AU LOUP (Médiéval Village) */
+:root[data-theme="werewolf"] {
+    /* Couleurs principales */
+    --primary-color: #4a7c9b;
+    --secondary-color: #8b4789;
+    --accent-color: #c9a961;
+    --danger-color: #8b0000;
+    --warning-color: #d4a017;
+    
+    /* Couleurs de fond */
+    --bg-primary: #1a1a2e;
+    --bg-secondary: #2d2d44;
+    --bg-tertiary: #3e3e5a;
+    --bg-overlay: rgba(26, 26, 46, 0.95);
+    
+    /* Couleurs de texte */
+    --text-primary: #e8e8f0;
+    --text-secondary: #b8b8d0;
+    --text-muted: #8888a0;
+    
+    /* Effets lueur lunaire */
+    --neon-glow: 0 0 15px rgba(74, 124, 155, 0.5), 0 0 30px rgba(74, 124, 155, 0.3);
+    --neon-glow-strong: 0 0 20px rgba(74, 124, 155, 0.8), 0 0 40px rgba(74, 124, 155, 0.6), 0 0 60px rgba(74, 124, 155, 0.4);
+    
+    /* Polices */
+    --font-title: 'Cinzel', serif;
+    --font-body: 'Crimson Text', serif;
+    
+    /* Bordures */
+    --border-width: 3px;
+    --border-radius: 4px;
+    --border-style: solid var(--primary-color);
+}
+
+/* THÈME WIZARD ACADEMY - L'ACADÉMIE DES SORCIERS (Magique) */
+:root[data-theme="wizard-academy"] {
+    /* Couleurs principales */
+    --primary-color: #c77dff;
+    --secondary-color: #7209b7;
+    --accent-color: #f72585;
+    --danger-color: #d62828;
+    --warning-color: #faa307;
+    
+    /* Couleurs de fond */
+    --bg-primary: #0f0820;
+    --bg-secondary: #1f1635;
+    --bg-tertiary: #2f244a;
+    --bg-overlay: rgba(15, 8, 32, 0.95);
+    
+    /* Couleurs de texte */
+    --text-primary: #f0e6ff;
+    --text-secondary: #d0c0e8;
+    --text-muted: #a090c0;
+    
+    /* Effets magiques */
+    --neon-glow: 0 0 12px rgba(199, 125, 255, 0.6), 0 0 24px rgba(199, 125, 255, 0.4);
+    --neon-glow-strong: 0 0 20px rgba(199, 125, 255, 0.9), 0 0 40px rgba(199, 125, 255, 0.7), 0 0 60px rgba(199, 125, 255, 0.5), 0 0 80px rgba(199, 125, 255, 0.3);
+    
+    /* Polices */
+    --font-title: 'Philosopher', sans-serif;
+    --font-body: 'Cormorant Garamond', serif;
+    
+    /* Bordures */
+    --border-width: 2px;
+    --border-radius: 12px;
+    --border-style: solid var(--primary-color);
+}
+
+/* THÈME MYTHIC REALMS - LA CONFRÉRIE FANTASTIQUE (Fantasy Épique) */
+:root[data-theme="mythic-realms"] {
+    /* Couleurs principales */
+    --primary-color: #fca311;
+    --secondary-color: #dc2f02;
+    --accent-color: #d4af37;
+    --danger-color: #9d0208;
+    --warning-color: #f48c06;
+    
+    /* Couleurs de fond */
+    --bg-primary: #1a0f0a;
+    --bg-secondary: #2d1e16;
+    --bg-tertiary: #402d22;
+    --bg-overlay: rgba(26, 15, 10, 0.95);
+    
+    /* Couleurs de texte */
+    --text-primary: #ffe8d6;
+    --text-secondary: #d4c0a8;
+    --text-muted: #a89078;
+    
+    /* Effets feu/or */
+    --neon-glow: 0 0 15px rgba(252, 163, 17, 0.5), 0 0 30px rgba(252, 163, 17, 0.3);
+    --neon-glow-strong: 0 0 20px rgba(252, 163, 17, 0.9), 0 0 40px rgba(252, 163, 17, 0.7), 0 0 60px rgba(220, 47, 2, 0.5), 0 0 80px rgba(220, 47, 2, 0.3);
+    
+    /* Polices */
+    --font-title: 'MedievalSharp', cursive;
+    --font-body: 'Lora', serif;
+    
+    /* Bordures */
+    --border-width: 3px;
+    --border-radius: 6px;
+    --border-style: solid var(--primary-color);
+}
+
+/* ============================================
+   ANIMATIONS PAR THÈME
+   ============================================ */
+
+/* ANIMATIONS DEFAULT - Tech Pulse */
+@keyframes techPulse {
+    0%, 100% { 
+        box-shadow: 0 0 10px var(--primary-color), 0 0 20px var(--primary-color);
+        transform: scale(1);
+    }
+    50% { 
+        box-shadow: 0 0 20px var(--primary-color), 0 0 40px var(--primary-color), 0 0 60px var(--primary-color);
+        transform: scale(1.02);
+    }
+}
+
+@keyframes neonFlicker {
+    0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+        text-shadow: var(--neon-glow);
+        opacity: 1;
+    }
+    20%, 24%, 55% {
+        text-shadow: none;
+        opacity: 0.8;
+    }
+}
+
+/* ANIMATIONS WEREWOLF - Lunar Glow */
+@keyframes lunarGlow {
+    0%, 100% { 
+        box-shadow: 0 0 15px rgba(74, 124, 155, 0.5), 0 0 30px rgba(74, 124, 155, 0.3);
+        filter: brightness(1);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(74, 124, 155, 0.8), 0 0 50px rgba(74, 124, 155, 0.6), 0 0 75px rgba(74, 124, 155, 0.4);
+        filter: brightness(1.2);
+    }
+}
+
+@keyframes moonShimmer {
+    0%, 100% {
+        text-shadow: 0 0 10px rgba(74, 124, 155, 0.8), 0 0 20px rgba(74, 124, 155, 0.5);
+        opacity: 1;
+    }
+    50% {
+        text-shadow: 0 0 15px rgba(74, 124, 155, 1), 0 0 30px rgba(74, 124, 155, 0.7), 0 0 45px rgba(139, 71, 137, 0.5);
+        opacity: 0.95;
+    }
+}
+
+/* ANIMATIONS WIZARD - Magic Shift */
+@keyframes magicShift {
+    0% { 
+        box-shadow: 0 0 15px rgba(199, 125, 255, 0.6), 0 0 30px rgba(199, 125, 255, 0.4);
+        border-color: #c77dff;
+    }
+    33% { 
+        box-shadow: 0 0 15px rgba(114, 9, 183, 0.6), 0 0 30px rgba(114, 9, 183, 0.4);
+        border-color: #7209b7;
+    }
+    66% { 
+        box-shadow: 0 0 15px rgba(247, 37, 133, 0.6), 0 0 30px rgba(247, 37, 133, 0.4);
+        border-color: #f72585;
+    }
+    100% { 
+        box-shadow: 0 0 15px rgba(199, 125, 255, 0.6), 0 0 30px rgba(199, 125, 255, 0.4);
+        border-color: #c77dff;
+    }
+}
+
+@keyframes spellGlow {
+    0%, 100% {
+        text-shadow: 0 0 10px rgba(199, 125, 255, 0.8), 0 0 20px rgba(199, 125, 255, 0.5);
+    }
+    25% {
+        text-shadow: 0 0 15px rgba(114, 9, 183, 0.9), 0 0 30px rgba(114, 9, 183, 0.6);
+    }
+    50% {
+        text-shadow: 0 0 12px rgba(247, 37, 133, 0.8), 0 0 24px rgba(247, 37, 133, 0.5);
+    }
+    75% {
+        text-shadow: 0 0 15px rgba(199, 125, 255, 0.9), 0 0 30px rgba(199, 125, 255, 0.6);
+    }
+}
+
+/* ANIMATIONS MYTHIC - Fire Flicker */
+@keyframes fireFlicker {
+    0%, 100% { 
+        box-shadow: 0 0 15px rgba(252, 163, 17, 0.6), 0 0 30px rgba(252, 163, 17, 0.4);
+        filter: brightness(1);
+    }
+    25% { 
+        box-shadow: 0 0 20px rgba(252, 163, 17, 0.8), 0 0 40px rgba(220, 47, 2, 0.5);
+        filter: brightness(1.15);
+    }
+    50% { 
+        box-shadow: 0 0 25px rgba(220, 47, 2, 0.7), 0 0 50px rgba(252, 163, 17, 0.5);
+        filter: brightness(1.1);
+    }
+    75% { 
+        box-shadow: 0 0 18px rgba(252, 163, 17, 0.7), 0 0 36px rgba(220, 47, 2, 0.4);
+        filter: brightness(1.2);
+    }
+}
+
+@keyframes emberGlow {
+    0%, 100% {
+        text-shadow: 0 0 10px rgba(252, 163, 17, 0.8), 0 0 20px rgba(252, 163, 17, 0.5);
+    }
+    33% {
+        text-shadow: 0 0 15px rgba(220, 47, 2, 0.9), 0 0 30px rgba(220, 47, 2, 0.6), 0 0 45px rgba(157, 2, 8, 0.3);
+    }
+    66% {
+        text-shadow: 0 0 12px rgba(212, 175, 55, 0.9), 0 0 24px rgba(212, 175, 55, 0.6);
+    }
+}
+
+/* ============================================
+   STYLES DE BASE (Communs à tous les thèmes)
+   ============================================ */
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
-:root {
-    --neon-cyan: #00ffff;
-    --neon-red: #ff0033;
-    --neon-orange: #ff8800;
-    --neon-green: #00ff88;
-    --deep-space: #000B18;
-    --dark-panel: #0a1628;
-    --metal-grey: #3a4a5a;
-}
-
 body {
-    font-family: 'Rajdhani', sans-serif;
-    background: var(--deep-space);
-    color: var(--neon-cyan);
-    overflow-x: hidden;
+    font-family: var(--font-body);
+    background: var(--bg-primary);
+    color: var(--text-primary);
     min-height: 100vh;
-    position: relative;
-    /* Optimisations mobile */
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    touch-action: manipulation; /* Désactive le double-tap zoom */
+    overflow-x: hidden;
+    transition: background 0.5s ease, color 0.3s ease;
 }
 
-body::before {
-    content: '';
+/* Overlay d'activation audio */
+.audio-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(2px 2px at 20% 30%, white, transparent),
-        radial-gradient(2px 2px at 60% 70%, white, transparent),
-        radial-gradient(1px 1px at 50% 50%, white, transparent),
-        radial-gradient(1px 1px at 80% 10%, white, transparent),
-        radial-gradient(2px 2px at 90% 60%, white, transparent);
-    background-size: 200% 200%;
-    animation: twinkle 8s ease-in-out infinite;
-    opacity: 0.3;
-    z-index: 0;
-}
-
-@keyframes twinkle {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 0.6; }
-}
-
-.container {
-    position: relative;
-    z-index: 1;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
-}
-
-.header {
-    text-align: center;
-    padding: 30px 0;
-}
-
-.logo {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 20px;
-    background: radial-gradient(circle, var(--neon-cyan), transparent);
-    border-radius: 50%;
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg-overlay);
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: pulse-glow 2s ease-in-out infinite;
-    position: relative;
+    z-index: 10000;
+    backdrop-filter: blur(10px);
 }
 
-.logo::before {
-    content: '';
-    position: absolute;
-    width: 40px;
-    height: 40px;
-    background: var(--neon-cyan);
-    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-    animation: spin 10s linear infinite;
+.audio-overlay.hidden {
+    display: none;
 }
 
-@keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px var(--neon-cyan); }
-    50% { box-shadow: 0 0 40px var(--neon-cyan), 0 0 80px var(--neon-cyan); }
+.audio-overlay-content {
+    text-align: center;
+    padding: 40px;
+    background: var(--bg-secondary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+    box-shadow: var(--neon-glow);
 }
 
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+.sound-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
 }
 
-h1 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 900;
-    letter-spacing: 8px;
-    text-transform: uppercase;
-    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green), var(--neon-cyan));
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradient-flow 3s linear infinite;
-    text-shadow: 0 0 30px var(--neon-cyan);
+:root[data-theme="default"] .sound-icon {
+    animation: techPulse 2s ease-in-out infinite;
 }
 
-@keyframes gradient-flow {
-    0% { background-position: 0% center; }
-    100% { background-position: 200% center; }
+:root[data-theme="werewolf"] .sound-icon {
+    animation: lunarGlow 3s ease-in-out infinite;
 }
 
-.subtitle {
-    font-size: clamp(0.9rem, 2vw, 1.2rem);
-    color: var(--neon-orange);
-    letter-spacing: 4px;
-    font-weight: 500;
-    margin-top: 10px;
+:root[data-theme="wizard-academy"] .sound-icon {
+    animation: magicShift 4s ease-in-out infinite;
 }
 
+:root[data-theme="mythic-realms"] .sound-icon {
+    animation: fireFlicker 2.5s ease-in-out infinite;
+}
+
+.audio-overlay-content h2 {
+    font-family: var(--font-title);
+    font-size: 28px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+:root[data-theme="default"] .audio-overlay-content h2 {
+    text-shadow: var(--neon-glow);
+    animation: neonFlicker 4s infinite;
+}
+
+:root[data-theme="werewolf"] .audio-overlay-content h2 {
+    animation: moonShimmer 3s ease-in-out infinite;
+}
+
+:root[data-theme="wizard-academy"] .audio-overlay-content h2 {
+    animation: spellGlow 4s ease-in-out infinite;
+}
+
+:root[data-theme="mythic-realms"] .audio-overlay-content h2 {
+    animation: emberGlow 3s ease-in-out infinite;
+}
+
+.audio-overlay-content p {
+    color: var(--text-secondary);
+    margin-bottom: 25px;
+    font-size: 16px;
+}
+
+.audio-enable-btn {
+    padding: 15px 40px;
+    font-family: var(--font-title);
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--bg-primary);
+    background: var(--primary-color);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.audio-enable-btn:hover {
+    transform: scale(1.05);
+    box-shadow: var(--neon-glow-strong);
+}
+
+/* Écrans */
 .screen {
     display: none;
-    animation: fadeIn 0.5s ease-in;
+    min-height: 100vh;
+    padding: 20px;
 }
 
 .screen.active {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.control-panel {
-    background: linear-gradient(135deg, var(--dark-panel), #0d1f3a);
-    border: 2px solid var(--neon-cyan);
-    border-radius: 15px;
-    padding: 30px;
-    margin: 20px auto;
-    max-width: 600px;
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), inset 0 0 30px rgba(0, 255, 255, 0.05);
-    position: relative;
-}
-
-.control-panel::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, var(--neon-cyan), var(--neon-green), var(--neon-cyan));
-    border-radius: 15px;
-    z-index: -1;
-    opacity: 0.5;
-    filter: blur(10px);
-}
-
-.panel-title {
-    text-align: center;
-    margin-bottom: 30px;
-    font-family: 'Orbitron', sans-serif;
-    letter-spacing: 3px;
-    font-size: 1.5rem;
-}
-
-.form-group {
-    margin-bottom: 25px;
-}
-
-label {
-    display: block;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-    text-transform: uppercase;
-    color: var(--neon-cyan);
-}
-
-input[type="text"],
-input[type="password"] {
+.container {
     width: 100%;
-    padding: 15px 20px;
-    background: rgba(0, 0, 0, 0.5);
-    border: 2px solid var(--neon-cyan);
-    border-radius: 8px;
-    color: var(--neon-cyan);
-    font-family: 'Rajdhani', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 500;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
+    max-width: 800px;
+    padding: 40px;
+    background: var(--bg-secondary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+    box-shadow: var(--neon-glow);
 }
 
-input:focus {
-    outline: none;
-    border-color: var(--neon-green);
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
-    background: rgba(0, 0, 0, 0.7);
-}
-
-.btn {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
+/* Titres */
+.title {
+    font-family: var(--font-title);
+    font-size: 48px;
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 30px;
     letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 15px 40px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    /* Optimisations tactiles */
-    min-height: 48px; /* Taille minimum pour le tactile */
-    -webkit-tap-highlight-color: transparent; /* Enlève le flash bleu sur mobile */
-    user-select: none; /* Empêche la sélection de texte */
 }
 
-.btn-primary {
-    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
-    color: var(--deep-space);
-    box-shadow: 0 0 20px var(--neon-cyan);
+:root[data-theme="default"] .title {
+    text-shadow: var(--neon-glow);
+    animation: neonFlicker 4s infinite;
 }
 
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0 40px var(--neon-cyan);
-}
-
-.btn-secondary {
-    background: linear-gradient(135deg, var(--neon-orange), var(--neon-red));
-    color: white;
-    box-shadow: 0 0 20px var(--neon-red);
-}
-
-.btn-secondary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 0 40px var(--neon-red);
-}
-
-.btn-danger {
-    background: var(--neon-red);
-    color: white;
-    animation: pulse-danger 2s ease-in-out infinite;
-}
-
-@keyframes pulse-danger {
-    0%, 100% { box-shadow: 0 0 20px var(--neon-red); }
-    50% { box-shadow: 0 0 60px var(--neon-red); transform: scale(1.05); }
-}
-
-.btn-group {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 30px;
-}
-
-.players-list {
-    background: rgba(0, 0, 0, 0.4);
-    border: 2px solid var(--metal-grey);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.player-item {
-    background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
-    border-left: 4px solid var(--neon-cyan);
-    padding: 12px 20px;
-    margin: 10px 0;
-    border-radius: 5px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: all 0.3s ease;
-}
-
-.player-item:hover {
-    background: linear-gradient(90deg, rgba(0, 255, 255, 0.2), transparent);
-    transform: translateX(5px);
-}
-
-.player-name {
-    font-size: 1.2rem;
-    font-weight: 600;
-    letter-spacing: 1px;
-}
-
-.player-badge {
-    background: var(--neon-orange);
-    color: var(--deep-space);
-    padding: 4px 12px;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    font-weight: 700;
-}
-
-.roles-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    margin: 20px 0;
-}
-
-.role-card {
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid var(--metal-grey);
-    border-radius: 10px;
-    padding: 15px;
-    transition: all 0.3s ease;
-}
-
-.role-card.active {
-    border-color: var(--neon-green);
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
-}
-
-.role-card.mandatory {
-    border-color: var(--neon-cyan);
-    background: rgba(0, 255, 255, 0.05);
-}
-
-.role-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.role-name {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
+:root[data-theme="werewolf"] .title {
+    animation: moonShimmer 3s ease-in-out infinite;
     letter-spacing: 2px;
 }
 
-.role-info {
-    width: 24px;
-    height: 24px;
-    background: var(--neon-cyan);
-    color: var(--deep-space);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 900;
-    cursor: help;
-    font-size: 0.8rem;
-    position: relative;
+:root[data-theme="wizard-academy"] .title {
+    animation: spellGlow 4s ease-in-out infinite;
+    letter-spacing: 1px;
 }
 
-.role-description {
-    font-size: 0.9rem;
-    color: var(--neon-green);
-    line-height: 1.4;
-    margin-top: 10px;
+:root[data-theme="mythic-realms"] .title {
+    animation: emberGlow 3s ease-in-out infinite;
+    letter-spacing: 2px;
 }
 
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 30px;
+/* Inputs */
+input[type="text"] {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-family: var(--font-body);
+    font-size: 16px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+    outline: none;
+    transition: all 0.3s ease;
 }
 
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
+input[type="text"]:focus {
+    box-shadow: var(--neon-glow);
 }
 
-.slider {
-    position: absolute;
+input[type="text"]::placeholder {
+    color: var(--text-muted);
+}
+
+/* Boutons */
+button {
+    font-family: var(--font-title);
+    font-size: 18px;
+    font-weight: bold;
+    padding: 15px 30px;
+    background: var(--primary-color);
+    color: var(--bg-primary);
+    border: none;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: var(--metal-grey);
-    transition: 0.4s;
-    border-radius: 30px;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 22px;
-    width: 22px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: 0.4s;
-    border-radius: 50%;
+button:hover:not(:disabled) {
+    transform: scale(1.05);
+    box-shadow: var(--neon-glow-strong);
 }
 
-input:checked + .slider {
-    background-color: var(--neon-green);
-    box-shadow: 0 0 15px var(--neon-green);
-}
-
-input:checked + .slider:before {
-    transform: translateX(30px);
-}
-
-input:disabled + .slider {
+button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.balance-meter {
-    margin: 30px 0;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid var(--neon-cyan);
-    border-radius: 10px;
-}
-
-.balance-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.2rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-align: center;
+.btn-primary {
+    width: 100%;
     margin-bottom: 15px;
 }
 
-.balance-bar {
-    height: 40px;
-    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-orange), var(--neon-red));
-    border-radius: 20px;
-    position: relative;
-    overflow: hidden;
-    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+.btn-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--primary-color);
+    border: var(--border-width) var(--border-style);
 }
 
-.balance-indicator {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 100%;
-    background: white;
-    box-shadow: 0 0 20px white;
-    transition: left 0.5s ease;
-    left: 50%;
+/* Sélection de thème */
+.theme-selector {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--bg-primary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
 }
 
-.balance-status {
+.theme-selector h3 {
+    font-family: var(--font-title);
+    color: var(--primary-color);
     text-align: center;
-    margin-top: 10px;
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: 2px;
+    margin-bottom: 20px;
+    font-size: 22px;
 }
 
-.balance-status.balanced { color: var(--neon-green); }
-.balance-status.humans { color: var(--neon-cyan); }
-.balance-status.saboteurs { color: var(--neon-red); }
+.theme-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 15px;
+}
+
+.theme-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 20px 15px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 2px solid var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.theme-btn:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.theme-btn.active {
+    border-color: var(--primary-color);
+    background: var(--bg-tertiary);
+    box-shadow: var(--neon-glow);
+}
+
+.theme-icon {
+    font-size: 32px;
+}
+
+.theme-name {
+    font-family: var(--font-title);
+    font-size: 14px;
+    font-weight: bold;
+}
+
+/* Info de la partie */
+.room-info {
+    text-align: center;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: var(--bg-primary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+}
+
+.room-info p {
+    font-size: 18px;
+    margin: 5px 0;
+    color: var(--text-secondary);
+}
 
 .room-code {
-    text-align: center;
-    margin: 30px 0;
-}
-
-.room-code-label {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    letter-spacing: 3px;
-    margin-bottom: 10px;
-}
-
-.room-code-display {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 3rem;
-    font-weight: 900;
-    letter-spacing: 15px;
-    color: var(--neon-cyan);
-    text-shadow: 0 0 30px var(--neon-cyan);
-    padding: 20px;
-    background: rgba(0, 255, 255, 0.05);
-    border: 3px solid var(--neon-cyan);
-    border-radius: 15px;
-    display: inline-block;
-}
-
-.game-phase {
-    text-align: center;
-    padding: 40px;
-    margin: 20px 0;
-}
-
-.phase-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 2rem;
-    font-weight: 900;
+    font-family: var(--font-title);
+    font-size: 32px;
+    color: var(--primary-color);
+    font-weight: bold;
     letter-spacing: 5px;
-    margin-bottom: 20px;
-    animation: pulse-glow 2s ease-in-out infinite;
 }
 
-.phase-night { color: var(--neon-cyan); }
-.phase-day { color: var(--neon-orange); }
-.phase-voting { color: var(--neon-red); }
-
-.role-reveal {
-    text-align: center;
-    padding: 40px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 3px solid var(--neon-cyan);
-    border-radius: 15px;
-    margin: 30px 0;
+:root[data-theme="default"] .room-code {
+    text-shadow: var(--neon-glow);
 }
 
-.your-role {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    margin-bottom: 20px;
+:root[data-theme="werewolf"] .room-code {
+    text-shadow: 0 0 10px rgba(74, 124, 155, 0.8);
 }
 
-.role-name-big {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 3rem;
-    font-weight: 900;
-    letter-spacing: 8px;
-    margin: 20px 0;
-    text-shadow: 0 0 40px currentColor;
+:root[data-theme="wizard-academy"] .room-code {
+    text-shadow: 0 0 10px rgba(199, 125, 255, 0.8);
 }
 
-.role-team-human { color: var(--neon-cyan); }
-.role-team-saboteur { color: var(--neon-red); }
-
-.ranking-table {
-    background: rgba(0, 0, 0, 0.6);
-    border: 2px solid var(--neon-cyan);
-    border-radius: 10px;
-    overflow: hidden;
-    margin: 20px 0;
+:root[data-theme="mythic-realms"] .room-code {
+    text-shadow: 0 0 10px rgba(252, 163, 17, 0.8);
 }
 
-.ranking-row {
-    display: grid;
-    grid-template-columns: 60px 1fr 150px 150px;
-    padding: 15px 20px;
-    border-bottom: 1px solid var(--metal-grey);
+/* Liste des joueurs */
+.players-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: var(--bg-primary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+}
+
+.player-item {
+    display: flex;
     align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--bg-tertiary);
+    border-radius: var(--border-radius);
     transition: all 0.3s ease;
 }
 
-.ranking-row:hover {
-    background: rgba(0, 255, 255, 0.1);
+.player-item:hover {
+    border-color: var(--primary-color);
 }
 
-.ranking-header {
-    background: rgba(0, 255, 255, 0.2);
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 700;
-    letter-spacing: 2px;
+.player-item.host {
+    border-color: var(--accent-color);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
 }
 
-.rank-number {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 900;
-    color: var(--neon-orange);
+.player-name {
+    font-size: 18px;
+    color: var(--text-primary);
 }
 
-.badge-display {
-    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-green));
-    color: var(--deep-space);
-    padding: 6px 12px;
+.host-badge {
+    padding: 5px 12px;
+    background: var(--accent-color);
+    color: var(--bg-primary);
     border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 700;
-    display: inline-block;
+    font-size: 12px;
+    font-weight: bold;
+    font-family: var(--font-title);
 }
 
-.badge-legend {
-    background: rgba(0, 0, 0, 0.4);
-    border: 2px solid var(--metal-grey);
-    border-radius: 10px;
-    padding: 20px;
-    margin: 30px 0;
-}
-
-.legend-title {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1.3rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    margin-bottom: 15px;
-    color: var(--neon-cyan);
-}
-
-.legend-item {
+/* Contrôles du lobby */
+.lobby-controls {
     display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* En-tête du jeu */
+.game-header {
+    position: sticky;
+    top: 0;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    margin: 10px 0;
+    padding: 20px;
+    background: var(--bg-secondary);
+    border-bottom: var(--border-width) var(--border-style);
+    z-index: 100;
+}
+
+.room-code-display {
+    font-family: var(--font-title);
+    font-size: 24px;
+    color: var(--primary-color);
+}
+
+.timer {
+    font-family: var(--font-title);
+    font-size: 32px;
+    color: var(--accent-color);
+}
+
+:root[data-theme="default"] .timer {
+    text-shadow: 0 0 10px var(--accent-color);
+}
+
+:root[data-theme="werewolf"] .timer {
+    animation: lunarGlow 2s ease-in-out infinite;
+}
+
+:root[data-theme="wizard-academy"] .timer {
+    animation: magicShift 3s ease-in-out infinite;
+}
+
+:root[data-theme="mythic-realms"] .timer {
+    animation: fireFlicker 2s ease-in-out infinite;
+}
+
+.phase {
+    font-family: var(--font-title);
+    font-size: 20px;
+    color: var(--text-secondary);
+}
+
+/* Carte de rôle */
+.role-card {
+    margin: 20px auto;
+    max-width: 600px;
+    padding: 30px;
+    background: var(--bg-secondary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+    box-shadow: var(--neon-glow);
+    text-align: center;
+}
+
+.role-card h2 {
+    font-family: var(--font-title);
+    font-size: 36px;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.role-card p {
+    font-size: 18px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+/* Contenu du jeu */
+.game-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 20px;
+}
+
+.mission-panel, .vote-panel, .chat-panel {
+    background: var(--bg-secondary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+    padding: 20px;
+}
+
+.mission-panel h3, .vote-panel h3 {
+    font-family: var(--font-title);
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 22px;
+}
+
+/* Chat */
+.chat-panel {
+    grid-column: 1 / -1;
+    max-height: 400px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 15px;
+    padding: 15px;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+}
+
+.chat-message {
+    margin-bottom: 10px;
     padding: 10px;
-    background: rgba(0, 255, 255, 0.05);
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+}
+
+.chat-message .username {
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+.chat-message .text {
+    color: var(--text-primary);
+}
+
+.chat-input-container {
+    display: flex;
+    gap: 10px;
+}
+
+.chat-input-container input {
+    flex: 1;
+    margin: 0;
+}
+
+.chat-input-container button {
+    padding: 15px 25px;
+}
+
+/* Écran de fin */
+.end-message {
+    text-align: center;
+    font-size: 20px;
+    color: var(--text-secondary);
+    margin-bottom: 30px;
+    line-height: 1.6;
+}
+
+.player-roles-list {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--bg-primary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+}
+
+.player-role-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    background: var(--bg-secondary);
+    border-radius: var(--border-radius);
+}
+
+.player-role-item .name {
+    color: var(--text-primary);
+    font-weight: bold;
+}
+
+.player-role-item .role {
+    color: var(--accent-color);
+    font-family: var(--font-title);
+}
+
+.game-stats {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--bg-primary);
+    border: var(--border-width) var(--border-style);
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.game-stats h3 {
+    font-family: var(--font-title);
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    font-size: 22px;
+}
+
+.game-stats p {
+    color: var(--text-secondary);
+    font-size: 16px;
+    margin: 8px 0;
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
     border-radius: 5px;
 }
 
-.legend-badge {
-    font-weight: 700;
-    color: var(--neon-orange);
+::-webkit-scrollbar-thumb:hover {
+    box-shadow: var(--neon-glow);
 }
 
-.legend-desc {
-    color: var(--neon-green);
-}
-
-.error-message {
-    background: rgba(255, 0, 51, 0.2);
-    border: 2px solid var(--neon-red);
-    color: var(--neon-red);
-    padding: 15px 20px;
-    border-radius: 8px;
-    margin: 20px auto;
-    max-width: 600px;
-    text-align: center;
-    font-weight: 600;
-    animation: shake 0.5s ease;
-}
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
-}
-
-/* ============================================
-   RESPONSIVE - MOBILE & TABLET
-   ============================================ */
-
-/* Tablettes et petits écrans */
-@media (max-width: 1024px) {
+/* Responsive */
+@media (max-width: 768px) {
+    .title {
+        font-size: 32px;
+    }
+    
     .container {
-        padding: 15px;
-        max-width: 100%;
+        padding: 20px;
     }
     
-    h1 {
-        font-size: 2.5rem;
-    }
-}
-
-/* Smartphones */
-@media (max-width: 768px) {
-    /* Titres */
-    h1 {
-        font-size: 1.8rem !important;
-        letter-spacing: 2px;
+    .game-content {
+        grid-template-columns: 1fr;
     }
     
-    h2 {
-        font-size: 1.5rem !important;
-    }
-    
-    h3 {
-        font-size: 1.2rem !important;
-    }
-
-    /* Container */
-    .container {
-        padding: 10px;
-    }
-    
-    /* Panels */
-    .control-panel {
-        padding: 15px !important;
-        margin: 10px 0 !important;
-    }
-
-    /* Boutons */
-    .btn {
-        padding: 12px 25px !important;
-        font-size: 0.9rem !important;
-        margin: 5px !important;
-    }
-
-    /* Lobby cockpit - Responsive */
-    #lobbyScreen > div {
-        padding: 20px 15px !important;
-    }
-    
-    /* Compteur joueurs */
-    #playerCount {
-        font-size: 5rem !important;
-    }
-    
-    /* Titre cockpit */
-    #lobbyScreen h1 {
-        font-size: 1.5rem !important;
-    }
-    
-    /* Jauge d'équilibre */
-    .balance-bar,
-    #lobbyScreen > div > div:nth-child(3) > div:first-child {
-        height: 40px !important;
-    }
-    
-    #balanceIndicatorCockpit {
-        width: 20px !important;
-        height: 20px !important;
-    }
-    
-    /* Grid auto-allocation + special systems */
-    #lobbyScreen > div > div:nth-child(4) {
-        grid-template-columns: 1fr !important;
-        gap: 15px !important;
-    }
-    
-    #lobbyScreen > div > div:nth-child(4) > div {
-        padding: 15px !important;
-    }
-    
-    #autoAllocation,
-    #specialSystems {
-        font-size: 1rem !important;
-    }
-    
-    /* Code mission et boutons - Stack vertical */
-    #lobbyScreen > div > div:nth-child(5) {
-        flex-direction: column !important;
-        gap: 15px !important;
-    }
-    
-    #displayRoomCode {
-        font-size: 1.8rem !important;
-        text-align: center;
-    }
-    
-    #lobbyScreen > div > div:nth-child(5) > div:last-child {
-        width: 100%;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    #lobbyScreen > div > div:nth-child(5) > div:last-child button {
-        width: 100%;
-    }
-
-    /* Liste des joueurs */
-    .players-list {
-        gap: 8px !important;
-    }
-    
-    .player-item {
-        padding: 12px !important;
-        flex-direction: column !important;
-        text-align: center;
-        gap: 8px;
-    }
-    
-    .player-name {
-        font-size: 1.1rem !important;
-    }
-
-    /* Code de salle */
-    .room-code-display {
-        font-size: 1.8rem !important;
-        letter-spacing: 8px;
-    }
-
-    /* Grille rôles */
-    .roles-grid {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-    }
-
-    /* Résultat radar - Mobile */
-    #gameControls img {
-        max-width: 200px !important;
-    }
-    
-    #gameControls h2 {
-        font-size: 1.5rem !important;
-    }
-    
-    #gameControls h3 {
-        font-size: 2rem !important;
-    }
-    
-    #gameControls p {
-        font-size: 1rem !important;
-    }
-    
-    /* Interface de vote */
-    .voting-interface .player-item {
-        font-size: 1rem !important;
-    }
-    
-    /* Images scènes */
-    img[src*="ejection"],
-    img[src*="vote-"] {
-        max-width: 100% !important;
-        height: auto !important;
-    }
-    
-    /* Formulaires */
-    input[type="text"],
-    input[type="password"] {
-        font-size: 16px !important; /* Évite le zoom sur iOS */
-        padding: 12px !important;
-    }
-    
-    /* Ranking */
-    .ranking-row {
-        grid-template-columns: 40px 1fr !important;
-        gap: 8px !important;
-        padding: 10px !important;
-    }
-    
-    /* Toggles rôles */
-    #specialSystems > div {
-        padding: 8px 0 !important;
-    }
-    
-    #specialSystems span {
-        font-size: 0.9rem !important;
+    .theme-buttons {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-/* Petits smartphones */
-@media (max-width: 480px) {
-    h1 {
-        font-size: 1.5rem !important;
-    }
-    
-    h2 {
-        font-size: 1.3rem !important;
-    }
-    
-    #playerCount {
-        font-size: 4rem !important;
-    }
-    
-    .btn {
-        padding: 10px 20px !important;
-        font-size: 0.85rem !important;
-    }
-    
-    #displayRoomCode {
-        font-size: 1.5rem !important;
-    }
-    
-    #gameControls h3 {
-        font-size: 1.5rem !important;
-    }
-    
-    /* Réduire les paddings */
-    .control-panel {
-        padding: 10px !important;
-    }
-    
-    #lobbyScreen > div {
-        padding: 15px 10px !important;
-    }
+/* Animations globales selon le thème */
+:root[data-theme="default"] .container {
+    animation: techPulse 4s ease-in-out infinite;
 }
 
-/* Landscape mobile */
-@media (max-width: 768px) and (orientation: landscape) {
-    #playerCount {
-        font-size: 3rem !important;
-    }
-    
-    #lobbyScreen > div > div:nth-child(4) {
-        grid-template-columns: 1fr 1fr !important;
-    }
+:root[data-theme="werewolf"] .container {
+    animation: lunarGlow 5s ease-in-out infinite;
 }
 
-/* Tooltip mobile */
-.tooltip {
-    position: relative;
-    display: inline-block;
+:root[data-theme="wizard-academy"] .container {
+    animation: magicShift 6s ease-in-out infinite;
 }
 
-.tooltiptext {
-    visibility: hidden;
-    background-color: rgba(0, 0, 0, 0.95);
-    color: var(--neon-cyan);
-    text-align: center;
-    border: 2px solid var(--neon-cyan);
-    border-radius: 8px;
-    padding: 10px 15px;
-    position: absolute;
-    z-index: 1000;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 250px;
-    font-size: 0.9rem;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.tooltip:hover .tooltiptext {
-    visibility: visible;
-    opacity: 1;
-}
-
-@media (max-width: 768px) {
-    .tooltiptext {
-        width: 200px;
-        font-size: 0.8rem;
-        padding: 8px 12px;
-    }
-}
-
-/* ============================================
-   OPTIMISATIONS TACTILES & MOBILE
-   ============================================ */
-
-/* Tous les éléments cliquables */
-button, 
-.player-item,
-[onclick] {
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-}
-
-/* Active state pour feedback tactile */
-button:active,
-.player-item:active,
-[onclick]:active {
-    opacity: 0.8;
-    transform: scale(0.98);
-}
-
-/* Scroll fluide sur mobile */
-* {
-    -webkit-overflow-scrolling: touch;
-}
-
-/* Éviter le zoom sur input focus (iOS) */
-input[type="text"],
-input[type="password"],
-select,
-textarea {
-    font-size: 16px !important; /* Important pour iOS */
-}
-
-/* Meilleure zone de touche pour les toggles */
-#specialSystems > div > div[onclick] {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-}
-
-/* Player items tactiles */
-.player-item {
-    min-height: 54px;
-    cursor: pointer;
-    -webkit-tap-highlight-color: rgba(0, 255, 255, 0.1);
-}
-
-.player-item:hover,
-.player-item:active {
-    background: rgba(0, 255, 255, 0.1);
-}
-
-/* Amélioration des zones tactiles */
-@media (max-width: 768px) {
-    /* Tous les boutons plus grands */
-    button,
-    .btn {
-        min-height: 48px;
-        padding: 14px 28px;
-    }
-    
-    /* Items de liste plus espacés */
-    .player-item,
-    .role-card {
-        min-height: 54px;
-        margin: 8px 0;
-    }
-    
-    /* Toggles plus faciles à toucher */
-    #specialSystems > div > div[onclick] {
-        padding: 12px 0;
-        min-height: 50px;
-    }
-    
-    /* Zone de toggle plus grande */
-    #specialSystems > div > div[onclick] > div {
-        width: 60px !important;
-        height: 30px !important;
-    }
-    
-    #specialSystems > div > div[onclick] > div > div {
-        width: 24px !important;
-        height: 24px !important;
-    }
-}
-
-/* Safe area pour iPhone avec encoche */
-@supports (padding: max(0px)) {
-    body {
-        padding-left: max(10px, env(safe-area-inset-left));
-        padding-right: max(10px, env(safe-area-inset-right));
-        padding-bottom: max(10px, env(safe-area-inset-bottom));
-    }
-}
-
-
-/* ====== V11 PHASE A - STYLES ====== */
-
-/* Animation spinner */
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Chief badge */
-.chief-badge {
-    position: absolute;
-    top: -10px;
-    right: -10px;
-    background: gold;
-    border-radius: 50%;
-    padding: 5px 10px;
-    font-size: 1.2rem;
-    box-shadow: 0 0 20px gold;
-    z-index: 10;
-}
-
-/* Tiebreak screen already styled inline but adding helper class */
-.tiebreak-screen {
-    background: rgba(255, 215, 0, 0.1);
-    border: 3px solid gold;
-    border-radius: 20px;
-}
-
-
-
-/* --- Added for Render-ready rewrite --- */
-.players-list { display:flex; flex-direction:column; gap:10px; }
-.player-item {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:10px 12px; border-radius:12px;
-  background: rgba(0,0,0,0.45);
-  border:1px solid rgba(0,255,255,0.25);
-}
-.player-left { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-.pill {
-  padding:4px 8px; border-radius:999px; font-weight:800; font-size:.9rem;
-  border:1px solid rgba(255,255,255,0.2);
-}
-.pill.ok { color: var(--neon-green); border-color: rgba(0,255,136,0.4); }
-.pill.warn { color: var(--neon-orange); border-color: rgba(255,136,0,0.4); }
-.pill.bad { color: var(--neon-red); border-color: rgba(255,0,51,0.4); }
-
-.btn { cursor:pointer; user-select:none; }
-.btn:disabled { opacity:.5; cursor:not-allowed; }
-.btn:disabled:hover { transform: none !important; box-shadow: none !important; }
-.btn.selected { outline: 2px solid rgba(0,255,136,0.9); box-shadow: 0 0 22px rgba(0,255,136,0.35); }
-.btn.selected:hover { transform: none !important; }
-
-.choice-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-top:10px; }
-.choice-card {
-  padding:12px; border-radius:14px; border:2px solid rgba(0,255,255,0.35);
-  background: rgba(0,0,0,0.35); cursor:pointer;
-}
-.choice-card:hover { box-shadow: 0 0 20px rgba(0,255,255,0.25); }
-.choice-card.selected { border-color: var(--neon-green); box-shadow: 0 0 20px rgba(0,255,136,0.25); }
-
-/* When controls are locked after validation, remove hover effects and show a clearer halo */
-.choice-card.locked { cursor: default; pointer-events: none; opacity: 0.9; }
-.choice-card.locked:hover { box-shadow: none; }
-.choice-card.locked.selected {
-  border-color: var(--neon-green);
-  box-shadow: 0 0 26px rgba(0,255,136,0.45), 0 0 8px rgba(0,255,136,0.25);
-}
-
-.log-line { padding:6px 8px; border-bottom:1px solid rgba(255,255,255,0.08); }
-.log-line:last-child { border-bottom: none; }
-.log-line.private { color: var(--neon-orange); }
-small.hint { opacity:.85; }
-
-input[type="checkbox"] { transform: scale(1.2); margin-right:8px; }
-
-/* --- Role display (big icon + title + description) --- */
-.role-display {
-  margin: 12px 0 16px 0;
-  padding: 14px;
-  border-radius: 16px;
-  border: 2px solid rgba(0,255,255,0.35);
-  background: rgba(0,0,0,0.35);
-  box-shadow: 0 0 30px rgba(0,255,255,0.12);
-}
-
-.role-card-inner {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  text-align: center;
-}
-
-.role-card-icons {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  justify-content: center;
-}
-
-.role-card-icon {
-  width: 120px;
-  height: 120px;
-  object-fit: contain;
-  filter: drop-shadow(0 0 18px rgba(0,255,255,0.45));
-}
-
-.role-card-icon.captain {
-  width: 72px;
-  height: 72px;
-  filter: drop-shadow(0 0 18px rgba(255,165,0,0.45));
-}
-
-.role-card-text {
-  min-width: 260px;
-  max-width: 560px;
-}
-
-.role-card-title {
-  font-family: 'Orbitron', sans-serif;
-  font-weight: 900;
-  letter-spacing: 2px;
-  font-size: 1.5rem;
-  margin-bottom: 6px;
-}
-
-.role-card-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,165,0,0.5);
-  color: var(--neon-orange);
-  font-weight: 900;
-  font-size: .9rem;
-}
-
-.role-card-desc {
-  opacity: .95;
-  font-size: 1.05rem;
-  line-height: 1.35;
-}
-
-@media (max-width: 560px) {
-  .role-card-icon { width: 96px; height: 96px; }
-  .role-card-icon.captain { width: 56px; height: 56px; }
-  .role-card-title { font-size: 1.25rem; }
-}
-
-/* V26 - Animations et améliorations */
-
-@keyframes badgePop {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* Variables CSS pour le thème purple (badges, tutoriel) */
-:root {
-  --neon-purple: #9d4edd;
-}
-
-/* Respect de prefers-reduced-motion */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* Accessibilité - Focus visible */
-button:focus-visible,
-input:focus-visible,
-select:focus-visible {
-  outline: 3px solid var(--neon-cyan);
-  outline-offset: 2px;
-}
-
-/* Mode compact automatique */
-@media (max-width: 420px) {
-  .btn {
-    padding: 10px 14px !important;
-    font-size: 0.9rem !important;
-  }
-  
-  .panel-title {
-    font-size: 1.3rem !important;
-  }
-  
-  body {
-    font-size: 0.95rem;
-  }
-}
-
-/* Animations pour l'overlay audio */
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
-}
-
-@keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
-  }
+:root[data-theme="mythic-realms"] .container {
+    animation: fireFlicker 4s ease-in-out infinite;
 }

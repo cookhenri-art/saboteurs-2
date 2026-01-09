@@ -1,396 +1,122 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚡ INFILTRATION SPATIALE ⚡</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infiltration Spatiale</title>
+    
+    <!-- Google Fonts - Default Theme -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts - Werewolf Theme -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts - Wizard Academy Theme -->
+    <link href="https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Google Fonts - Mythic Realms Theme -->
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <div id="topLeftButtons" style="
-    position: fixed; left: 20px; top: 20px; z-index: 9999;
-    display:flex; gap:10px; align-items:center;
-  ">
-    <button id="rulesBtn" class="btn btn-secondary" style="
-      padding: 10px 16px; border-radius: 10px; font-weight: 800;
-    ">📜 RÈGLES</button>
-    <button id="soundBtn" class="btn btn-secondary" style="
-      padding: 10px 16px; border-radius: 10px; font-weight: 900;
-      min-width: 56px;
-    " title="Couper / réactiver le son">🔊</button>
-  </div>
-
-  <div class="container">
-    <!-- Audio Unlock Overlay -->
-    <div id="audioUnlockOverlay" style="
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 99999;
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      gap: 20px;
-    ">
-      <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🔊</div>
-      <div style="font-size: 1.5rem; color: var(--neon-cyan); font-weight: 800; text-align: center;">
-        CLIQUEZ POUR ACTIVER LE SON
-      </div>
-      <button id="audioUnlockBtn" class="btn btn-primary" style="
-        padding: 20px 40px;
-        font-size: 1.3rem;
-        font-weight: 900;
-        animation: glow 1.5s infinite;
-      ">🎵 ACTIVER L'AUDIO</button>
-    </div>
-    
-    <div class="header">
-      <div class="logo"></div>
-      <h1>INFILTRATION SPATIALE</h1>
-      <div class="subtitle">⚡ MISSION TEMPS RÉEL ⚡</div>
-      <div id="buildBadge" style="margin-top:10px; opacity:.85; font-size:.95rem;"></div>
-      <div id="topBanner" style="display:none; margin-top:12px; color: var(--neon-orange); font-weight:700; letter-spacing:1px;"></div>
+    <!-- Overlay d'activation du son -->
+    <div id="audioOverlay" class="audio-overlay">
+        <div class="audio-overlay-content">
+            <div class="sound-icon">🔊</div>
+            <h2>CLIQUER POUR ACTIVER LE SON</h2>
+            <p>Les navigateurs bloquent l'audio par défaut</p>
+            <button id="enableAudioBtn" class="audio-enable-btn">ACTIVER</button>
+        </div>
     </div>
 
-    <!-- HOME -->
-    <div id="homeScreen" class="screen active">
-      <div class="control-panel">
-        <div class="form-group">
-          <label for="playerName">Nom du joueur</label>
-          <input type="text" id="playerName" placeholder="Entrez votre nom" maxlength="20">
+    <!-- Écran de connexion -->
+    <div id="loginScreen" class="screen active">
+        <div class="container">
+            <h1 class="title">INFILTRATION SPATIALE</h1>
+            <input type="text" id="usernameInput" placeholder="Entrez votre nom..." maxlength="20">
+            <button id="joinBtn">REJOINDRE</button>
+            <div id="connectionStatus"></div>
         </div>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="createBtn">Créer une Mission</button>
-          <button class="btn btn-secondary" id="joinBtn">Rejoindre une Mission</button>
-        </div>
-      </div>
     </div>
 
-    <!-- CREATE -->
-    <div id="createScreen" class="screen">
-      <div class="control-panel">
-        <h2 class="panel-title" id="createMissionTitle">CRÉER UNE MISSION</h2>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="createRoomBtn">Générer Code Mission</button>
-          <button class="btn btn-secondary" id="backFromCreate">Retour</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- JOIN -->
-    <div id="joinScreen" class="screen">
-      <div class="control-panel">
-        <h2 class="panel-title" id="joinMissionTitle">REJOINDRE UNE MISSION</h2>
-        <div class="form-group">
-          <label for="joinRoomCode">Numéro de salle</label>
-          <input type="text" id="joinRoomCode" placeholder="0000" maxlength="4">
-        </div>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="joinRoomBtn">Connexion</button>
-          <button class="btn btn-secondary" id="backFromJoin">Retour</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- LOBBY (cockpit style) -->
+    <!-- Écran du lobby -->
     <div id="lobbyScreen" class="screen">
-      <div style="width: 100%; max-width: 1200px; margin: 0 auto;
-          background: linear-gradient(135deg, #0a0e27 0%, #1a1e3f 50%, #0a0e27 100%);
-          border: 3px solid var(--metal-grey); border-radius: 20px; padding: 40px;
-          box-shadow: 0 0 60px rgba(0,255,255,0.3), inset 0 0 100px rgba(0,0,0,0.5);">
+        <div class="container">
+            <h1 class="title">SALLE D'ATTENTE</h1>
+            
+            <!-- Sélection du thème -->
+            <div class="theme-selector">
+                <h3>Choisir un Thème</h3>
+                <div class="theme-buttons">
+                    <button class="theme-btn active" data-theme="default">
+                        <span class="theme-icon">🚀</span>
+                        <span class="theme-name">Spatial</span>
+                    </button>
+                    <button class="theme-btn" data-theme="werewolf">
+                        <span class="theme-icon">🐺</span>
+                        <span class="theme-name">Loup-Garou</span>
+                    </button>
+                    <button class="theme-btn" data-theme="wizard-academy">
+                        <span class="theme-icon">🧙</span>
+                        <span class="theme-name">Sorciers</span>
+                    </button>
+                    <button class="theme-btn" data-theme="mythic-realms">
+                        <span class="theme-icon">⚔️</span>
+                        <span class="theme-name">Fantasy</span>
+                    </button>
+                </div>
+            </div>
 
-        <div style="text-align: center; margin-bottom: 40px; position: relative; display:flex; flex-direction:column; align-items:center;">
-          <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-              width: min(380px, 86vw); height: 62px; background: rgba(0,255,255,0.1);
-              border: 2px solid var(--neon-cyan); border-radius: 10px;"></div>
-          <h1 style="display:inline-block; color: var(--neon-cyan); font-size: clamp(1.3rem, 5vw, 1.9rem); margin: 0; padding: 10px; white-space: nowrap; line-height: 1.1; letter-spacing: 2px;
-              max-width: min(380px, 86vw); overflow: hidden; text-overflow: ellipsis;
-              text-shadow: 0 0 30px var(--neon-cyan); position: relative; text-align:center;">
-            LES SABOTEURS
-          </h1>
+            <div id="roomInfo" class="room-info">
+                <p>Code de la partie : <span id="roomCode" class="room-code"></span></p>
+                <p>Joueurs : <span id="playerCount">0</span> / 10</p>
+            </div>
+            
+            <div id="playersList" class="players-list"></div>
+            
+            <div class="lobby-controls">
+                <button id="startBtn" class="btn-primary" disabled>DÉMARRER LA PARTIE</button>
+                <button id="leaveBtn" class="btn-secondary">QUITTER</button>
+            </div>
         </div>
-
-        <div style="display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap;">
-          <div>
-            <div style="color: var(--neon-orange); font-size: 1rem; margin-bottom: 5px;">CODE MISSION</div>
-            <div id="displayRoomCode" style="color: var(--neon-cyan); font-size: 2.5rem;
-                font-weight: bold; text-shadow: 0 0 20px var(--neon-cyan);">0000</div>
-          </div>
-          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <button class="btn btn-secondary" id="readyBtn">✅ PRÊT</button>
-            <button class="btn btn-primary" id="startGameBtn" style="display:none;">🚀 Lancer Mission</button>
-          </div>
-        </div>
-
-        <div style="text-align: center; margin: 40px 0;">
-          <div id="playerCount" style="font-size: 7rem; color: var(--neon-cyan);
-              text-shadow: 0 0 80px var(--neon-cyan); font-weight: 900;
-              font-family: 'Orbitron', sans-serif;">0</div>
-          <div style="color: var(--metal-grey); font-size: 1.1rem; margin-top: -10px;">MEMBRES D'ÉQUIPAGE</div>
-        </div>
-
-        <div style="margin: 25px 0;">
-          <div style="position: relative; height: 50px;
-              background: linear-gradient(to right, var(--neon-cyan) 0%, var(--neon-cyan) 50%, var(--neon-red) 50%, var(--neon-red) 100%);
-              border-radius: 25px; overflow: hidden; border: 3px solid var(--metal-grey);
-              box-shadow: 0 0 30px rgba(0,255,255,0.5), inset 0 0 30px rgba(0,0,0,0.8);">
-            <div id="balanceIndicatorCockpit" style="position: absolute; top: 50%; left: 50%;
-                transform: translate(-50%, -50%); width: 26px; height: 26px;
-                background: var(--neon-green); border-radius: 50%;
-                box-shadow: 0 0 40px var(--neon-green); border: 3px solid white;
-                transition: left 0.3s ease;"></div>
-          </div>
-          <div style="display:flex; justify-content:space-between; margin-top:12px; padding: 0 10px; gap:12px; flex-wrap:wrap;">
-            <span style="color: var(--neon-cyan); font-size: 1.1rem; font-weight:bold;">👨‍🚀 ASTRONAUTES</span>
-            <span id="balanceStatusCockpit" style="color: var(--neon-green); font-size: 1.1rem; font-weight:bold;">MISSION BALANCED</span>
-            <span style="color: var(--neon-red); font-size: 1.1rem; font-weight:bold;">SABOTEURS ⚔️</span>
-          </div>
-        </div>
-
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px;">
-          <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-              border: 2px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0,255,255,0.3);">
-            <h3 style="color: var(--neon-cyan); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">AUTO-ALLOCATION</h3>
-            <div id="autoAllocation" style="color: var(--neon-cyan); font-size: 1.05rem; line-height:1.8;"></div>
-          </div>
-          <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-              border: 2px solid var(--neon-orange); box-shadow: 0 0 20px rgba(255,165,0,0.3);">
-            <h3 style="color: var(--neon-orange); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">CONFIG RÔLES (HÔTE)</h3>
-            <div id="rolesConfig"></div>
-          </div>
-        </div>
-
-        <!-- Sélection de thème (hôte uniquement) -->
-        <div id="themeSelector" style="display:none; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-            border: 2px solid var(--neon-purple, #9d4edd); box-shadow: 0 0 20px rgba(157,78,221,0.3);">
-          <h3 style="color: var(--neon-purple, #9d4edd); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">🎨 THÈME (HÔTE)</h3>
-          <div id="themeButtons" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;"></div>
-          <div id="themeDescription" style="margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; color: #ccc; font-size: 0.95rem; text-align: center; min-height: 40px;"></div>
-        </div>
-      </div>
-
-      <div class="control-panel" style="margin-top: 20px;">
-        <h2 class="panel-title">ÉQUIPAGE CONNECTÉ</h2>
-        <div class="players-list" id="playersList"></div>
-      </div>
     </div>
 
-    <!-- GAME -->
+    <!-- Écran du jeu -->
     <div id="gameScreen" class="screen">
-      <div id="gameBackdrop" style="width:100%; height:180px; border-radius:16px; overflow:hidden; border:2px solid var(--neon-cyan);
-        background-size:cover; background-position:center; margin-bottom: 16px; position:relative;">
-        <img id="ejectionOverlay" src="/images/ejection.png" alt="ejection" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; pointer-events:none;">
-      </div>
-      <div id="deadBanner" style="display:none; margin-bottom: 12px; padding:10px 12px; border-radius:12px; border:2px solid var(--neon-red); color: var(--neon-red); font-weight:900; text-align:center;">💀 Vous avez été éjecté</div>
-
-      <div class="control-panel" style="max-width: 900px;">
-        <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center;">
-          <div>
-            <div style="opacity:.85; letter-spacing:2px; font-family:'Orbitron',sans-serif; font-size:.9rem;">MISSION</div>
-            <div id="hudRoom" style="font-size:1.6rem; font-weight:900; letter-spacing:3px;"></div>
-          </div>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <div id="roleIcons" style="display:flex; gap:8px; align-items:center;"></div>
-            <div id="linkBanner" style="display:none; padding:6px 10px; border:2px solid var(--neon-orange); border-radius:10px; color:var(--neon-orange); font-weight:800;"></div>
-          </div>
+        <div class="game-header">
+            <div id="roomCodeDisplay" class="room-code-display"></div>
+            <div id="timerDisplay" class="timer"></div>
+            <div id="phaseDisplay" class="phase"></div>
         </div>
 
-        <div style="margin-top: 18px;">
-          <div id="phaseTitle" class="panel-title" style="margin-bottom:10px;">—</div>
-          <div id="phaseText" style="font-size:1.1rem; line-height:1.4; opacity:.95;"></div>
-          <div id="ackLine" style="margin-top:10px; color: var(--neon-green); font-weight:800;"></div>
-        </div>
+        <div id="roleCard" class="role-card"></div>
 
-        <div id="controls" style="margin-top: 18px;"></div>
-        
-        <!-- Panneau de contrôle hôte (force advance) -->
-        <div id="hostControls" style="display:none; margin-top: 18px; padding: 15px; background: rgba(255,165,0,0.1); border: 2px solid var(--neon-orange); border-radius: 12px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <div style="color: var(--neon-orange); font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">⚡ CONTRÔLES HÔTE</div>
-              <div id="phaseTimer" style="color: #ccc; font-size: 0.9rem;">Phase active depuis : <span id="phaseElapsed">0s</span></div>
-              <div id="pendingPlayers" style="margin-top: 5px; color: #999; font-size: 0.85rem;"></div>
+        <div class="game-content">
+            <div id="missionPanel" class="mission-panel"></div>
+            <div id="votePanel" class="vote-panel"></div>
+            <div id="chatPanel" class="chat-panel">
+                <div id="chatMessages" class="chat-messages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chatInput" placeholder="Discutez avec les autres joueurs..." maxlength="200">
+                    <button id="chatSend">Envoyer</button>
+                </div>
             </div>
-            <button id="forceAdvanceBtn" class="btn" style="background: var(--neon-orange); color: #000; font-weight: 800; padding: 12px 20px; opacity: 0.5; cursor: not-allowed;" disabled>
-              ⏭️ Forcer la suite (20s min)
-            </button>
-          </div>
         </div>
-        
-        <div id="log" style="margin-top:16px; max-height:220px; overflow:auto; padding:10px; border-radius:12px;
-          background: rgba(0,0,0,0.35); border:1px solid rgba(0,255,255,0.25);"></div>
-      </div>
     </div>
 
-    <!-- END -->
+    <!-- Écran de fin de partie -->
     <div id="endScreen" class="screen">
-      <div id="endBackdrop" style="width:100%; height:180px; border-radius:16px; overflow:hidden; border:2px solid var(--neon-cyan);
-        background-size:cover; background-position:center; margin-bottom: 16px;"></div>
-      <div class="control-panel" style="max-width: 900px;">
-        <h2 class="panel-title winner-title" id="winnerTitle"></h2>
-        <div id="endSummary" style="margin-bottom:16px;"></div>
-        
-        <!-- Badges débloqués cette partie -->
-        <div id="newBadgesSection" style="display:none; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, rgba(157,78,221,0.2), rgba(255,165,0,0.2)); border: 2px solid var(--neon-purple, #9d4edd); border-radius: 15px;">
-          <h3 style="color: var(--neon-purple, #9d4edd); margin: 0 0 15px 0; text-align: center; font-size: 1.4rem;">🏆 BADGES DÉBLOQUÉS</h3>
-          <div id="newBadgesList" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;"></div>
+        <div class="container">
+            <h1 id="winnerTitle" class="title"></h1>
+            <div id="endMessage" class="end-message"></div>
+            <div id="playerRolesList" class="player-roles-list"></div>
+            <div id="gameStats" class="game-stats"></div>
+            <button id="backToLobbyBtn" class="btn-primary">RETOUR AU LOBBY</button>
         </div>
-        
-        <div class="ranking-table" id="rankingTable"></div>
-
-        <div class="btn-group" style="margin-top: 18px;">
-          <button class="btn btn-primary" id="replayBtn">🔁 Rejouer dans cette chambre (garder les stats)</button>
-          <button class="btn btn-secondary" id="newGameBtn">🆕 Nouvelle partie (réinitialiser les stats)</button>
-        </div>
-      </div>
     </div>
 
-    <div id="errorDisplay"></div>
-  </div>
-
-  <!-- Rules modal -->
-  <div id="rulesModal" style="display:none; position:fixed; inset:0; z-index:10000; background: rgba(0,0,0,0.75);">
-    <div style="max-width: 900px; margin: 5vh auto; background: linear-gradient(135deg, var(--dark-panel), #0d1f3a);
-      border:2px solid var(--neon-cyan); border-radius: 16px; padding: 18px; position: relative;">
-      <button id="rulesClose" class="btn btn-secondary" style="position:absolute; right:12px; top:12px;">✖</button>
-      <div class="panel-title">RÈGLES</div>
-      <div id="rulesContent" style="line-height:1.45; font-size:1.05rem; max-height: 75vh; overflow:auto; padding-right:10px;"></div>
-      <button id="tutorialBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%;">📖 Voir le tutoriel rapide</button>
-    </div>
-  </div>
-
-  <!-- Tutorial modal -->
-  <div id="tutorialModal" style="display:none; position:fixed; inset:0; z-index:10001; background: rgba(0,0,0,0.85);">
-    <div style="max-width: 700px; margin: 10vh auto; background: linear-gradient(135deg, #0a0e27, #1a1e3f);
-      border:3px solid var(--neon-cyan); border-radius: 20px; padding: 30px; position: relative; box-shadow: 0 0 60px rgba(0,255,255,0.5);">
-      <button id="tutorialClose" class="btn btn-secondary" style="position:absolute; right:15px; top:15px;">✖</button>
-      
-      <div id="tutorialContent">
-        <!-- Écran 1 -->
-        <div class="tutorial-screen" data-screen="1" style="display:block;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
-            <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Bienvenue !</h2>
-          </div>
-          <p style="font-size: 1.1rem; line-height: 1.6; color: #e0e6ed;">
-            <strong>Infiltration Spatiale</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">saboteurs</span> 
-            tentent d'éliminer les <span style="color: var(--neon-cyan);">astronautes</span> sans être découverts.
-          </p>
-          <p style="font-size: 1.05rem; line-height: 1.6; color: #ccc;">
-            Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).
-          </p>
-        </div>
-
-        <!-- Écran 2 -->
-        <div class="tutorial-screen" data-screen="2" style="display:none;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
-            <h2 style="color: var(--neon-purple, #9d4edd); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
-          </div>
-          <ul style="font-size: 1.05rem; line-height: 1.8; color: #e0e6ed; padding-left: 25px;">
-            <li><strong style="color: var(--neon-red);">Saboteurs</strong> : choisissent une victime (unanimité requise)</li>
-            <li><strong style="color: var(--neon-cyan);">Officier Radar</strong> : inspecte un joueur (saboteur ou non ?)</li>
-            <li><strong style="color: var(--neon-green);">Docteur Bio</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
-            <li><strong style="color: var(--neon-orange);">Rôles spéciaux</strong> : Caméléon, Agent IA, etc.</li>
-          </ul>
-        </div>
-
-        <!-- Écran 3 -->
-        <div class="tutorial-screen" data-screen="3" style="display:none;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">☀️</div>
-            <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
-          </div>
-          <ul style="font-size: 1.05rem; line-height: 1.8; color: #e0e6ed; padding-left: 25px;">
-            <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
-            <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
-            <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
-            <li>Le <strong>Capitaine</strong> tranche en cas d'égalité</li>
-          </ul>
-          <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: #ccc;">
-            <strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !
-          </p>
-        </div>
-
-        <!-- Écran 4 -->
-        <div class="tutorial-screen" data-screen="4" style="display:none;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
-            <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
-              <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
-              <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">Astronautes gagnent</div>
-              <div style="font-size: 0.95rem; color: #ccc;">Tous les saboteurs sont éjectés</div>
-            </div>
-            <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
-              <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
-              <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">Saboteurs gagnent</div>
-              <div style="font-size: 0.95rem; color: #ccc;">Nombre de saboteurs ≥ astronautes</div>
-            </div>
-          </div>
-          <p style="text-align: center; font-size: 1.1rem; color: var(--neon-green); font-weight: 800;">
-            Prêt à jouer ? Créez ou rejoignez une mission ! 🚀
-          </p>
-        </div>
-      </div>
-
-      <!-- Navigation -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(0,255,255,0.3);">
-        <button id="tutorialPrev" class="btn btn-secondary">← Précédent</button>
-        <div style="display: flex; gap: 8px;">
-          <div class="tutorial-dot" data-dot="1" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="2" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="3" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="4" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
-        </div>
-        <button id="tutorialNext" class="btn btn-primary">Suivant →</button>
-      </div>
-
-      <div style="text-align: center; margin-top: 15px;">
-        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc; font-size: 0.95rem;">
-          <input type="checkbox" id="tutorialDontShow" style="width: 18px; height: 18px; cursor: pointer;">
-          <span>Ne plus afficher ce tutoriel</span>
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <!-- Boot: ensure Socket.IO client is available (works on Render + local; shows a clear error if server not running) -->
-  <script>
-    (function () {
-      function loadScript(src) {
-        return new Promise(function (resolve) {
-          var s = document.createElement('script');
-          s.src = src;
-          s.async = true;
-          s.onload = function () { resolve(true); };
-          s.onerror = function () { resolve(false); };
-          document.head.appendChild(s);
-        });
-      }
-
-      function loadClient() {
-        var s = document.createElement('script');
-        s.src = 'client.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
-
-      // Try local first (Render/local). If not available (e.g., opened via file://), fallback to CDN
-      loadScript('/socket.io/socket.io.js').then(function () {
-        if (typeof window.io === 'undefined') {
-          return loadScript('https://cdn.socket.io/4.7.5/socket.io.min.js');
-        }
-        return true;
-      }).then(loadClient);
-    })();
-  </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="client.js"></script>
 </body>
 </html>
