@@ -234,35 +234,35 @@ function formatPhaseTitle(s) {
 
 const ROLE_INFO = {
   astronaut: {
-    get title() { return tRole('astronaut'); },
+    get title() { return tRole("astronaut"); },
     desc: () => `Aucun pouvoir spécial. Observe, débat et vote pour protéger la ${t('station')}.`
   },
   saboteur: {
-    get title() { return tRole('saboteur'); },
+    get title() { return tRole("saboteur"); },
     desc: () => `Chaque nuit, les ${t('saboteurs').toLowerCase()} votent UNANIMEMENT une cible (impossible de viser un ${t('saboteurs').toLowerCase().slice(0, -1)}).`
   },
   doctor: {
-    get title() { return tRole('doctor'); },
+    get title() { return tRole("doctor"); },
     desc: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible)."
   },
   security: {
-    get title() { return tRole('security'); },
+    get title() { return tRole("security"); },
     desc: "Si tu meurs, tu tires une dernière fois (vengeance)."
   },
   ai_agent: {
-    get title() { return tRole('ai_agent'); },
+    get title() { return tRole("ai_agent"); },
     desc: "Nuit 1 : choisis un joueur à lier avec TOI. Si l’un meurt, l’autre meurt aussi."
   },
   radar: {
-    get title() { return tRole('radar'); },
+    get title() { return tRole("radar"); },
     desc: "Chaque nuit, inspecte un joueur et découvre son rôle."
   },
   engineer: {
-    get title() { return tRole('engineer'); },
+    get title() { return tRole("engineer"); },
     desc: "Peut espionner à ses risques et périls. Rappel discret en début de nuit tant qu’il est vivant."
   },
   chameleon: {
-    get title() { return tRole('chameleon'); },
+    get title() { return tRole("chameleon"); },
     desc: "Nuit 1 seulement : échange TON rôle avec un joueur. Après l’échange : revérification globale."
   },
 };
@@ -1561,6 +1561,15 @@ fetch("/api/themes")
   .catch(e => console.error("[themes] failed to load", e));
 
 // Détecte et applique automatiquement le changement de thème
+/**
+ * Applique les styles CSS du thème actif (polices, couleurs, effets)
+ */
+function applyThemeStyles(themeId) {
+  // Définir l'attribut data-theme sur l'élément racine
+  document.documentElement.setAttribute('data-theme', themeId);
+  console.log("[theme-styles] Applied visual theme:", themeId);
+}
+
 function checkAndApplyTheme() {
   const themeId = state?.themeId || "default";
   
@@ -1571,6 +1580,9 @@ function checkAndApplyTheme() {
       currentTheme = newTheme;
       console.log("[theme] Applied theme:", themeId);
       
+      // Appliquer les styles visuels du thème
+      applyThemeStyles(themeId);
+      
       // Appliquer les traductions
       applyThemeTranslations();
     }
@@ -1579,10 +1591,10 @@ function checkAndApplyTheme() {
 
 // Applique les traductions du thème actif sur les éléments visibles
 function applyThemeTranslations() {
-  // Titre principal (h1)
-  const mainTitle = document.getElementById('mainTitle');
-  if (mainTitle) {
-    mainTitle.textContent = t('title').toUpperCase();
+  // Titre principal
+  const h1 = document.querySelector('h1');
+  if (h1 && !state?.roomCode) {
+    h1.textContent = t('title').toUpperCase();
   }
   
   // Titres des écrans
@@ -1592,8 +1604,7 @@ function applyThemeTranslations() {
   const joinTitle = document.getElementById('joinMissionTitle');
   if (joinTitle) joinTitle.textContent = `REJOINDRE UNE ${t('mission').toUpperCase()}`;
   
-  // Note: Les autres traductions (rôles, phases, etc.) sont appliquées dynamiquement 
-  // dans les fonctions de render quand elles utilisent t() et tRole()
+  // Note: Les autres traductions sont appliquées dynamiquement dans les fonctions de render
 }
 
 function renderThemeSelector(isHost) {
