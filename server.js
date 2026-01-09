@@ -5,7 +5,7 @@ const express = require("express");
 const { Server } = require("socket.io");
 
 const PORT = process.env.PORT || 3000;
-const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v24";
+const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v1.0-1-9-2026-01-08-v25";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -1392,12 +1392,33 @@ function clearTimers(room, playerId) {
   room.timers.delete(playerId);
 }
 
+// Prevent duplicate player names in a room (case-insensitive, accents-insensitive, ignoring punctuation/spaces)
+function normalizePlayerName(name) {
+  return String(name || "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+function isNameTaken(room, name, exceptPlayerId = null) {
+  const needle = normalizePlayerName(name);
+  if (!needle) return false;
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    if (exceptPlayerId && p.playerId === exceptPlayerId) continue;
+    if (normalizePlayerName(p.name) === needle) return true;
+  }
+  return false;
+}
+
 function joinRoomCommon(socket, room, playerId, name) {
   let p = getPlayer(room, playerId);
   if (!p) {
     p = {
       playerId,
-      name: name || "Joueur",
+      name: String(name || "Joueur").trim(),
       socketId: socket.id,
       connected: true,
       status: "alive",
@@ -1409,7 +1430,7 @@ function joinRoomCommon(socket, room, playerId, name) {
     };
     room.players.set(playerId, p);
   } else {
-    p.name = name || p.name;
+    if (name != null) p.name = String(name).trim() || p.name;
     p.socketId = socket.id;
     p.connected = true;
   }
@@ -1561,6 +1582,9 @@ io.on("connection", (socket) => {
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
     if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (isNameTaken(room, name, playerId)) {
+      return cb && cb({ ok: false, error: "Ce nom est déjà utilisé dans cette mission." });
+    }
     console.log(`[${code}] room_join name=${name} (${playerId})`);
     joinRoomCommon(socket, room, playerId, name);
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
