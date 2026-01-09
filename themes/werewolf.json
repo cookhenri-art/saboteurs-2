@@ -62,40 +62,6 @@
     "GAME_OVER": "Fin de partie",
     "GAME_ABORTED": "Partie interrompue"
   },
-
-  "phaseTitles": {
-    "LOBBY": "LE VILLAGE",
-    "ROLE_REVEAL": "DÉCOUVERTE DU RÔLE",
-    "CAPTAIN_CANDIDACY": "CANDIDATURES MAIRE",
-    "CAPTAIN_VOTE": "ÉLECTION DU MAIRE",
-    "NIGHT_START": "NUIT {night} — LE VILLAGE DORT",
-    "NIGHT_CHAMELEON": "NUIT — LOUP MÉTAMORPHE",
-    "NIGHT_AI_AGENT": "NUIT — CUPIDON (LIAISON)",
-    "NIGHT_RADAR": "NUIT — VOYANTE",
-    "NIGHT_SABOTEURS": "NUIT — LOUPS-GAROUS (UNANIMITÉ)",
-    "NIGHT_DOCTOR": "NUIT — SORCIÈRE",
-    "NIGHT_RESULTS": "RÉSULTATS NUIT {night}",
-    "DAY_WAKE": "JOUR {day} — LE VILLAGE S'ÉVEILLE",
-    "DAY_CAPTAIN_TRANSFER": "JOUR {day} — PASSATION DU MAIRE",
-    "DAY_VOTE": "JOUR {day} — VOTE D'ÉLIMINATION",
-    "DAY_TIEBREAK": "JOUR {day} — DÉPARTAGE (MAIRE)",
-    "DAY_RESULTS": "JOUR {day} — RÉSULTATS",
-    "REVENGE": "VENGEANCE — CHASSEUR",
-    "GAME_OVER": "FIN DE PARTIE",
-    "GAME_ABORTED": "PARTIE INTERROMPUE",
-    "MANUAL_ROLE_PICK": "CHOIX MANUEL DES RÔLES"
-  },
-
-  "phaseWaitTexts": {
-    "NIGHT_CHAMELEON": "En attente du Loup Métamorphe...",
-    "NIGHT_AI_AGENT": "En attente de Cupidon...",
-    "NIGHT_RADAR": "En attente de la Voyante...",
-    "NIGHT_SABOTEURS": "En attente des Loups-Garous...",
-    "NIGHT_DOCTOR": "En attente de la Sorcière...",
-    "DAY_VOTE": "En attente des votes...",
-    "DAY_TIEBREAK": "En attente du Maire...",
-    "REVENGE": "En attente du Chasseur..."
-  },
   
   "audio": {
     "INTRO_LOBBY": "intro-village",

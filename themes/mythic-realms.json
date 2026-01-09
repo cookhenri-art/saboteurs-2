@@ -62,40 +62,6 @@
     "GAME_OVER": "Fin de partie",
     "GAME_ABORTED": "Partie interrompue"
   },
-
-  "phaseTitles": {
-    "LOBBY": "LE ROYAUME",
-    "ROLE_REVEAL": "DÉCOUVERTE DE VOTRE NATURE",
-    "CAPTAIN_CANDIDACY": "CANDIDATURES RÉGENT",
-    "CAPTAIN_VOTE": "ÉLECTION DU RÉGENT",
-    "NIGHT_START": "NUIT {night} — LE ROYAUME DORT",
-    "NIGHT_CHAMELEON": "NUIT — DRAGON MÉTAMORPHE",
-    "NIGHT_AI_AGENT": "NUIT — ELFE CHARMEUR (LIAISON)",
-    "NIGHT_RADAR": "NUIT — ÉCLAIREUR",
-    "NIGHT_SABOTEURS": "NUIT — OGRES (UNANIMITÉ)",
-    "NIGHT_DOCTOR": "NUIT — GUÉRISSEUR",
-    "NIGHT_RESULTS": "RÉSULTATS NUIT {night}",
-    "DAY_WAKE": "JOUR {day} — LE ROYAUME S'ÉVEILLE",
-    "DAY_CAPTAIN_TRANSFER": "JOUR {day} — PASSATION DU RÉGENT",
-    "DAY_VOTE": "JOUR {day} — VOTE DE BANNISSEMENT",
-    "DAY_TIEBREAK": "JOUR {day} — DÉPARTAGE (RÉGENT)",
-    "DAY_RESULTS": "JOUR {day} — RÉSULTATS",
-    "REVENGE": "VENGEANCE — CHEVALIER",
-    "GAME_OVER": "FIN DE PARTIE",
-    "GAME_ABORTED": "PARTIE INTERROMPUE",
-    "MANUAL_ROLE_PICK": "CHOIX MANUEL DES RÔLES"
-  },
-
-  "phaseWaitTexts": {
-    "NIGHT_CHAMELEON": "En attente du Dragon Métamorphe...",
-    "NIGHT_AI_AGENT": "En attente de l'Elfe Charmeur...",
-    "NIGHT_RADAR": "En attente de l'Éclaireur...",
-    "NIGHT_SABOTEURS": "En attente des Ogres...",
-    "NIGHT_DOCTOR": "En attente du Guérisseur...",
-    "DAY_VOTE": "En attente des votes...",
-    "DAY_TIEBREAK": "En attente du Régent...",
-    "REVENGE": "En attente du Chevalier..."
-  },
   
   "audio": {
     "INTRO_LOBBY": "intro-realm",

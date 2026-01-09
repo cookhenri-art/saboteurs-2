@@ -62,40 +62,6 @@
     "GAME_OVER": "Fin de partie",
     "GAME_ABORTED": "Partie interrompue"
   },
-
-  "phaseTitles": {
-    "LOBBY": "LOBBY",
-    "ROLE_REVEAL": "VÉRIFICATION DU RÔLE",
-    "CAPTAIN_CANDIDACY": "CANDIDATURE CAPITAINE",
-    "CAPTAIN_VOTE": "VOTE CAPITAINE",
-    "NIGHT_START": "NUIT {night} — DÉBUT",
-    "NIGHT_CHAMELEON": "NUIT — CAMÉLÉON",
-    "NIGHT_AI_AGENT": "NUIT — AGENT IA (LIAISON)",
-    "NIGHT_RADAR": "NUIT — OFFICIER RADAR",
-    "NIGHT_SABOTEURS": "NUIT — SABOTEURS (UNANIMITÉ)",
-    "NIGHT_DOCTOR": "NUIT — DOCTEUR BIO",
-    "NIGHT_RESULTS": "RÉSULTATS NUIT {night}",
-    "DAY_WAKE": "JOUR {day} — RÉVEIL",
-    "DAY_CAPTAIN_TRANSFER": "JOUR {day} — TRANSMISSION DU CAPITAINE",
-    "DAY_VOTE": "JOUR {day} — VOTE D'ÉJECTION",
-    "DAY_TIEBREAK": "JOUR {day} — DÉPARTAGE (CAPITAINE)",
-    "DAY_RESULTS": "JOUR {day} — RÉSULTATS",
-    "REVENGE": "VENGEANCE — CHEF DE SÉCURITÉ",
-    "GAME_OVER": "FIN DE PARTIE",
-    "GAME_ABORTED": "PARTIE INTERROMPUE",
-    "MANUAL_ROLE_PICK": "CHOIX MANUEL DES RÔLES"
-  },
-
-  "phaseWaitTexts": {
-    "NIGHT_CHAMELEON": "En attente du Caméléon...",
-    "NIGHT_AI_AGENT": "En attente de l'Agent IA...",
-    "NIGHT_RADAR": "En attente de l'Officier Radar...",
-    "NIGHT_SABOTEURS": "En attente des Saboteurs...",
-    "NIGHT_DOCTOR": "En attente du Docteur Bio...",
-    "DAY_VOTE": "En attente des votes...",
-    "DAY_TIEBREAK": "En attente du Capitaine...",
-    "REVENGE": "En attente du Chef de Sécurité..."
-  },
   
   "audio": {
     "INTRO_LOBBY": "intro-lobby",

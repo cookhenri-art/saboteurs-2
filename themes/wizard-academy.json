@@ -62,40 +62,6 @@
     "GAME_OVER": "Fin de partie",
     "GAME_ABORTED": "Partie interrompue"
   },
-
-  "phaseTitles": {
-    "LOBBY": "L'ACADÉMIE",
-    "ROLE_REVEAL": "DÉCOUVERTE DU RÔLE",
-    "CAPTAIN_CANDIDACY": "CANDIDATURES DIRECTEUR",
-    "CAPTAIN_VOTE": "ÉLECTION DU DIRECTEUR",
-    "NIGHT_START": "NUIT {night} — L'ACADÉMIE DORT",
-    "NIGHT_CHAMELEON": "NUIT — MÉTAMORPHE",
-    "NIGHT_AI_AGENT": "NUIT — MAÎTRE DU PHILTRE (LIAISON)",
-    "NIGHT_RADAR": "NUIT — ORACLE",
-    "NIGHT_SABOTEURS": "NUIT — SORCIERS MALÉFIQUES (UNANIMITÉ)",
-    "NIGHT_DOCTOR": "NUIT — ALCHIMISTE",
-    "NIGHT_RESULTS": "RÉSULTATS NUIT {night}",
-    "DAY_WAKE": "JOUR {day} — L'ACADÉMIE S'ÉVEILLE",
-    "DAY_CAPTAIN_TRANSFER": "JOUR {day} — PASSATION DU DIRECTEUR",
-    "DAY_VOTE": "JOUR {day} — VOTE D'EXPULSION",
-    "DAY_TIEBREAK": "JOUR {day} — DÉPARTAGE (DIRECTEUR)",
-    "DAY_RESULTS": "JOUR {day} — RÉSULTATS",
-    "REVENGE": "VENGEANCE — GARDIEN DU CHÂTEAU",
-    "GAME_OVER": "FIN DE PARTIE",
-    "GAME_ABORTED": "PARTIE INTERROMPUE",
-    "MANUAL_ROLE_PICK": "CHOIX MANUEL DES RÔLES"
-  },
-
-  "phaseWaitTexts": {
-    "NIGHT_CHAMELEON": "En attente du Métamorphe...",
-    "NIGHT_AI_AGENT": "En attente du Maître du Philtre...",
-    "NIGHT_RADAR": "En attente de l'Oracle...",
-    "NIGHT_SABOTEURS": "En attente des Sorciers Maléfiques...",
-    "NIGHT_DOCTOR": "En attente de l'Alchimiste...",
-    "DAY_VOTE": "En attente des votes...",
-    "DAY_TIEBREAK": "En attente du Directeur...",
-    "REVENGE": "En attente du Gardien..."
-  },
   
   "audio": {
     "INTRO_LOBBY": "intro-academy",
