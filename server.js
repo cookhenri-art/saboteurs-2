@@ -292,6 +292,24 @@ const ROLES = {
 };
 const CAPTAIN_ICON = "capitaine.png";
 
+/**
+ * Obtient le nom traduit d'un rôle selon le thème de la room
+ * @param {string} roleKey - Clé du rôle (astronaut, saboteur, etc.)
+ * @param {object} room - L'objet room contenant le themeId
+ * @param {boolean} plural - Si true, retourne la forme plurielle
+ * @returns {string} - Le nom traduit du rôle
+ */
+function getRoleLabel(roleKey, room, plural = false) {
+  if (!roleKey) return "?";
+  const themeId = room?.themeId || "default";
+  try {
+    return themeManager.getRoleName(themeId, roleKey, plural);
+  } catch (e) {
+    // Fallback si le thème n'existe pas
+    return ROLES[roleKey]?.label || roleKey;
+  }
+}
+
 function defaultConfig() {
   return {
     rolesEnabled: {
@@ -559,7 +577,7 @@ function buildDeathsText(room, newlyDeadIds) {
   const items = ids.map((id) => {
     const p = room.players.get(id);
     if (!p) return null;
-    const roleLabel = ROLES[p.role]?.label || p.role || "?";
+    const roleLabel = getRoleLabel(p.role, room);
     return `${p.name} (${roleLabel})`;
   }).filter(Boolean);
   if (!items.length) return null;
@@ -623,7 +641,7 @@ function buildEndReport(room, winner) {
     name: p.name,
     status: p.status,
     role: p.role,
-    roleLabel: ROLES[p.role]?.label || p.role || null,
+    roleLabel: getRoleLabel(p.role, room),
     isCaptain: !!p.isCaptain
   }));
 
@@ -636,7 +654,7 @@ function buildEndReport(room, winner) {
     seen.add(e.playerId);
     const name = room.players.get(e.playerId)?.name || e.playerId;
     const role = room.players.get(e.playerId)?.role;
-    const roleLabel = ROLES[role]?.label || role || "?";
+    const roleLabel = getRoleLabel(role, room);
     deathOrder.push({ playerId: e.playerId, name, roleLabel, source: e.source || "?" });
   }
 
@@ -674,7 +692,7 @@ function buildEndReport(room, winner) {
     const p = room.players.get(pid);
     if (!p) return null;
     const role = roleOverride || p.role;
-    const roleLabel = ROLES[role]?.label || role || "?";
+    const roleLabel = getRoleLabel(role, room);
     return `${p.name} (${roleLabel})`;
   };
 
@@ -1309,18 +1327,18 @@ function publicRoomStateFor(room, viewerId) {
 
     if (room.ended || room.phase === "GAME_OVER") {
       base.role = p.role;
-      base.roleLabel = ROLES[p.role]?.label || p.role;
+      base.roleLabel = getRoleLabel(p.role, room);
       base.roleIcon = ROLES[p.role]?.icon || null;
       return base;
     }
 
     if (viewer && viewer.playerId === p.playerId) {
       base.role = p.role;
-      base.roleLabel = ROLES[p.role]?.label || p.role;
+      base.roleLabel = getRoleLabel(p.role, room);
       base.roleIcon = ROLES[p.role]?.icon || null;
     } else if (viewer && viewer.role === "saboteur" && p.role === "saboteur") {
       base.role = "saboteur";
-      base.roleLabel = ROLES.saboteur.label;
+      base.roleLabel = getRoleLabel("saboteur", room);
       base.roleIcon = ROLES.saboteur.icon;
     } else {
       base.role = null;
@@ -1335,7 +1353,7 @@ function publicRoomStateFor(room, viewerId) {
     name: viewer.name,
     status: viewer.status,
     role: viewer.role,
-    roleLabel: viewer.role ? (ROLES[viewer.role]?.label || viewer.role) : null,
+    roleLabel: viewer.role ? getRoleLabel(viewer.role, room) : null,
     roleIcon: viewer.role ? (ROLES[viewer.role]?.icon || null) : null,
     isCaptain: !!viewer.isCaptain,
     captainIcon: viewer.isCaptain ? CAPTAIN_ICON : null,
@@ -2022,7 +2040,7 @@ io.on("connection", (socket) => {
       if (!tP || tP.status !== "alive") return;
 
       const role = tP.role || "astronaut";
-      room.phaseData.lastRadarResult = { viewerId: playerId, targetId, roleKey: role, text: `🔍 Radar: ${tP.name} = ${ROLES[role]?.label || role}` };
+      room.phaseData.lastRadarResult = { viewerId: playerId, targetId, roleKey: role, text: `🔍 Radar: ${tP.name} = ${getRoleLabel(role, room)}` };
       room.phaseData.selectionDone = true;
 
       logEvent(room, "radar_inspect", { by: playerId, targetId, role });
