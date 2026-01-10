@@ -320,8 +320,8 @@
 
   <!-- Tutorial modal -->
   <div id="tutorialModal" style="display:none; position:fixed; inset:0; z-index:10001; background: rgba(0,0,0,0.85);">
-    <div style="max-width: 700px; margin: 10vh auto; background: linear-gradient(135deg, #0a0e27, #1a1e3f);
-      border:3px solid var(--neon-cyan); border-radius: 20px; padding: 30px; position: relative; box-shadow: 0 0 60px rgba(0,255,255,0.5);">
+    <div style="max-width: 700px; margin: 10vh auto; background: linear-gradient(135deg, var(--primary-bg), var(--secondary-bg));
+      border:3px solid var(--neon-cyan); border-radius: 20px; padding: 30px; position: relative; box-shadow: 0 0 60px var(--neon-cyan);">
       <button id="tutorialClose" class="btn btn-secondary" style="position:absolute; right:15px; top:15px;">✖</button>
       
       <div id="tutorialContent">
@@ -331,11 +331,11 @@
             <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
             <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Bienvenue !</h2>
           </div>
-          <p style="font-size: 1.1rem; line-height: 1.6; color: #e0e6ed;">
+          <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary);">
             <strong>Infiltration Spatiale</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">saboteurs</span> 
             tentent d'éliminer les <span style="color: var(--neon-cyan);">astronautes</span> sans être découverts.
           </p>
-          <p style="font-size: 1.05rem; line-height: 1.6; color: #ccc;">
+          <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary);">
             Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).
           </p>
         </div>
@@ -344,9 +344,9 @@
         <div class="tutorial-screen" data-screen="2" style="display:none;">
           <div style="text-align:center; margin-bottom: 25px;">
             <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
-            <h2 style="color: var(--neon-purple, #9d4edd); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
+            <h2 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
           </div>
-          <ul style="font-size: 1.05rem; line-height: 1.8; color: #e0e6ed; padding-left: 25px;">
+          <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
             <li><strong style="color: var(--neon-red);">Saboteurs</strong> : choisissent une victime (unanimité requise)</li>
             <li><strong style="color: var(--neon-cyan);">Officier Radar</strong> : inspecte un joueur (saboteur ou non ?)</li>
             <li><strong style="color: var(--neon-green);">Docteur Bio</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
@@ -360,13 +360,13 @@
             <div style="font-size: 4rem; margin-bottom: 10px;">☀️</div>
             <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
           </div>
-          <ul style="font-size: 1.05rem; line-height: 1.8; color: #e0e6ed; padding-left: 25px;">
+          <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
             <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
             <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
             <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
             <li>Le <strong>Capitaine</strong> tranche en cas d'égalité</li>
           </ul>
-          <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: #ccc;">
+          <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: var(--text-secondary);">
             <strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !
           </p>
         </div>
@@ -381,12 +381,12 @@
             <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
               <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
               <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">Astronautes gagnent</div>
-              <div style="font-size: 0.95rem; color: #ccc;">Tous les saboteurs sont éjectés</div>
+              <div style="font-size: 0.95rem; color: var(--text-secondary);">Tous les saboteurs sont éjectés</div>
             </div>
             <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
               <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
               <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">Saboteurs gagnent</div>
-              <div style="font-size: 0.95rem; color: #ccc;">Nombre de saboteurs ≥ astronautes</div>
+              <div style="font-size: 0.95rem; color: var(--text-secondary);">Nombre de saboteurs ≥ astronautes</div>
             </div>
           </div>
           <p style="text-align: center; font-size: 1.1rem; color: var(--neon-green); font-weight: 800;">
@@ -396,13 +396,13 @@
       </div>
 
       <!-- Navigation -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid rgba(0,255,255,0.3);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px; padding-top: 20px; border-top: 2px solid var(--neon-cyan);">
         <button id="tutorialPrev" class="btn btn-secondary">← Précédent</button>
         <div style="display: flex; gap: 8px;">
           <div class="tutorial-dot" data-dot="1" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="2" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="3" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="4" style="width: 12px; height: 12px; border-radius: 50%; background: rgba(0,255,255,0.3); cursor: pointer;"></div>
+          <div class="tutorial-dot" data-dot="2" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
+          <div class="tutorial-dot" data-dot="3" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
+          <div class="tutorial-dot" data-dot="4" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
         </div>
         <button id="tutorialNext" class="btn btn-primary">Suivant →</button>
       </div>

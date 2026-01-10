@@ -1515,6 +1515,12 @@ select:focus-visible {
     min-width: auto !important;
   }
   
+  /* Réduire la taille du texte RÈGLES encore plus */
+  #rulesBtn {
+    font-size: 0.5rem !important; /* Divisé par 2 supplémentaire */
+    padding: 4px 8px !important;
+  }
+  
   /* Réduire la taille des émojis dans les boutons */
   #rulesBtn::before {
     content: '📜';
@@ -1671,13 +1677,44 @@ select:focus-visible {
     padding: 10px 14px !important;
     font-size: 0.85rem !important;
   }
+  
+  /* TUTORIEL - Adaptation mobile */
+  #tutorialModal > div {
+    max-width: 95vw !important;
+    margin: 5vh auto !important;
+    padding: 15px !important;
+  }
+  
+  #tutorialModal h2 {
+    font-size: 1.3rem !important;
+  }
+  
+  #tutorialModal p,
+  #tutorialModal li {
+    font-size: 0.85rem !important;
+    line-height: 1.4 !important;
+  }
+  
+  #tutorialModal .btn {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  .tutorial-dots {
+    margin: 10px 0 !important;
+  }
+  
+  .tutorial-dot {
+    width: 8px !important;
+    height: 8px !important;
+  }
 }
 
 /* Mobile très petit (< 400px) */
 @media (max-width: 400px) {
   #rulesBtn {
-    padding: 5px 8px !important;
-    font-size: 0.7rem !important;
+    padding: 4px 6px !important;
+    font-size: 0.45rem !important; /* Encore plus petit */
   }
   
   #soundBtn {

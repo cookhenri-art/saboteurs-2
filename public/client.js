@@ -456,18 +456,40 @@ function renderLobby() {
   const box = $("rolesConfig");
   box.innerHTML = "";
 
-  // Disabled pour les non-hôtes, mais ils voient quand même les checkboxes
-  const disabled = !isHost;
-
-
-  box.appendChild(makeCheckbox("doctor", tRole('doctor'), rolesEnabled.doctor, false, disabled));
-  box.appendChild(makeCheckbox("security", tRole('security'), rolesEnabled.security, false, disabled));
-  box.appendChild(makeCheckbox("radar", tRole('radar'), rolesEnabled.radar, false, disabled));
-  box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), rolesEnabled.ai_agent, false, disabled));
-  box.appendChild(makeCheckbox("engineer", tRole('engineer'), rolesEnabled.engineer, false, disabled));
-  box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, rolesEnabled.chameleon, false, disabled));
-  box.appendChild(document.createElement("hr"));
-  box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true, false, disabled));
+  if (!isHost) {
+    // Pour les joueurs : afficher seulement les rôles actifs
+    const activeRoles = [];
+    if (rolesEnabled.doctor) activeRoles.push(tRole('doctor'));
+    if (rolesEnabled.security) activeRoles.push(tRole('security'));
+    if (rolesEnabled.radar) activeRoles.push(tRole('radar'));
+    if (rolesEnabled.ai_agent) activeRoles.push(tRole('ai_agent'));
+    if (rolesEnabled.engineer) activeRoles.push(tRole('engineer'));
+    if (rolesEnabled.chameleon) activeRoles.push(`${tRole('chameleon')} (Nuit 1)`);
+    
+    if (activeRoles.length > 0) {
+      box.innerHTML = activeRoles.map(role => 
+        `<div style="margin-bottom: 8px; color: var(--neon-cyan); opacity: 0.9;">• ${role}</div>`
+      ).join("");
+    } else {
+      box.innerHTML = `<div style="opacity: 0.7; font-style: italic;">Aucun rôle spécial activé</div>`;
+    }
+    
+    if (cfg.manualRoles) {
+      box.innerHTML += `<hr><div style="margin-top: 8px; color: var(--neon-orange); opacity: 0.9;">• Mode manuel (cartes physiques)</div>`;
+    }
+    
+  } else {
+    // Pour l'hôte : afficher les checkboxes comme avant
+    box.appendChild(makeCheckbox("doctor", tRole('doctor'), rolesEnabled.doctor, false, false));
+    box.appendChild(makeCheckbox("security", tRole('security'), rolesEnabled.security, false, false));
+    box.appendChild(makeCheckbox("radar", tRole('radar'), rolesEnabled.radar, false, false));
+    box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), rolesEnabled.ai_agent, false, false));
+    box.appendChild(makeCheckbox("engineer", tRole('engineer'), rolesEnabled.engineer, false, false));
+    box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, rolesEnabled.chameleon, false, false));
+    box.appendChild(document.createElement("hr"));
+    box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true, false));
+  }
+  
   
   // Theme selector (host only)
   renderThemeSelector(isHost);
@@ -1896,15 +1918,8 @@ if (forceAdvanceBtn) {
 let currentTutorialScreen = 1;
 const tutorialDontShowKey = "is_tutorialDontShow";
 
-// Vérifier si on doit afficher le tutoriel au premier lancement
-if (!localStorage.getItem(tutorialDontShowKey)) {
-  // Afficher après un court délai
-  setTimeout(() => {
-    if ($("homeScreen").classList.contains("active")) {
-      showTutorial();
-    }
-  }, 1000);
-}
+// Le tutoriel ne se lance plus automatiquement
+// Il faut cliquer sur le bouton dans les règles pour le voir
 
 function showTutorial() {
   $("tutorialModal").style.display = "block";
