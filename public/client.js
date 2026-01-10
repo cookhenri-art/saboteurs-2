@@ -461,17 +461,23 @@ function renderLobby() {
   if (!isHost) {
     // Pour les joueurs : afficher seulement les rôles actifs
     const activeRoles = [];
-    if (rolesEnabled.doctor) activeRoles.push(tRole('doctor'));
-    if (rolesEnabled.security) activeRoles.push(tRole('security'));
-    if (rolesEnabled.radar) activeRoles.push(tRole('radar'));
-    if (rolesEnabled.ai_agent) activeRoles.push(tRole('ai_agent'));
-    if (rolesEnabled.engineer) activeRoles.push(tRole('engineer'));
-    if (rolesEnabled.chameleon) activeRoles.push(`${tRole('chameleon')} (Nuit 1)`);
+    if (rolesEnabled.doctor) activeRoles.push({ key: 'doctor', label: tRole('doctor') });
+    if (rolesEnabled.security) activeRoles.push({ key: 'security', label: tRole('security') });
+    if (rolesEnabled.radar) activeRoles.push({ key: 'radar', label: tRole('radar') });
+    if (rolesEnabled.ai_agent) activeRoles.push({ key: 'ai_agent', label: tRole('ai_agent') });
+    if (rolesEnabled.engineer) activeRoles.push({ key: 'engineer', label: tRole('engineer') });
+    if (rolesEnabled.chameleon) activeRoles.push({ key: 'chameleon', label: `${tRole('chameleon')} (Nuit 1)` });
     
     if (activeRoles.length > 0) {
-      box.innerHTML = activeRoles.map(role => 
-        `<div style="margin-bottom: 8px; color: var(--neon-cyan); opacity: 0.9;">• ${role}</div>`
-      ).join("");
+      box.innerHTML = activeRoles.map(r => {
+        const help = tRoleHelp(r.key);
+        return `
+          <div style="margin-bottom: 10px; color: var(--neon-cyan); opacity: 0.9;">
+            <div>• ${escapeHtml(r.label)}</div>
+            ${help ? `<div class="role-cfg-help" style="margin-left: 14px;">${escapeHtml(help)}</div>` : ""}
+          </div>
+        `;
+      }).join("");
     } else {
       box.innerHTML = `<div style="opacity: 0.7; font-style: italic;">Aucun rôle spécial activé</div>`;
     }
@@ -482,27 +488,30 @@ function renderLobby() {
     
   } else {
     // Pour l'hôte : afficher les checkboxes comme avant
-    box.appendChild(makeCheckbox("doctor", tRole('doctor'), rolesEnabled.doctor, false, false));
-    box.appendChild(makeCheckbox("security", tRole('security'), rolesEnabled.security, false, false));
-    box.appendChild(makeCheckbox("radar", tRole('radar'), rolesEnabled.radar, false, false));
-    box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), rolesEnabled.ai_agent, false, false));
-    box.appendChild(makeCheckbox("engineer", tRole('engineer'), rolesEnabled.engineer, false, false));
-    box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, rolesEnabled.chameleon, false, false));
+    box.appendChild(makeCheckbox("doctor", tRole('doctor'), tRoleHelp('doctor'), rolesEnabled.doctor, false, false));
+    box.appendChild(makeCheckbox("security", tRole('security'), tRoleHelp('security'), rolesEnabled.security, false, false));
+    box.appendChild(makeCheckbox("radar", tRole('radar'), tRoleHelp('radar'), rolesEnabled.radar, false, false));
+    box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), tRoleHelp('ai_agent'), rolesEnabled.ai_agent, false, false));
+    box.appendChild(makeCheckbox("engineer", tRole('engineer'), tRoleHelp('engineer'), rolesEnabled.engineer, false, false));
+    box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, tRoleHelp('chameleon'), rolesEnabled.chameleon, false, false));
     box.appendChild(document.createElement("hr"));
-    box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true, false));
+    box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", "", !!cfg.manualRoles, true, false));
   }
   
   
   // Theme selector (host only)
   renderThemeSelector(isHost);
 
-  function makeCheckbox(key, label, checked, isRoot=false, isDisabled=false) {
+  function makeCheckbox(key, label, helpText, checked, isRoot=false, isDisabled=false) {
     const row = document.createElement("div");
     row.style.marginBottom = "10px";
     const id = `cfg_${key}`;
-    row.innerHTML = `<label style="display:flex; align-items:center; gap:10px; text-transform:none; letter-spacing:1px; ${isDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">
+    row.innerHTML = `<label class="role-cfg-row" style="display:flex; align-items:flex-start; gap:10px; text-transform:none; letter-spacing:1px; ${isDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">
       <input type="checkbox" id="${id}" ${checked ? "checked" : ""} ${isDisabled ? "disabled" : ""}>
-      <span>${label}</span>
+      <span class="role-cfg-text" style="display:flex; flex-direction:column; gap:2px;">
+        <span class="role-cfg-title">${label}</span>
+        ${helpText ? `<span class="role-cfg-help">${helpText}</span>` : ``}
+      </span>
     </label>`;
     if (!isDisabled) {
       row.querySelector("input").addEventListener("change", () => {
@@ -1630,6 +1639,19 @@ function tRole(roleKey, plural = false) {
     return role.namePlural;
   }
   return role.name || roleKey;
+}
+
+// Petites explications génériques des rôles (identiques pour tous les thèmes)
+function tRoleHelp(roleKey) {
+  const helps = {
+    doctor: "Une potion de vie, une potion de mort.",
+    security: "Vengeance si tué.",
+    radar: "Peut révéler un rôle.",
+    ai_agent: "Se lie à un joueur.",
+    engineer: "Regarde discrètement lors des votes.",
+    chameleon: "Échange son rôle avec 1 joueur."
+  };
+  return helps[roleKey] || "";
 }
 
 // Charger la liste des thèmes disponibles

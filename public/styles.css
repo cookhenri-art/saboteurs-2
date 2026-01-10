@@ -1340,6 +1340,15 @@ textarea {
 .pill.warn { color: var(--neon-orange); border-color: rgba(255,136,0,0.4); }
 .pill.bad { color: var(--neon-red); border-color: rgba(255,0,51,0.4); }
 
+/* Aide sous les rôles (lobby -> config rôles) */
+.role-cfg-help {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  color: var(--metal-grey);
+  line-height: 1.2;
+  white-space: normal;
+}
+
 .btn { cursor:pointer; user-select:none; }
 .btn:disabled { opacity:.5; cursor:not-allowed; }
 .btn:disabled:hover { transform: none !important; box-shadow: none !important; }
@@ -1522,7 +1531,8 @@ select:focus-visible {
   /* Mobile: agrandit seulement le mot "RÈGLES" sans changer la taille du bouton */
   #rulesBtn .rulesBtnText {
     display: inline-block;
-    transform: scale(2.2);
+    /* Texte trop gros sur mobile -> on divise par 2 */
+    transform: scale(1.1);
     transform-origin: left center;
     line-height: 1;
   }
