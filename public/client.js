@@ -872,7 +872,9 @@ function renderEnd() {
 const detailed = rep.detailedStatsByName || {};
 const detailedHtml = Object.entries(detailed).map(([name, s]) => {
   const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
-    return `<div style="opacity:.95;">• <b>${escapeHtml(rk)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
+    // Traduire la clé de rôle en nom localisé
+    const roleName = tRole(rk) || rk;
+    return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
   }).join("");
   return `<div class="player-item" style="margin:8px 0;">
     <div class="player-left">
