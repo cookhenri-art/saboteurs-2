@@ -1,0 +1,116 @@
+{
+  "id": "mythic-realms",
+  "name": "Royaumes Mythiques",
+  "homeTitle": "LA CONFRÉRIE FANTASTIQUE",
+  "description": "Un royaume fantastique menacé par des ogres infiltrés",
+  
+  "terms": {
+    "captain": "Guide Sacré",
+    "station": "La Confrérie",
+    "crew": "Engagés",
+    "mission": "périple",
+    "title": "La Confrérie Fantastique",
+    "saboteurs": "Orques",
+    "astronauts": "Humains"
+  },
+  "roles": {
+    "saboteur": {
+      "name": "Orque",
+      "namePlural": "Orques",
+      "description": "Créatures brutales infiltrées parmi les habitants du royaume."
+    },
+    "astronaut": {
+      "name": "Humain",
+      "namePlural": "Humains",
+      "description": "Citoyens du royaume qui doivent identifier et bannir les orques."
+    },
+    "radar": {
+      "name": "Éclaireur",
+      "description": "Chaque nuit, peut traquer une créature pour révéler sa vraie nature."
+    },
+    "doctor": {
+      "name": "Guérisseur",
+      "description": "Possède une bénédiction de protection et une malédiction (usage unique)."
+    },
+    "security": {
+      "name": "Chevalier",
+      "description": "Si tué par les ogres, peut porter un coup fatal avec son dernier souffle."
+    },
+    "ai_agent": {
+      "name": "Elfe Charmeur",
+      "description": "La première nuit, enchante deux êtres. Si l'un périt, l'autre suit."
+    },
+    "engineer": {
+      "name": "Nain Espiègle",
+      "description": "Simple habitant du royaume sans pouvoir particulier."
+    },
+    "chameleon": {
+      "name": "Dragon Métamorphe",
+      "description": "Une fois dans la partie, peut échanger son essence avec une autre créature."
+    }
+  },
+  
+  "phases": {
+    "LOBBY": "Le royaume se rassemble",
+    "ROLE_REVEAL": "Découvrez votre nature",
+    "CAPTAIN_CANDIDACY": "Candidatures pour régent",
+    "CAPTAIN_VOTE": "Élection du régent",
+    "NIGHT_START": "Le royaume s'endort",
+    "NIGHT_CHAMELEON": "Dragon métamorphe, réveille-toi",
+    "NIGHT_AI_AGENT": "Elfe charmeur, réveille-toi",
+    "NIGHT_RADAR": "Éclaireur, réveille-toi",
+    "NIGHT_SABOTEURS": "Ogres, choisissez votre proie",
+    "NIGHT_DOCTOR": "Guérisseur, choisissez votre action",
+    "NIGHT_RESULTS": "Résultats de la nuit",
+    "DAY_WAKE": "Le royaume se réveille",
+    "DAY_CAPTAIN_TRANSFER": "Passation du titre de régent",
+    "DAY_VOTE": "Vote pour bannir un suspect",
+    "DAY_TIEBREAK": "Égalité - Le régent tranche",
+    "DAY_RESULTS": "Résultats du bannissement",
+    "REVENGE": "Chevalier - Dernier coup",
+    "GAME_OVER": "Fin de partie",
+    "GAME_ABORTED": "Partie interrompue"
+  },
+  
+  "audio": {
+    "INTRO_LOBBY": "intro-realm",
+    "STATION_SLEEP": "realm-sleep",
+    "STATION_WAKE_LIGHT": "realm-wake-light",
+    "STATION_WAKE_HEAVY": "realm-wake-heavy",
+    "CHAMELEON_WAKE": "dragon-wake",
+    "CHAMELEON_SLEEP": "dragon-sleep",
+    "IA_WAKE": "elf-wake",
+    "IA_SLEEP": "elf-sleep",
+    "RADAR_WAKE": "scout-wake",
+    "RADAR_SLEEP": "scout-sleep",
+    "SABOTEURS_WAKE": "ogres-wake",
+    "SABOTEURS_SLEEP": "ogres-sleep",
+    "DOCTOR_WAKE": "healer-wake",
+    "DOCTOR_SLEEP": "healer-sleep",
+    "ELECTION_CHIEF": "regent-election",
+    "VOTE_ANNONCE": "vote-announce",
+    "SECURITY_REVENGE": "knight-revenge",
+    "WAITING_LOOP": "waiting-loop",
+    "CHECK_ROLE": "check-role",
+    "END_VICTORY": "end-victory",
+    "END_STATS_OUTRO": "end-stats",
+    "END_SCREEN_SONG": "end-song",
+    "OUTRO": "outro",
+    "GENERIC_MAIN": "generic"
+  },
+  
+  "images": {
+    "logo": "logo-realm.png",
+    "background": "bg-realm.jpg"
+  },
+  
+  "cssVars": {
+    "primary-bg": "#0d1b2a",
+    "secondary-bg": "#1b263b",
+    "accent-color": "#fca311",
+    "neon-red": "#d62828",
+    "neon-green": "#80b918",
+    "text-primary": "#e5e5e5",
+    "text-secondary": "#b8bec9"
+  }
+}

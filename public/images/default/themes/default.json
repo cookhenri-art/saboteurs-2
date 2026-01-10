@@ -1,0 +1,116 @@
+{
+  "id": "default",
+  "name": "Infiltration Spatiale",
+  "homeTitle": "INFILTRATION SPATIALE",
+  "description": "Le thème spatial original avec saboteurs vs astronautes",
+  
+  "terms": {
+    "captain": "Chef de station",
+    "station": "station",
+    "crew": "équipage",
+    "mission": "mission",
+    "title": "Infiltration Spatiale",
+    "saboteurs": "Saboteurs",
+    "astronauts": "Astronautes"
+  },
+  "roles": {
+    "saboteur": {
+      "name": "Saboteur",
+      "namePlural": "Saboteurs",
+      "description": "Infiltrés dans la station, leur but est d'éliminer les astronautes. Ils agissent ensemble la nuit."
+    },
+    "astronaut": {
+      "name": "Astronaute",
+      "namePlural": "Astronautes",
+      "description": "Membres d'équipage innocents qui doivent identifier et éjecter les saboteurs."
+    },
+    "radar": {
+      "name": "Officier Radar",
+      "description": "Chaque nuit, peut inspecter un joueur pour savoir s'il est saboteur ou non."
+    },
+    "doctor": {
+      "name": "Docteur Bio",
+      "description": "Peut sauver ou éliminer un joueur chaque nuit (une seule vie/mort disponible)."
+    },
+    "security": {
+      "name": "Chef de Sécurité",
+      "description": "Si éjecté par les saboteurs, peut tirer sur un joueur de son choix."
+    },
+    "ai_agent": {
+      "name": "Agent IA",
+      "description": "La première nuit, lie deux joueurs. Si l'un meurt, l'autre aussi."
+    },
+    "engineer": {
+      "name": "Ingénieur",
+      "description": "Simple astronaute sans pouvoir spécial."
+    },
+    "chameleon": {
+      "name": "Caméléon",
+      "description": "Une seule fois dans la partie, peut échanger son rôle avec un autre joueur."
+    }
+  },
+  
+  "phases": {
+    "LOBBY": "Mission en préparation",
+    "ROLE_REVEAL": "Vérifiez votre rôle",
+    "CAPTAIN_CANDIDACY": "Candidatures au poste de capitaine",
+    "CAPTAIN_VOTE": "Élection du capitaine",
+    "NIGHT_START": "La station s'endort",
+    "NIGHT_CHAMELEON": "Caméléon, réveille-toi",
+    "NIGHT_AI_AGENT": "Agent IA, réveille-toi",
+    "NIGHT_RADAR": "Officier radar, réveille-toi",
+    "NIGHT_SABOTEURS": "Saboteurs, choisissez une cible",
+    "NIGHT_DOCTOR": "Docteur bio, choisissez votre action",
+    "NIGHT_RESULTS": "Résultats de la nuit",
+    "DAY_WAKE": "La station se réveille",
+    "DAY_CAPTAIN_TRANSFER": "Transmission du capitaine",
+    "DAY_VOTE": "Vote d'éjection",
+    "DAY_TIEBREAK": "Égalité - Capitaine tranche",
+    "DAY_RESULTS": "Résultats du jour",
+    "REVENGE": "Chef de sécurité - Vengeance",
+    "GAME_OVER": "Fin de partie",
+    "GAME_ABORTED": "Partie interrompue"
+  },
+  
+  "audio": {
+    "INTRO_LOBBY": "intro-lobby",
+    "STATION_SLEEP": "station-sleep",
+    "STATION_WAKE_LIGHT": "station-wake-light",
+    "STATION_WAKE_HEAVY": "station-wake-heavy",
+    "CHAMELEON_WAKE": "chameleon-wake",
+    "CHAMELEON_SLEEP": "chameleon-sleep",
+    "IA_WAKE": "ia-wake",
+    "IA_SLEEP": "ia-sleep",
+    "RADAR_WAKE": "radar-wake",
+    "RADAR_SLEEP": "radar-sleep",
+    "SABOTEURS_WAKE": "saboteurs-wake",
+    "SABOTEURS_SLEEP": "saboteurs-sleep",
+    "DOCTOR_WAKE": "doctor-wake",
+    "DOCTOR_SLEEP": "doctor-sleep",
+    "ELECTION_CHIEF": "election-chief",
+    "VOTE_ANNONCE": "vote-annonce",
+    "SECURITY_REVENGE": "security-revenge",
+    "WAITING_LOOP": "waiting-loop",
+    "CHECK_ROLE": "check-role",
+    "END_VICTORY": "end-victory",
+    "END_STATS_OUTRO": "end-stats-outro",
+    "END_SCREEN_SONG": "end-screen-song",
+    "OUTRO": "outro",
+    "GENERIC_MAIN": "generic-main"
+  },
+  
+  "images": {
+    "logo": "logo-spatial.png",
+    "background": "bg-space.jpg"
+  },
+  
+  "cssVars": {
+    "primary-bg": "#0a0e27",
+    "secondary-bg": "#141b3d",
+    "accent-color": "#00f3ff",
+    "neon-red": "#ff073a",
+    "neon-green": "#39ff14",
+    "text-primary": "#e0e6ed",
+    "text-secondary": "#a0b3c8"
+  }
+}
