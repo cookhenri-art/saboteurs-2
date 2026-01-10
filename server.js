@@ -1555,65 +1555,75 @@ app.get("/api/assets/audio", (req, res) => {
   });
 });
 
-// ============== DAILY.CO VIDEO ROUTES ==============
-app.post("/api/video/create-room", async (req, res) => {
-  try {
-    const { roomCode } = req.body;
-    if (!roomCode) {
-      return res.status(400).json({ ok: false, error: "roomCode required" });
+// ============== ITINÉRAIRES VIDÉO DAILY.CO ==============
+application.poste("/api/video/create-room/:roomCode", asynchrone (demande, res) => {
+  essayer {
+    const {Code de chambre} = demande.corps;
+    
+    // Vérifier si la salle de Jeu existe
+    const chambre = chambres.obtenir(Code de chambre);
+    si (!chambre) {
+      retour res.statut(404).json({ d'accord:FAUX, erreur:« Code de chambre requis » });
     }
-
-    // Vérifier si la room de jeu existe
-    const room = rooms.get(roomCode);
-    if (!room) {
-      return res.status(404).json({ ok: false, error: "Game room not found" });
-    }
-
-    // Vérifier si une room vidéo existe déjà
-    let videoRoom = dailyManager.getVideoRoom(roomCode);
-    if (videoRoom) {
-      return res.json({
-        ok: true,
-        roomUrl: videoRoom.dailyRoomUrl,
-        roomName: videoRoom.dailyRoomName,
-        cached: true
+    
+    // Vérifier si une vidéo de la pièce existe déjà
+    laisser salle vidéo = Gestionnaire quotidien.salle vidéo(Code de chambre);
+    si (salle vidéo) {
+      retour res.json({
+        d'accord:vrai,
+        URL de la chambre:salle vidéo.URL de la chambre quotidienne,
+        Nom de la chambre:salle vidéo.Nom de la chambre quotidienne,
+        en cache:vrai
       });
     }
 
-    // Créer une nouvelle room vidéo
-    videoRoom = await dailyManager.createVideoRoom(roomCode);
+    // Créer une nouvelle salle vidéo
+    salle vidéo = attendre Gestionnaire quotidien.créer une salle vidéo(Code de chambre);
     
     res.json({
-      ok: true,
-      roomUrl: videoRoom.roomUrl,
-      roomName: videoRoom.roomName,
-      isFreeRoom: videoRoom.isFreeRoom
+      d'accord:vrai,
+      URL de la chambre:salle vidéo.URL de la chambre,
+      Nom de la chambre:salle vidéo.Nom de la chambre,
+      isFreeRoom:salle vidéo.isFreeRoom
     });
     
-  } catch (error) {
-    logger.error('[API] Error creating video room:', error);
-    res.status(500).json({ ok: false, error: error.message });
+  } attraper (erreur) {
+    bûcheron.erreur('[API] Erreur lors de la création de la salle vidéo :', erreur);
+    res.statut(500).json({ d'accord:FAUX, erreur:erreur.message });
   }
 });
 
-app.get("/api/video/room-info/:roomCode", (req, res) => {
-  try {
-    const { roomCode } = req.params;
-    const videoRoom = dailyManager.getVideoRoom(roomCode);
+application.obtenir("/api/video/room-info/:roomCode", (demande, res) => {
+  essayer {
+    const {Code de chambre} = demande.paramètres;
+    const salle vidéo = Gestionnaire quotidien.salle vidéo(Code de chambre);
     
-    if (!videoRoom) {
-      return res.status(404).json({ ok: false, error: "Video room not found" });
+    si (!salle vidéo) {
+      retour res.statut(404).json({ d'accord:FAUX, erreur:"Salle vidéo introuvable" });
     }
     
     res.json({
-      ok: true,
-      roomUrl: videoRoom.dailyRoomUrl,
-      roomName: videoRoom.dailyRoomName
+      d'accord:vrai,
+      URL de la chambre:salle vidéo.URL de la chambre quotidienne,
+      Nom de la chambre:salle vidéo.Nom de la chambre quotidienne
     });
     
-  } catch (error) {
-    logger.error('[API] Error getting video room info:', error);
-    res.status(500).json({ ok: false, error: error.message });
+  } attraper (erreur) {
+    bûcheron.erreur('[API] Erreur lors de l\'obtention des informations sur la salle vidéo :', erreur);
+    res.statut(500).json({ d'accord:FAUX, erreur:erreur.message });
+  }
+});
+
+application.supprimer("/api/video/delete-room/:roomCode", asynchrone (demande, res) => {
+  essayer {
+    const {Code de chambre} = demande.paramètres;
+    attendre Gestionnaire quotidien.deleteVideoRoom(Code de chambre);
+    
+    res.json({ d'accord:vrai });
+    
+  } attraper (erreur) {
+    bûcheron.erreur('[API] Erreur lors de la suppression de la salle vidéo :', erreur);
+    res.statut(500).json({ d'accord:FAUX, erreur:erreur.message });
   }
 });
 
