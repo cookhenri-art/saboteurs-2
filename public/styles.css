@@ -1501,34 +1501,28 @@ select:focus-visible {
    ADAPTATION MOBILE COMPLÈTE
    ======================================== */
 @media (max-width: 768px) {
-  /* Boutons RÈGLES et MUTE (coin haut gauche) */
+  /* Boutons RÈGLES et MUTE */
   #topLeftButtons {
     left: 10px !important;
     top: 10px !important;
-    gap: 6px !important;
   }
   
-  #rulesBtn, #soundBtn {
-    padding: 6px 10px !important;
-    font-size: 0.75rem !important;
-    border-radius: 6px !important;
-    min-width: auto !important;
+  #topRightButtons {
+    right: 10px !important;
+    top: 10px !important;
   }
   
-  /* Réduire la taille du texte RÈGLES encore plus */
   #rulesBtn {
-    font-size: 0.5rem !important; /* Divisé par 2 supplémentaire */
-    padding: 4px 8px !important;
+    font-size: 0.25rem !important; /* Divisé par 2 encore */
+    padding: 3px 6px !important;
+    border-radius: 4px !important;
   }
   
-  /* Réduire la taille des émojis dans les boutons */
-  #rulesBtn::before {
-    content: '📜';
-    font-size: 0.9rem;
-  }
   #soundBtn {
     font-size: 1rem !important;
     padding: 6px 8px !important;
+    border-radius: 6px !important;
+    min-width: auto !important;
   }
   
   /* Container principal plus étroit */
@@ -1696,8 +1690,8 @@ select:focus-visible {
   }
   
   #tutorialModal .btn {
-    padding: 8px 12px !important;
-    font-size: 0.8rem !important;
+    padding: 4px 8px !important; /* Divisé par 2 */
+    font-size: 0.7rem !important; /* Divisé par 2 */
   }
   
   .tutorial-dots {
@@ -1713,8 +1707,8 @@ select:focus-visible {
 /* Mobile très petit (< 400px) */
 @media (max-width: 400px) {
   #rulesBtn {
-    padding: 4px 6px !important;
-    font-size: 0.45rem !important; /* Encore plus petit */
+    padding: 2px 4px !important;
+    font-size: 0.2rem !important; /* Encore plus petit */
   }
   
   #soundBtn {

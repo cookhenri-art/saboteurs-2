@@ -1921,7 +1921,87 @@ const tutorialDontShowKey = "is_tutorialDontShow";
 // Le tutoriel ne se lance plus automatiquement
 // Il faut cliquer sur le bouton dans les règles pour le voir
 
+function generateTutorialContent() {
+  // Termes traduits selon le thème actif
+  const astronauts = t('astronauts');
+  const saboteurs = t('saboteurs');
+  
+  return `
+    <!-- Écran 1 -->
+    <div class="tutorial-screen" data-screen="1" style="display:block;">
+      <div style="text-align:center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
+        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Bienvenue !</h2>
+      </div>
+      <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary);">
+        <strong>Les Saboteurs</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">${saboteurs.toLowerCase()}</span> 
+        tentent d'éliminer les <span style="color: var(--neon-cyan);">${astronauts.toLowerCase()}</span> sans être découverts.
+      </p>
+      <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary);">
+        Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).
+      </p>
+    </div>
+
+    <!-- Écran 2 -->
+    <div class="tutorial-screen" data-screen="2" style="display:none;">
+      <div style="text-align:center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
+        <h2 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
+      </div>
+      <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
+        <li><strong style="color: var(--neon-red);">${saboteurs}</strong> : choisissent une victime (unanimité requise)</li>
+        <li><strong style="color: var(--neon-cyan);">${tRole('radar')}</strong> : inspecte un joueur (${saboteurs.toLowerCase()[0] + saboteurs.toLowerCase().slice(1, -1)} ou non ?)</li>
+        <li><strong style="color: var(--neon-green);">${tRole('doctor')}</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
+        <li><strong style="color: var(--neon-orange);">Rôles spéciaux</strong> : ${tRole('chameleon')}, ${tRole('ai_agent')}, etc.</li>
+      </ul>
+    </div>
+
+    <!-- Écran 3 -->
+    <div class="tutorial-screen" data-screen="3" style="display:none;">
+      <div style="text-align:center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">☀️</div>
+        <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
+      </div>
+      <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
+        <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
+        <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
+        <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
+        <li>Le <strong>${t('captain')}</strong> tranche en cas d'égalité</li>
+      </ul>
+      <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: var(--text-secondary);">
+        <strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !
+      </p>
+    </div>
+
+    <!-- Écran 4 -->
+    <div class="tutorial-screen" data-screen="4" style="display:none;">
+      <div style="text-align:center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
+        <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
+          <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">${astronauts} gagnent</div>
+          <div style="font-size: 0.95rem; color: var(--text-secondary);">Tous les ${saboteurs.toLowerCase()} sont éjectés</div>
+        </div>
+        <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
+          <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">${saboteurs} gagnent</div>
+          <div style="font-size: 0.95rem; color: var(--text-secondary);">Nombre de ${saboteurs.toLowerCase()} ≥ ${astronauts.toLowerCase()}</div>
+        </div>
+      </div>
+      <p style="text-align: center; font-size: 1.1rem; color: var(--neon-green); font-weight: 800;">
+        Prêt à jouer ? Créez ou rejoignez une ${t('mission')} ! 🚀
+      </p>
+    </div>
+  `;
+}
+
 function showTutorial() {
+  // Régénérer le contenu avec les traductions actuelles
+  $("tutorialContent").innerHTML = generateTutorialContent();
+  
   $("tutorialModal").style.display = "block";
   currentTutorialScreen = 1;
   updateTutorialScreen();
