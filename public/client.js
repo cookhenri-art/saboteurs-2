@@ -387,6 +387,17 @@ function renderLobby() {
   $("displayRoomCode").textContent = code;
   $("playerCount").textContent = String(state.players.filter(p => p.status !== "left").length);
 
+  // Lobby title: adapt "ÉQUIPAGE CONNECTÉ" to the active theme
+  const connectedTitleEl = $("connectedPlayersTitle");
+  if (connectedTitleEl) {
+    const themeId = state.themeId || currentTheme?.id || "default";
+    let title = "ÉQUIPAGE CONNECTÉ";
+    if (themeId === "werewolf") title = "LES CITOYENS CONNECTÉS";
+    if (themeId === "mythic-realms") title = "LES COMPAGNONS CONNECTÉS";
+    if (themeId === "wizard-academy") title = "LES MAGICIENS CONNECTÉS";
+    connectedTitleEl.textContent = title;
+  }
+
   // auto allocation summary (based on player count)
   const n = state.players.filter(p => p.status !== "left").length;
   const sab = (n <= 6) ? 1 : (n <= 11 ? 2 : 3);
