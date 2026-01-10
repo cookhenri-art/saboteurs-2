@@ -310,6 +310,69 @@ function getRoleLabel(roleKey, room, plural = false) {
   }
 }
 
+/**
+ * Obtient un terme traduit selon le thème de la room
+ * @param {string} termKey - Clé du terme (captain, station, saboteurs, astronauts, etc.)
+ * @param {object} room - L'objet room contenant le themeId
+ * @returns {string} - Le terme traduit
+ */
+function getTerm(termKey, room) {
+  if (!termKey) return "";
+  const themeId = room?.themeId || "default";
+  try {
+    const theme = themeManager.getTheme(themeId);
+    return theme.terms?.[termKey] || termKey;
+  } catch (e) {
+    // Fallback
+    const defaults = {
+      captain: "Chef de station",
+      station: "station",
+      crew: "équipage",
+      mission: "mission",
+      title: "Infiltration Spatiale",
+      saboteurs: "Saboteurs",
+      astronauts: "Astronautes"
+    };
+    return defaults[termKey] || termKey;
+  }
+}
+
+/**
+ * Traduit un nom de phase selon le thème de la room
+ * @param {string} phaseKey - Clé de la phase (CAPTAIN_CANDIDACY, NIGHT_RADAR, etc.)
+ * @param {object} room - L'objet room contenant le themeId
+ * @returns {string} - Le nom traduit de la phase
+ */
+function getPhaseName(phaseKey, room) {
+  if (!phaseKey) return "";
+  
+  const captainTerm = getTerm('captain', room);
+  const saboteursTerm = getTerm('saboteurs', room);
+  
+  // Map simple pour les phases communes
+  const simpleMap = {
+    LOBBY: "LOBBY",
+    ROLE_REVEAL: "RÉVÉLATION DES RÔLES",
+    CAPTAIN_CANDIDACY: `Élection du ${captainTerm}`,
+    CAPTAIN_VOTE: `Vote pour ${captainTerm}`,
+    NIGHT_START: "Début de la nuit",
+    NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
+    NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
+    NIGHT_RADAR: `${getRoleLabel('radar', room)}, réveille-toi`,
+    NIGHT_SABOTEURS: `${saboteursTerm}, réveillez-vous`,
+    NIGHT_DOCTOR: `${getRoleLabel('doctor', room)}, réveille-toi`,
+    NIGHT_RESULTS: "Résultats de la nuit",
+    DAY_WAKE: "Réveil",
+    DAY_VOTE: "Vote d'éjection",
+    DAY_RESULTS: "Résultats",
+    REVENGE: `Vengeance du ${getRoleLabel('security', room)}`,
+    GAME_OVER: "Fin de partie",
+    GAME_ABORTED: "Partie interrompue"
+  };
+  
+  return simpleMap[phaseKey] || phaseKey;
+}
+
 function defaultConfig() {
   return {
     rolesEnabled: {
@@ -655,7 +718,14 @@ function buildEndReport(room, winner) {
     const name = room.players.get(e.playerId)?.name || e.playerId;
     const role = room.players.get(e.playerId)?.role;
     const roleLabel = getRoleLabel(role, room);
-    deathOrder.push({ playerId: e.playerId, name, roleLabel, source: e.source || "?" });
+    
+    // Traduire la source
+    let source = e.source || "?";
+    if (source === "saboteurs") source = getTerm('saboteurs', room).toLowerCase();
+    else if (source === "doctor") source = getRoleLabel('doctor', room).toLowerCase();
+    else if (source === "security") source = getRoleLabel('security', room).toLowerCase();
+    
+    deathOrder.push({ playerId: e.playerId, name, roleLabel, source });
   }
 
   // match-specific counters from matchLog
@@ -719,10 +789,14 @@ function buildEndReport(room, winner) {
 
   const awardBoucher = () => {
     // Only if the doctor did NOT use the life potion during the match.
-    if (room.doctorLifeUsed) return { title: "Boucher de la station", text: "Aucun (potion de vie utilisée)." };
+    const stationTerm = getTerm('station', room);
+    const astronautsTerm = getTerm('astronauts', room);
+    const doctorRoleLabel = getRoleLabel('doctor', room);
+    
+    if (room.doctorLifeUsed) return { title: `Boucher de la ${stationTerm}`, text: "Aucun (potion de vie utilisée)." };
 
     const doctorIds = getDoctorActorIds();
-    const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || "Docteur") : "Docteur";
+    const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || doctorRoleLabel) : doctorRoleLabel;
 
     // Astronauts wrongly ejected by doctor potion of death
     const wrong = [];
@@ -745,15 +819,17 @@ function buildEndReport(room, winner) {
       if (label) unsaved.push(label);
     }
 
-    if (!wrong.length && !unsaved.length) return { title: "Boucher de la station", text: "Aucun." };
+    if (!wrong.length && !unsaved.length) return { title: `Boucher de la ${stationTerm}`, text: "Aucun." };
 
     const parts = [];
-    if (wrong.length) parts.push(`Éjections d'astronautes : ${Array.from(new Set(wrong)).join(", ")}`);
+    if (wrong.length) parts.push(`Éjections d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
     if (unsaved.length) parts.push(`Non sauvés : ${Array.from(new Set(unsaved)).join(", ")}`);
-    return { title: "Boucher de la station", text: `${doctorName} — ${parts.join(" • ")}` };
+    return { title: `Boucher de la ${stationTerm}`, text: `${doctorName} — ${parts.join(" • ")}` };
   };
 
   const awardOeilDeLynx = () => {
+    const saboteurTerm = getTerm('saboteurs', room).toLowerCase().slice(0, -1); // saboteur/loup/orque
+    
     // Saboteurs inspected by radar who later got ejected
     const diedAt = new Map();
     for (const e of room.matchLog) {
@@ -774,11 +850,13 @@ function buildEndReport(room, winner) {
       if (label) found.push(label);
     }
     const uniqFound = Array.from(new Set(found));
-    if (!uniqFound.length) return { title: "L'œil de Lynx", text: "Aucun saboteur repéré puis éjecté." };
-    return { title: "L'œil de Lynx", text: `Saboteur(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
+    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éjecté.` };
+    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
   };
 
   const awardLupin = () => {
+    const saboteurTerm = getTerm('saboteurs', room).toLowerCase().slice(0, -1);
+    
     const names = [];
     for (const e of room.matchLog) {
       if (e.type !== "chameleon_swap") continue;
@@ -787,7 +865,7 @@ function buildEndReport(room, winner) {
       if (n) names.push(n);
     }
     const uniqNames = Array.from(new Set(names));
-    if (!uniqNames.length) return { title: "Le Lupin d'Or", text: "Aucun saboteur volé." };
+    if (!uniqNames.length) return { title: "Le Lupin d'Or", text: `Aucun ${saboteurTerm} volé.` };
     return { title: "Le Lupin d'Or", text: `A volé le rôle de : ${uniqNames.join(", ")}` };
   };
 
@@ -845,13 +923,17 @@ function buildEndReport(room, winner) {
     return { title: "Saboteur Incognito", text: `0 vote contre lui : ${uniq.join(", ")}` };
   };
 
+  const saboteursTerm = getTerm('saboteurs', room);
+  const astronautsTerm = getTerm('astronauts', room);
+  const stationTerm = getTerm('station', room);
+  
   const awards = [
     awardDoctorHouse(),
     awardBoucher(),
     awardOeilDeLynx(),
     awardLupin(),
-    awardSecurity("saboteurs", "Terminator de la Station", "Aucune vengeance sur saboteur."),
-    awardSecurity("astronauts", "Gâchette Nerveuse", "Aucune vengeance sur astronaute."),
+    awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
+    awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`),
     awardAssociation(),
     awardSaboteurIncognito()
   ];
@@ -1294,10 +1376,12 @@ function afterRevenge(room, context) {
 function formatLogLine(room, e) {
   const t = new Date(e.t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   const name = (id) => room.players.get(id)?.name || "???";
+  const captainTerm = getTerm('captain', room);
+  
   switch (e.type) {
-    case "phase": return { kind: "info", text: `[${t}] ➜ Phase: ${e.phase}` };
+    case "phase": return { kind: "info", text: `[${t}] ➜ ${getPhaseName(e.phase, room)}` };
     case "roles_assigned": return { kind: "info", text: `[${t}] Rôles attribués.` };
-    case "captain_elected": return { kind: "info", text: `[${t}] ⭐ Capitaine: ${name(e.playerId)}` };
+    case "captain_elected": return { kind: "info", text: `[${t}] ⭐ ${captainTerm}: ${name(e.playerId)}` };
     case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éjecté.` };
     case "player_left": return { kind: "warn", text: `[${t}] 🚪 ${name(e.playerId)} peut revenir (30s).` };
     case "player_removed": return { kind: "warn", text: `[${t}] ⛔ ${name(e.playerId)} est sorti.` };
