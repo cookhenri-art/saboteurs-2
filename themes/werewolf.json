@@ -46,7 +46,7 @@
       "description": "Simple villageois qui observe discrètement."
     },
     "chameleon": {
-      "name": "Loup Métamorphe",
+      "name": "Transformiste",
       "description": "Une fois dans la partie, peut échanger son rôle avec un autre joueur."
     }
   },
@@ -57,7 +57,7 @@
     "CAPTAIN_CANDIDACY": "Candidatures pour être le maire",
     "CAPTAIN_VOTE": "Élection du maire",
     "NIGHT_START": "Le village s'endort",
-    "NIGHT_CHAMELEON": "Loup métamorphe, réveille-toi",
+    "NIGHT_CHAMELEON": "Transformiste, réveille-toi",
     "NIGHT_AI_AGENT": "L'Amoureux, réveille-toi",
     "NIGHT_RADAR": "Voyante, réveille-toi",
     "NIGHT_SABOTEURS": "Loups-garous, choisissez votre proie",
