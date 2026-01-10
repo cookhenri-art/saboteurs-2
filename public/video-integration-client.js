@@ -201,9 +201,27 @@ function cleanupVideo() {
     // Stocker l'état pour debug
     window.lastKnownState = state;
 
+    // DEBUG : Logger l'état complet
+    console.log('[Video] 📥 roomState received:', {
+      started: state.started,
+      ended: state.ended,
+      aborted: state.aborted,
+      phase: state.phase,
+      roomCode: state.roomCode,
+      hasYou: !!state.you,
+      hasVideoPermissions: !!state.videoPermissions
+    });
+
     // 1. Initialiser la vidéo au démarrage de la partie
     if (state.started && !state.ended && !state.aborted) {
+      console.log('[Video] 🎯 Conditions met for video initialization');
       initVideoForGame(state);
+    } else {
+      console.log('[Video] ⏸️ Not starting video:', {
+        started: state.started,
+        ended: state.ended,
+        aborted: state.aborted
+      });
     }
     
     // 2. Mettre à jour les permissions selon la phase
