@@ -1524,21 +1524,22 @@ function t(key) {
 function tRole(roleKey, plural = false) {
   // Debug
   if (!currentTheme) {
-    console.warn("[tRole] currentTheme is null! Using defaults for:", roleKey);
+    console.warn("[tRole] currentTheme is null! Themes not loaded yet. Using defaults for:", roleKey);
   }
   
+  // Fallback complet si pas de thème chargé
+  const defaults = {
+    saboteur: plural ? "Saboteurs" : "Saboteur",
+    astronaut: plural ? "Astronautes" : "Astronaute",
+    radar: "Officier radar",
+    doctor: "Docteur bio",
+    security: "Chef de sécurité",
+    ai_agent: "Agent IA",
+    engineer: "Ingénieur",
+    chameleon: "Caméléon"
+  };
+  
   if (!currentTheme || !currentTheme.roles || !currentTheme.roles[roleKey]) {
-    // Fallback: noms par défaut
-    const defaults = {
-      saboteur: plural ? "Saboteurs" : "Saboteur",
-      astronaut: plural ? "Astronautes" : "Astronaute",
-      radar: "Officier radar",
-      doctor: "Docteur bio",
-      security: "Chef de sécurité",
-      ai_agent: "Agent IA",
-      engineer: "Ingénieur",
-      chameleon: "Caméléon"
-    };
     return defaults[roleKey] || roleKey;
   }
   
@@ -1550,28 +1551,36 @@ function tRole(roleKey, plural = false) {
 }
 
 // Charger la liste des thèmes disponibles
+console.log("[themes] Fetching themes from server...");
 fetch("/api/themes")
   .then(r => r.json())
   .then(data => {
+    console.log("[themes] Received response:", data);
     if (data.ok && data.themes) {
       availableThemes = data.themes;
       console.log("[themes] Loaded themes:", availableThemes.map(t => t.id));
+      console.log("[themes] Available themes count:", availableThemes.length);
       
       // Appliquer le thème par défaut au chargement
       const defaultTheme = availableThemes.find(t => t.id === "default");
       if (defaultTheme) {
         currentTheme = defaultTheme;
         console.log("[themes] Set default theme:", currentTheme.id);
+        console.log("[themes] Default theme has roles:", Object.keys(currentTheme.roles || {}));
         
         // Appliquer les styles CSS
         applyThemeStyles("default");
         
         // Appliquer les traductions
         applyThemeTranslations();
+      } else {
+        console.error("[themes] No default theme found!");
       }
+    } else {
+      console.error("[themes] Invalid response format:", data);
     }
   })
-  .catch(e => console.error("[themes] failed to load", e));
+  .catch(e => console.error("[themes] Failed to load:", e));
 
 // Détecte et applique automatiquement le changement de thème
 /**
