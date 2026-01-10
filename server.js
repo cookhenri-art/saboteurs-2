@@ -5,6 +5,8 @@ const express = require("express");
 const { Server } = require("socket.io");
 const logger = require("./logger");
 const RateLimiter = require("./rate-limiter");
+const dailyManager = require("./daily-manager");
+const videoPermissions = require("./video-permissions");
 
 const PORT = process.env.PORT || 3000;
 const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v26-2026-01-09";
@@ -566,8 +568,16 @@ function setPhase(room, phase, data = {}) {
   const alive = alivePlayers(room).length;
   logger.phaseStart(room.code, phase, room.day, room.night, alive);
   
+  // Calculer et émettre les permissions vidéo pour cette phase
+  const permissions = videoPermissions.calculateRoomPermissions(phase, room.players);
+  const videoMessage = videoPermissions.getPhaseVideoMessage(phase);
+  
+  // Stocker les permissions dans la room pour référence
+  room.videoPermissions = permissions;
+  room.videoPhaseMessage = videoMessage;
+  
   try {
-    console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night}`);
+    console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night} video=${videoMessage}`);
   } catch {}
 
 }
@@ -1495,7 +1505,10 @@ function publicRoomStateFor(room, viewerId) {
     players,
     you,
     logs,
-    privateLines
+    privateLines,
+    // V27: Permissions vidéo
+    videoPermissions: room.videoPermissions ? room.videoPermissions[viewerId] : null,
+    videoPhaseMessage: room.videoPhaseMessage || null
   };
 }
 
@@ -1541,6 +1554,82 @@ app.get("/api/assets/audio", (req, res) => {
     mapped: AUDIO
   });
 });
+
+// ============== DAILY.CO VIDEO ROUTES ==============
+app.post("/api/video/create-room", async (req, res) => {
+  try {
+    const { roomCode } = req.body;
+    if (!roomCode) {
+      return res.status(400).json({ ok: false, error: "roomCode required" });
+    }
+
+    // Vérifier si la room de jeu existe
+    const room = rooms.get(roomCode);
+    if (!room) {
+      return res.status(404).json({ ok: false, error: "Game room not found" });
+    }
+
+    // Vérifier si une room vidéo existe déjà
+    let videoRoom = dailyManager.getVideoRoom(roomCode);
+    if (videoRoom) {
+      return res.json({
+        ok: true,
+        roomUrl: videoRoom.dailyRoomUrl,
+        roomName: videoRoom.dailyRoomName,
+        cached: true
+      });
+    }
+
+    // Créer une nouvelle room vidéo
+    videoRoom = await dailyManager.createVideoRoom(roomCode);
+    
+    res.json({
+      ok: true,
+      roomUrl: videoRoom.roomUrl,
+      roomName: videoRoom.roomName,
+      isFreeRoom: videoRoom.isFreeRoom
+    });
+    
+  } catch (error) {
+    logger.error('[API] Error creating video room:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.get("/api/video/room-info/:roomCode", (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    const videoRoom = dailyManager.getVideoRoom(roomCode);
+    
+    if (!videoRoom) {
+      return res.status(404).json({ ok: false, error: "Video room not found" });
+    }
+    
+    res.json({
+      ok: true,
+      roomUrl: videoRoom.dailyRoomUrl,
+      roomName: videoRoom.dailyRoomName
+    });
+    
+  } catch (error) {
+    logger.error('[API] Error getting video room info:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+
+app.delete("/api/video/delete-room/:roomCode", async (req, res) => {
+  try {
+    const { roomCode } = req.params;
+    await dailyManager.deleteVideoRoom(roomCode);
+    
+    res.json({ ok: true });
+    
+  } catch (error) {
+    logger.error('[API] Error deleting video room:', error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
+});
+// ===================================================
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
