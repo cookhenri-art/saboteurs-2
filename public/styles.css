@@ -1081,6 +1081,8 @@ input:disabled + .slider {
     
     /* Images scènes */
     img[src*="ejection"],
+    img[src*="out"],
+    img[src*="vengeance"],
     img[src*="vote-"] {
         max-width: 100% !important;
         height: auto !important;
@@ -1127,6 +1129,16 @@ input:disabled + .slider {
     .btn {
         padding: 10px 20px !important;
         font-size: 0.85rem !important;
+    }
+
+    /* Bouton RÈGLES : texte plus lisible sur mobile sans agrandir le bouton */
+    #rulesBtn {
+        padding: 10px 16px !important; /* garder la taille voulue */
+    }
+    #rulesBtn .rulesBtnText {
+        display: inline-block;
+        transform: scale(1.12);
+        transform-origin: left center;
     }
     
     #displayRoomCode {
