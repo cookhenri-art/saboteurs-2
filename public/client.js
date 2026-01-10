@@ -362,11 +362,15 @@ function render() {
 
 function renderLobby() {
   // Play lobby intro on first entry (adapté au thème)
-  if (!lobbyIntroPlayed && !audioManager.userUnlocked) {
+  if (!lobbyIntroPlayed) {
     lobbyIntroPlayed = true;
-    audioManager.unlock();
     
-    // Jouer l'intro avec le thème actif de la room
+    // Unlock audio si pas déjà fait
+    if (!audioManager.userUnlocked) {
+      audioManager.unlock();
+    }
+    
+    // Jouer l'intro avec le thème actif de la room (force=true)
     const introCue = {
       file: getThemeAudioPath("INTRO_LOBBY.mp3"),
       queueLoopFile: null,
@@ -374,7 +378,7 @@ function renderLobby() {
       ttsAfterSequence: null
     };
     console.log("[lobby-intro] Playing theme intro:", introCue.file);
-    audioManager.play(introCue, true);
+    audioManager.play(introCue, true); // force=true pour bypass pending
   }
   
   const code = state.roomCode;

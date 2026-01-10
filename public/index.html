@@ -208,17 +208,15 @@
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 20px;">
-          <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-              border: 2px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0,255,255,0.3);">
-            <h3 style="color: var(--neon-cyan); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">AUTO-ALLOCATION</h3>
-            <div id="autoAllocation" style="color: var(--neon-cyan); font-size: 1.05rem; line-height:1.8;"></div>
-          </div>
-          <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-              border: 2px solid var(--neon-orange); box-shadow: 0 0 20px rgba(255,165,0,0.3);">
-            <h3 style="color: var(--neon-orange); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">CONFIG RÔLES (HÔTE)</h3>
-            <div id="rolesConfig"></div>
-          </div>
+        <!-- Phrase de répartition simple -->
+        <div id="autoAllocation" style="text-align: center; margin: 20px 0 15px 0; 
+            color: var(--neon-cyan); font-size: 1.05rem; opacity: 0.9;"></div>
+
+        <!-- Config rôles en pleine largeur -->
+        <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
+            border: 2px solid var(--neon-orange); box-shadow: 0 0 20px rgba(255,165,0,0.3);">
+          <h3 style="color: var(--neon-orange); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">CONFIG RÔLES (HÔTE)</h3>
+          <div id="rolesConfig"></div>
         </div>
 
         <!-- Sélection de thème (hôte uniquement) -->

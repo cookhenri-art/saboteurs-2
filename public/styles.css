@@ -1622,14 +1622,14 @@ select:focus-visible {
   }
   
   /* BOUTON PRÊT - Divisé par 3 */
-  #lobbyScreen button[onclick*="ready"] {
+  #readyBtn {
     padding: 10px 16px !important;
     font-size: 0.9rem !important;
     min-width: 100px !important;
   }
   
   /* BOUTON LANCER MISSION - Divisé par 3 */
-  #lobbyScreen button[onclick*="start"] {
+  #startGameBtn {
     padding: 12px 20px !important;
     font-size: 1rem !important;
     min-width: 140px !important;
@@ -1699,13 +1699,13 @@ select:focus-visible {
   }
   
   /* Boutons encore plus petits */
-  #lobbyScreen button[onclick*="ready"] {
+  #readyBtn {
     padding: 8px 12px !important;
     font-size: 0.8rem !important;
     min-width: 80px !important;
   }
   
-  #lobbyScreen button[onclick*="start"] {
+  #startGameBtn {
     padding: 10px 16px !important;
     font-size: 0.9rem !important;
     min-width: 120px !important;
