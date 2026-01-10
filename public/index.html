@@ -170,10 +170,10 @@
           <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);
               width: min(380px, 86vw); height: 62px; background: rgba(0,255,255,0.1);
               border: 2px solid var(--neon-cyan); border-radius: 10px;"></div>
-          <h1 style="display:flex; align-items:center; justify-content:center;
+	          <h1 class="lobby-title-text" style="display:flex; align-items:center; justify-content:center;
               color: var(--neon-cyan); font-size: clamp(1.3rem, 5vw, 1.9rem);
               margin: 0; padding: 0 10px; height: 62px; box-sizing: border-box;
-              white-space: nowrap; line-height: 1; letter-spacing: 2px;
+	              white-space: nowrap; line-height: 62px; letter-spacing: 2px;
               max-width: min(380px, 86vw); overflow: hidden; text-overflow: ellipsis;
               text-shadow: 0 0 30px var(--neon-cyan); position: relative; text-align:center;">
             LES SABOTEURS
@@ -210,11 +210,11 @@
                 box-shadow: 0 0 40px var(--neon-green); border: 3px solid white;
                 transition: left 0.3s ease;"></div>
           </div>
-          <div style="display:flex; justify-content:space-between; margin-top:12px; padding: 0 10px; gap:12px; flex-wrap:wrap;">
-            <span id="balanceLabelLeft" style="color: var(--neon-cyan); font-size: 1.1rem; font-weight:bold;">👨‍🚀 ASTRONAUTES</span>
-            <span id="balanceStatusCockpit" style="color: var(--neon-green); font-size: 1.1rem; font-weight:bold;">MISSION BALANCED</span>
-            <span id="balanceLabelRight" style="color: var(--neon-red); font-size: 1.1rem; font-weight:bold;">SABOTEURS ⚔️</span>
-          </div>
+	          <div id="balanceLabelsCockpit" style="display:flex; justify-content:space-between; margin-top:12px; padding: 0 10px; gap:12px; flex-wrap:wrap;">
+	            <span id="balanceLabelLeft" style="color: var(--neon-cyan); font-size: 1.1rem; font-weight:bold;">ASTRONAUTES</span>
+	            <span id="balanceStatusCockpit" style="color: var(--neon-green); font-size: 1.1rem; font-weight:bold; display:none;">MISSION BALANCED</span>
+	            <span id="balanceLabelRight" style="color: var(--neon-red); font-size: 1.1rem; font-weight:bold;">SABOTEURS</span>
+	          </div>
         </div>
 
         <!-- Phrase de répartition simple -->

@@ -1511,6 +1511,33 @@ select:focus-visible {
    ADAPTATION MOBILE COMPLÈTE
    ======================================== */
 @media (max-width: 768px) {
+  /* Lobby: titre "LES SABOTEURS" mieux centré verticalement dans son rectangle */
+  .lobby-title-text {
+    transform: translateY(-3px);
+  }
+
+  /* Lobby: barre d'équilibre - on garde uniquement les 2 camps (pas de statut "AVANTAGE") */
+  #balanceStatusCockpit {
+    display: none !important;
+  }
+
+  #balanceLabelsCockpit {
+    flex-wrap: nowrap !important;
+    align-items: center;
+  }
+
+  #balanceLabelsCockpit #balanceLabelLeft,
+  #balanceLabelsCockpit #balanceLabelRight {
+    max-width: 48%;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.15;
+    font-size: 0.85rem !important; /* évite le dépassement sur mobile */
+  }
+
+  #balanceLabelsCockpit #balanceLabelLeft { text-align: left; }
+  #balanceLabelsCockpit #balanceLabelRight { text-align: right; }
+
   /* Boutons RÈGLES et MUTE */
   #topLeftButtons {
     left: 10px !important;

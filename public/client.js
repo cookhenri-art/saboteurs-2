@@ -405,17 +405,11 @@ function renderLobby() {
   // Traduire les labels
   const astronautsTerm = t('astronauts').toUpperCase();
   const saboteursTerm = t('saboteurs').toUpperCase();
-  $("balanceLabelLeft").textContent = `👨‍🚀 ${astronautsTerm}`;
-  $("balanceLabelRight").textContent = `${saboteursTerm} ⚔️`;
-  
-  // Traduire le statut
-  const missionTerm = t('mission').toUpperCase();
-  if (ratio > 0.62) {
-    $("balanceStatusCockpit").textContent = `${astronautsTerm} AVANTAGE`;
-  } else if (ratio < 0.55) {
-    $("balanceStatusCockpit").textContent = `${saboteursTerm} AVANTAGE`;
-  } else {
-    $("balanceStatusCockpit").textContent = `${missionTerm} ÉQUILIBRÉE`;
+  // Lobby: on garde uniquement les noms des 2 camps (sans emojis / sans "AVANTAGE")
+  $("balanceLabelLeft").textContent = astronautsTerm;
+  $("balanceLabelRight").textContent = saboteursTerm;
+  if ($("balanceStatusCockpit")) {
+    $("balanceStatusCockpit").textContent = "";
   }
 
   // players list
