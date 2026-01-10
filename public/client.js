@@ -1402,14 +1402,17 @@ $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 function createRoomFlow() {
   clearError();
   
-  // Unlock audio et forcer le son d'intro si pas encore joué
+  // Unlock audio et forcer le son d'intro immédiatement
   if (!audioManager.userUnlocked) {
     audioManager.unlock();
-    // Si le son d'intro est en attente, le forcer maintenant
-    if (audioManager.pendingCue || audioManager.queuedCue) {
-      const cue = { file: "/sounds/INTRO_LOBBY.mp3", queueLoopFile: null, tts: null, ttsAfterSequence: null };
-      audioManager.play(cue, true); // force=true
-    }
+    // Jouer le son d'intro avec le chemin correct (via theme)
+    const introCue = {
+      file: getThemeAudioPath("INTRO_LOBBY.mp3"),
+      queueLoopFile: null,
+      tts: null,
+      ttsAfterSequence: null
+    };
+    audioManager.play(introCue, true); // force=true
   }
   
   const name = mustName();
@@ -1436,14 +1439,17 @@ $("createRoomBtn").onclick = createRoomFlow;
 $("joinRoomBtn").onclick = () => {
   clearError();
   
-  // Unlock audio et forcer le son d'intro si pas encore joué
+  // Unlock audio et forcer le son d'intro immédiatement
   if (!audioManager.userUnlocked) {
     audioManager.unlock();
-    // Si le son d'intro est en attente, le forcer maintenant
-    if (audioManager.pendingCue || audioManager.queuedCue) {
-      const cue = { file: "/sounds/INTRO_LOBBY.mp3", queueLoopFile: null, tts: null, ttsAfterSequence: null };
-      audioManager.play(cue, true); // force=true
-    }
+    // Jouer le son d'intro avec le chemin correct (via theme)
+    const introCue = {
+      file: getThemeAudioPath("INTRO_LOBBY.mp3"),
+      queueLoopFile: null,
+      tts: null,
+      ttsAfterSequence: null
+    };
+    audioManager.play(introCue, true); // force=true
   }
   
   const name = mustName();
