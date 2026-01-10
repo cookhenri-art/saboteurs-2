@@ -1,0 +1,284 @@
+/**
+ * VIDEO INTEGRATION - À ajouter dans public/client.js
+ * 
+ * Copiez ce code à la fin de votre fichier client.js
+ */
+
+// ============================================
+// SECTION VIDEO - DAILY.CO INTEGRATION
+// ============================================
+
+let videoRoomUrl = null;
+let videoRoomJoined = false;
+
+/**
+ * Initialise la vidéo quand la partie démarre
+ */
+function initVideoForGame(state) {
+  // Ne rien faire si déjà initialisé ou si pas encore démarré
+  if (videoRoomJoined || !state.started || !state.roomCode) {
+    return;
+  }
+
+  console.log('[Video] Initializing video for game...');
+
+  // Demander la création de la room vidéo au serveur
+  fetch(`/api/video/create-room/${state.roomCode}`)
+    .then(res => res.json())
+    .then(data => {
+      if (!data.ok) {
+        console.error('[Video] Failed to create room:', data.error);
+        showVideoStatus('❌ Impossible de créer la visio', 'error');
+        return;
+      }
+
+      videoRoomUrl = data.roomUrl;
+      console.log('[Video] Room created:', videoRoomUrl);
+      
+      // Afficher un message d'info si c'est une room gratuite
+      if (data.isFreeRoom) {
+        console.log('[Video] Using FREE Daily.co room (10 participants max)');
+      }
+
+      // Rejoindre la room avec les permissions initiales
+      const permissions = state.videoPermissions || { video: true, audio: true };
+      const userName = state.you?.name || 'Joueur';
+      
+      window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions)
+        .then(() => {
+          videoRoomJoined = true;
+          console.log('[Video] Successfully joined room');
+          showVideoStatus('✅ Visio activée', 'success');
+        })
+        .catch(err => {
+          console.error('[Video] Join error:', err);
+          showVideoStatus('❌ Erreur de connexion vidéo', 'error');
+        });
+    })
+    .catch(err => {
+      console.error('[Video] API error:', err);
+      showVideoStatus('❌ Erreur serveur vidéo', 'error');
+    });
+}
+
+/**
+ * Met à jour les permissions vidéo selon la phase
+ */
+function updateVideoPermissions(state) {
+  if (!videoRoomJoined || !window.dailyVideo.callFrame) {
+    return;
+  }
+
+  const permissions = state.videoPermissions;
+  if (!permissions) return;
+
+  console.log('[Video] Updating permissions:', permissions);
+  window.dailyVideo.updatePermissions(permissions);
+
+  // Afficher le message de phase
+  if (state.videoPhaseMessage) {
+    showVideoStatus(state.videoPhaseMessage, 'info');
+  }
+}
+
+/**
+ * Quitte la room vidéo
+ */
+function leaveVideoRoom() {
+  if (!videoRoomJoined) return;
+
+  console.log('[Video] Leaving room...');
+  window.dailyVideo.leave();
+  videoRoomJoined = false;
+  videoRoomUrl = null;
+  showVideoStatus('📹 Visio terminée', 'info');
+}
+
+/**
+ * Affiche un message de statut vidéo (optionnel - peut être adapté à votre UI)
+ */
+function showVideoStatus(message, type = 'info') {
+  console.log(`[Video Status - ${type}]`, message);
+  
+  // Option 1: Afficher dans la console seulement
+  // (Commentez cette partie si vous avez déjà un système de notifications)
+  
+  // Option 2: Créer une notification temporaire
+  const notification = document.createElement('div');
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 120px;
+    right: 20px;
+    padding: 12px 20px;
+    background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
+    color: white;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 9997;
+    animation: slideInRight 0.3s ease-out;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    notification.style.transform = 'translateX(100%)';
+    notification.style.transition = 'all 0.3s ease-out';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
+}
+
+/**
+ * Nettoie la vidéo (appelé lors de la déconnexion)
+ */
+function cleanupVideo() {
+  if (videoRoomJoined) {
+    window.dailyVideo.destroy();
+    videoRoomJoined = false;
+    videoRoomUrl = null;
+  }
+}
+
+// ============================================
+// HOOKS DANS LE CODE EXISTANT
+// ============================================
+
+/**
+ * À ajouter dans votre socket.on("roomState", ...)
+ */
+socket.on("roomState", (state) => {
+  // ... votre code existant ...
+  
+  // === INTÉGRATION VIDÉO ===
+  
+  // 1. Initialiser la vidéo au démarrage de la partie
+  if (state.started && !state.ended && !state.aborted) {
+    initVideoForGame(state);
+  }
+  
+  // 2. Mettre à jour les permissions selon la phase
+  if (state.started && !state.ended) {
+    updateVideoPermissions(state);
+  }
+  
+  // 3. Quitter la vidéo en fin de partie
+  if (state.ended || state.aborted) {
+    leaveVideoRoom();
+  }
+});
+
+/**
+ * À ajouter dans votre socket.on("disconnect", ...)
+ */
+socket.on("disconnect", () => {
+  // ... votre code existant ...
+  
+  // Nettoyer la vidéo
+  cleanupVideo();
+});
+
+/**
+ * À ajouter quand l'utilisateur quitte volontairement
+ */
+function onLeaveRoom() {
+  // ... votre code existant ...
+  
+  // Quitter la vidéo
+  leaveVideoRoom();
+}
+
+// ============================================
+// CONTRÔLES UTILISATEUR (OPTIONNEL)
+// ============================================
+
+/**
+ * Bouton pour toggle la vidéo manuellement
+ * À ajouter dans votre UI si souhaité
+ */
+function createVideoToggleButton() {
+  const button = document.createElement('button');
+  button.id = 'videoToggleBtn';
+  button.textContent = '📹';
+  button.title = 'Activer/Désactiver la visioconférence';
+  button.className = 'btn btn-secondary';
+  button.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    font-size: 28px;
+    z-index: 9996;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  `;
+  
+  button.onclick = () => {
+    if (!videoRoomJoined) {
+      // Tenter de rejoindre manuellement
+      const state = window.lastKnownState; // Vous devez stocker state globalement
+      if (state && state.started) {
+        initVideoForGame(state);
+      } else {
+        showVideoStatus('⚠️ Attendez le début de la partie', 'warning');
+      }
+    } else {
+      // Toggle minimiser/maximiser
+      window.dailyVideo.toggleMinimize();
+    }
+  };
+  
+  document.body.appendChild(button);
+  
+  return button;
+}
+
+// Créer le bouton au chargement (optionnel)
+// window.addEventListener('DOMContentLoaded', () => {
+//   createVideoToggleButton();
+// });
+
+// ============================================
+// DEBUGGING
+// ============================================
+
+/**
+ * Fonction de debug pour tester manuellement
+ * Utilisez dans la console: testVideoConnection()
+ */
+window.testVideoConnection = function() {
+  console.log('[Video Debug] Testing connection...');
+  console.log('Room joined:', videoRoomJoined);
+  console.log('Room URL:', videoRoomUrl);
+  console.log('CallFrame exists:', !!window.dailyVideo.callFrame);
+  
+  if (window.dailyVideo.callFrame) {
+    window.dailyVideo.callFrame.participants().then(participants => {
+      console.log('Participants:', Object.keys(participants).length);
+      console.log('Details:', participants);
+    });
+  }
+};
+
+/**
+ * Logger les événements vidéo importants
+ */
+if (window.dailyVideo) {
+  const originalJoin = window.dailyVideo.joinRoom;
+  window.dailyVideo.joinRoom = async function(...args) {
+    console.log('[Video] Joining room with args:', args);
+    try {
+      const result = await originalJoin.apply(this, args);
+      console.log('[Video] Join successful');
+      return result;
+    } catch (error) {
+      console.error('[Video] Join failed:', error);
+      throw error;
+    }
+  };
+}
+
+console.log('[Video Integration] Module loaded successfully ✅');

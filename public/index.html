@@ -446,13 +446,46 @@
         document.body.appendChild(s);
       }
 
+      function loadVideoManager() {
+        // Charger le CSS d'abord
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'daily-video.css';
+        document.head.appendChild(link);
+        
+        // Puis le JS
+        var s = document.createElement('script');
+        s.src = 'daily-video.js';
+        s.async = true;
+        document.body.appendChild(s);
+      }
+
+      function loadVideoIntegration() {
+        var s = document.createElement('script');
+        s.src = 'video-integration-client.js';
+        s.async = true;
+        document.body.appendChild(s);
+      }
+
       // Try local first (Render/local). If not available (e.g., opened via file://), fallback to CDN
       loadScript('/socket.io/socket.io.js').then(function () {
         if (typeof window.io === 'undefined') {
           return loadScript('https://cdn.socket.io/4.7.5/socket.io.min.js');
         }
         return true;
-      }).then(loadClient);
+      })
+      .then(function() {
+        // Charger Daily.co
+        return loadScript('https://unpkg.com/@daily-co/daily-js@0.60.0/dist/daily-iframe.js');
+      })
+      .then(function() {
+        // Charger le video manager
+        loadVideoManager();
+        // Charger le client principal
+        loadClient();
+        // Charger l'intégration vidéo (après le client)
+        setTimeout(loadVideoIntegration, 1000);
+      });
     })();
   </script>
 </body>
