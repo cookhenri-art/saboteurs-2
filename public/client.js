@@ -309,15 +309,12 @@ function setBackdrop() {
   if (p === "LOBBY" || p === "MANUAL_ROLE_PICK" || p === "ROLE_REVEAL" || p === "CAPTAIN_CANDIDACY" || p === "CAPTAIN_VOTE") {
     img = getThemeImagePath("cockpit.png");
   }
-  // revenge banner (security / equivalent role depending on theme)
-  else if (p === "REVENGE") {
-    img = getThemeImagePath("vengeance.png");
-  }
   // results: use ejection banner if there were ejections
   else if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText)) {
-    // L'image "éjection" a été renommée en "out"
     img = getThemeImagePath("out.png");
   }
+  // revenge banner
+  else if (p === "REVENGE") img = getThemeImagePath("vengeance.png");
   // day / night banners
   else if (p.startsWith("DAY")) img = getThemeImagePath("vote-jour.png");
   else if (p.startsWith("NIGHT")) img = getThemeImagePath("vote-nuit.png");
@@ -527,10 +524,8 @@ function renderGame() {
   // results overlay (ejection)
   const ov = $("ejectionOverlay");
   if (ov) {
-    // Toujours synchroniser la source avec le thème actif + le nouveau nom de fichier (out.png)
-    const expectedSrc = getThemeImagePath("out.png");
-    if (ov.getAttribute("src") !== expectedSrc) ov.setAttribute("src", expectedSrc);
-
+    // Keep the overlay image synced with the active theme
+    ov.src = getThemeImagePath("out.png");
     const show = (state.phase === "NIGHT_RESULTS" || state.phase === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText);
     ov.style.display = show ? "block" : "none";
   }
@@ -1263,7 +1258,6 @@ class AudioManager {
     } catch {}
     this.audio = null;
     this.loopAudio = null;
-    try { window.speechSynthesis.cancel(); } catch {}
   }
 
   play(cue, force=false) {
@@ -1350,6 +1344,9 @@ class AudioManager {
   tts(text) {
     if (!text || this.muted) return;
     try {
+      // Important: do NOT cancel TTS in stopAll(), otherwise a fast phase change can cut announcements.
+      // Instead, cancel right before speaking to avoid overlaps.
+      try { window.speechSynthesis.cancel(); } catch {}
       const u = new SpeechSynthesisUtterance(text);
       u.lang = "fr-FR";
       window.speechSynthesis.speak(u);
