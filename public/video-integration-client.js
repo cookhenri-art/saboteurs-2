@@ -16,47 +16,72 @@ let videoRoomJoined = false;
  */
 function initVideoForGame(state) {
   // Ne rien faire si déjà initialisé ou si pas encore démarré
-  if (videoRoomJoined || !state.started || !state.roomCode) {
+  if (videoRoomJoined) {
+    console.log('[Video] Already joined, skipping initialization');
     return;
   }
 
-  console.log('[Video] Initializing video for game...');
+  if (!state.started) {
+    console.log('[Video] Game not started yet, skipping');
+    return;
+  }
+
+  if (!state.roomCode) {
+    console.error('[Video] No room code in state!', state);
+    return;
+  }
+
+  console.log('[Video] 🎬 Initializing video for game...', {
+    roomCode: state.roomCode,
+    phase: state.phase,
+    started: state.started
+  });
 
   // Demander la création de la room vidéo au serveur
-  fetch(`/api/video/create-room/${state.roomCode}`)
-    .then(res => res.json())
+  const apiUrl = `/api/video/create-room/${state.roomCode}`;
+  console.log('[Video] 📡 Fetching:', apiUrl);
+
+  fetch(apiUrl)
+    .then(res => {
+      console.log('[Video] 📥 Response status:', res.status);
+      return res.json();
+    })
     .then(data => {
+      console.log('[Video] 📦 Response data:', data);
+
       if (!data.ok) {
-        console.error('[Video] Failed to create room:', data.error);
+        console.error('[Video] ❌ Failed to create room:', data.error);
         showVideoStatus('❌ Impossible de créer la visio', 'error');
         return;
       }
 
       videoRoomUrl = data.roomUrl;
-      console.log('[Video] Room created:', videoRoomUrl);
+      console.log('[Video] ✅ Room created:', videoRoomUrl);
       
       // Afficher un message d'info si c'est une room gratuite
       if (data.isFreeRoom) {
-        console.log('[Video] Using FREE Daily.co room (10 participants max)');
+        console.log('[Video] ℹ️ Using FREE Daily.co room (10 participants max)');
       }
 
       // Rejoindre la room avec les permissions initiales
       const permissions = state.videoPermissions || { video: true, audio: true };
       const userName = state.you?.name || 'Joueur';
       
+      console.log('[Video] 🚀 Joining room with:', { userName, permissions });
+      
       window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions)
         .then(() => {
           videoRoomJoined = true;
-          console.log('[Video] Successfully joined room');
+          console.log('[Video] ✅ Successfully joined room');
           showVideoStatus('✅ Visio activée', 'success');
         })
         .catch(err => {
-          console.error('[Video] Join error:', err);
+          console.error('[Video] ❌ Join error:', err);
           showVideoStatus('❌ Erreur de connexion vidéo', 'error');
         });
     })
     .catch(err => {
-      console.error('[Video] API error:', err);
+      console.error('[Video] ❌ API error:', err);
       showVideoStatus('❌ Erreur serveur vidéo', 'error');
     });
 }
@@ -146,39 +171,59 @@ function cleanupVideo() {
 // HOOKS DANS LE CODE EXISTANT
 // ============================================
 
-/**
- * À ajouter dans votre socket.on("roomState", ...)
- */
-socket.on("roomState", (state) => {
-  // ... votre code existant ...
-  
-  // === INTÉGRATION VIDÉO ===
-  
-  // 1. Initialiser la vidéo au démarrage de la partie
-  if (state.started && !state.ended && !state.aborted) {
-    initVideoForGame(state);
-  }
-  
-  // 2. Mettre à jour les permissions selon la phase
-  if (state.started && !state.ended) {
-    updateVideoPermissions(state);
-  }
-  
-  // 3. Quitter la vidéo en fin de partie
-  if (state.ended || state.aborted) {
-    leaveVideoRoom();
-  }
-});
+// ============================================
+// AUTO-ACTIVATION via Socket.IO
+// ============================================
 
 /**
- * À ajouter dans votre socket.on("disconnect", ...)
+ * Écoute automatique des événements Socket.IO
+ * S'active dès que le module est chargé
  */
-socket.on("disconnect", () => {
-  // ... votre code existant ...
-  
-  // Nettoyer la vidéo
-  cleanupVideo();
-});
+(function autoActivateVideo() {
+  // Vérifier que Socket.IO est disponible
+  if (typeof io === 'undefined') {
+    console.warn('[Video] Socket.IO not loaded yet, retrying...');
+    setTimeout(autoActivateVideo, 500);
+    return;
+  }
+
+  // Vérifier qu'une socket existe
+  if (typeof socket === 'undefined') {
+    console.warn('[Video] Socket not initialized yet, retrying...');
+    setTimeout(autoActivateVideo, 500);
+    return;
+  }
+
+  console.log('[Video] Auto-activation enabled ✅');
+
+  // Hook sur roomState (s'ajoute aux listeners existants)
+  socket.on("roomState", (state) => {
+    // Stocker l'état pour debug
+    window.lastKnownState = state;
+
+    // 1. Initialiser la vidéo au démarrage de la partie
+    if (state.started && !state.ended && !state.aborted) {
+      initVideoForGame(state);
+    }
+    
+    // 2. Mettre à jour les permissions selon la phase
+    if (state.started && !state.ended) {
+      updateVideoPermissions(state);
+    }
+    
+    // 3. Quitter la vidéo en fin de partie
+    if (state.ended || state.aborted) {
+      leaveVideoRoom();
+    }
+  });
+
+  // Hook sur disconnect
+  socket.on("disconnect", () => {
+    cleanupVideo();
+  });
+
+  console.log('[Video] Event listeners registered ✅');
+})();
 
 /**
  * À ajouter quand l'utilisateur quitte volontairement
