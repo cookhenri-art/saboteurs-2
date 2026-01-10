@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>⚡ INFILTRATION SPATIALE ⚡</title>
+  <title>🎭 LES SABOTEURS 🎭</title>
   <!-- Polices pour thème Default (Spatial) -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   
@@ -70,15 +70,60 @@
 
     <!-- HOME -->
     <div id="homeScreen" class="screen active">
-      <div class="control-panel">
-        <div class="form-group">
-          <label for="playerName">Nom du joueur</label>
-          <input type="text" id="playerName" placeholder="Entrez votre nom" maxlength="20">
+      <div style="width: 100%; max-width: 800px; margin: 0 auto;
+          background: linear-gradient(135deg, #0a0e27 0%, #1a1e3f 50%, #0a0e27 100%);
+          border: 3px solid var(--metal-grey); border-radius: 20px; padding: 40px;
+          box-shadow: 0 0 60px rgba(0,255,255,0.3), inset 0 0 100px rgba(0,0,0,0.5);">
+        
+        <!-- Titre Principal -->
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h1 style="color: var(--neon-cyan); font-size: clamp(2rem, 6vw, 3rem); margin: 0; 
+              text-shadow: 0 0 30px var(--neon-cyan); letter-spacing: 3px;">
+            LES SABOTEURS
+          </h1>
+          <p style="color: var(--neon-green); margin-top: 10px; font-size: 1rem; opacity: 0.8;">
+            Jeu de déduction sociale multijoueur
+          </p>
         </div>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="createBtn">Créer une Mission</button>
-          <button class="btn btn-secondary" id="joinBtn">Rejoindre une Mission</button>
+
+        <!-- Sélecteur de Thème -->
+        <div style="margin-bottom: 30px; padding: 20px; border-radius: 12px; 
+            border: 2px solid rgba(0, 255, 255, 0.3); background: rgba(0, 0, 0, 0.4);">
+          <div style="text-align: center; margin-bottom: 15px;">
+            <span style="color: var(--neon-cyan); font-weight: 700; font-size: 1.1rem;">
+              🎨 CHOIX DU THÈME
+            </span>
+          </div>
+          <div id="homeThemeSelector" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+            <!-- Les boutons seront générés par JS -->
+          </div>
+          <div id="homeThemeDescription" style="text-align: center; margin-top: 15px; 
+              color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; min-height: 24px;">
+          </div>
         </div>
+
+        <!-- Formulaire -->
+        <div style="padding: 20px; border-radius: 12px; 
+            border: 2px solid var(--neon-cyan); background: rgba(0, 255, 255, 0.05);">
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="playerName" style="color: var(--neon-cyan); font-weight: 700; margin-bottom: 8px; display: block;">
+              NOM DU JOUEUR
+            </label>
+            <input type="text" id="playerName" placeholder="Entrez votre nom" maxlength="20"
+                style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px;
+                background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.3);
+                color: white; outline: none; transition: all 0.3s;">
+          </div>
+          <div class="btn-group" style="display: flex; gap: 10px; flex-direction: column;">
+            <button class="btn btn-primary" id="createBtn" style="padding: 15px; font-size: 1.1rem;">
+              🚀 CRÉER UNE MISSION
+            </button>
+            <button class="btn btn-secondary" id="joinBtn" style="padding: 15px; font-size: 1.1rem;">
+              🔗 REJOINDRE UNE MISSION
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
 

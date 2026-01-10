@@ -71,6 +71,7 @@ if (isDebugMode) {
 
 let state = null;
 let lastAudioToken = null;
+let lobbyIntroPlayed = false; // Track if we've played the lobby intro for this session
 
 let autoReconnectAttempted = false;
 let disconnectReloadTimer = null;
@@ -158,6 +159,11 @@ socket.on("connect_error", () => {
 function showScreen(screenId) {
   for (const el of document.querySelectorAll(".screen")) el.classList.remove("active");
   $(screenId).classList.add("active");
+  
+  // Reset lobby intro flag when returning to home
+  if (screenId === "homeScreen") {
+    lobbyIntroPlayed = false;
+  }
 }
 
 function setError(msg) {
@@ -355,6 +361,22 @@ function render() {
 }
 
 function renderLobby() {
+  // Play lobby intro on first entry (adapté au thème)
+  if (!lobbyIntroPlayed && !audioManager.userUnlocked) {
+    lobbyIntroPlayed = true;
+    audioManager.unlock();
+    
+    // Jouer l'intro avec le thème actif de la room
+    const introCue = {
+      file: getThemeAudioPath("INTRO_LOBBY.mp3"),
+      queueLoopFile: null,
+      tts: null,
+      ttsAfterSequence: null
+    };
+    console.log("[lobby-intro] Playing theme intro:", introCue.file);
+    audioManager.play(introCue, true);
+  }
+  
   const code = state.roomCode;
   $("displayRoomCode").textContent = code;
   $("playerCount").textContent = String(state.players.filter(p => p.status !== "left").length);
@@ -1401,21 +1423,6 @@ $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 
 function createRoomFlow() {
   clearError();
-  
-  // Unlock audio et forcer le son d'intro immédiatement
-  if (!audioManager.userUnlocked) {
-    audioManager.unlock();
-    // Jouer le son d'intro avec le chemin direct (theme pas encore chargé)
-    const introCue = {
-      file: "/sounds/default/INTRO_LOBBY.mp3",
-      queueLoopFile: null,
-      tts: null,
-      ttsAfterSequence: null
-    };
-    console.log("[audio] Forcing intro play:", introCue.file);
-    audioManager.play(introCue, true); // force=true
-  }
-  
   const name = mustName();
   if (!name) return;
   sessionStorage.setItem(STORAGE.name, name);
@@ -1424,7 +1431,7 @@ function createRoomFlow() {
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
 
-  socket.emit("createRoom", { playerId, name, playerToken }, (res) => {
+  socket.emit("createRoom", { playerId, name, playerToken, themeId: homeSelectedTheme }, (res) => {
     if (!res?.ok) return setError(res?.error || "Erreur création");
     sessionStorage.setItem(STORAGE.room, res.roomCode);
     startHeartbeat();
@@ -1439,21 +1446,6 @@ $("createRoomBtn").onclick = createRoomFlow;
 
 $("joinRoomBtn").onclick = () => {
   clearError();
-  
-  // Unlock audio et forcer le son d'intro immédiatement
-  if (!audioManager.userUnlocked) {
-    audioManager.unlock();
-    // Jouer le son d'intro avec le chemin direct (theme pas encore chargé)
-    const introCue = {
-      file: "/sounds/default/INTRO_LOBBY.mp3",
-      queueLoopFile: null,
-      tts: null,
-      ttsAfterSequence: null
-    };
-    console.log("[audio] Forcing intro play:", introCue.file);
-    audioManager.play(introCue, true); // force=true
-  }
-  
   const name = mustName();
   if (!name) return;
   const roomCode = ($("joinRoomCode").value || "").trim();
@@ -1520,6 +1512,7 @@ showScreen("homeScreen");
 
 let availableThemes = [];
 let currentTheme = null;
+let homeSelectedTheme = "default"; // Thème choisi sur la page d'accueil (avant d'entrer dans une room)
 
 // Résout le chemin d'une image de rôle selon le thème actif
 function getRoleImagePath(filename) {
@@ -1544,7 +1537,8 @@ function getThemeAudioPath(filename) {
   if (!filename) return "";
   if (filename.startsWith("/") || filename.startsWith("http")) return filename;
   
-  const themeId = currentTheme?.id || "default";
+  // Utiliser le thème de la room si disponible, sinon le thème sélectionné sur l'accueil
+  const themeId = state?.themeId || currentTheme?.id || homeSelectedTheme || "default";
   return `/sounds/${themeId}/${filename}`;
 }
 
@@ -1616,6 +1610,7 @@ fetch("/api/themes")
       const defaultTheme = availableThemes.find(t => t.id === "default");
       if (defaultTheme) {
         currentTheme = defaultTheme;
+        homeSelectedTheme = "default";
         console.log("[themes] Set default theme:", currentTheme.id);
         console.log("[themes] Default theme has roles:", Object.keys(currentTheme.roles || {}));
         
@@ -1624,6 +1619,9 @@ fetch("/api/themes")
         
         // Appliquer les traductions
         applyThemeTranslations();
+        
+        // Rendre le sélecteur de thème sur la page d'accueil
+        renderHomeThemeSelector();
       } else {
         console.error("[themes] No default theme found!");
       }
@@ -1634,6 +1632,64 @@ fetch("/api/themes")
   .catch(e => console.error("[themes] Failed to load:", e));
 
 // Détecte et applique automatiquement le changement de thème
+/**
+ * Rend le sélecteur de thème sur la page d'accueil
+ */
+function renderHomeThemeSelector() {
+  const container = document.getElementById("homeThemeSelector");
+  const descContainer = document.getElementById("homeThemeDescription");
+  if (!container) return;
+  
+  container.innerHTML = availableThemes.map(theme => {
+    const isSelected = theme.id === homeSelectedTheme;
+    return `<button 
+      class="theme-button ${isSelected ? 'selected' : ''}" 
+      data-theme-id="${theme.id}"
+      style="
+        padding: 10px 20px;
+        border-radius: 8px;
+        border: 2px solid ${isSelected ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.3)'};
+        background: ${isSelected ? 'rgba(0, 255, 0, 0.2)' : 'rgba(0, 0, 0, 0.4)'};
+        color: ${isSelected ? 'var(--neon-green)' : 'white'};
+        font-weight: ${isSelected ? '800' : '600'};
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+      "
+      onmouseover="this.style.borderColor='var(--neon-cyan)'; this.style.transform='scale(1.05)';"
+      onmouseout="this.style.borderColor='${isSelected ? 'var(--neon-green)' : 'rgba(255, 255, 255, 0.3)'}'; this.style.transform='scale(1)';"
+    >${theme.name}</button>`;
+  }).join("");
+  
+  // Mettre à jour la description
+  const selected = availableThemes.find(t => t.id === homeSelectedTheme);
+  if (selected && descContainer) {
+    descContainer.textContent = selected.description || "";
+  }
+  
+  // Ajouter les event listeners
+  container.querySelectorAll(".theme-button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const themeId = btn.dataset.themeId;
+      homeSelectedTheme = themeId;
+      
+      // Appliquer le thème visuellement
+      const theme = availableThemes.find(t => t.id === themeId);
+      if (theme) {
+        currentTheme = theme;
+        applyThemeStyles(themeId);
+        applyThemeTranslations();
+      }
+      
+      // Re-render pour mettre à jour les boutons
+      renderHomeThemeSelector();
+      
+      console.log("[home-theme] Selected theme:", themeId);
+    });
+  });
+}
+
 /**
  * Applique les styles CSS du thème actif (polices, couleurs, effets)
  */
