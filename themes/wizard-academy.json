@@ -20,9 +20,9 @@
       "description": "Mages corrompus qui veulent détruire l'académie de l'intérieur."
     },
     "astronaut": {
-      "name": "Étudiant",
-      "namePlural": "Étudiants",
-      "description": "Jeunes mages qui étudient les arts mystiques et doivent démasquer les traîtres."
+      "name": "Mage Blanc",
+      "namePlural": "Mages Blancs",
+      "description": "Mages bienveillants qui étudient les arts mystiques et doivent démasquer les traîtres."
     },
     "radar": {
       "name": "Oracle",
