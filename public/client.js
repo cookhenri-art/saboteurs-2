@@ -369,7 +369,22 @@ function renderLobby() {
   const ratio = n ? (ast / n) : 0.5;
   const left = Math.round(ratio * 100);
   $("balanceIndicatorCockpit").style.left = `${left}%`;
-  $("balanceStatusCockpit").textContent = (ratio > 0.62) ? "TEAM HUMAN AVANTAGE" : (ratio < 0.55 ? "SABOTEURS AVANTAGE" : "MISSION BALANCED");
+  
+  // Traduire les labels
+  const astronautsTerm = t('astronauts').toUpperCase();
+  const saboteursTerm = t('saboteurs').toUpperCase();
+  $("balanceLabelLeft").textContent = `👨‍🚀 ${astronautsTerm}`;
+  $("balanceLabelRight").textContent = `${saboteursTerm} ⚔️`;
+  
+  // Traduire le statut
+  const missionTerm = t('mission').toUpperCase();
+  if (ratio > 0.62) {
+    $("balanceStatusCockpit").textContent = `${astronautsTerm} AVANTAGE`;
+  } else if (ratio < 0.55) {
+    $("balanceStatusCockpit").textContent = `${saboteursTerm} AVANTAGE`;
+  } else {
+    $("balanceStatusCockpit").textContent = `${missionTerm} ÉQUILIBRÉE`;
+  }
 
   // players list
   const list = $("playersList");
@@ -1382,6 +1397,10 @@ $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 
 function createRoomFlow() {
   clearError();
+  
+  // Unlock audio dès le premier clic (évite l'overlay après)
+  audioManager.unlock();
+  
   const name = mustName();
   if (!name) return;
   sessionStorage.setItem(STORAGE.name, name);
@@ -1405,6 +1424,10 @@ $("createRoomBtn").onclick = createRoomFlow;
 
 $("joinRoomBtn").onclick = () => {
   clearError();
+  
+  // Unlock audio dès le premier clic (évite l'overlay après)
+  audioManager.unlock();
+  
   const name = mustName();
   if (!name) return;
   const roomCode = ($("joinRoomCode").value || "").trim();
