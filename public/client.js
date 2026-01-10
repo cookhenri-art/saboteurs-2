@@ -1171,6 +1171,7 @@ class AudioManager {
   }
   toggleMuted() { this.setMuted(!this.muted); }
   unlock() {
+    console.log("[audio] unlock() called, userUnlocked:", this.userUnlocked, "pendingCue:", !!this.pendingCue);
     this.userUnlocked = true;
     // Cacher l'overlay audio si visible
     const overlay = document.getElementById('audioUnlockOverlay');
@@ -1179,8 +1180,11 @@ class AudioManager {
     if (!this.muted && this.pendingCue) {
       const cue = this.pendingCue;
       this.pendingCue = null;
+      console.log("[audio] Playing pending cue:", cue.file);
       // do NOT clear queuedCue here; it is used to avoid cutting the lobby intro.
       this.play(cue, true);
+    } else {
+      console.log("[audio] No pending cue to play, muted:", this.muted);
     }
   }
   showUnlockOverlay() {
@@ -1398,8 +1402,15 @@ $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 function createRoomFlow() {
   clearError();
   
-  // Unlock audio dès le premier clic (évite l'overlay après)
-  audioManager.unlock();
+  // Unlock audio et forcer le son d'intro si pas encore joué
+  if (!audioManager.userUnlocked) {
+    audioManager.unlock();
+    // Si le son d'intro est en attente, le forcer maintenant
+    if (audioManager.pendingCue || audioManager.queuedCue) {
+      const cue = { file: "/sounds/INTRO_LOBBY.mp3", queueLoopFile: null, tts: null, ttsAfterSequence: null };
+      audioManager.play(cue, true); // force=true
+    }
+  }
   
   const name = mustName();
   if (!name) return;
@@ -1425,8 +1436,15 @@ $("createRoomBtn").onclick = createRoomFlow;
 $("joinRoomBtn").onclick = () => {
   clearError();
   
-  // Unlock audio dès le premier clic (évite l'overlay après)
-  audioManager.unlock();
+  // Unlock audio et forcer le son d'intro si pas encore joué
+  if (!audioManager.userUnlocked) {
+    audioManager.unlock();
+    // Si le son d'intro est en attente, le forcer maintenant
+    if (audioManager.pendingCue || audioManager.queuedCue) {
+      const cue = { file: "/sounds/INTRO_LOBBY.mp3", queueLoopFile: null, tts: null, ttsAfterSequence: null };
+      audioManager.play(cue, true); // force=true
+    }
+  }
   
   const name = mustName();
   if (!name) return;
