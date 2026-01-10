@@ -1405,13 +1405,14 @@ function createRoomFlow() {
   // Unlock audio et forcer le son d'intro immédiatement
   if (!audioManager.userUnlocked) {
     audioManager.unlock();
-    // Jouer le son d'intro avec le chemin correct (via theme)
+    // Jouer le son d'intro avec le chemin direct (theme pas encore chargé)
     const introCue = {
-      file: getThemeAudioPath("INTRO_LOBBY.mp3"),
+      file: "/sounds/default/INTRO_LOBBY.mp3",
       queueLoopFile: null,
       tts: null,
       ttsAfterSequence: null
     };
+    console.log("[audio] Forcing intro play:", introCue.file);
     audioManager.play(introCue, true); // force=true
   }
   
@@ -1442,13 +1443,14 @@ $("joinRoomBtn").onclick = () => {
   // Unlock audio et forcer le son d'intro immédiatement
   if (!audioManager.userUnlocked) {
     audioManager.unlock();
-    // Jouer le son d'intro avec le chemin correct (via theme)
+    // Jouer le son d'intro avec le chemin direct (theme pas encore chargé)
     const introCue = {
-      file: getThemeAudioPath("INTRO_LOBBY.mp3"),
+      file: "/sounds/default/INTRO_LOBBY.mp3",
       queueLoopFile: null,
       tts: null,
       ttsAfterSequence: null
     };
+    console.log("[audio] Forcing intro play:", introCue.file);
     audioManager.play(introCue, true); // force=true
   }
   
