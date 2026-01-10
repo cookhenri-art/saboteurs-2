@@ -1763,7 +1763,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, themeId }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -1772,8 +1772,15 @@ io.on("connection", (socket) => {
     try {
       const code = genRoomCode(rooms);
       const room = newRoom(code, playerId);
+      
+      // Appliquer le thème choisi sur la page d'accueil
+      if (themeId && themeManager.getTheme(themeId)) {
+        room.themeId = themeId;
+        logger.info("room_theme_set", { roomCode: code, themeId });
+      }
+      
       rooms.set(code, room);
-      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name });
+      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId });
       joinRoomCommon(socket, room, playerId, name, playerToken);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
