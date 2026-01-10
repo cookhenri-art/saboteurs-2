@@ -70,10 +70,14 @@ class ThemeManager {
   }
 
   getAllThemes() {
+    // Retourner les thèmes complets avec roles, terms, phases pour les traductions côté client
     return Array.from(this.themes.values()).map(t => ({
       id: t.id,
       name: t.name,
-      description: t.description
+      description: t.description,
+      roles: t.roles,      // ✅ AJOUTÉ : Nécessaire pour tRole()
+      terms: t.terms,      // ✅ AJOUTÉ : Nécessaire pour t()
+      phases: t.phases     // ✅ AJOUTÉ : Pour les phases traduites
     }));
   }
 
