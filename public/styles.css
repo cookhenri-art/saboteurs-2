@@ -1497,6 +1497,221 @@ select:focus-visible {
   }
 }
 
+/* ========================================
+   ADAPTATION MOBILE COMPLÈTE
+   ======================================== */
+@media (max-width: 768px) {
+  /* Boutons RÈGLES et MUTE (coin haut gauche) */
+  #topLeftButtons {
+    left: 10px !important;
+    top: 10px !important;
+    gap: 6px !important;
+  }
+  
+  #rulesBtn, #soundBtn {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
+    min-width: auto !important;
+  }
+  
+  /* Réduire la taille des émojis dans les boutons */
+  #rulesBtn::before {
+    content: '📜';
+    font-size: 0.9rem;
+  }
+  #soundBtn {
+    font-size: 1rem !important;
+    padding: 6px 8px !important;
+  }
+  
+  /* Container principal plus étroit */
+  .container {
+    padding: 10px !important;
+  }
+  
+  /* Page d'accueil - Panneau plus compact */
+  #homeScreen > div {
+    padding: 20px !important;
+    max-width: 95% !important;
+  }
+  
+  #homeScreen h1 {
+    font-size: 1.8rem !important;
+    letter-spacing: 2px !important;
+  }
+  
+  #homeScreen p {
+    font-size: 0.85rem !important;
+  }
+  
+  /* Boutons de thème sur l'accueil */
+  #homeThemeSelector button {
+    padding: 8px 12px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  #homeThemeDescription {
+    font-size: 0.8rem !important;
+  }
+  
+  /* Boutons principaux CRÉER/REJOINDRE */
+  #createBtn, #joinBtn {
+    padding: 12px !important;
+    font-size: 0.95rem !important;
+  }
+  
+  /* LOBBY - Titre */
+  #lobbyScreen h1 {
+    font-size: 1.4rem !important;
+    max-width: 90vw !important;
+  }
+  
+  /* LOBBY - Info room et nombre de joueurs */
+  #lobbyScreen > div > div:first-child {
+    padding: 20px !important;
+  }
+  
+  /* Bloc CODE MISSION et JOUEURS plus compact */
+  #lobbyScreen > div > div > div:nth-child(2) > div {
+    padding: 12px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  #displayRoomCode {
+    font-size: 1.8rem !important;
+    letter-spacing: 8px !important;
+  }
+  
+  #playerCount {
+    font-size: 2rem !important;
+  }
+  
+  /* Sélecteur de thème dans le lobby */
+  #lobbyScreen .theme-button {
+    padding: 8px 12px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  /* Barre d'équilibre */
+  #lobbyScreen > div > div > div:nth-child(3) {
+    padding: 12px !important;
+  }
+  
+  #balanceLabelLeft, #balanceLabelRight, #balanceStatusCockpit {
+    font-size: 0.75rem !important;
+  }
+  
+  /* Auto-allocation */
+  #autoAllocation {
+    font-size: 0.85rem !important;
+  }
+  
+  #autoAllocation div {
+    padding: 8px !important;
+  }
+  
+  /* Liste des joueurs */
+  .player-item {
+    padding: 8px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  .player-left > div:first-child {
+    font-size: 0.95rem !important;
+  }
+  
+  /* BOUTON PRÊT - Divisé par 3 */
+  #lobbyScreen button[onclick*="ready"] {
+    padding: 10px 16px !important;
+    font-size: 0.9rem !important;
+    min-width: 100px !important;
+  }
+  
+  /* BOUTON LANCER MISSION - Divisé par 3 */
+  #lobbyScreen button[onclick*="start"] {
+    padding: 12px 20px !important;
+    font-size: 1rem !important;
+    min-width: 140px !important;
+  }
+  
+  /* Checkboxes de rôles plus compactes */
+  #lobbyScreen input[type="checkbox"] {
+    width: 16px !important;
+    height: 16px !important;
+  }
+  
+  #lobbyScreen label {
+    font-size: 0.85rem !important;
+  }
+  
+  /* EN JEU - Contrôles */
+  #gameScreen .control-panel {
+    padding: 15px !important;
+  }
+  
+  #phaseTitle {
+    font-size: 1.2rem !important;
+  }
+  
+  /* Boutons en jeu */
+  #gameScreen .btn {
+    padding: 10px 14px !important;
+    font-size: 0.85rem !important;
+  }
+  
+  /* Logs de phase */
+  #phaseLog {
+    max-height: 150px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* Stats de fin */
+  #endScreen .btn {
+    padding: 10px 14px !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* Mobile très petit (< 400px) */
+@media (max-width: 400px) {
+  #rulesBtn {
+    padding: 5px 8px !important;
+    font-size: 0.7rem !important;
+  }
+  
+  #soundBtn {
+    padding: 5px 7px !important;
+    font-size: 0.9rem !important;
+  }
+  
+  #homeScreen h1 {
+    font-size: 1.5rem !important;
+  }
+  
+  #displayRoomCode {
+    font-size: 1.5rem !important;
+    letter-spacing: 6px !important;
+  }
+  
+  #playerCount {
+    font-size: 1.6rem !important;
+  }
+  
+  /* Boutons encore plus petits */
+  #lobbyScreen button[onclick*="ready"] {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    min-width: 80px !important;
+  }
+  
+  #lobbyScreen button[onclick*="start"] {
+    padding: 10px 16px !important;
+    font-size: 0.9rem !important;
+    min-width: 120px !important;
+  }
+}
+
 /* Animations pour l'overlay audio */
 @keyframes pulse {
   0%, 100% {

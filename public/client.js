@@ -385,7 +385,11 @@ function renderLobby() {
   const n = state.players.filter(p => p.status !== "left").length;
   const sab = (n <= 6) ? 1 : (n <= 11 ? 2 : 3);
   const ast = Math.max(0, n - sab);
-  $("autoAllocation").innerHTML = `<div>${sab}️⃣ ${tRole('saboteur', true).toUpperCase()}</div><div>${ast}️⃣ ${tRole('astronaut', true).toUpperCase()}</div>`;
+  
+  // Format simplifié : "Répartition : X Saboteurs • Y Astronautes"
+  const sabLabel = tRole('saboteur', sab > 1);
+  const astLabel = tRole('astronaut', ast > 1);
+  $("autoAllocation").innerHTML = `<div style="text-align:center; opacity:0.9;">Répartition : <b>${sab}</b> ${sabLabel} • <b>${ast}</b> ${astLabel}</div>`;
 
   // balance indicator
   const ratio = n ? (ast / n) : 0.5;
@@ -448,38 +452,39 @@ function renderLobby() {
   const box = $("rolesConfig");
   box.innerHTML = "";
 
-  if (!isHost) {
-    box.innerHTML = `<div style="opacity:.85;">Seul l’hôte peut configurer.</div>`;
-    return;
-  }
+  // Disabled pour les non-hôtes, mais ils voient quand même les checkboxes
+  const disabled = !isHost;
 
-  box.appendChild(makeCheckbox("doctor", tRole('doctor'), rolesEnabled.doctor));
-  box.appendChild(makeCheckbox("security", tRole('security'), rolesEnabled.security));
-  box.appendChild(makeCheckbox("radar", tRole('radar'), rolesEnabled.radar));
-  box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), rolesEnabled.ai_agent));
-  box.appendChild(makeCheckbox("engineer", tRole('engineer'), rolesEnabled.engineer));
-  box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, rolesEnabled.chameleon));
+
+  box.appendChild(makeCheckbox("doctor", tRole('doctor'), rolesEnabled.doctor, false, disabled));
+  box.appendChild(makeCheckbox("security", tRole('security'), rolesEnabled.security, false, disabled));
+  box.appendChild(makeCheckbox("radar", tRole('radar'), rolesEnabled.radar, false, disabled));
+  box.appendChild(makeCheckbox("ai_agent", tRole('ai_agent'), rolesEnabled.ai_agent, false, disabled));
+  box.appendChild(makeCheckbox("engineer", tRole('engineer'), rolesEnabled.engineer, false, disabled));
+  box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, rolesEnabled.chameleon, false, disabled));
   box.appendChild(document.createElement("hr"));
-  box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true));
+  box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", !!cfg.manualRoles, true, false, disabled));
   
   // Theme selector (host only)
   renderThemeSelector(isHost);
 
-  function makeCheckbox(key, label, checked, isRoot=false) {
+  function makeCheckbox(key, label, checked, isRoot=false, isDisabled=false) {
     const row = document.createElement("div");
     row.style.marginBottom = "10px";
     const id = `cfg_${key}`;
-    row.innerHTML = `<label style="display:flex; align-items:center; gap:10px; text-transform:none; letter-spacing:1px;">
-      <input type="checkbox" id="${id}" ${checked ? "checked" : ""}>
+    row.innerHTML = `<label style="display:flex; align-items:center; gap:10px; text-transform:none; letter-spacing:1px; ${isDisabled ? 'opacity:0.5; cursor:not-allowed;' : ''}">
+      <input type="checkbox" id="${id}" ${checked ? "checked" : ""} ${isDisabled ? "disabled" : ""}>
       <span>${label}</span>
     </label>`;
-    row.querySelector("input").addEventListener("change", () => {
-      const next = JSON.parse(JSON.stringify(state.config || {}));
-      next.rolesEnabled = next.rolesEnabled || {};
-      if (isRoot) next[key] = row.querySelector("input").checked;
-      else next.rolesEnabled[key] = row.querySelector("input").checked;
-      socket.emit("updateConfig", { config: next }, (r) => { if (!r?.ok) setError(r?.error || "Erreur config"); });
-    });
+    if (!isDisabled) {
+      row.querySelector("input").addEventListener("change", () => {
+        const next = JSON.parse(JSON.stringify(state.config || {}));
+        next.rolesEnabled = next.rolesEnabled || {};
+        if (isRoot) next[key] = row.querySelector("input").checked;
+        else next.rolesEnabled[key] = row.querySelector("input").checked;
+        socket.emit("updateConfig", { config: next }, (r) => { if (!r?.ok) setError(r?.error || "Erreur config"); });
+      });
+    }
     return row;
   }
 }
