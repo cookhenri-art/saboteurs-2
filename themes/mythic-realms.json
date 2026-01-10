@@ -2,7 +2,7 @@
   "id": "mythic-realms",
   "name": "Royaumes Mythiques",
   "homeTitle": "LA CONFRÉRIE FANTASTIQUE",
-  "description": "Un royaume fantastique menacé par des ogres infiltrés",
+  "description": "Un royaume fantastique menacé par des orques infiltrés",
   
   "terms": {
     "captain": "Guide Sacré",
@@ -34,7 +34,7 @@
     },
     "security": {
       "name": "Chevalier",
-      "description": "Si tué par les ogres, peut porter un coup fatal avec son dernier souffle."
+      "description": "Si tué par les orques, peut porter un coup fatal avec son dernier souffle."
     },
     "ai_agent": {
       "name": "Elfe Charmeur",
