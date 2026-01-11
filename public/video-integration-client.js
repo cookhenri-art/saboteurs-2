@@ -10,6 +10,7 @@
 
 let videoRoomUrl = null;
 let videoRoomJoined = false;
+let isInitializingVideo = false; // Protection contre appels multiples
 
 /**
  * Initialise la vidéo quand la partie démarre
@@ -18,6 +19,12 @@ function initVideoForGame(state) {
   // Ne rien faire si déjà initialisé ou si pas encore démarré
   if (videoRoomJoined) {
     console.log('[Video] Already joined, skipping initialization');
+    return;
+  }
+
+  // ✨ NOUVEAU : Bloquer si initialisation en cours
+  if (isInitializingVideo) {
+    console.log('[Video] Initialization already in progress, skipping');
     return;
   }
 
@@ -30,6 +37,9 @@ function initVideoForGame(state) {
     console.error('[Video] No room code in state!', state);
     return;
   }
+
+  // ✨ Marquer comme en cours
+  isInitializingVideo = true;
 
   console.log('[Video] 🎬 Initializing video for game...', {
     roomCode: state.roomCode,
@@ -57,6 +67,7 @@ function initVideoForGame(state) {
       if (!data.ok) {
         console.error('[Video] ❌ Failed to create room:', data.error);
         showVideoStatus('❌ Impossible de créer la visio', 'error');
+        isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
         return;
       }
 
@@ -77,16 +88,19 @@ function initVideoForGame(state) {
       window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions)
         .then(() => {
           videoRoomJoined = true;
+          isInitializingVideo = false; // ✨ Débloquer après succès
           console.log('[Video] ✅ Successfully joined room');
           showVideoStatus('✅ Visio activée', 'success');
         })
         .catch(err => {
           console.error('[Video] ❌ Join error:', err);
+          isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
           showVideoStatus('❌ Erreur de connexion vidéo', 'error');
         });
     })
     .catch(err => {
       console.error('[Video] ❌ API error:', err);
+      isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
       showVideoStatus('❌ Erreur serveur vidéo', 'error');
     });
 }
