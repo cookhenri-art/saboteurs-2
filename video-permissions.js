@@ -16,7 +16,7 @@ const FULL_VIDEO_PHASES = [
   'DAY_WAKE',           // ✅ Réveil - Discussion des résultats
   'DAY_CAPTAIN_TRANSFER',
   'DAY_RESULTS',        // ✅ Résultats du vote - Voir les réactions
-    'END_STATS_OUTRO',   // ✅ Stats/Outro: discussion libre
+  'END_STATS_OUTRO',   // ✅ Stats/Outro: discussion libre
   'END_STATS',         // ✅ Fallback
   'END'
 ];
@@ -27,7 +27,7 @@ const FULL_VIDEO_PHASES = [
  */
 /**
  * Phases de nuit silencieuses: personne ne parle ni n'apparaît en vidéo
- * But: éviter d'identifier les rôles (chaméléon, docteur, radar...)
+ * (évite d'identifier les rôles: chaméléon, docteur, radar...)
  */
 const SILENT_NIGHT_PHASES = new Set([
   'NIGHT_CHAMELEON',
@@ -89,13 +89,14 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
   }
 
   // Phase restreinte par rôle
+
   if (ROLE_RESTRICTED_PHASES[phase]) {
     // ✅ Nuits silencieuses: tout le monde OFF (même le rôle actif)
     if (SILENT_NIGHT_PHASES.has(phase)) {
       return {
         video: false,
         audio: false,
-        reason: 'Phase de nuit silencieuse'
+        reason: 'Nuit silencieuse'
       };
     }
 
@@ -111,7 +112,7 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
           };
         }
       }
-      // Sinon: personne ne parle / n'apparait (y compris l'IA si pas de duo valide)
+      // Sinon: personne ne parle / n'apparaît (y compris l'IA si pas de duo valide)
       return {
         video: false,
         audio: false,
@@ -129,14 +130,7 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
       reason: hasPermission ? `Canal privé: ${player.role}` : 'Phase privée'
     };
   }
-    }
 
-    return {
-      video: hasPermission,
-      audio: hasPermission,
-      reason: hasPermission ? `Rôle actif: ${player.role}` : 'Rôle inactif cette phase'
-    };
-  }
 
   // Par défaut: vidéo et audio activés
   return {
