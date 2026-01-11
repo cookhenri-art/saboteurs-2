@@ -1556,17 +1556,11 @@ app.get("/api/assets/audio", (req, res) => {
 });
 
 // ============== DAILY.CO VIDEO ROUTES ==============
-app.post("/api/video/create-room", async (req, res) => {
+app.post("/api/video/create-room/:roomCode", async (req, res) => {
   try {
-    const { roomCode } = req.body;
+    const { roomCode } = req.params;
     if (!roomCode) {
       return res.status(400).json({ ok: false, error: "roomCode required" });
-    }
-
-    // Vérifier si la room de jeu existe
-    const room = rooms.get(roomCode);
-    if (!room) {
-      return res.status(404).json({ ok: false, error: "Game room not found" });
     }
 
     // Vérifier si une room vidéo existe déjà
