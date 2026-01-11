@@ -14,13 +14,17 @@
 
 class DailyVideoManager {
   constructor() {
-    this.__version = "v5-permissions";
+    this.__version = "v5.2-ui";
 
     this.callFrame = null;
     this.container = null;
     this.grid = null;
     this.statusMessage = null;
     this.overlay = null;
+
+    // UI: bouton lanceur (quand on ferme la fenêtre)
+    this.launcher = null;
+    this._drag = { active: false, startX: 0, startY: 0, startTop: 0, startLeft: 0 };
 
     this.camButton = null;
     this.micButton = null;
@@ -56,7 +60,9 @@ class DailyVideoManager {
       right: 20px;
       width: ${containerWidth};
       height: ${containerHeight};
-      background: rgba(10, 14, 39, 0.95);
+            min-width: 260px;
+      min-height: 320px;
+background: rgba(10, 14, 39, 0.95);
       border: 2px solid var(--neon-cyan, #00ffff);
       border-radius: 12px;
       overflow: hidden;
@@ -65,7 +71,9 @@ class DailyVideoManager {
       flex-direction: column;
       box-shadow: 0 8px 32px rgba(0, 255, 255, 0.3);
       pointer-events: auto;
-    `;
+          resize: both;
+      overflow: hidden;
+`;
 
     const header = document.createElement("div");
     header.className = "daily-header";
@@ -78,7 +86,9 @@ class DailyVideoManager {
       align-items: center;
       flex: 0 0 auto;
       gap: 8px;
-    `;
+          cursor: move;
+      touch-action: none;
+`;
 
     const title = document.createElement("span");
     title.textContent = "📹 Visioconférence";
@@ -102,9 +112,9 @@ class DailyVideoManager {
     minimizeBtn.onclick = () => this.toggleMinimize();
 
     const closeBtn = this.createControlButton("✕", "Masquer");
-    closeBtn.onclick = () => this.container.style.setProperty("display", "none", "important");
+    closeBtn.onclick = () => this.hideWindow();
 
-    controls.appendChild(this.camButton);
+controls.appendChild(this.camButton);
     controls.appendChild(this.micButton);
     controls.appendChild(minimizeBtn);
     controls.appendChild(closeBtn);
@@ -169,7 +179,59 @@ class DailyVideoManager {
 
     document.body.appendChild(this.container);
 
-    console.log("[DailyUI] Container injected (v5).");
+    // UI: bouton lanceur (si on ferme la fenêtre)
+    this.ensureLauncher();
+
+    // UI: drag & drop via le header (déplacement de la fenêtre)
+    const onDown = (ev) => {
+      // ne pas déclencher si clic sur un bouton
+      if (ev.target && ev.target.tagName === "BUTTON") return;
+
+      this._drag.active = true;
+      const pt = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+
+      this._drag.startX = pt.clientX;
+      this._drag.startY = pt.clientY;
+
+      const rect = this.container.getBoundingClientRect();
+      this._drag.startTop = rect.top;
+      this._drag.startLeft = rect.left;
+
+      // passer en mode left/top (désactive right)
+      this.container.style.right = "auto";
+      this.container.style.left = rect.left + "px";
+      this.container.style.top = rect.top + "px";
+
+      ev.preventDefault?.();
+    };
+
+    const onMove = (ev) => {
+      if (!this._drag.active) return;
+      const pt = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+
+      const dx = pt.clientX - this._drag.startX;
+      const dy = pt.clientY - this._drag.startY;
+
+      const nextLeft = Math.max(0, this._drag.startLeft + dx);
+      const nextTop = Math.max(0, this._drag.startTop + dy);
+
+      this.container.style.left = nextLeft + "px";
+      this.container.style.top = nextTop + "px";
+      ev.preventDefault?.();
+    };
+
+    const onUp = () => {
+      this._drag.active = false;
+    };
+
+    header.addEventListener("mousedown", onDown);
+    header.addEventListener("touchstart", onDown, { passive: false });
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchmove", onMove, { passive: false });
+    window.addEventListener("mouseup", onUp);
+    window.addEventListener("touchend", onUp);
+
+    console.log("[DailyUI] Container injected (v5.2-ui).");
   }
 
   createControlButton(label, title) {
@@ -200,7 +262,7 @@ class DailyVideoManager {
 
   async joinRoom(roomUrl, userName, permissions = { video: true, audio: true }) {
     this.initContainer();
-    this.container.style.setProperty("display", "flex", "important");
+    this.showWindow();
     this.updateStatus("Connexion…");
 
     // Reset prefs at (re)join
@@ -308,6 +370,50 @@ class DailyVideoManager {
     }
     this.callFrame = null;
     this.container?.style.setProperty("display", "none", "important");
+  }
+
+
+  ensureLauncher() {
+    if (this.launcher) return;
+
+    const btn = document.createElement("button");
+    btn.id = "dailyVideoLauncher";
+    btn.type = "button";
+    btn.textContent = "📹";
+    btn.title = "Ré-ouvrir la visioconférence";
+    btn.style.cssText = `
+      position: fixed;
+      bottom: 18px;
+      right: 18px;
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: 2px solid rgba(0, 255, 255, 0.35);
+      background: rgba(0, 0, 0, 0.55);
+      color: #fff;
+      font-size: 22px;
+      cursor: pointer;
+      z-index: 2147483647;
+      display: none;
+      box-shadow: 0 8px 22px rgba(0, 255, 255, 0.22);
+    `;
+
+    btn.onclick = () => this.showWindow();
+    document.body.appendChild(btn);
+    this.launcher = btn;
+  }
+
+  showWindow() {
+    if (!this.container) return;
+    this.container.style.setProperty("display", "flex", "important");
+    if (this.launcher) this.launcher.style.display = "none";
+  }
+
+  hideWindow() {
+    if (!this.container) return;
+    this.container.style.setProperty("display", "none", "important");
+    this.ensureLauncher();
+    if (this.launcher) this.launcher.style.display = "block";
   }
 
   toggleMinimize() {
