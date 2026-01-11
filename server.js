@@ -1563,27 +1563,17 @@ app.post("/api/video/create-room/:roomCode", async (req, res) => {
       return res.status(400).json({ ok: false, error: "roomCode required" });
     }
 
-    // Vérifier si une room vidéo existe déjà
-    let videoRoom = dailyManager.getVideoRoom(roomCode);
-    if (videoRoom) {
-      return res.json({
-        ok: true,
-        roomUrl: videoRoom.dailyRoomUrl,
-        roomName: videoRoom.dailyRoomName,
-        cached: true
-      });
-    }
+    // A) Anti-concurrence + C) récupération si la room existe déjà (après redéploiement)
+    const videoRoom = await dailyManager.getOrCreateVideoRoom(roomCode);
 
-    // Créer une nouvelle room vidéo
-    videoRoom = await dailyManager.createVideoRoom(roomCode);
-    
     res.json({
       ok: true,
       roomUrl: videoRoom.roomUrl,
       roomName: videoRoom.roomName,
-      isFreeRoom: videoRoom.isFreeRoom
+      cached: !!videoRoom.cached,
+      isFreeRoom: !!videoRoom.isFreeRoom
     });
-    
+
   } catch (error) {
     logger.error('[API] Error creating video room:', error);
     res.status(500).json({ ok: false, error: error.message });
