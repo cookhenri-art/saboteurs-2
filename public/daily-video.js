@@ -1,45 +1,47 @@
 /**
  * Daily.co Video Component - Client Side
- * Interface de visioconférence en mosaïque avec gestion des permissions
+ * FIX: mosaïque invisible -> container sans height => iframe à 0px de haut.
+ * Ici on fixe une height + on met la zone iframe en block/100%.
  */
 
 class DailyVideoManager {
   constructor() {
     this.callFrame = null;
-    this.participants = new Map();
     this.container = null;
-    this.isInitialized = false;
+    this.grid = null;
+    this.statusMessage = null;
+    this.camButton = null;
+    this.micButton = null;
     this.localPermissions = { video: true, audio: true };
     this.isMobile = window.innerWidth < 768;
   }
 
-  /**
-   * Initialise le conteneur vidéo dans le DOM
-   */
   initContainer() {
     if (this.container) return;
 
-    // Créer le conteneur principal
     this.container = document.createElement('div');
     this.container.id = 'dailyVideoContainer';
     this.container.className = 'daily-video-container';
+
+    const containerWidth = this.isMobile ? '300px' : '400px';
+    const containerHeight = this.isMobile ? '420px' : '620px';
+
     this.container.style.cssText = `
       position: fixed;
       top: 80px;
       right: 20px;
-      width: ${this.isMobile ? '300px' : '400px'};
-      max-height: ${this.isMobile ? '400px' : '600px'};
+      width: ${containerWidth};
+      height: ${containerHeight};
       background: rgba(10, 14, 39, 0.95);
       border: 2px solid var(--neon-cyan, #00ffff);
       border-radius: 12px;
       overflow: hidden;
-      z-index: 9998;
+      z-index: 999999;
       display: none;
       flex-direction: column;
       box-shadow: 0 8px 32px rgba(0, 255, 255, 0.3);
     `;
 
-    // Header avec contrôles
     const header = document.createElement('div');
     header.className = 'daily-header';
     header.style.cssText = `
@@ -49,6 +51,7 @@ class DailyVideoManager {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex: 0 0 auto;
     `;
 
     const title = document.createElement('span');
@@ -62,19 +65,15 @@ class DailyVideoManager {
     const controls = document.createElement('div');
     controls.style.cssText = 'display: flex; gap: 8px;';
 
-    // Bouton toggle caméra
     this.camButton = this.createControlButton('📹', 'Caméra');
     this.camButton.onclick = () => this.toggleCamera();
 
-    // Bouton toggle micro
     this.micButton = this.createControlButton('🎤', 'Micro');
     this.micButton.onclick = () => this.toggleMicrophone();
 
-    // Bouton minimiser
     const minimizeBtn = this.createControlButton('−', 'Minimiser');
     minimizeBtn.onclick = () => this.toggleMinimize();
 
-    // Bouton fermer complètement
     const closeBtn = this.createControlButton('✕', 'Fermer la vidéo');
     closeBtn.onclick = () => {
       if (confirm('Voulez-vous vraiment quitter la vidéo ? Vous pourrez la réactiver depuis les paramètres.')) {
@@ -91,19 +90,18 @@ class DailyVideoManager {
     header.appendChild(title);
     header.appendChild(controls);
 
-    // Grille de participants
+    // Zone iframe Daily (100% height/width)
     this.grid = document.createElement('div');
     this.grid.className = 'daily-grid';
     this.grid.style.cssText = `
-      flex: 1;
-      display: grid;
-      gap: 4px;
-      padding: 8px;
-      overflow-y: auto;
-      max-height: ${this.isMobile ? '350px' : '540px'};
+      flex: 1 1 auto;
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: rgba(0,0,0,0.15);
     `;
 
-    // Message d'état
     this.statusMessage = document.createElement('div');
     this.statusMessage.className = 'daily-status';
     this.statusMessage.style.cssText = `
@@ -113,7 +111,9 @@ class DailyVideoManager {
       color: var(--neon-orange, #ff6b35);
       background: rgba(0, 0, 0, 0.3);
       border-top: 1px solid rgba(0, 255, 255, 0.2);
+      flex: 0 0 auto;
     `;
+    this.statusMessage.textContent = 'En attente…';
 
     this.container.appendChild(header);
     this.container.appendChild(this.grid);
@@ -122,9 +122,6 @@ class DailyVideoManager {
     document.body.appendChild(this.container);
   }
 
-  /**
-   * Crée un bouton de contrôle
-   */
   createControlButton(emoji, title) {
     const btn = document.createElement('button');
     btn.textContent = emoji;
@@ -149,73 +146,53 @@ class DailyVideoManager {
     return btn;
   }
 
-  /**
-   * Rejoint une room Daily.co
-   */
   async joinRoom(roomUrl, userName, permissions = { video: true, audio: true }) {
     try {
       this.initContainer();
       this.localPermissions = permissions;
 
-      // Charger le SDK Daily.co si pas encore fait
       if (!window.DailyIframe) {
         await this.loadDailyScript();
       }
 
-      // Créer le call frame
       this.callFrame = window.DailyIframe.createFrame(this.grid, {
-        iframeStyle: {
-          width: '100%',
-          height: '100%',
-          border: 'none'
-        },
+        iframeStyle: { width: '100%', height: '100%', border: 'none' },
         showLeaveButton: false,
         showFullscreenButton: false
       });
 
-      // Écouter les événements
       this.setupEventListeners();
 
-      // Rejoindre la room
+      this.updateStatus('Connexion…');
+
       await this.callFrame.join({
         url: roomUrl,
-        userName: userName,
+        userName,
         startVideoOff: !permissions.video,
         startAudioOff: !permissions.audio
       });
 
       this.container.style.display = 'flex';
-      this.updateStatus('Connecté à la visio');
-      this.updateGridLayout();
-
+      this.updateStatus('✅ Connecté');
       console.log('[Daily] Joined room:', roomUrl);
+
+      await this.updateButtonStates();
     } catch (error) {
       console.error('[Daily] Join error:', error);
       this.updateStatus('❌ Erreur de connexion');
 
-      // IMPORTANT: si join échoue, on nettoie et on RELANCE l'erreur
-      // sinon le code appelant croit que "join a réussi" et n'essaie plus jamais.
       try {
-        if (this.callFrame) {
-          await this.callFrame.destroy();
-        }
+        if (this.callFrame) await this.callFrame.destroy();
       } catch (_) {}
       this.callFrame = null;
 
-      throw error;
+      throw error; // IMPORTANT
     }
   }
 
-  /**
-   * Charge le SDK Daily.co dynamiquement
-   */
   loadDailyScript() {
     return new Promise((resolve, reject) => {
-      if (window.DailyIframe) {
-        resolve();
-        return;
-      }
-
+      if (window.DailyIframe) return resolve();
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/@daily-co/daily-js';
       script.onload = resolve;
@@ -224,25 +201,11 @@ class DailyVideoManager {
     });
   }
 
-  /**
-   * Configure les listeners d'événements Daily
-   */
   setupEventListeners() {
     if (!this.callFrame) return;
 
-    this.callFrame.on('participant-joined', (event) => {
-      console.log('[Daily] Participant joined:', event.participant);
-      this.updateGridLayout();
-    });
-
-    this.callFrame.on('participant-left', (event) => {
-      console.log('[Daily] Participant left:', event.participant);
-      this.updateGridLayout();
-    });
-
-    this.callFrame.on('participant-updated', () => {
-      this.updateGridLayout();
-    });
+    this.callFrame.on('joined-meeting', () => this.updateStatus('✅ Connecté'));
+    this.callFrame.on('left-meeting', () => this.updateStatus('Déconnecté'));
 
     this.callFrame.on('error', (error) => {
       console.error('[Daily] Error:', error);
@@ -250,76 +213,17 @@ class DailyVideoManager {
     });
   }
 
-  /**
-   * Met à jour la disposition de la grille selon le nombre de participants
-   */
-  async updateGridLayout() {
-    if (!this.callFrame) return;
-
-    const participants = await this.callFrame.participants();
-    const count = Object.keys(participants).length;
-
-    const maxCols = this.isMobile ? 3 : 4;
-    const maxRows = this.isMobile ? 3 : 4;
-
-    let cols, rows;
-    if (count <= 4) {
-      cols = Math.min(2, count);
-      rows = Math.ceil(count / 2);
-    } else if (count <= 9) {
-      cols = Math.min(3, count);
-      rows = Math.ceil(count / 3);
-    } else {
-      cols = maxCols;
-      rows = Math.ceil(count / cols);
-    }
-
-    this.grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    this.grid.style.gridTemplateRows = `repeat(${Math.min(rows, maxRows)}, 1fr)`;
-  }
-
-  /**
-   * Met à jour les permissions vidéo/audio
-   */
-  async updatePermissions(permissions) {
-    if (!this.callFrame) return;
-
-    this.localPermissions = permissions;
-
-    try {
-      await this.callFrame.setLocalVideo(permissions.video);
-      await this.callFrame.setLocalAudio(permissions.audio);
-
-      await this.updateButtonStates();
-
-      if (!permissions.video && !permissions.audio) {
-        this.updateStatus('🔇 Caméra et micro désactivés');
-      } else if (!permissions.video) {
-        this.updateStatus('📹 Caméra désactivée');
-      } else if (!permissions.audio) {
-        this.updateStatus('🔇 Micro désactivé');
-      } else {
-        this.updateStatus('✅ Caméra et micro actifs');
-      }
-
-      console.log('[Daily] Permissions updated:', permissions);
-    } catch (error) {
-      console.error('[Daily] Update permissions error:', error);
-    }
-  }
-
   async toggleCamera() {
     if (!this.callFrame || !this.localPermissions.video) {
       this.updateStatus('⚠️ Caméra désactivée pour cette phase');
       return;
     }
-
     try {
-      const currentState = await this.callFrame.localVideo();
-      await this.callFrame.setLocalVideo(!currentState);
+      const current = await this.callFrame.localVideo();
+      await this.callFrame.setLocalVideo(!current);
       await this.updateButtonStates();
-    } catch (error) {
-      console.error('[Daily] Toggle camera error:', error);
+    } catch (e) {
+      console.error('[Daily] Toggle camera error:', e);
     }
   }
 
@@ -328,43 +232,35 @@ class DailyVideoManager {
       this.updateStatus('⚠️ Micro désactivé pour cette phase');
       return;
     }
-
     try {
-      const currentState = await this.callFrame.localAudio();
-      await this.callFrame.setLocalAudio(!currentState);
+      const current = await this.callFrame.localAudio();
+      await this.callFrame.setLocalAudio(!current);
       await this.updateButtonStates();
-    } catch (error) {
-      console.error('[Daily] Toggle mic error:', error);
+    } catch (e) {
+      console.error('[Daily] Toggle mic error:', e);
     }
   }
 
   async updateButtonStates() {
-    if (!this.callFrame) return;
-
+    if (!this.callFrame || !this.camButton || !this.micButton) return;
     const videoOn = await this.callFrame.localVideo();
     const audioOn = await this.callFrame.localAudio();
 
     this.camButton.style.opacity = videoOn ? '1' : '0.5';
-    this.camButton.style.background = videoOn
-      ? 'rgba(0, 255, 255, 0.2)'
-      : 'rgba(255, 0, 0, 0.2)';
+    this.camButton.style.background = videoOn ? 'rgba(0, 255, 255, 0.2)' : 'rgba(255, 0, 0, 0.2)';
 
     this.micButton.style.opacity = audioOn ? '1' : '0.5';
-    this.micButton.style.background = audioOn
-      ? 'rgba(0, 255, 255, 0.2)'
-      : 'rgba(255, 0, 0, 0.2)';
+    this.micButton.style.background = audioOn ? 'rgba(0, 255, 255, 0.2)' : 'rgba(255, 0, 0, 0.2)';
   }
 
   toggleMinimize() {
-    const isMinimized = this.grid.style.display === 'none';
-    this.grid.style.display = isMinimized ? 'grid' : 'none';
-    this.statusMessage.style.display = 'block';
+    if (!this.grid) return;
+    const hidden = this.grid.style.display === 'none';
+    this.grid.style.display = hidden ? 'block' : 'none';
   }
 
   updateStatus(message) {
-    if (this.statusMessage) {
-      this.statusMessage.textContent = message;
-    }
+    if (this.statusMessage) this.statusMessage.textContent = message;
   }
 
   async leave() {
@@ -372,29 +268,15 @@ class DailyVideoManager {
       try {
         await this.callFrame.leave();
         await this.callFrame.destroy();
-      } catch (error) {
-        console.error('[Daily] Leave error:', error);
+      } catch (e) {
+        console.error('[Daily] Leave error:', e);
       } finally {
         this.callFrame = null;
       }
     }
-
-    if (this.container) {
-      this.container.style.display = 'none';
-    }
-
+    if (this.container) this.container.style.display = 'none';
     this.updateStatus('Déconnecté');
-  }
-
-  destroy() {
-    this.leave();
-    if (this.container && this.container.parentNode) {
-      this.container.parentNode.removeChild(this.container);
-    }
-    this.container = null;
-    this.participants.clear();
   }
 }
 
-// Instance globale
 window.dailyVideo = new DailyVideoManager();
