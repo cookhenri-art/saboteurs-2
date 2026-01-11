@@ -41,7 +41,12 @@ function initVideoForGame(state) {
   const apiUrl = `/api/video/create-room/${state.roomCode}`;
   console.log('[Video] 📡 Fetching:', apiUrl);
 
-  fetch(apiUrl)
+  fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
     .then(res => {
       console.log('[Video] 📥 Response status:', res.status);
       return res.json();
