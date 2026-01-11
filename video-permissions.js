@@ -16,13 +16,29 @@ const FULL_VIDEO_PHASES = [
   'DAY_WAKE',           // ✅ Réveil - Discussion des résultats
   'DAY_CAPTAIN_TRANSFER',
   'DAY_RESULTS',        // ✅ Résultats du vote - Voir les réactions
+    'END_STATS_OUTRO',   // ✅ Stats/Outro: discussion libre
+  'END_STATS',         // ✅ (fallback si phase existe)
   'END'
+  'END_VICTORY',
+  'END_SCREEN',
+  'GAME_OVER',
+  'GAME_END',
 ];
 
 /**
  * Phases où SEULS certains rôles peuvent avoir caméra + micro
  * Format: { phase: [roles autorisés] }
  */
+/**
+ * Phases de nuit où le rôle actif doit rester silencieux (caméra + micro OFF)
+ * But: ne pas trahir son identité (chaméléon, docteur, radar...)
+ */
+const SILENT_NIGHT_PHASES = new Set([
+  'NIGHT_CHAMELEON',
+  'NIGHT_DOCTOR',
+  'NIGHT_RADAR'
+]);
+
 const ROLE_RESTRICTED_PHASES = {
   'NIGHT_SABOTEURS': ['saboteur'],
   'NIGHT_AI_AGENT': ['ai_agent'],  // Les amoureux se voient
@@ -58,6 +74,56 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
     };
   }
 
+
+  // ---------------- V7: règles STRICTES (nuit / canaux privés) ----------------
+  // Nuit Saboteurs: seuls les saboteurs voient/entendent entre eux
+  if (phase === 'NIGHT_SABOTEURS') {
+    const isSaboteur = player.role === 'saboteur';
+    return {
+      video: isSaboteur,
+      audio: isSaboteur,
+      reason: isSaboteur ? 'Canal saboteurs' : 'Endormi (nuit saboteurs)'
+    };
+  }
+
+  // Nuit IA: IA + personne liée uniquement (canal privé)
+  if (phase === 'NIGHT_AI_AGENT') {
+    // Recherche de l'agent IA vivant
+    let aiPlayer = null;
+    for (const [, p] of allPlayers.entries()) {
+      if (p.role === 'ai_agent' && p.status === 'alive') { aiPlayer = p; break; }
+    }
+
+    const aiLinkedId = aiPlayer && aiPlayer.linkedTo;
+    const isAI = player.role === 'ai_agent';
+    const isLinkedToAI =
+      (aiPlayer && aiLinkedId && player.id === aiLinkedId) ||
+      (player.linkedTo && aiPlayer && player.linkedTo === aiPlayer.id) ||
+      (player.linkedTo && aiLinkedId && player.linkedTo === aiLinkedId);
+
+    const partnerAlive =
+      (isAI && aiLinkedId && allPlayers.get(aiLinkedId) && allPlayers.get(aiLinkedId).status === 'alive') ||
+      (isLinkedToAI && aiPlayer && aiPlayer.status === 'alive');
+
+    const allowed = (isAI || isLinkedToAI) && partnerAlive;
+
+    return {
+      video: allowed,
+      audio: allowed,
+      reason: allowed ? 'Canal IA (duo)' : 'Endormi (nuit IA)'
+    };
+  }
+
+  // Nuits "silencieuses": chaméléon / docteur / radar
+  // Le rôle agit via l'UI du jeu => caméra+micro OFF pour éviter d'être identifié.
+  if (phase === 'NIGHT_CHAMELEON' || phase === 'NIGHT_DOCTOR' || phase === 'NIGHT_RADAR') {
+    return {
+      video: false,
+      audio: false,
+      reason: 'Rôle secret: phase silencieuse'
+    };
+  }
+
   // Phase avec caméra complètement désactivée
   if (CAMERA_OFF_PHASES.includes(phase)) {
     return {
@@ -81,6 +147,16 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
     const allowedRoles = ROLE_RESTRICTED_PHASES[phase];
     const hasPermission = allowedRoles.includes(player.role);
 
+
+    // ✅ Rôles "silencieux" pendant la nuit: même si le rôle est actif, caméra+micro restent OFF
+    // (le joueur agit via l'UI du jeu, pas besoin de parler ni d'être vu)
+    if (SILENT_NIGHT_PHASES.has(phase)) {
+      return {
+        video: false,
+        audio: false,
+        reason: `Rôle secret (silencieux): ${player.role}`
+      };
+    }
     // Cas spécial AI_AGENT: les deux amoureux se voient
     if (phase === 'NIGHT_AI_AGENT' && player.linkedTo) {
       const partner = allPlayers.get(player.linkedTo);
@@ -132,6 +208,10 @@ function calculateRoomPermissions(phase, players) {
 function getPhaseVideoMessage(phase) {
   if (CAMERA_OFF_PHASES.includes(phase)) {
     return "📹 Caméras désactivées pour cette phase";
+  }
+
+  if (SILENT_NIGHT_PHASES.has(phase)) {
+    return "😴 Phase secrète: tout le monde est silencieux";
   }
 
   if (ROLE_RESTRICTED_PHASES[phase]) {
