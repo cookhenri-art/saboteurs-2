@@ -81,7 +81,7 @@ class DailyVideoManager {
         this.container.style.display = 'none';
       }
     };
-    closeBtn.style.color = '#ff6b6b'; // Rouge pour la fermeture
+    closeBtn.style.color = '#ff6b6b';
 
     controls.appendChild(this.camButton);
     controls.appendChild(this.micButton);
@@ -192,6 +192,17 @@ class DailyVideoManager {
     } catch (error) {
       console.error('[Daily] Join error:', error);
       this.updateStatus('❌ Erreur de connexion');
+
+      // IMPORTANT: si join échoue, on nettoie et on RELANCE l'erreur
+      // sinon le code appelant croit que "join a réussi" et n'essaie plus jamais.
+      try {
+        if (this.callFrame) {
+          await this.callFrame.destroy();
+        }
+      } catch (_) {}
+      this.callFrame = null;
+
+      throw error;
     }
   }
 
@@ -229,7 +240,7 @@ class DailyVideoManager {
       this.updateGridLayout();
     });
 
-    this.callFrame.on('participant-updated', (event) => {
+    this.callFrame.on('participant-updated', () => {
       this.updateGridLayout();
     });
 
@@ -248,10 +259,9 @@ class DailyVideoManager {
     const participants = await this.callFrame.participants();
     const count = Object.keys(participants).length;
 
-    // Déterminer la grille selon le device et le nombre de participants
     const maxCols = this.isMobile ? 3 : 4;
     const maxRows = this.isMobile ? 3 : 4;
-    
+
     let cols, rows;
     if (count <= 4) {
       cols = Math.min(2, count);
@@ -277,16 +287,11 @@ class DailyVideoManager {
     this.localPermissions = permissions;
 
     try {
-      // Activer/désactiver la caméra
       await this.callFrame.setLocalVideo(permissions.video);
-      
-      // Activer/désactiver le micro
       await this.callFrame.setLocalAudio(permissions.audio);
 
-      // Mettre à jour l'UI des boutons
-      this.updateButtonStates();
+      await this.updateButtonStates();
 
-      // Message de statut
       if (!permissions.video && !permissions.audio) {
         this.updateStatus('🔇 Caméra et micro désactivés');
       } else if (!permissions.video) {
@@ -303,9 +308,6 @@ class DailyVideoManager {
     }
   }
 
-  /**
-   * Toggle caméra
-   */
   async toggleCamera() {
     if (!this.callFrame || !this.localPermissions.video) {
       this.updateStatus('⚠️ Caméra désactivée pour cette phase');
@@ -315,15 +317,12 @@ class DailyVideoManager {
     try {
       const currentState = await this.callFrame.localVideo();
       await this.callFrame.setLocalVideo(!currentState);
-      this.updateButtonStates();
+      await this.updateButtonStates();
     } catch (error) {
       console.error('[Daily] Toggle camera error:', error);
     }
   }
 
-  /**
-   * Toggle micro
-   */
   async toggleMicrophone() {
     if (!this.callFrame || !this.localPermissions.audio) {
       this.updateStatus('⚠️ Micro désactivé pour cette phase');
@@ -333,15 +332,12 @@ class DailyVideoManager {
     try {
       const currentState = await this.callFrame.localAudio();
       await this.callFrame.setLocalAudio(!currentState);
-      this.updateButtonStates();
+      await this.updateButtonStates();
     } catch (error) {
       console.error('[Daily] Toggle mic error:', error);
     }
   }
 
-  /**
-   * Met à jour l'état visuel des boutons
-   */
   async updateButtonStates() {
     if (!this.callFrame) return;
 
@@ -349,45 +345,37 @@ class DailyVideoManager {
     const audioOn = await this.callFrame.localAudio();
 
     this.camButton.style.opacity = videoOn ? '1' : '0.5';
-    this.camButton.style.background = videoOn 
-      ? 'rgba(0, 255, 255, 0.2)' 
+    this.camButton.style.background = videoOn
+      ? 'rgba(0, 255, 255, 0.2)'
       : 'rgba(255, 0, 0, 0.2)';
 
     this.micButton.style.opacity = audioOn ? '1' : '0.5';
-    this.micButton.style.background = audioOn 
-      ? 'rgba(0, 255, 255, 0.2)' 
+    this.micButton.style.background = audioOn
+      ? 'rgba(0, 255, 255, 0.2)'
       : 'rgba(255, 0, 0, 0.2)';
   }
 
-  /**
-   * Minimise/Maximise le conteneur vidéo
-   */
   toggleMinimize() {
     const isMinimized = this.grid.style.display === 'none';
     this.grid.style.display = isMinimized ? 'grid' : 'none';
-    this.statusMessage.style.display = isMinimized ? 'block' : 'block';
+    this.statusMessage.style.display = 'block';
   }
 
-  /**
-   * Met à jour le message de statut
-   */
   updateStatus(message) {
     if (this.statusMessage) {
       this.statusMessage.textContent = message;
     }
   }
 
-  /**
-   * Quitte la room et nettoie
-   */
   async leave() {
     if (this.callFrame) {
       try {
         await this.callFrame.leave();
         await this.callFrame.destroy();
-        this.callFrame = null;
       } catch (error) {
         console.error('[Daily] Leave error:', error);
+      } finally {
+        this.callFrame = null;
       }
     }
 
@@ -398,9 +386,6 @@ class DailyVideoManager {
     this.updateStatus('Déconnecté');
   }
 
-  /**
-   * Détruit complètement l'instance
-   */
   destroy() {
     this.leave();
     if (this.container && this.container.parentNode) {
