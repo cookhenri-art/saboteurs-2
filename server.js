@@ -1514,19 +1514,6 @@ function publicRoomStateFor(room, viewerId) {
 
 // ----------------- socket server -----------------
 const app = express();
-
-// 🔧 V8.1 HOTFIX – REST endpoint for video room creation
-app.post('/api/video/create-room/:roomCode', async (req, res) => {
-  try {
-    const { roomCode } = req.params;
-    const daily = await dailyManager.getOrCreateVideoRoom(roomCode);
-    res.json({ ok: true, roomUrl: daily.roomUrl, isFreeRoom: daily.isFreeRoom });
-  } catch (err) {
-    console.error('[API] create-room error:', err);
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
 app.use(express.static(path.join(__dirname, "public")));
 
 // Initialiser les systèmes
