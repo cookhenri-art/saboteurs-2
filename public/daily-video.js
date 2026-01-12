@@ -26,6 +26,12 @@ class DailyVideoManager {
     this.launcher = null;
     this._drag = { active: false, startX: 0, startY: 0, startTop: 0, startLeft: 0 };
 
+    // UI state persistence (position/taille/dock/minimisé/masqué)
+    this._uiKey = null;
+    this._uiState = null;
+    this._resizeObserver = null;
+    this._saveTimer = null;
+
     this.camButton = null;
     this.micButton = null;
 
@@ -46,6 +52,11 @@ class DailyVideoManager {
 
   initContainer() {
     if (this.container) return;
+
+    // Key is per room when available, otherwise global.
+    const roomCode = (window.state && window.state.roomCode) ? window.state.roomCode : "global";
+    this._uiKey = `dailyVideoUI:v1:${roomCode}`;
+    this._uiState = this._loadUIState();
 
     this.container = document.createElement("div");
     this.container.id = "dailyVideoContainer";
@@ -102,6 +113,19 @@ background: rgba(10, 14, 39, 0.95);
     const controls = document.createElement("div");
     controls.style.cssText = "display:flex; gap:8px; align-items:center;";
 
+    // Dock controls
+    const dockLeftBtn = this.createControlButton("⟸", "Dock à gauche");
+    dockLeftBtn.onclick = () => this.setDock("left");
+
+    const dockRightBtn = this.createControlButton("⟹", "Dock à droite");
+    dockRightBtn.onclick = () => this.setDock("right");
+
+    const dockBottomBtn = this.createControlButton("⟱", "Dock en bas");
+    dockBottomBtn.onclick = () => this.setDock("bottom");
+
+    const resetDockBtn = this.createControlButton("⤢", "Réinitialiser position");
+    resetDockBtn.onclick = () => this.resetDock();
+
     this.camButton = this.createControlButton("📹", "Caméra");
     this.camButton.onclick = () => this.toggleCamera();
 
@@ -114,8 +138,12 @@ background: rgba(10, 14, 39, 0.95);
     const closeBtn = this.createControlButton("✕", "Masquer");
     closeBtn.onclick = () => this.hideWindow();
 
-controls.appendChild(this.camButton);
+    controls.appendChild(this.camButton);
     controls.appendChild(this.micButton);
+    controls.appendChild(dockLeftBtn);
+    controls.appendChild(dockRightBtn);
+    controls.appendChild(dockBottomBtn);
+    controls.appendChild(resetDockBtn);
     controls.appendChild(minimizeBtn);
     controls.appendChild(closeBtn);
 
@@ -182,6 +210,12 @@ controls.appendChild(this.camButton);
     // UI: bouton lanceur (si on ferme la fenêtre)
     this.ensureLauncher();
 
+    // Restore persisted UI state (pos/size/dock/minimized/hidden)
+    this._applyUIState();
+
+    // Persist size changes (css resize: both)
+    this._startResizeObserver();
+
     // UI: drag & drop via le header (déplacement de la fenêtre)
     const onDown = (ev) => {
       // ne pas déclencher si clic sur un bouton
@@ -222,6 +256,10 @@ controls.appendChild(this.camButton);
 
     const onUp = () => {
       this._drag.active = false;
+
+      // Snap-to-dock when close to edges + persist position
+      this._snapDock();
+      this._scheduleSave();
     };
 
     header.addEventListener("mousedown", onDown);
@@ -256,6 +294,169 @@ controls.appendChild(this.camButton);
 
   updateStatus(message) {
     if (this.statusMessage) this.statusMessage.textContent = message;
+  }
+
+  // ---------------- UI state persistence ----------------
+
+  _loadUIState() {
+    if (!this._uiKey) return null;
+    try {
+      const raw = localStorage.getItem(this._uiKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+
+  _scheduleSave() {
+    if (!this._uiKey) return;
+    if (this._saveTimer) clearTimeout(this._saveTimer);
+    this._saveTimer = setTimeout(() => {
+      this._saveTimer = null;
+      this._saveUIState();
+    }, 150);
+  }
+
+  _saveUIState() {
+    if (!this._uiKey || !this.container) return;
+    try {
+      const rect = this.container.getBoundingClientRect();
+      const style = window.getComputedStyle(this.container);
+      const dock = this._uiState?.dock || "free";
+      const hidden = this._uiState?.hidden || false;
+      const minimized = this._uiState?.minimized || false;
+
+      const state = {
+        dock,
+        hidden,
+        minimized,
+        // store size always
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+        // store positional anchors
+        top: style.top && style.top !== "auto" ? Math.round(parseFloat(style.top)) : null,
+        left: style.left && style.left !== "auto" ? Math.round(parseFloat(style.left)) : null,
+        right: style.right && style.right !== "auto" ? Math.round(parseFloat(style.right)) : null,
+        bottom: style.bottom && style.bottom !== "auto" ? Math.round(parseFloat(style.bottom)) : null
+      };
+
+      this._uiState = state;
+      localStorage.setItem(this._uiKey, JSON.stringify(state));
+    } catch {
+      // ignore
+    }
+  }
+
+  _applyUIState() {
+    if (!this.container) return;
+    const s = this._uiState;
+    if (!s) return;
+
+    // size
+    if (s.width) this.container.style.width = `${s.width}px`;
+    if (s.height) this.container.style.height = `${s.height}px`;
+
+    // position
+    if (s.dock && s.dock !== "free") {
+      this.setDock(s.dock, { silent: true });
+    } else {
+      // restore free pos
+      if (s.top != null) this.container.style.top = `${s.top}px`;
+      if (s.left != null) {
+        this.container.style.left = `${s.left}px`;
+        this.container.style.right = "auto";
+      } else if (s.right != null) {
+        this.container.style.right = `${s.right}px`;
+        this.container.style.left = "auto";
+      }
+      if (s.bottom != null) this.container.style.bottom = `${s.bottom}px`;
+    }
+
+    // minimized
+    if (this.grid) this.grid.style.display = s.minimized ? "none" : "block";
+
+    // hidden
+    if (s.hidden) {
+      this.container.style.setProperty("display", "none", "important");
+      this.ensureLauncher();
+      if (this.launcher) this.launcher.style.display = "block";
+    }
+  }
+
+  _startResizeObserver() {
+    if (!this.container || this._resizeObserver) return;
+    this._resizeObserver = new ResizeObserver(() => {
+      this._scheduleSave();
+    });
+    this._resizeObserver.observe(this.container);
+  }
+
+  setDock(where, { silent = false } = {}) {
+    if (!this.container) return;
+    const c = this.container;
+
+    // reset anchors
+    c.style.left = "auto";
+    c.style.right = "auto";
+    c.style.top = "auto";
+    c.style.bottom = "auto";
+
+    if (where === "left") {
+      c.style.left = "20px";
+      c.style.top = "80px";
+    } else if (where === "right") {
+      c.style.right = "20px";
+      c.style.top = "80px";
+    } else if (where === "bottom") {
+      c.style.left = "20px";
+      c.style.right = "20px";
+      c.style.bottom = "20px";
+      c.style.top = "auto";
+      // keep height reasonable on bottom dock for desktop
+      if (!this.isMobile && (!this._uiState || !this._uiState.height)) {
+        c.style.height = "420px";
+      }
+    } else {
+      // free
+      c.style.top = "80px";
+      c.style.right = "20px";
+    }
+
+    this._uiState = { ...(this._uiState || {}), dock: where };
+    if (!silent) this._scheduleSave();
+  }
+
+  resetDock() {
+    if (!this.container) return;
+    this._uiState = { ...(this._uiState || {}), dock: "free" };
+    // default position
+    this.container.style.right = "20px";
+    this.container.style.top = "80px";
+    this.container.style.left = "auto";
+    this.container.style.bottom = "auto";
+    this._scheduleSave();
+  }
+
+  _snapDock() {
+    if (!this.container) return;
+    const rect = this.container.getBoundingClientRect();
+    const margin = 28;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    const nearLeft = rect.left <= margin;
+    const nearRight = (vw - rect.right) <= margin;
+    const nearBottom = (vh - rect.bottom) <= margin;
+
+    if (nearBottom) return this.setDock("bottom");
+    if (nearLeft) return this.setDock("left");
+    if (nearRight) return this.setDock("right");
+
+    // otherwise free
+    this._uiState = { ...(this._uiState || {}), dock: "free" };
+    this._scheduleSave();
   }
 
   // --------------- Daily join / lifecycle ----------------
@@ -407,6 +608,10 @@ controls.appendChild(this.camButton);
     if (!this.container) return;
     this.container.style.setProperty("display", "flex", "important");
     if (this.launcher) this.launcher.style.display = "none";
+
+    // Persist
+    this._uiState = { ...(this._uiState || {}), hidden: false };
+    this._scheduleSave();
   }
 
   hideWindow() {
@@ -414,12 +619,20 @@ controls.appendChild(this.camButton);
     this.container.style.setProperty("display", "none", "important");
     this.ensureLauncher();
     if (this.launcher) this.launcher.style.display = "block";
+
+    // Persist
+    this._uiState = { ...(this._uiState || {}), hidden: true };
+    this._scheduleSave();
   }
 
   toggleMinimize() {
     if (!this.grid) return;
     const hidden = this.grid.style.display === "none";
     this.grid.style.display = hidden ? "block" : "none";
+
+    // Persist
+    this._uiState = { ...(this._uiState || {}), minimized: !hidden };
+    this._scheduleSave();
   }
 
   // ---------------- Permissions handling ----------------

@@ -1903,16 +1903,24 @@ function renderVideoOptions(isHost) {
   checkbox.checked = state.videoDisabled || false;
   
   // Écouter les changements de la checkbox
-  checkbox.onchange = () => {
-    const videoDisabled = checkbox.checked;
-    socket.emit("setVideoDisabled", { videoDisabled }, (res) => {
-      if (!res?.ok) {
-        setError(res?.error || "Erreur changement option vidéo");
-        // Remettre l'ancienne valeur en cas d'erreur
-        checkbox.checked = !videoDisabled;
-      }
+  if (!checkbox.__boundVideoOption) {
+    checkbox.__boundVideoOption = true;
+    checkbox.addEventListener("change", () => {
+      const videoDisabled = checkbox.checked;
+
+      // Si l'état est déjà celui du serveur, ne rien faire.
+      // (évite des émissions inutiles lors des re-renders)
+      if (!!state.videoDisabled === !!videoDisabled) return;
+
+      socket.emit("setVideoDisabled", { videoDisabled }, (res) => {
+        if (!res?.ok) {
+          setError(res?.error || "Erreur changement option vidéo");
+          // Remettre l'ancienne valeur en cas d'erreur
+          checkbox.checked = !videoDisabled;
+        }
+      });
     });
-  };
+  }
 }
 
 // --- MODE HÔTE : FORCER LA SUITE ---
