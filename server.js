@@ -360,7 +360,7 @@ function getPhaseName(phaseKey, room) {
     NIGHT_START: "Début de la nuit",
     NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
     NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
-    NIGHT_AI_EXCHANGE: `Échange IA (privé)`,
+    NIGHT_AI_EXCHANGE: \"Échange privé IA\",
     NIGHT_RADAR: `${getRoleLabel('radar', room)}, réveille-toi`,
     NIGHT_SABOTEURS: `${saboteursTerm}, réveillez-vous`,
     NIGHT_DOCTOR: `${getRoleLabel('doctor', room)}, réveille-toi`,
@@ -525,10 +525,7 @@ function computeAudioCue(room, prevPhase) {
     // Otherwise use the standard sequence builder (prev sleep + IA wake if available).
     return seqIf(AUDIO.IA_WAKE, AUDIO.IA_WAKE ? null : "Agent IA, réveille-toi.");
   }
-  
-  if (phase === "NIGHT_AI_EXCHANGE") return { file: null, queueLoopFile: null, tts: "Échange privé IA." };
-
-if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, réveille-toi.");
+  if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, réveille-toi.");
   if (phase === "NIGHT_SABOTEURS") return seqIf(AUDIO.SABOTEURS_WAKE, "Saboteurs, choisissez une cible. Unanimité requise.", AUDIO.WAITING_LOOP);
   if (phase === "NIGHT_DOCTOR") return seqIf(AUDIO.DOCTOR_WAKE, "Docteur bio, choisissez votre action.");
 
@@ -598,6 +595,7 @@ function requiredPlayersForPhase(room) {
     case "NIGHT_START": return alive;
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
+    case "NIGHT_AI_EXCHANGE": return d.actorIds || (d.actorId ? [d.actorId] : []);
     case "NIGHT_RADAR": return d.actorId ? [d.actorId] : [];
     case "NIGHT_SABOTEURS": return d.actorIds || [];
     case "NIGHT_DOCTOR": return d.actorId ? [d.actorId] : [];
@@ -2195,11 +2193,11 @@ io.on("connection", (socket) => {
       logEvent(room, "ai_link", { by: playerId, targetId });
       console.log(`[${room.code}] ai_link by=${p.name} target=${tP.name}`);
 
-      // ✅ V9: phase d'échange privé IA + lié (les 2 doivent valider pour continuer)
-      setPhase(room, "NIGHT_AI_EXCHANGE", { iaId: p.playerId, partnerId: tP.playerId });
+      // V9: insérer une phase d'échange privé IA ↔ lié
+      setPhase(room, "NIGHT_AI_EXCHANGE", { actorIds: [p.playerId, tP.playerId], iaId: p.playerId, partnerId: tP.playerId });
       emitRoom(room);
       return cb && cb({ ok:true });
-}
+    }
 
     // --- night: radar ---
     if (phase === "NIGHT_RADAR") {
