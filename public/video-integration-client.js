@@ -290,7 +290,8 @@ function cleanupVideo() {
     }
     
     // 2. Mettre à jour les permissions selon la phase
-    if (state.started && !state.ended) {
+    // V9.3.0.2: IMPORTANT - Appeler même en GAME_OVER (state.ended=true) pour réactiver les morts
+    if (state.started) {
       updateVideoPermissions(state);
     }
     
