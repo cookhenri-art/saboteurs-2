@@ -119,26 +119,50 @@ function updateVideoPermissions(state) {
   console.log('[Video] Updating permissions:', permissions);
   window.dailyVideo.updatePermissions(permissions);
 
-  // 🎉 V9.3.0 : Réactivation forcée en GAME_OVER pour les joueurs morts
+  // 🎉 V9.3.0.1 : Réactivation forcée en GAME_OVER pour les joueurs morts
   // Daily.co garde les joueurs morts en mode "spectateur" même si les permissions changent
   // On force la réactivation des tracks pour permettre le débrief post-game
   if (state.phase === 'GAME_OVER' && permissions.video && permissions.audio) {
     console.log('[Video] 🎉 GAME_OVER detected - Force enabling camera and mic for all players');
     
-    // Petit délai pour laisser les permissions se propager
-    setTimeout(() => {
+    // Fonction de réactivation avec retry
+    const forceEnableTracks = (attempt = 1) => {
       try {
         const callFrame = window.dailyVideo.callFrame;
-        if (callFrame) {
-          // Forcer l'activation de la caméra et du micro
-          callFrame.setLocalAudio(true);
-          callFrame.setLocalVideo(true);
-          console.log('[Video] ✅ Camera and mic forcefully enabled for post-game debrief');
+        if (!callFrame) {
+          console.warn('[Video] ⚠️ No callFrame available (attempt ' + attempt + ')');
+          return;
+        }
+        
+        // Vérifier si on est toujours dans la room
+        const meetingState = callFrame.meetingState();
+        if (meetingState !== 'joined-meeting') {
+          console.warn('[Video] ⚠️ Not in meeting state:', meetingState);
+          return;
+        }
+        
+        // Forcer l'activation de la caméra et du micro
+        callFrame.setLocalAudio(true);
+        callFrame.setLocalVideo(true);
+        console.log('[Video] ✅ Camera and mic forcefully enabled (attempt ' + attempt + ')');
+        
+        // Retry après 2 secondes si c'est la première tentative
+        // Certains joueurs morts depuis longtemps ont besoin d'un second passage
+        if (attempt === 1) {
+          setTimeout(() => forceEnableTracks(2), 2000);
         }
       } catch (err) {
-        console.warn('[Video] ⚠️ Could not force enable tracks:', err);
+        console.warn('[Video] ⚠️ Could not force enable tracks (attempt ' + attempt + '):', err);
+        
+        // Retry une fois en cas d'erreur sur la première tentative
+        if (attempt === 1) {
+          setTimeout(() => forceEnableTracks(2), 2000);
+        }
       }
-    }, 500);
+    };
+    
+    // Premier passage après 800ms (au lieu de 500ms)
+    setTimeout(() => forceEnableTracks(1), 800);
   }
 
   // Afficher le message de phase
