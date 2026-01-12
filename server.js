@@ -598,7 +598,7 @@ function requiredPlayersForPhase(room) {
     case "NIGHT_START": return alive;
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
-    case "NIGHT_AI_EXCHANGE": return (d.iaId && d.partnerId) ? [d.iaId, d.partnerId] : alive;
+    case "NIGHT_AI_EXCHANGE": return (d.iaId && d.partnerId) ? [d.iaId, d.partnerId] : [];
     case "NIGHT_RADAR": return d.actorId ? [d.actorId] : [];
     case "NIGHT_SABOTEURS": return d.actorIds || [];
     case "NIGHT_DOCTOR": return d.actorId ? [d.actorId] : [];
