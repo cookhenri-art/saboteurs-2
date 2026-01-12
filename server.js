@@ -1817,6 +1817,10 @@ function handlePhaseCompletion(room) {
       nextNightPhase(room);
       break;
 
+    case "NIGHT_AI_EXCHANGE":
+      nextNightPhase(room);
+      break;
+
     case "NIGHT_RADAR":
       if (room.nightData?.radarDone) nextNightPhase(room);
       break;
