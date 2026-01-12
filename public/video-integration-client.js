@@ -10,26 +10,11 @@
 
 let videoRoomUrl = null;
 let videoRoomJoined = false;
-let currentVideoRoomCode = null;
 let isInitializingVideo = false; // Protection contre appels multiples
 
 /**
  * Initialise la vidéo quand la partie démarre
  */
-function computeDesiredVideoRoomCode(state) {
-  const base = state.roomCode;
-  const night = state.night || 1;
-  const ch = state.videoPermissions && state.videoPermissions.channel ? state.videoPermissions.channel : "main";
-  const suffix = state.videoPermissions && state.videoPermissions.roomSuffix ? state.videoPermissions.roomSuffix : null;
-
-  if (suffix) return suffix; // roomSuffix déjà complet (ex: 0593-sabo)
-  if (!base) return null;
-
-  if (ch === "sabo") return `${base}-sabo`;
-  if (ch === "ai") return `${base}-ai-${night}`;
-  return base;
-}
-
 function initVideoForGame(state) {
   // Ne rien faire si déjà initialisé ou si pas encore démarré
   if (videoRoomJoined) {
@@ -58,14 +43,12 @@ function initVideoForGame(state) {
 
   console.log('[Video] 🎬 Initializing video for game...', {
     roomCode: state.roomCode,
-    desiredRoomCode: computeDesiredVideoRoomCode(state),
     phase: state.phase,
     started: state.started
   });
 
   // Demander la création de la room vidéo au serveur
-  const desiredRoomCode = computeDesiredVideoRoomCode(state);
-  const apiUrl = `/api/video/create-room/${desiredRoomCode}`;
+  const apiUrl = `/api/video/create-room/${state.roomCode}`;
   console.log('[Video] 📡 Fetching:', apiUrl);
 
   fetch(apiUrl, {
@@ -105,7 +88,6 @@ function initVideoForGame(state) {
       window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions)
         .then(() => {
           videoRoomJoined = true;
-      currentVideoRoomCode = desiredRoomCode;
           isInitializingVideo = false; // ✨ Débloquer après succès
           console.log('[Video] ✅ Successfully joined room');
           showVideoStatus('✅ Visio activée', 'success');
@@ -263,28 +245,11 @@ function cleanupVideo() {
     
     // 2. Mettre à jour les permissions selon la phase
     if (state.started && !state.ended) {
-      if (window.dailyVideo && window.dailyVideo.setContext) {
-        window.dailyVideo.setContext({ roomCode: state.roomCode, night: state.night });
-      }
       updateVideoPermissions(state);
-// 2bis. Switch de room Daily si le channel change (main / sabo / ai)
-const desiredRoomCode = computeDesiredVideoRoomCode(state);
-if (videoRoomJoined && desiredRoomCode && currentVideoRoomCode && desiredRoomCode !== currentVideoRoomCode) {
-  console.log('[Video] 🔁 Switching Daily room:', { from: currentVideoRoomCode, to: desiredRoomCode });
-  const apiUrl = `/api/video/create-room/${desiredRoomCode}`;
-  fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }})
-    .then(r => r.json())
-    .then(data => {
-      if (!data || !data.ok || !data.roomUrl) throw new Error(data?.error || 'No roomUrl');
-      return window.dailyVideo.switchRoom(data.roomUrl);
-    })
-    .then(() => { currentVideoRoomCode = desiredRoomCode; })
-    .catch(err => console.error('[Video] ❌ switchRoom error:', err));
-}
     }
     
-    // 3. En fin de partie: on garde la visio pour les stats (GAME_OVER). On quitte seulement si aborted.
-    if (state.aborted) {
+    // 3. Quitter la vidéo en fin de partie
+    if (state.ended || state.aborted) {
       leaveVideoRoom();
     }
   });
