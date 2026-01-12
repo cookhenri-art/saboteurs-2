@@ -19,6 +19,8 @@ const FULL_VIDEO_PHASES = [
   'END_STATS_OUTRO',   // ✅ Stats/Outro: discussion libre
   'END_STATS',         // ✅ Fallback
   'END'
+,
+  'GAME_OVER'
 ];
 
 /**
@@ -146,15 +148,165 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
  * @param {Map} players - Map des joueurs
  * @returns {object} - { playerId: { video, audio, reason } }
  */
-function calculateRoomPermissions(phase, players) {
+function calculateRoomPermissions(phase, players, roomMeta = {}) {
+  // roomMeta: { roomCode, night } - optionnel
   const permissions = {};
+  const night = roomMeta.night || 1;
 
-  for (const [playerId, player] of players.entries()) {
-    permissions[playerId] = getPlayerVideoPermissions(phase, player, players);
+  // Helper: set perms for a player
+  const setP = (pid, opts) => {
+    permissions[pid] = Object.assign({
+      canSeeVideo: false,
+      canSendVideo: false,
+      canSendAudio: false,
+      canSeeAudio: false,
+      channel: "main" // main | sabo | ai
+    }, opts || {});
+  };
+
+  // Build role maps
+  const all = Array.from(players.values ? players.values() : players);
+  const alive = all.filter(p => p && p.status === "alive");
+  const saboteurs = alive.filter(p => p.role === "saboteur").map(p => p.playerId);
+  const ai = alive.find(p => p.role === "ai_agent")?.playerId || null;
+
+  // Default: everyone in main
+  for (const p of all) {
+    if (!p) continue;
+    setP(p.playerId, { channel: "main" });
   }
 
+  // FULL phases: everyone cam+mic ON (main)
+  if (FULL_VIDEO_PHASES.includes(phase)) {
+    for (const p of all) {
+      if (!p) continue;
+      setP(p.playerId, {
+        canSeeVideo: true,
+        canSendVideo: true,
+        canSendAudio: true,
+        canSeeAudio: true,
+        channel: "main"
+      });
+    }
+    return permissions;
+  }
+
+  // SILENT phases: everyone OFF
+  if (NO_VIDEO_PHASES.includes(phase)) {
+    for (const p of all) {
+      if (!p) continue;
+      setP(p.playerId, {
+        canSeeVideo: false,
+        canSendVideo: false,
+        canSendAudio: false,
+        canSeeAudio: false,
+        channel: "main"
+      });
+    }
+    return permissions;
+  }
+
+  // Phase spécifique: saboteurs -> room privée, les autres totalement OFF
+  if (phase === "NIGHT_SABOTEURS") {
+    for (const p of all) {
+      if (!p) continue;
+      const isSabo = p.role === "saboteur" && p.status === "alive";
+      if (isSabo) {
+        setP(p.playerId, {
+          canSeeVideo: true,
+          canSendVideo: true,
+          canSendAudio: true,
+          canSeeAudio: true,
+          channel: "sabo",
+          roomSuffix: `${roomMeta.roomCode || ""}-sabo`.replace(/^-/,"")
+        });
+      } else {
+        setP(p.playerId, {
+          canSeeVideo: false,
+          canSendVideo: false,
+          canSendAudio: false,
+          canSeeAudio: false,
+          channel: "main"
+        });
+      }
+    }
+    return permissions;
+  }
+
+  // Phase IA choix: tout le monde silencieux (IA agit via UI)
+  if (phase === "NIGHT_AI_AGENT") {
+    for (const p of all) {
+      if (!p) continue;
+      setP(p.playerId, {
+        canSeeVideo: false,
+        canSendVideo: false,
+        canSendAudio: false,
+        canSeeAudio: false,
+        channel: "main"
+      });
+    }
+    return permissions;
+  }
+
+  // Phase IA échange (privé): IA + partenaire -> room AI, autres OFF.
+  if (phase === "NIGHT_AI_EXCHANGE") {
+    const partnerId = roomMeta.aiPartnerId || null;
+    const aiId = ai;
+    for (const p of all) {
+      if (!p) continue;
+      const isPair = p.status === "alive" && (p.playerId === aiId || p.playerId === partnerId);
+      if (isPair) {
+        setP(p.playerId, {
+          canSeeVideo: true,
+          canSendVideo: true,
+          canSendAudio: true,
+          canSeeAudio: true,
+          channel: "ai",
+          roomSuffix: `${roomMeta.roomCode || ""}-ai-${night}`.replace(/^-/,"")
+        });
+      } else {
+        // Si le partenaire est un saboteur, les autres saboteurs restent sur leur room saboteurs (mais muets ici)
+        setP(p.playerId, {
+          canSeeVideo: false,
+          canSendVideo: false,
+          canSendAudio: false,
+          canSeeAudio: false,
+          channel: (p.role === "saboteur" && p.status === "alive") ? "sabo" : "main"
+        });
+      }
+    }
+    return permissions;
+  }
+
+  // Phase radar / doctor / chameleon : silencieux total (évite identification)
+  if (["NIGHT_RADAR","NIGHT_DOCTOR","NIGHT_CHAMELEON"].includes(phase)) {
+    for (const p of all) {
+      if (!p) continue;
+      setP(p.playerId, {
+        canSeeVideo: false,
+        canSendVideo: false,
+        canSendAudio: false,
+        canSeeAudio: false,
+        channel: (p.role === "saboteur" && p.status === "alive") ? "sabo" : "main"
+      });
+    }
+    return permissions;
+  }
+
+  // Default fallback: cam/mic off
+  for (const p of all) {
+    if (!p) continue;
+    setP(p.playerId, {
+      canSeeVideo: false,
+      canSendVideo: false,
+      canSendAudio: false,
+      canSeeAudio: false,
+      channel: "main"
+    });
+  }
   return permissions;
 }
+
 
 /**
  * Génère un message explicatif pour le changement de phase
