@@ -220,6 +220,7 @@ function formatPhaseTitle(s) {
     NIGHT_START: `NUIT ${night} — DÉBUT`,
     NIGHT_CHAMELEON: `NUIT — ${tRole('chameleon').toUpperCase()}`,
     NIGHT_AI_AGENT: `NUIT — ${tRole('ai_agent').toUpperCase()} (LIAISON)`,
+    NIGHT_AI_EXCHANGE: `NUIT — ÉCHANGE IA (PRIVÉ)`,
     NIGHT_RADAR: `NUIT — ${tRole('radar').toUpperCase()}`,
     NIGHT_SABOTEURS: `NUIT — ${t('saboteurs').toUpperCase()} (UNANIMITÉ)`,
     NIGHT_DOCTOR: `NUIT — ${tRole('doctor').toUpperCase()}`,
@@ -785,6 +786,28 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     controls.appendChild(makeHint("Nuit 1 uniquement. La liaison est entre toi (Agent IA) et le joueur choisi."));
   }
 
+  // NIGHT_AI_EXCHANGE: Phase privée où l'Agent IA et son partenaire lié doivent valider
+  if (state.phase === "NIGHT_AI_EXCHANGE") {
+    const iaId = state.phaseData?.iaId;
+    const partnerId = state.phaseData?.partnerId;
+    const isParticipant = (meId === iaId || meId === partnerId);
+    
+    if (isParticipant) {
+      const btn = document.createElement("button");
+      btn.className = "btn btn-primary";
+      btn.textContent = "✅ Valider l'échange 🤖";
+      btn.onclick = () => {
+        btn.classList.add('selected');
+        lockControlsNow($('controls'));
+        socket.emit("phaseAck");
+      };
+      controls.appendChild(btn);
+      controls.appendChild(makeHint("Échange privé entre l'Agent IA et son partenaire lié. Les deux doivent valider pour continuer."));
+    } else {
+      controls.appendChild(makeHint("🤖 Échange IA en cours…"));
+    }
+  }
+
   if (state.phase === "NIGHT_RADAR") {
     if (state.phaseData?.selectionDone) {
       controls.appendChild(makeHint("Résultat affiché en bas (journal privé). Valide pour continuer."));
@@ -1040,6 +1063,7 @@ function buildPhaseText(s) {
   if (p === "NIGHT_START") return "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.";
   if (p === "NIGHT_CHAMELEON") return `${tRole('chameleon')} : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).`;
   if (p === "NIGHT_AI_AGENT") return `${tRole('ai_agent')} : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).`;
+  if (p === "NIGHT_AI_EXCHANGE") return `Échange privé entre ${tRole("ai_agent")} et son partenaire lié. Les deux doivent valider pour continuer.`;
   if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
   if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
   if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.`;
@@ -2183,28 +2207,3 @@ socket.on("newBadges", (data) => {
 console.log("[V26] Nouvelles fonctionnalités chargées !");
 
 
-// NIGHT_AI_EXCHANGE validation button logic added
-
-// === V9.2 FINAL : AI EXCHANGE VALIDATION ===
-socket.on("phase_start", (data) => {
-  if (data.phase === "NIGHT_AI_EXCHANGE") {
-    let btn = document.getElementById("validate-ai-exchange");
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.id = "validate-ai-exchange";
-      btn.innerText = "Valider l’échange 🤖";
-      btn.style.position = "fixed";
-      btn.style.bottom = "20px";
-      btn.style.right = "20px";
-      btn.style.zIndex = "9999";
-      btn.onclick = () => {
-        socket.emit("phaseAck");
-        btn.remove();
-      };
-      document.body.appendChild(btn);
-    }
-  } else {
-    const btn = document.getElementById("validate-ai-exchange");
-    if (btn) btn.remove();
-  }
-});
