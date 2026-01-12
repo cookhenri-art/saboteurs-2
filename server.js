@@ -1501,6 +1501,9 @@ function publicRoomStateFor(room, viewerId) {
     themeId: room.themeId || "default",  // V26: Thème sélectionné
     phaseStartTime: room.phaseStartTime || Date.now(),  // V26: Pour timer hôte
     audio: room.audio,
+    // V9.3.1: Option lobby — partie sans visio
+    // IMPORTANT: doit être exposée au client sinon la checkbox se réinitialise.
+    videoDisabled: !!room.videoDisabled,
     ack: { 
       done: room.phaseAck.size, 
       total: required.length,
