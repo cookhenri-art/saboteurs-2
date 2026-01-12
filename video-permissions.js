@@ -1,109 +1,167 @@
 /**
- * VIDEO PERMISSIONS – V9.0.2 SAFE
- * Preserves V8.1 API (calculateRoomPermissions)
+ * Video Permissions Manager
+ * V9.1 FINAL – based on V8.1 (API intact)
  */
 
-// Public video phases
-const FULL_VIDEO_PHASES = new Set([
+/**
+ * Phases où TOUS les joueurs peuvent avoir caméra + micro
+ */
+const FULL_VIDEO_PHASES = [
+  'LOBBY',
+  'MANUAL_ROLE_PICK',
   'ROLE_REVEAL',
-  'DAY_WAKE',
-  'DAY_DEBATE',
-  'DAY_RESULTS',
+  'CAPTAIN_CANDIDACY',
+  'CAPTAIN_VOTE',
   'NIGHT_RESULTS',
-  'GAME_OVER',
-  'END_STATS',
+  'DAY_WAKE',
+  'DAY_CAPTAIN_TRANSFER',
+  'DAY_RESULTS',
   'END_STATS_OUTRO',
-  'END'
-]);
+  'END_STATS',
+  'END',
+  'GAME_OVER'
+];
 
-// Silent phases
+/**
+ * Phases de nuit silencieuses
+ */
 const SILENT_NIGHT_PHASES = new Set([
-  'NIGHT_START',
-  'NIGHT_RADAR',
   'NIGHT_CHAMELEON',
-  'STATION_SLEEP'
+  'NIGHT_DOCTOR',
+  'NIGHT_RADAR'
 ]);
 
-// End phases where dead players can talk
-const END_TALK_PHASES = new Set([
-  'GAME_OVER',
-  'END_STATS',
-  'END_STATS_OUTRO',
-  'END'
-]);
-
-// Restricted by role
+/**
+ * Phases restreintes par rôle
+ */
 const ROLE_RESTRICTED_PHASES = {
   'NIGHT_SABOTEURS': ['saboteur'],
   'NIGHT_AI_AGENT': ['ai_agent'],
-  'NIGHT_AI_EXCHANGE': ['ai_agent'], // handled specially
-  'NIGHT_DOCTOR': ['doctor'],
-  'NIGHT_RADAR': ['radar'],
-  'NIGHT_CHAMELEON': ['chameleon']
+  'NIGHT_AI_EXCHANGE': ['ai_agent'], // V9: géré spécialement
+  'NIGHT_CHAMELEON': ['chameleon'],
+  'NIGHT_RADAR': ['radar_officer'],
+  'NIGHT_DOCTOR': ['doctor']
 };
 
-function getPlayerVideoPermissions({ phase, player, allPlayers }) {
-  if (!phase || !player) {
-    return { video: false, audio: false, reason: 'Invalid state' };
-  }
+/**
+ * Phases caméra OFF
+ */
+const CAMERA_OFF_PHASES = [
+  'DAY_VOTE',
+  'DAY_TIEBREAK',
+  'NIGHT_START',
+  'REVENGE'
+];
 
+/**
+ * Permissions par joueur
+ */
+function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
+  // 🚫 Joueur déconnecté
   if (player.status === 'left') {
-    return { video: false, audio: false, reason: 'Player left' };
+    return { video: false, audio: false, reason: 'Joueur déconnecté' };
   }
 
+  // ☠️ Joueur mort
   if (player.status === 'dead') {
-    if (END_TALK_PHASES.has(phase)) {
-      return { video: true, audio: true, reason: 'Endgame discussion (dead allowed)' };
+    if (['GAME_OVER','END_STATS','END_STATS_OUTRO','END'].includes(phase)) {
+      return { video: true, audio: true, reason: 'Fin de partie (morts autorisés)' };
     }
-    return { video: false, audio: false, reason: 'Player dead' };
+    return { video: false, audio: false, reason: 'Joueur éliminé' };
   }
 
-  if (FULL_VIDEO_PHASES.has(phase)) {
-    return { video: true, audio: true, reason: 'Public phase' };
+  // 🎥 Caméra OFF
+  if (CAMERA_OFF_PHASES.includes(phase)) {
+    return { video: false, audio: true, reason: `Phase ${phase}: caméra OFF` };
   }
 
-  if (SILENT_NIGHT_PHASES.has(phase)) {
-    return { video: false, audio: false, reason: 'Silent night' };
+  // 🌍 Phase publique
+  if (FULL_VIDEO_PHASES.includes(phase)) {
+    return { video: true, audio: true, reason: 'Phase publique' };
   }
 
+  // 🔒 Phases restreintes
   if (ROLE_RESTRICTED_PHASES[phase]) {
+    if (SILENT_NIGHT_PHASES.has(phase)) {
+      return { video: false, audio: false, reason: 'Nuit silencieuse' };
+    }
+
+    // 🤖 IA EXCHANGE (IA + lié uniquement)
     if (phase === 'NIGHT_AI_EXCHANGE') {
       const ia = Array.from(allPlayers.values()).find(
         p => p.role === 'ai_agent' && p.status === 'alive'
       );
-      if (!ia || !ia.linkedTo) {
-        return { video: false, audio: false, reason: 'No AI link' };
+      if (ia && (player.playerId === ia.playerId || player.playerId === ia.linkedTo)) {
+        return { video: true, audio: true, reason: 'Échange IA privé' };
       }
-      const partnerId = ia.linkedTo;
-      const inDuo = player.playerId === ia.playerId || player.playerId === partnerId;
-      return inDuo
-        ? { video: true, audio: true, reason: 'AI exchange' }
-        : { video: false, audio: false, reason: 'Private AI exchange' };
+      return { video: false, audio: false, reason: 'Canal IA privé' };
     }
 
-    if (ROLE_RESTRICTED_PHASES[phase].includes(player.role)) {
-      return { video: true, audio: true, reason: 'Role allowed' };
+    // 🤖 IA AGENT
+    if (phase === 'NIGHT_AI_AGENT') {
+      if (player.linkedTo) {
+        const partner = allPlayers.get(player.linkedTo);
+        if (partner && partner.status === 'alive') {
+          return { video: true, audio: true, reason: 'Duo IA + lié' };
+        }
+      }
+      return { video: false, audio: false, reason: 'Canal IA indisponible' };
     }
-    return { video: false, audio: false, reason: 'Private phase' };
+
+    const allowed = ROLE_RESTRICTED_PHASES[phase].includes(player.role);
+    return {
+      video: allowed,
+      audio: allowed,
+      reason: allowed ? `Canal privé ${player.role}` : 'Phase privée'
+    };
   }
 
-  return { video: false, audio: false, reason: 'Default off' };
+  return { video: true, audio: true, reason: 'Phase standard' };
 }
 
-// 🔒 API V8.1 preserved
-function calculateRoomPermissions(phase, playersMap) {
+/**
+ * Permissions de room (API V8.1)
+ */
+function calculateRoomPermissions(phase, players) {
   const permissions = {};
-  for (const player of playersMap.values()) {
-    permissions[player.playerId] = getPlayerVideoPermissions({
-      phase,
-      player,
-      allPlayers: playersMap
-    });
+  for (const [id, player] of players.entries()) {
+    permissions[id] = getPlayerVideoPermissions(phase, player, players);
   }
   return permissions;
 }
 
+/**
+ * Message UI
+ */
+function getPhaseVideoMessage(phase) {
+  if (CAMERA_OFF_PHASES.includes(phase)) return "📹 Caméras désactivées pour cette phase";
+  if (SILENT_NIGHT_PHASES.has(phase)) return "😴 Nuit silencieuse (caméra + micro OFF)";
+  if (ROLE_RESTRICTED_PHASES[phase]) return "📹 Caméras actives uniquement pour certains rôles";
+  if (FULL_VIDEO_PHASES.includes(phase)) return "📹 Caméras et micros actifs pour tous";
+  return "📹 Permissions vidéo standards";
+}
+
+/**
+ * Optimisation updates
+ */
+function shouldUpdatePermissions(oldPhase, newPhase) {
+  if (oldPhase === newPhase) return false;
+  return getPhaseCategory(oldPhase) !== getPhaseCategory(newPhase);
+}
+
+function getPhaseCategory(phase) {
+  if (FULL_VIDEO_PHASES.includes(phase)) return 'FULL';
+  if (CAMERA_OFF_PHASES.includes(phase)) return 'OFF';
+  if (ROLE_RESTRICTED_PHASES[phase]) return 'RESTRICTED';
+  return 'DEFAULT';
+}
+
 module.exports = {
   getPlayerVideoPermissions,
-  calculateRoomPermissions
+  calculateRoomPermissions,
+  getPhaseVideoMessage,
+  shouldUpdatePermissions,
+  FULL_VIDEO_PHASES,
+  ROLE_RESTRICTED_PHASES,
+  CAMERA_OFF_PHASES
 };
