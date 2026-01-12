@@ -32,6 +32,12 @@ function initVideoForGame(state) {
     console.log('[Video] Game not started yet, skipping');
     return;
   }
+  
+  // V9.3.1: Vérifier si la vidéo est désactivée pour cette partie
+  if (state.videoDisabled) {
+    console.log('[Video] Video disabled for this game, skipping initialization');
+    return;
+  }
 
   if (!state.roomCode) {
     console.error('[Video] No room code in state!', state);

@@ -507,6 +507,9 @@ function renderLobby() {
   
   // Theme selector (host only)
   renderThemeSelector(isHost);
+  
+  // V9.3.1: Video options (host only)
+  renderVideoOptions(isHost);
 
   function makeCheckbox(key, label, helpText, checked, isRoot=false, isDisabled=false) {
     const row = document.createElement("div");
@@ -1878,6 +1881,38 @@ function renderThemeSelector(isHost) {
   if (theme) {
     descContainer.textContent = theme.description || "";
   }
+}
+
+
+// V9.3.1: Afficher les options vidéo pour l'hôte
+function renderVideoOptions(isHost) {
+  const videoOptions = $("videoOptions");
+  if (!videoOptions) return;
+  
+  if (!isHost || state.started) {
+    videoOptions.style.display = "none";
+    return;
+  }
+  
+  videoOptions.style.display = "block";
+  
+  const checkbox = $("disableVideoCheckbox");
+  if (!checkbox) return;
+  
+  // Synchroniser la checkbox avec l'état du serveur
+  checkbox.checked = state.videoDisabled || false;
+  
+  // Écouter les changements de la checkbox
+  checkbox.onchange = () => {
+    const videoDisabled = checkbox.checked;
+    socket.emit("setVideoDisabled", { videoDisabled }, (res) => {
+      if (!res?.ok) {
+        setError(res?.error || "Erreur changement option vidéo");
+        // Remettre l'ancienne valeur en cas d'erreur
+        checkbox.checked = !videoDisabled;
+      }
+    });
+  };
 }
 
 // --- MODE HÔTE : FORCER LA SUITE ---

@@ -235,6 +235,21 @@
           <div id="themeButtons" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;"></div>
           <div id="themeDescription" style="margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; color: #ccc; font-size: 0.95rem; text-align: center; min-height: 40px;"></div>
         </div>
+
+        <!-- V9.3.1: Options vidéo (hôte uniquement) -->
+        <div id="videoOptions" style="display:none; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
+            border: 2px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0,255,255,0.3);">
+          <h3 style="color: var(--neon-cyan); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">📹 OPTIONS VIDÉO (HÔTE)</h3>
+          <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+            <label style="display: flex; align-items: center; gap: 8px; color: #ccc; font-size: 1rem; cursor: pointer;">
+              <input type="checkbox" id="disableVideoCheckbox" style="width: 20px; height: 20px; cursor: pointer;">
+              <span>Désactiver la vidéo pour cette partie</span>
+            </label>
+          </div>
+          <div style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; color: #999; font-size: 0.9rem; text-align: center;">
+            <span id="videoOptionDescription">Si activé, la partie se déroulera sans vidéo. Utile pour les connexions limitées ou les parties rapides.</span>
+          </div>
+        </div>
       </div>
 
       <div class="control-panel" style="margin-top: 20px;">
