@@ -604,3 +604,17 @@ controls.appendChild(this.camButton);
 
 window.dailyVideo = new DailyVideoManager();
 console.log("[DailyUI] dailyVideo manager ready ✅", window.dailyVideo.__version);
+function switchRoom(newRoomUrl) {
+  if (!callFrame) return Promise.resolve();
+  try {
+    // Daily: leave puis join (pas de destroy) pour éviter de perdre l'UI
+    return callFrame.leave()
+      .catch(() => {})
+      .then(() => callFrame.join({ url: newRoomUrl }));
+  } catch (e) {
+    console.error('[DailyVideo] switchRoom failed:', e);
+    return Promise.reject(e);
+  }
+}
+
+
