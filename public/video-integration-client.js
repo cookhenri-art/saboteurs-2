@@ -252,11 +252,8 @@ function cleanupVideo() {
     if (state.aborted) {
       leaveVideoRoom();
     }
-    // ✅ V8.1: keep video ON during end stats/outro (public discussion)
-    // Only leave video on end if we are NOT in an end-stats phase.
-    if (state.ended && !['END_STATS_OUTRO','END_STATS','END'].includes(state.phase)) {
-      leaveVideoRoom();
-    }
+    // ✅ V8.1: keep video running through GAME_OVER and end stats; server controls media permissions.
+    // We intentionally do NOT leave on state.ended here.
   });
 
   // Hook sur disconnect
