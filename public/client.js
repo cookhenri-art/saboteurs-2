@@ -219,8 +219,7 @@ function formatPhaseTitle(s) {
     CAPTAIN_VOTE: `VOTE ${t('captain').toUpperCase()}`,
     NIGHT_START: `NUIT ${night} — DÉBUT`,
     NIGHT_CHAMELEON: `NUIT — ${tRole('chameleon').toUpperCase()}`,
-    NIGHT_AI_AGENT,
-  'NIGHT_AI_EXCHANGE': `NUIT — ${tRole('ai_agent').toUpperCase()} (LIAISON)`,
+    NIGHT_AI_AGENT: `NUIT — ${tRole('ai_agent').toUpperCase()} (LIAISON)`,
     NIGHT_RADAR: `NUIT — ${tRole('radar').toUpperCase()}`,
     NIGHT_SABOTEURS: `NUIT — ${t('saboteurs').toUpperCase()} (UNANIMITÉ)`,
     NIGHT_DOCTOR: `NUIT — ${tRole('doctor').toUpperCase()}`,
@@ -620,12 +619,10 @@ function renderGame() {
 
 
 // actor-only phases: only the actor sees the action UI
-const actorOnly = new Set(["NIGHT_CHAMELEON","NIGHT_AI_AGENT,
-  'NIGHT_AI_EXCHANGE'","NIGHT_RADAR","NIGHT_DOCTOR","NIGHT_SABOTEURS","DAY_TIEBREAK","DAY_CAPTAIN_TRANSFER","REVENGE"]);
+const actorOnly = new Set(["NIGHT_CHAMELEON","NIGHT_AI_AGENT","NIGHT_RADAR","NIGHT_DOCTOR","NIGHT_SABOTEURS","DAY_TIEBREAK","DAY_CAPTAIN_TRANSFER","REVENGE"]);
 const waitTextByPhase = {
   NIGHT_CHAMELEON: "🦎 Le caméléon agit…",
-  NIGHT_AI_AGENT,
-  'NIGHT_AI_EXCHANGE': "🤖 L’Agent IA agit…",
+  NIGHT_AI_AGENT: "🤖 L’Agent IA agit…",
   NIGHT_RADAR: "🔍 Le radar agit…",
   NIGHT_DOCTOR: "🧪 Le docteur agit…",
   NIGHT_SABOTEURS: "🗡️ Les saboteurs agissent…",
@@ -728,8 +725,7 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     controls.appendChild(makeHint(`${tRole('chameleon')} : Nuit 1 uniquement. Un seul usage dans toute la partie.`));
   }
 
-  if (state.phase === "NIGHT_AI_AGENT,
-  'NIGHT_AI_EXCHANGE'") {
+  if (state.phase === "NIGHT_AI_AGENT") {
     const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
     const sel = document.createElement("select");
     sel.style.width = "100%";
@@ -1043,8 +1039,7 @@ function buildPhaseText(s) {
   if (p === "CAPTAIN_VOTE") return `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`;
   if (p === "NIGHT_START") return "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.";
   if (p === "NIGHT_CHAMELEON") return `${tRole('chameleon')} : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).`;
-  if (p === "NIGHT_AI_AGENT,
-  'NIGHT_AI_EXCHANGE'") return `${tRole('ai_agent')} : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).`;
+  if (p === "NIGHT_AI_AGENT") return `${tRole('ai_agent')} : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).`;
   if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
   if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
   if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.`;
