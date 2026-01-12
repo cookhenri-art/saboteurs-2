@@ -1998,6 +1998,19 @@ io.on("connection", (socket) => {
     emitRoom(room);
     cb && cb({ ok: true, themeId });
   });
+
+  // V9.3.1: Toggle video disabled option
+  socket.on("setVideoDisabled", ({ videoDisabled }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut modifier cette option" });
+    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
+    
+    room.videoDisabled = Boolean(videoDisabled);
+    logger.info("video_disabled_changed", { roomCode: room.code, videoDisabled: room.videoDisabled, hostId: socket.data.playerId });
+    emitRoom(room);
+    cb && cb({ ok: true, videoDisabled: room.videoDisabled });
+  });
   
   // Force advance (Phase 1 - S4 Mode hôte amélioré)
   socket.on("forceAdvance", (_, cb) => {
