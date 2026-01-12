@@ -655,7 +655,7 @@ if (actorOnly.has(state.phase) && !isActorNow) {
     return b;
   };
 
-  if (state.phase === "ROLE_REVEAL" || state.phase === "NIGHT_START" || state.phase === "NIGHT_RESULTS" || state.phase === "DAY_WAKE" || state.phase === "DAY_RESULTS") {
+  if (state.phase === "ROLE_REVEAL" || state.phase === "NIGHT_START" || state.phase === "NIGHT_RESULTS" || state.phase === "DAY_WAKE" || state.phase === "DAY_RESULTS" || (state.phase === "NIGHT_AI_EXCHANGE" && state.you && state.you.linkedTo)) {
     controls.appendChild(ackButton());
   }
   if (state.phase === "NIGHT_RADAR" && state.phaseData?.selectionDone) {
@@ -2182,29 +2182,3 @@ socket.on("newBadges", (data) => {
 
 console.log("[V26] Nouvelles fonctionnalités chargées !");
 
-
-// NIGHT_AI_EXCHANGE validation button logic added
-
-// === V9.2 FINAL : AI EXCHANGE VALIDATION ===
-socket.on("phase_start", (data) => {
-  if (data.phase === "NIGHT_AI_EXCHANGE") {
-    let btn = document.getElementById("validate-ai-exchange");
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.id = "validate-ai-exchange";
-      btn.innerText = "Valider l’échange 🤖";
-      btn.style.position = "fixed";
-      btn.style.bottom = "20px";
-      btn.style.right = "20px";
-      btn.style.zIndex = "9999";
-      btn.onclick = () => {
-        socket.emit("phaseAck");
-        btn.remove();
-      };
-      document.body.appendChild(btn);
-    }
-  } else {
-    const btn = document.getElementById("validate-ai-exchange");
-    if (btn) btn.remove();
-  }
-});
