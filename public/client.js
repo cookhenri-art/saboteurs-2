@@ -2198,7 +2198,7 @@ socket.on("phase_start", (data) => {
       btn.style.right = "20px";
       btn.style.zIndex = "9999";
       btn.onclick = () => {
-        socket.emit("phase_ack");
+        socket.emit("phaseAck");
         btn.remove();
       };
       document.body.appendChild(btn);
