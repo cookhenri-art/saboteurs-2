@@ -569,7 +569,11 @@ function setPhase(room, phase, data = {}) {
   logger.phaseStart(room.code, phase, room.day, room.night, alive);
   
   // Calculer et émettre les permissions vidéo pour cette phase
-  const permissions = videoPermissions.calculateRoomPermissions(phase, room.players, { roomCode: room.code, night: room.night, aiPartnerId: room.nightData?.aiPartnerId || null });
+  const permissions = videoPermissions.calculateRoomPermissions(phase, room.players, { 
+    roomCode: room.code, 
+    night: room.night, 
+    aiPartnerId: room.nightData?.aiPartnerId || null  // ✅ Safe access avec ?.
+  });
   const videoMessage = videoPermissions.getPhaseVideoMessage(phase);
   
   // Stocker les permissions dans la room pour référence
@@ -1192,18 +1196,21 @@ function finishCaptainVote(room) {
 
 function beginNight(room) {
   room.night += 1;
+  
+  // ✅ IMPORTANT: Initialiser nightData AVANT setPhase pour éviter les erreurs
   room.nightData = {
     saboteurTarget: null,
     doctorSave: null,
     doctorKill: null,
     aiLinked: false,
-    aiPartnerId: null,
+    aiPartnerId: null,  // ✅ Obligatoire: lu par videoPermissions dans setPhase
     aiExchangeDone: false,
     radarDone: false,
     saboteurDone: false,
     doctorDone: false,
     chameleonDone: false
   };
+  
   setPhase(room, "NIGHT_START", { engineerReminder: hasAliveRole(room, "engineer") });
 }
 
