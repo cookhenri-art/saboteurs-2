@@ -569,11 +569,7 @@ function setPhase(room, phase, data = {}) {
   logger.phaseStart(room.code, phase, room.day, room.night, alive);
   
   // Calculer et émettre les permissions vidéo pour cette phase
-  const permissions = videoPermissions.calculateRoomPermissions(phase, room.players, { 
-    roomCode: room.code, 
-    night: room.night, 
-    aiPartnerId: room.nightData?.aiPartnerId || null  // ✅ Safe access avec ?.
-  });
+  const permissions = videoPermissions.calculateRoomPermissions(phase, room.players);
   const videoMessage = videoPermissions.getPhaseVideoMessage(phase);
   
   // Stocker les permissions dans la room pour référence
@@ -598,11 +594,6 @@ function requiredPlayersForPhase(room) {
     case "NIGHT_START": return alive;
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
-    case "NIGHT_AI_EXCHANGE": {
-      const a = d.aiId || d.actorId;
-      const b = d.partnerId;
-      return (a && b) ? [a, b] : (a ? [a] : []);
-    }
     case "NIGHT_RADAR": return d.actorId ? [d.actorId] : [];
     case "NIGHT_SABOTEURS": return d.actorIds || [];
     case "NIGHT_DOCTOR": return d.actorId ? [d.actorId] : [];
@@ -620,14 +611,9 @@ function requiredPlayersForPhase(room) {
 }
 
 function ack(room, playerId) {
-  const requiredList = requiredPlayersForPhase(room);
-  const required = new Set(requiredList);
-  // Ne compter que les joueurs requis (évite avance prématurée si un autre clique)
-  if (required.has(playerId)) room.phaseAck.add(playerId);
-
-  let count = 0;
-  for (const id of room.phaseAck) if (required.has(id)) count++;
-  return count >= required.size;
+  room.phaseAck.add(playerId);
+  const required = requiredPlayersForPhase(room);
+  return room.phaseAck.size >= required.length;
 }
 
 function applyLinkCascade(room) {
@@ -1196,21 +1182,16 @@ function finishCaptainVote(room) {
 
 function beginNight(room) {
   room.night += 1;
-  
-  // ✅ IMPORTANT: Initialiser nightData AVANT setPhase pour éviter les erreurs
   room.nightData = {
     saboteurTarget: null,
     doctorSave: null,
     doctorKill: null,
     aiLinked: false,
-    aiPartnerId: null,  // ✅ Obligatoire: lu par videoPermissions dans setPhase
-    aiExchangeDone: false,
     radarDone: false,
     saboteurDone: false,
     doctorDone: false,
     chameleonDone: false
   };
-  
   setPhase(room, "NIGHT_START", { engineerReminder: hasAliveRole(room, "engineer") });
 }
 
@@ -1582,27 +1563,17 @@ app.post("/api/video/create-room/:roomCode", async (req, res) => {
       return res.status(400).json({ ok: false, error: "roomCode required" });
     }
 
-    // Vérifier si une room vidéo existe déjà
-    let videoRoom = dailyManager.getVideoRoom(roomCode);
-    if (videoRoom) {
-      return res.json({
-        ok: true,
-        roomUrl: videoRoom.dailyRoomUrl,
-        roomName: videoRoom.dailyRoomName,
-        cached: true
-      });
-    }
+    // A) Anti-concurrence + C) récupération si la room existe déjà (après redéploiement)
+    const videoRoom = await dailyManager.getOrCreateVideoRoom(roomCode);
 
-    // Créer une nouvelle room vidéo
-    videoRoom = await dailyManager.createVideoRoom(roomCode);
-    
     res.json({
       ok: true,
       roomUrl: videoRoom.roomUrl,
       roomName: videoRoom.roomName,
-      isFreeRoom: videoRoom.isFreeRoom
+      cached: !!videoRoom.cached,
+      isFreeRoom: !!videoRoom.isFreeRoom
     });
-    
+
   } catch (error) {
     logger.error('[API] Error creating video room:', error);
     res.status(500).json({ ok: false, error: error.message });
@@ -2220,14 +2191,10 @@ io.on("connection", (socket) => {
       logEvent(room, "ai_link", { by: playerId, targetId });
       console.log(`[${room.code}] ai_link by=${p.name} target=${tP.name}`);
 
-      
-      // V8: Pause pour échange privé IA + partenaire
-      room.nightData.aiPartnerId = targetId;
-      room.nightData.aiExchangeDone = false;
-      setPhase(room, "NIGHT_AI_EXCHANGE", { aiId: playerId, partnerId: targetId });
+      nextNightPhase(room);
       emitRoom(room);
       return cb && cb({ ok:true });
-}
+    }
 
     // --- night: radar ---
     if (phase === "NIGHT_RADAR") {
