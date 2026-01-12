@@ -18,8 +18,7 @@ const FULL_VIDEO_PHASES = [
   'DAY_RESULTS',        // ✅ Résultats du vote - Voir les réactions
   'END_STATS_OUTRO',   // ✅ Stats/Outro: discussion libre
   'END_STATS',         // ✅ Fallback
-  'END',
-  'GAME_OVER' // ✅ Fin de partie: discussion en visio pendant l'écran de fin/stats
+  'END'
 ];
 
 /**
@@ -39,6 +38,7 @@ const SILENT_NIGHT_PHASES = new Set([
 const ROLE_RESTRICTED_PHASES = {
   'NIGHT_SABOTEURS': ['saboteur'],
   'NIGHT_AI_AGENT': ['ai_agent'],  // Les amoureux se voient
+  'NIGHT_AI_EXCHANGE': ['ai_agent'] // V9: duo IA + lié (géré spécialement)
   'NIGHT_CHAMELEON': ['chameleon'],
   'NIGHT_RADAR': ['radar_officer'],
   'NIGHT_DOCTOR': ['doctor']
@@ -61,17 +61,22 @@ const CAMERA_OFF_PHASES = [
  * @param {Map} allPlayers - Map de tous les joueurs (pour vérifier les liens)
  * @returns {object} - { video: boolean, audio: boolean, reason: string }
  */
+const END_TALK_PHASES = new Set(['GAME_OVER','END_STATS_OUTRO','END_STATS','END']);
+
 function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
-  // Si le joueur est mort ou a quitté → pas de caméra ni micro
-  if (player.status === 'dead' || player.status === 'left') {
-    return {
-      video: false,
-      audio: false,
-      reason: 'Joueur éliminé ou déconnecté'
-    };
+  // Si le joueur a quitté → pas de caméra ni micro
+  if (player.status === 'left') {
+    return { video: false, audio: false, reason: 'Joueur déconnecté' };
   }
 
-  // Phase avec caméra complètement désactivée
+  // ✅ V9: joueurs morts autorisés à reparler en fin de partie / stats
+  if (player.status === 'dead') {
+    if (END_TALK_PHASES.has(phase)) {
+      return { video: true, audio: true, reason: 'Fin de partie: discussion autorisée (morts inclus)' };
+    }
+    return { video: false, audio: false, reason: 'Joueur éliminé' };
+  }
+// Phase avec caméra complètement désactivée
   if (CAMERA_OFF_PHASES.includes(phase)) {
     return {
       video: false,
@@ -102,6 +107,19 @@ function getPlayerVideoPermissions(phase, player, allPlayers = new Map()) {
     }
 
     // ✅ NIGHT_AI_AGENT strict: uniquement le duo (IA + lié vivant) se voit / s'entend
+    if (phase === 'NIGHT_AI_EXCHANGE') {
+      // ✅ V9: IA + joueur lié (même si saboteur) uniquement.
+      // Autoriser si le joueur est dans le duo (IA ou lié).
+      const ia = Array.from(allPlayers.values()).find(pp => pp.role === 'ai_agent' && pp.status === 'alive');
+      if (!ia || !ia.linkedTo) {
+        return { video: false, audio: false, reason: 'Échange IA indisponible' };
+      }
+      const partnerId = ia.linkedTo;
+      const inDuo = (player.role === 'ai_agent' && player.linkedTo === partnerId) || (player.playerId === partnerId && player.linkedTo === ia.playerId);
+      if (inDuo) return { video: true, audio: true, reason: 'Échange privé IA + lié' };
+      return { video: false, audio: false, reason: 'Phase privée' };
+    }
+
     if (phase === 'NIGHT_AI_AGENT') {
       if (player.linkedTo) {
         const partner = allPlayers.get(player.linkedTo);

@@ -360,6 +360,7 @@ function getPhaseName(phaseKey, room) {
     NIGHT_START: "Début de la nuit",
     NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
     NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
+    NIGHT_AI_EXCHANGE: `Échange IA (privé)`,
     NIGHT_RADAR: `${getRoleLabel('radar', room)}, réveille-toi`,
     NIGHT_SABOTEURS: `${saboteursTerm}, réveillez-vous`,
     NIGHT_DOCTOR: `${getRoleLabel('doctor', room)}, réveille-toi`,
@@ -524,7 +525,10 @@ function computeAudioCue(room, prevPhase) {
     // Otherwise use the standard sequence builder (prev sleep + IA wake if available).
     return seqIf(AUDIO.IA_WAKE, AUDIO.IA_WAKE ? null : "Agent IA, réveille-toi.");
   }
-  if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, réveille-toi.");
+  
+  if (phase === "NIGHT_AI_EXCHANGE") return { file: null, queueLoopFile: null, tts: "Échange privé IA." };
+
+if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, réveille-toi.");
   if (phase === "NIGHT_SABOTEURS") return seqIf(AUDIO.SABOTEURS_WAKE, "Saboteurs, choisissez une cible. Unanimité requise.", AUDIO.WAITING_LOOP);
   if (phase === "NIGHT_DOCTOR") return seqIf(AUDIO.DOCTOR_WAKE, "Docteur bio, choisissez votre action.");
 
@@ -2191,10 +2195,11 @@ io.on("connection", (socket) => {
       logEvent(room, "ai_link", { by: playerId, targetId });
       console.log(`[${room.code}] ai_link by=${p.name} target=${tP.name}`);
 
-      nextNightPhase(room);
+      // ✅ V9: phase d'échange privé IA + lié (les 2 doivent valider pour continuer)
+      setPhase(room, "NIGHT_AI_EXCHANGE", { iaId: p.playerId, partnerId: tP.playerId });
       emitRoom(room);
       return cb && cb({ ok:true });
-    }
+}
 
     // --- night: radar ---
     if (phase === "NIGHT_RADAR") {
