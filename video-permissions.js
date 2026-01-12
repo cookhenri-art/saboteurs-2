@@ -18,7 +18,8 @@ const FULL_VIDEO_PHASES = [
   'DAY_RESULTS',        // ✅ Résultats du vote - Voir les réactions
   'END_STATS_OUTRO',   // ✅ Stats/Outro: discussion libre
   'END_STATS',         // ✅ Fallback
-  'END'
+  'END',
+  'GAME_OVER' // ✅ Fin de partie: discussion en visio pendant l'écran de fin/stats
 ];
 
 /**
