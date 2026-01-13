@@ -692,7 +692,7 @@ if (actorOnly.has(state.phase) && !isActorNow) {
 
     const card = document.createElement("div");
     card.className = "choice-card";
-    card.dataset.playerId = id;
+    card.dataset.playerId = state.playerId;
     card.innerHTML = `<div style="font-weight:900; font-size:1.1rem;">${label}</div>
       <div style="opacity:.9; margin-top:6px;">Places restantes : <b>${count}</b></div>`;
     card.onclick = () => {
