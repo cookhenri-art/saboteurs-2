@@ -1,10 +1,3 @@
-// ==============================
-// V9.4.3 FORCE RECONNECT
-// ==============================
-function shouldReconnect() {
-  return !!localStorage.getItem("playerId");
-}
-
 /* Infiltration Spatiale — client (vanilla) V26 */
 
 // Socket.IO: index.html ensures the client library is loaded (local first, CDN fallback).
@@ -27,6 +20,23 @@ const STORAGE = {
   room: "is_roomCode",
 };
 
+// ==============================
+// V9.4.5 STORAGE FALLBACK
+// ==============================
+(function () {
+  try {
+    if (!sessionStorage.getItem(STORAGE.name) && localStorage.getItem(STORAGE.name)) {
+      sessionStorage.setItem(STORAGE.name, localStorage.getItem(STORAGE.name));
+    }
+    if (!sessionStorage.getItem(STORAGE.room) && localStorage.getItem(STORAGE.room)) {
+      sessionStorage.setItem(STORAGE.room, localStorage.getItem(STORAGE.room));
+    }
+    if (!sessionStorage.getItem(STORAGE.playerId) && localStorage.getItem(STORAGE.playerId)) {
+      sessionStorage.setItem(STORAGE.playerId, localStorage.getItem(STORAGE.playerId));
+    }
+  } catch (e) {}
+})();
+
 // Mode debug: ajouter ?debug=1 dans l'URL pour créer un nouveau token à chaque session
 const isDebugMode = new URLSearchParams(window.location.search).get('debug') === '1';
 
@@ -48,18 +58,21 @@ function getOrCreatePlayerToken() {
 }
 
 function getOrCreatePlayerId() {
-  // En mode debug, créer un nouveau playerId à chaque fois
+  // En debug, on force un nouvel ID par session pour faciliter les tests
   if (isDebugMode) {
     const id = crypto.randomUUID();
-    console.log('[DEBUG MODE] New playerId generated:', id);
+    sessionStorage.setItem(STORAGE.playerId, id);
     return id;
   }
-  
-  let id = sessionStorage.getItem(STORAGE.playerId);
+
+  // Persistant: le playerId doit survivre à une fermeture d’onglet (localStorage)
+  let id = localStorage.getItem(STORAGE.playerId) || sessionStorage.getItem(STORAGE.playerId);
   if (!id) {
     id = crypto.randomUUID();
-    sessionStorage.setItem(STORAGE.playerId, id);
+    localStorage.setItem(STORAGE.playerId, id);
   }
+  // Toujours miroir en sessionStorage pour l’onglet courant
+  sessionStorage.setItem(STORAGE.playerId, id);
   return id;
 }
 
@@ -514,9 +527,6 @@ function renderLobby() {
   
   // Theme selector (host only)
   renderThemeSelector(isHost);
-  
-  // V9.3.1: Video options (host only)
-  renderVideoOptions(isHost);
 
   function makeCheckbox(key, label, helpText, checked, isRoot=false, isDisabled=false) {
     const row = document.createElement("div");
@@ -1511,6 +1521,7 @@ function createRoomFlow() {
   const name = mustName();
   if (!name) return;
   sessionStorage.setItem(STORAGE.name, name);
+  try { localStorage.setItem(STORAGE.name, name); } catch (e) {}
   showScreen("createScreen");
 
   // Provide immediate feedback even before the first roomState arrives
@@ -1536,7 +1547,9 @@ $("joinRoomBtn").onclick = () => {
   const roomCode = ($("joinRoomCode").value || "").trim();
   if (!/^\d{4}$/.test(roomCode)) return setError("Code mission invalide (4 chiffres).");
   sessionStorage.setItem(STORAGE.name, name);
+  try { localStorage.setItem(STORAGE.name, name); } catch (e) {}
   sessionStorage.setItem(STORAGE.room, roomCode);
+  try { localStorage.setItem(STORAGE.room, roomCode); } catch (e) {}
 
   socket.emit("joinRoom", { playerId, name, roomCode, playerToken }, (res) => {
     if (!res?.ok) {
@@ -1887,46 +1900,6 @@ function renderThemeSelector(isHost) {
   const theme = availableThemes.find(t => t.id === currentThemeId);
   if (theme) {
     descContainer.textContent = theme.description || "";
-  }
-}
-
-
-// V9.3.1: Afficher les options vidéo pour l'hôte
-function renderVideoOptions(isHost) {
-  const videoOptions = $("videoOptions");
-  if (!videoOptions) return;
-  
-  if (!isHost || state.started) {
-    videoOptions.style.display = "none";
-    return;
-  }
-  
-  videoOptions.style.display = "block";
-  
-  const checkbox = $("disableVideoCheckbox");
-  if (!checkbox) return;
-  
-  // Synchroniser la checkbox avec l'état du serveur
-  checkbox.checked = state.videoDisabled || false;
-  
-  // Écouter les changements de la checkbox
-  if (!checkbox.__boundVideoOption) {
-    checkbox.__boundVideoOption = true;
-    checkbox.addEventListener("change", () => {
-      const videoDisabled = checkbox.checked;
-
-      // Si l'état est déjà celui du serveur, ne rien faire.
-      // (évite des émissions inutiles lors des re-renders)
-      if (!!state.videoDisabled === !!videoDisabled) return;
-
-      socket.emit("setVideoDisabled", { videoDisabled }, (res) => {
-        if (!res?.ok) {
-          setError(res?.error || "Erreur changement option vidéo");
-          // Remettre l'ancienne valeur en cas d'erreur
-          checkbox.checked = !videoDisabled;
-        }
-      });
-    });
   }
 }
 
