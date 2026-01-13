@@ -9,12 +9,6 @@ const dailyManager = require("./daily-manager");
 const videoPermissions = require("./video-permissions");
 
 const PORT = process.env.PORT || 3000;
-
-// V9.4: reconnect + disconnect tolerance
-const DISCONNECT_REMOVE_MS_LOBBY = 30000; // 30s in lobby
-const DISCONNECT_REMOVE_MS_GAME  = 5 * 60 * 1000; // 5 min in game
-const RECONNECT_GRACE_MS         = 10 * 60 * 1000; // allow restore after marked left
-
 const BUILD_ID = process.env.BUILD_ID || "infiltration-spatiale-v26-2026-01-09";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
@@ -1507,6 +1501,9 @@ function publicRoomStateFor(room, viewerId) {
     themeId: room.themeId || "default",  // V26: Thème sélectionné
     phaseStartTime: room.phaseStartTime || Date.now(),  // V26: Pour timer hôte
     audio: room.audio,
+    // V9.3.1: Option lobby — partie sans visio
+    // IMPORTANT: doit être exposée au client sinon la checkbox se réinitialise.
+    videoDisabled: !!room.videoDisabled,
     ack: { 
       done: room.phaseAck.size, 
       total: required.length,
@@ -1704,14 +1701,6 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null) {
     p.socketId = socket.id;
     p.connected = true;
     p.lastSeenAt = now;
-
-    // V9.4: allow restoring a player that was marked left after a long disconnect
-    if (p.status === "left" && p.disconnectedPrevStatus && p.leftAt && (now - p.leftAt) < RECONNECT_GRACE_MS) {
-      logger.info("restore_left_player", { roomCode: room.code, playerId, prevStatus: p.disconnectedPrevStatus, leftAt: p.leftAt });
-      p.status = p.disconnectedPrevStatus;
-      p.disconnectedPrevStatus = null;
-      p.leftAt = null;
-    }
     
     // Mettre à jour le token si fourni
     if (playerToken && playerToken !== p.playerToken) {
@@ -1739,9 +1728,6 @@ function scheduleDisconnect(room, playerId) {
   const p = getPlayer(room, playerId);
   if (!p) return;
 
-  // V9.4: tolerate longer disconnects during an active game
-  const removeDelay = room.started && !room.ended ? DISCONNECT_REMOVE_MS_GAME : DISCONNECT_REMOVE_MS_LOBBY;
-
   const notifyTimer = setTimeout(() => {
     const p2 = getPlayer(room, playerId);
     if (p2 && !p2.connected && p2.status !== "left") {
@@ -1753,13 +1739,9 @@ function scheduleDisconnect(room, playerId) {
   const removeTimer = setTimeout(() => {
     const p3 = getPlayer(room, playerId);
     if (!p3 || p3.connected) return;
-
-    // Mark as left, but keep enough info to allow a later restore (V9.4 grace)
-    p3.disconnectedPrevStatus = p3.status;
-    p3.leftAt = Date.now();
     p3.status = "left";
     p3.ready = false;
-    logEvent(room, "player_removed", { playerId, removeDelay });
+    logEvent(room, "player_removed", { playerId });
 
     // if phase waits on this actor, fallback
     if (room.phase === "DAY_CAPTAIN_TRANSFER" && room.phaseData?.actorId === playerId) {
@@ -1791,7 +1773,7 @@ function scheduleDisconnect(room, playerId) {
 
     ensureMinPlayers(room);
     emitRoom(room);
-  }, removeDelay);
+  }, 30000);
 
   room.timers.set(playerId, { notifyTimer, removeTimer });
 }
@@ -1951,27 +1933,11 @@ io.on("connection", (socket) => {
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
     if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
-
-    // V9.4: resolve player by token if playerId missing/invalid
-    let resolvedPlayerId = playerId;
-    let p = resolvedPlayerId ? getPlayer(room, resolvedPlayerId) : null;
-
-    if (!p && playerToken && room.playerTokens && room.playerTokens.has(playerToken)) {
-      resolvedPlayerId = room.playerTokens.get(playerToken);
-      p = getPlayer(room, resolvedPlayerId);
-      logger.info("reconnect_by_token", { roomCode: code, playerToken, resolvedPlayerId });
-    }
-
+    const p = getPlayer(room, playerId);
     if (!p) return cb && cb({ ok: false, error: "Joueur introuvable dans la room" });
-
-    joinRoomCommon(socket, room, resolvedPlayerId, name || p.name, playerToken);
-
-    // joinRoomCommon already emitRoom(), but keep this to guarantee a fresh state for long reconnects
-    emitRoom(room);
-
-    cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === resolvedPlayerId, playerId: resolvedPlayerId });
+    joinRoomCommon(socket, room, playerId, name || p.name, playerToken);
+    cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
-
   
   // Heartbeat pour maintenir la session vivante
   socket.on("heartbeat", ({ playerId, roomCode }, cb) => {
@@ -2034,6 +2000,19 @@ io.on("connection", (socket) => {
     logger.info("theme_selected", { roomCode: room.code, themeId, hostId: socket.data.playerId });
     emitRoom(room);
     cb && cb({ ok: true, themeId });
+  });
+
+  // V9.3.1: Toggle video disabled option
+  socket.on("setVideoDisabled", ({ videoDisabled }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut modifier cette option" });
+    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
+    
+    room.videoDisabled = Boolean(videoDisabled);
+    logger.info("video_disabled_changed", { roomCode: room.code, videoDisabled: room.videoDisabled, hostId: socket.data.playerId });
+    emitRoom(room);
+    cb && cb({ ok: true, videoDisabled: room.videoDisabled });
   });
   
   // Force advance (Phase 1 - S4 Mode hôte amélioré)
