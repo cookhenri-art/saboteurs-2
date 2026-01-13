@@ -306,6 +306,43 @@ function ensureRoleCardEl() {
   return el;
 }
 
+function ensureEjectedPanelEl() {
+  let el = $("ejectedPanel");
+  if (el) return el;
+  const logEl = $("log");
+  if (!logEl || !logEl.parentElement) return null;
+  el = document.createElement("div");
+  el.id = "ejectedPanel";
+  el.style.marginTop = "16px";
+  el.style.padding = "12px";
+  el.style.borderRadius = "12px";
+  el.style.background = "rgba(0,0,0,0.35)";
+  el.style.border = "1px solid rgba(0,255,255,0.25)";
+  el.style.maxHeight = "220px";
+  el.style.overflow = "auto";
+  el.style.display = "none";
+  logEl.parentElement.insertBefore(el, logEl);
+  return el;
+}
+
+function renderEjectedPanel() {
+  const el = ensureEjectedPanelEl();
+  if (!el || !state) return;
+  const ejected = (state.players || []).filter(p => p.status === "dead");
+  if (!ejected.length) {
+    el.style.display = "none";
+    el.innerHTML = "";
+    return;
+  }
+  el.style.display = "block";
+  el.innerHTML =
+    `<div style="font-weight:900; margin-bottom:8px;">🚀 ÉJECTÉS</div>` +
+    `<div style="display:flex; flex-wrap:wrap; gap:8px;">` +
+    ejected.map(p => `<div style="padding:8px 10px; border-radius:999px; border:1px solid rgba(255,0,102,0.45); background:rgba(255,0,102,0.12); font-weight:900;">💀 ${escapeHtml(p.name)}</div>`).join("") +
+    `</div>`;
+}
+
+
 function setBackdrop() {
   const el = $("gameBackdrop");
   if (!el || !state) return;
@@ -612,22 +649,36 @@ function renderGame() {
   const ack = state.ack || { done:0, total:0 };
   $("ackLine").textContent = ack.total ? `✅ Validations : ${ack.done}/${ack.total}` : "";
 
-  // logs
-  const logEl = $("log");
-  logEl.innerHTML = "";
-  for (const l of (state.logs || [])) {
-    const div = document.createElement("div");
-    div.className = "log-line";
-    div.textContent = l.text;
-    logEl.appendChild(div);
+// logs (+ panel éjectés)
+const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.isHost;
+
+renderEjectedPanel();
+
+const logEl = $("log");
+if (logEl) {
+  if (isHost) {
+    logEl.style.display = "block";
+    logEl.innerHTML = "";
+    for (const l of (state.logs || [])) {
+      const div = document.createElement("div");
+      div.className = "log-line";
+      div.textContent = l.text;
+      logEl.appendChild(div);
+    }
+    for (const l of (state.privateLines || [])) {
+      const div = document.createElement("div");
+      div.className = "log-line private";
+      div.textContent = l.text;
+      logEl.appendChild(div);
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+  } else {
+    // Joueurs : on masque le tableau/log pour réduire la charge visuelle.
+    logEl.style.display = "none";
+    logEl.innerHTML = "";
   }
-  for (const l of (state.privateLines || [])) {
-    const div = document.createElement("div");
-    div.className = "log-line private";
-    div.textContent = l.text;
-    logEl.appendChild(div);
-  }
-  logEl.scrollTop = logEl.scrollHeight;
+}
+
 
   // controls
   const controls = $("controls");
@@ -826,7 +877,20 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
   if (state.phase === "NIGHT_RADAR") {
     if (state.phaseData?.selectionDone) {
-      controls.appendChild(makeHint("Résultat affiché en bas (journal privé). Valide pour continuer."));
+// Afficher le résultat directement ici (les joueurs n'ont plus le log/tableau).
+const radarLine = (state.privateLines || []).map(x => x.text).find(t => /radar/i.test(t)) || state.privateLines?.[0]?.text || "";
+if (radarLine) {
+  const box = document.createElement("div");
+  box.style.marginTop = "10px";
+  box.style.padding = "12px";
+  box.style.borderRadius = "12px";
+  box.style.border = "1px solid rgba(0,255,255,0.25)";
+  box.style.background = "rgba(0,0,0,0.25)";
+  box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🔎 Radar</div>` +
+    `<div style="opacity:.95; font-weight:800;">${escapeHtml(radarLine)}</div>`;
+  controls.appendChild(box);
+}
+controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
     } else {
       const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
       controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Inspecter", (id) => socket.emit("phaseAction", { targetId: id }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); })));
