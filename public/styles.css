@@ -1355,6 +1355,45 @@ textarea {
 .btn.selected { outline: 2px solid rgba(0,255,136,0.9); box-shadow: 0 0 22px rgba(0,255,136,0.35); }
 .btn.selected:hover { transform: none !important; }
 
+/* =====================================================
+   PATCH UI/UX V0-0 -> mobile comfort (safe, minimal)
+   - Plus d'espace / lisibilité sur mobile
+   - Scrolls plus fiables
+   - Réduction légère des effets (sans toucher au thème)
+   ===================================================== */
+
+:root {
+  --ui-gap: 12px;
+  --ui-radius: 14px;
+}
+
+@media (max-width: 768px) {
+  .control-panel {
+    padding: 14px 12px !important;
+  }
+
+  #phaseTitle {
+    font-size: 1.15rem !important;
+    letter-spacing: 2px !important;
+  }
+
+  #phaseText {
+    font-size: 1.02rem !important;
+    line-height: 1.45 !important;
+  }
+
+  #log {
+    max-height: 32vh !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .btn {
+    padding: 12px 18px !important;
+    letter-spacing: 2px !important;
+    font-size: 0.95rem !important;
+  }
+}
+
 .choice-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-top:10px; }
 .choice-card {
   padding:12px; border-radius:14px; border:2px solid rgba(0,255,255,0.35);

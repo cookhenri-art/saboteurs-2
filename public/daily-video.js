@@ -26,6 +26,27 @@ class DailyVideoManager {
     this.launcher = null;
     this._drag = { active: false, startX: 0, startY: 0, startTop: 0, startLeft: 0 };
 
+    // UI: état mobile-friendly persistant (position / taille / dock / visibilité)
+    this.uiStateKey = "saboteur.dailyVideo.uiState.v1";
+    this.uiState = {
+      visible: true,
+      minimized: false,
+      // dock: tl,tr,bl,br,l,r,t,b,bc,tc ou null
+      dock: null,
+      left: null,
+      top: null,
+      width: null,
+      height: null,
+      // bubble position when hidden
+      bubbleDock: "br",
+      bubbleLeft: null,
+      bubbleTop: null
+    };
+
+    // Gestures
+    this._pointerDrag = { active: false, pointerId: null, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+    this._pinch = { active: false, startDist: 0, startW: 0, startH: 0 };
+
     this.camButton = null;
     this.micButton = null;
 
@@ -37,9 +58,275 @@ class DailyVideoManager {
 
     this.isMobile = window.innerWidth < 768;
 
+    // Safe area (iOS notch etc.)
+    this.safeInset = { top: 0, right: 0, bottom: 0, left: 0 };
+
     // Pour remettre le volume remote quand on "deafen"
     this._remoteVolumes = new Map();
     this._isDeafened = false;
+
+    // Load persisted UI state early
+    this.loadUIState();
+
+    // Keep layout sane on viewport changes
+    window.addEventListener("resize", () => {
+      this.isMobile = window.innerWidth < 768;
+      this.applyUIState({ reason: "resize" });
+    });
+  }
+
+  // ---------------- persistence ----------------
+
+  loadUIState() {
+    try {
+      const raw = localStorage.getItem(this.uiStateKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") {
+        this.uiState = { ...this.uiState, ...parsed };
+      }
+    } catch {}
+  }
+
+  saveUIState() {
+    try {
+      localStorage.setItem(this.uiStateKey, JSON.stringify(this.uiState));
+    } catch {}
+  }
+
+  getViewportRect() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const m = 10;
+    return {
+      left: this.safeInset.left + m,
+      top: this.safeInset.top + m,
+      right: vw - this.safeInset.right - m,
+      bottom: vh - this.safeInset.bottom - m,
+      width: vw - this.safeInset.left - this.safeInset.right - m * 2,
+      height: vh - this.safeInset.top - this.safeInset.bottom - m * 2
+    };
+  }
+
+  clampToViewport(left, top, width, height) {
+    const vp = this.getViewportRect();
+    const maxLeft = Math.max(vp.left, vp.right - width);
+    const maxTop = Math.max(vp.top, vp.bottom - height);
+    const nextLeft = Math.min(Math.max(left, vp.left), maxLeft);
+    const nextTop = Math.min(Math.max(top, vp.top), maxTop);
+    return { left: nextLeft, top: nextTop };
+  }
+
+  getSafeInsets() {
+    // Read CSS env(safe-area-inset-*) via computed style
+    const probe = document.createElement("div");
+    probe.style.cssText = `
+      position: fixed;
+      inset: 0;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+      pointer-events: none;
+      visibility: hidden;
+    `;
+    document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    const px = (v) => {
+      const n = parseFloat((v || "0").toString().replace("px", ""));
+      return Number.isFinite(n) ? n : 0;
+    };
+    const top = px(cs.paddingTop);
+    const right = px(cs.paddingRight);
+    const bottom = px(cs.paddingBottom);
+    const left = px(cs.paddingLeft);
+    probe.remove();
+    this.safeInset = { top, right, bottom, left };
+  }
+
+  // ---------------- critical UI avoidance ----------------
+
+  getCriticalRects() {
+    // Heuristics: host force advance button, any controls in #controls, any element marked data-critical="true"
+    const els = [];
+    const force = document.getElementById("forceAdvanceBtn");
+    if (force && force.offsetParent !== null) els.push(force);
+
+    const controls = document.getElementById("controls");
+    if (controls && controls.offsetParent !== null) {
+      // buttons / selects inside controls
+      els.push(...controls.querySelectorAll("button, select, input"));
+    }
+
+    const marked = document.querySelectorAll('[data-critical="true"]');
+    els.push(...marked);
+
+    // De-duplicate
+    const uniq = Array.from(new Set(els));
+    return uniq
+      .filter((el) => el && el.getBoundingClientRect)
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0);
+  }
+
+  rectsOverlap(a, b) {
+    const x1 = Math.max(a.left, b.left);
+    const y1 = Math.max(a.top, b.top);
+    const x2 = Math.min(a.right, b.right);
+    const y2 = Math.min(a.bottom, b.bottom);
+    return x2 > x1 && y2 > y1;
+  }
+
+  hasCriticalOverlap(containerRect) {
+    const critical = this.getCriticalRects();
+    return critical.some((r) => this.rectsOverlap(containerRect, r));
+  }
+
+  // ---------------- docking ----------------
+
+  getDockCandidates(width, height) {
+    const vp = this.getViewportRect();
+    const L = vp.left;
+    const T = vp.top;
+    const R = vp.right - width;
+    const B = vp.bottom - height;
+    const Cx = vp.left + (vp.width - width) / 2;
+    const Cy = vp.top + (vp.height - height) / 2;
+    return {
+      tl: { left: L, top: T },
+      tr: { left: R, top: T },
+      bl: { left: L, top: B },
+      br: { left: R, top: B },
+      l: { left: L, top: Cy },
+      r: { left: R, top: Cy },
+      t: { left: Cx, top: T },
+      b: { left: Cx, top: B },
+      bc: { left: Cx, top: B },
+      tc: { left: Cx, top: T }
+    };
+  }
+
+  pickBestDock(currentLeft, currentTop, width, height) {
+    const cand = this.getDockCandidates(width, height);
+    const order = ["br", "bl", "tr", "tl", "r", "l", "b", "t", "bc", "tc"];
+
+    // Find nearest by euclidean distance, but avoid critical overlaps.
+    const scored = order.map((k) => {
+      const p = cand[k];
+      const dx = p.left - currentLeft;
+      const dy = p.top - currentTop;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const rect = { left: p.left, top: p.top, right: p.left + width, bottom: p.top + height };
+      const overlap = this.hasCriticalOverlap(rect);
+      return { k, p, dist, overlap };
+    });
+
+    scored.sort((a, b) => {
+      // prefer non-overlap, then distance
+      if (a.overlap !== b.overlap) return a.overlap ? 1 : -1;
+      return a.dist - b.dist;
+    });
+    return scored[0];
+  }
+
+  applyDock(dockKey, width, height) {
+    if (!this.container) return;
+    const cand = this.getDockCandidates(width, height);
+    const p = cand[dockKey] || cand.br;
+    this.setPositionAndSize(p.left, p.top, width, height);
+    this.uiState.dock = dockKey;
+    this.saveUIState();
+  }
+
+  setPositionAndSize(left, top, width, height) {
+    if (!this.container) return;
+    const vp = this.getViewportRect();
+    const minW = this.isMobile ? 220 : 320;
+    const minH = this.isMobile ? 240 : 360;
+    const maxW = Math.min(vp.width, this.isMobile ? 360 : 520);
+    const maxH = Math.min(vp.height, this.isMobile ? 520 : 760);
+    const w = Math.min(Math.max(width, minW), maxW);
+    const h = Math.min(Math.max(height, minH), maxH);
+    const clamped = this.clampToViewport(left, top, w, h);
+
+    this.container.style.right = "auto";
+    this.container.style.left = clamped.left + "px";
+    this.container.style.top = clamped.top + "px";
+    this.container.style.width = w + "px";
+    this.container.style.height = h + "px";
+
+    this.uiState.left = clamped.left;
+    this.uiState.top = clamped.top;
+    this.uiState.width = w;
+    this.uiState.height = h;
+  }
+
+  applyUIState({ reason } = { reason: "" }) {
+    // Called after container is created or when viewport changes
+    if (!this.container) return;
+
+    // Ensure safe insets are current (especially on iOS orientation changes)
+    try { this.getSafeInsets(); } catch {}
+
+    const vp = this.getViewportRect();
+
+    // Size defaults / fallback
+    const def = this.isMobile
+      ? { w: 300, h: 420, dock: "br" }
+      : { w: 420, h: 650, dock: "tr" };
+
+    const w = this.uiState.width || def.w;
+    const h = this.uiState.height || def.h;
+
+    // Position logic: prefer dock, else saved left/top, else default dock
+    let left = this.uiState.left;
+    let top = this.uiState.top;
+
+    if (this.uiState.dock) {
+      const p = this.getDockCandidates(w, h)[this.uiState.dock] || this.getDockCandidates(w, h)[def.dock];
+      left = p.left;
+      top = p.top;
+    } else if (left == null || top == null) {
+      const p = this.getDockCandidates(w, h)[def.dock];
+      left = p.left;
+      top = p.top;
+      this.uiState.dock = def.dock;
+    }
+
+    // Clamp to viewport
+    const clamped = this.clampToViewport(left, top, w, h);
+    this.setPositionAndSize(clamped.left, clamped.top, w, h);
+
+    // Avoid covering critical UI on load/resize (best-effort)
+    const rect = this.container.getBoundingClientRect();
+    if (this.hasCriticalOverlap(rect)) {
+      const best = this.pickBestDock(rect.left, rect.top, rect.width, rect.height);
+      if (best) {
+        this.uiState.dock = best.k;
+        this.setPositionAndSize(best.p.left, best.p.top, rect.width, rect.height);
+      }
+    }
+
+    // Visible/minimized
+    if (this.uiState.visible) {
+      this.container.style.setProperty("display", "flex", "important");
+      if (this.launcher) this.launcher.style.display = "none";
+    } else {
+      this.container.style.setProperty("display", "none", "important");
+      if (this.launcher) this.launcher.style.display = "block";
+    }
+
+    if (this.grid) {
+      const shouldHide = !!this.uiState.minimized;
+      this.grid.style.display = shouldHide ? "none" : "block";
+      this.container.classList.toggle("minimized", shouldHide);
+    }
+
+    // Keep within viewport (defensive)
+    const r2 = this.container.getBoundingClientRect();
+    const cl2 = this.clampToViewport(r2.left, r2.top, r2.width, r2.height);
+    if (cl2.left !== r2.left || cl2.top !== r2.top) {
+      this.setPositionAndSize(cl2.left, cl2.top, r2.width, r2.height);
+    }
+
+    this.saveUIState();
   }
 
   // ---------------- UI ----------------
@@ -47,12 +334,17 @@ class DailyVideoManager {
   initContainer() {
     if (this.container) return;
 
+    this.loadUIState();
+
     this.container = document.createElement("div");
     this.container.id = "dailyVideoContainer";
     this.container.className = "daily-video-container";
 
-    const containerWidth = this.isMobile ? "320px" : "420px";
-    const containerHeight = this.isMobile ? "460px" : "650px";
+    // Resolve safe insets once body exists
+    this.getSafeInsets();
+
+    const containerWidth = this.isMobile ? "300px" : "420px";
+    const containerHeight = this.isMobile ? "420px" : "650px";
 
     this.container.style.cssText = `
       position: fixed;
@@ -71,8 +363,9 @@ background: rgba(10, 14, 39, 0.95);
       flex-direction: column;
       box-shadow: 0 8px 32px rgba(0, 255, 255, 0.3);
       pointer-events: auto;
-          resize: both;
+      resize: ${this.isMobile ? "none" : "both"};
       overflow: hidden;
+      touch-action: none;
 `;
 
     const header = document.createElement("div");
@@ -111,11 +404,24 @@ background: rgba(10, 14, 39, 0.95);
     const minimizeBtn = this.createControlButton("−", "Minimiser");
     minimizeBtn.onclick = () => this.toggleMinimize();
 
+    // Presets S/M/L
+    const presetS = this.createControlButton("S", "Taille: petite");
+    const presetM = this.createControlButton("M", "Taille: moyenne");
+    const presetL = this.createControlButton("L", "Taille: grande");
+    presetS.style.fontSize = presetM.style.fontSize = presetL.style.fontSize = "12px";
+    presetS.style.padding = presetM.style.padding = presetL.style.padding = "6px 8px";
+    presetS.onclick = () => this.applySizePreset("S");
+    presetM.onclick = () => this.applySizePreset("M");
+    presetL.onclick = () => this.applySizePreset("L");
+
     const closeBtn = this.createControlButton("✕", "Masquer");
     closeBtn.onclick = () => this.hideWindow();
 
 controls.appendChild(this.camButton);
     controls.appendChild(this.micButton);
+    controls.appendChild(presetS);
+    controls.appendChild(presetM);
+    controls.appendChild(presetL);
     controls.appendChild(minimizeBtn);
     controls.appendChild(closeBtn);
 
@@ -202,61 +508,202 @@ controls.appendChild(this.camButton);
       <div style="font-size: 1rem; opacity: 0.7;">Caméra et micro désactivés</div>
     `;
 
+    // Ensure it is actually in the DOM and above the iframe
+    this.grid.appendChild(this.privatePhaseScreen);
+
     document.body.appendChild(this.container);
 
     // UI: bouton lanceur (si on ferme la fenêtre)
     this.ensureLauncher();
 
-    // UI: drag & drop via le header (déplacement de la fenêtre)
-    const onDown = (ev) => {
-      // ne pas déclencher si clic sur un bouton
-      if (ev.target && ev.target.tagName === "BUTTON") return;
+    // Restore initial position / size (and visibility) once in DOM
+    this.restoreUIAfterMount();
 
-      this._drag.active = true;
-      const pt = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    // UI: drag & drop + pinch on header (mobile-friendly)
+    this.setupHeaderGestures(header);
 
-      this._drag.startX = pt.clientX;
-      this._drag.startY = pt.clientY;
-
-      const rect = this.container.getBoundingClientRect();
-      this._drag.startTop = rect.top;
-      this._drag.startLeft = rect.left;
-
-      // passer en mode left/top (désactive right)
-      this.container.style.right = "auto";
-      this.container.style.left = rect.left + "px";
-      this.container.style.top = rect.top + "px";
-
-      ev.preventDefault?.();
-    };
-
-    const onMove = (ev) => {
-      if (!this._drag.active) return;
-      const pt = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
-
-      const dx = pt.clientX - this._drag.startX;
-      const dy = pt.clientY - this._drag.startY;
-
-      const nextLeft = Math.max(0, this._drag.startLeft + dx);
-      const nextTop = Math.max(0, this._drag.startTop + dy);
-
-      this.container.style.left = nextLeft + "px";
-      this.container.style.top = nextTop + "px";
-      ev.preventDefault?.();
-    };
-
-    const onUp = () => {
-      this._drag.active = false;
-    };
-
-    header.addEventListener("mousedown", onDown);
-    header.addEventListener("touchstart", onDown, { passive: false });
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onMove, { passive: false });
-    window.addEventListener("mouseup", onUp);
-    window.addEventListener("touchend", onUp);
+    // When viewport changes (rotation, keyboard), keep window visible and clamped
+    window.addEventListener("resize", () => {
+      this.getSafeInsets();
+      this.reflowIntoViewport();
+    });
 
     console.log("[DailyUI] Container injected (v5.2-ui).");
+  }
+
+  restoreUIAfterMount() {
+    const vp = this.getViewportRect();
+
+    // Defaults
+    const defaults = this.getPresetDims(this.isMobile ? "M" : "L");
+    const w = this.uiState.width || defaults.w;
+    const h = this.uiState.height || defaults.h;
+
+    // If dock stored: apply dock
+    if (this.uiState.dock) {
+      this.applyDock(this.uiState.dock, w, h);
+    } else if (Number.isFinite(this.uiState.left) && Number.isFinite(this.uiState.top)) {
+      this.setPositionAndSize(this.uiState.left, this.uiState.top, w, h);
+      this.saveUIState();
+    } else {
+      // pick a sane default dock that avoids critical buttons
+      const best = this.pickBestDock(vp.right - w, vp.bottom - h, w, h);
+      this.applyDock(best.k, w, h);
+    }
+
+    // restore minimized / visibility
+    if (this.uiState.minimized) {
+      this.grid.style.display = "none";
+    }
+    if (this.uiState.visible === false) {
+      this.hideWindow(false);
+    }
+  }
+
+  reflowIntoViewport() {
+    if (!this.container) return;
+    const rect = this.container.getBoundingClientRect();
+    const clamped = this.clampToViewport(rect.left, rect.top, rect.width, rect.height);
+    this.setPositionAndSize(clamped.left, clamped.top, rect.width, rect.height);
+    // If overlapping critical UI after reflow, snap away
+    const nextRect = this.container.getBoundingClientRect();
+    if (this.hasCriticalOverlap(nextRect)) {
+      const best = this.pickBestDock(nextRect.left, nextRect.top, nextRect.width, nextRect.height);
+      this.applyDock(best.k, nextRect.width, nextRect.height);
+    }
+    this.saveUIState();
+  }
+
+  setupHeaderGestures(header) {
+    if (!header) return;
+
+    // Pointer-based drag (works for mouse + touch)
+    const onPointerDown = (ev) => {
+      if (ev.target && ev.target.tagName === "BUTTON") return;
+      // Ignore right click
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+
+      this._pointerDrag.active = true;
+      this._pointerDrag.pointerId = ev.pointerId;
+      this._pointerDrag.startX = ev.clientX;
+      this._pointerDrag.startY = ev.clientY;
+      const rect = this.container.getBoundingClientRect();
+      this._pointerDrag.startLeft = rect.left;
+      this._pointerDrag.startTop = rect.top;
+      this.uiState.dock = null; // leaving dock mode
+      this.container.style.right = "auto";
+      try { header.setPointerCapture(ev.pointerId); } catch {}
+      ev.preventDefault?.();
+    };
+
+    const onPointerMove = (ev) => {
+      if (!this._pointerDrag.active) return;
+      if (this._pointerDrag.pointerId !== ev.pointerId) return;
+
+      const dx = ev.clientX - this._pointerDrag.startX;
+      const dy = ev.clientY - this._pointerDrag.startY;
+
+      const rect = this.container.getBoundingClientRect();
+      const nextLeft = this._pointerDrag.startLeft + dx;
+      const nextTop = this._pointerDrag.startTop + dy;
+      this.setPositionAndSize(nextLeft, nextTop, rect.width, rect.height);
+      ev.preventDefault?.();
+    };
+
+    const onPointerUp = (ev) => {
+      if (!this._pointerDrag.active) return;
+      if (this._pointerDrag.pointerId !== ev.pointerId) return;
+      this._pointerDrag.active = false;
+      this._pointerDrag.pointerId = null;
+
+      // Snap to best dock after drag end
+      const rect = this.container.getBoundingClientRect();
+      const best = this.pickBestDock(rect.left, rect.top, rect.width, rect.height);
+      this.applyDock(best.k, rect.width, rect.height);
+      this.saveUIState();
+    };
+
+    header.addEventListener("pointerdown", onPointerDown);
+    header.addEventListener("pointermove", onPointerMove);
+    header.addEventListener("pointerup", onPointerUp);
+    header.addEventListener("pointercancel", onPointerUp);
+
+    // Pinch-to-zoom (optional): only on touch, only on header
+    header.addEventListener(
+      "touchstart",
+      (ev) => {
+        if (ev.touches?.length === 2) {
+          const t1 = ev.touches[0];
+          const t2 = ev.touches[1];
+          const dx = t2.clientX - t1.clientX;
+          const dy = t2.clientY - t1.clientY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const rect = this.container.getBoundingClientRect();
+          this._pinch = { active: true, startDist: dist, startW: rect.width, startH: rect.height };
+          this.uiState.dock = null;
+          ev.preventDefault?.();
+        }
+      },
+      { passive: false }
+    );
+    header.addEventListener(
+      "touchmove",
+      (ev) => {
+        if (!this._pinch.active || ev.touches?.length !== 2) return;
+        const t1 = ev.touches[0];
+        const t2 = ev.touches[1];
+        const dx = t2.clientX - t1.clientX;
+        const dy = t2.clientY - t1.clientY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const scale = dist / (this._pinch.startDist || dist);
+        const rect = this.container.getBoundingClientRect();
+        const nextW = this._pinch.startW * scale;
+        const nextH = this._pinch.startH * scale;
+        this.setPositionAndSize(rect.left, rect.top, nextW, nextH);
+        ev.preventDefault?.();
+      },
+      { passive: false }
+    );
+    header.addEventListener(
+      "touchend",
+      () => {
+        if (!this._pinch.active) return;
+        this._pinch.active = false;
+        const rect = this.container.getBoundingClientRect();
+        const best = this.pickBestDock(rect.left, rect.top, rect.width, rect.height);
+        this.applyDock(best.k, rect.width, rect.height);
+        this.saveUIState();
+      },
+      { passive: true }
+    );
+  }
+
+  getPresetDims(size) {
+    // Size presets tuned for mobile first; desktop uses larger.
+    const mobile = {
+      S: { w: 240, h: 320 },
+      M: { w: 300, h: 420 },
+      L: { w: 340, h: 520 }
+    };
+    const desktop = {
+      S: { w: 340, h: 480 },
+      M: { w: 400, h: 580 },
+      L: { w: 460, h: 700 }
+    };
+    const map = this.isMobile ? mobile : desktop;
+    return map[size] || map.M;
+  }
+
+  applySizePreset(size) {
+    if (!this.container) return;
+    const rect = this.container.getBoundingClientRect();
+    const dims = this.getPresetDims(size);
+    this.setPositionAndSize(rect.left, rect.top, dims.w, dims.h);
+    // After size change, snap to avoid overlap
+    const r2 = this.container.getBoundingClientRect();
+    const best = this.pickBestDock(r2.left, r2.top, r2.width, r2.height);
+    this.applyDock(best.k, r2.width, r2.height);
+    this.saveUIState();
   }
 
   createControlButton(label, title) {
@@ -421,9 +868,108 @@ controls.appendChild(this.camButton);
       z-index: 2147483647;
       display: none;
       box-shadow: 0 8px 22px rgba(0, 255, 255, 0.22);
+      touch-action: none;
     `;
 
-    btn.onclick = () => this.showWindow();
+    // Bubble drag + snap too
+    const bubbleDrag = { active: false, pointerId: null, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+
+    const setBubblePos = (left, top) => {
+      const vp = this.getViewportRect();
+      const w = 52;
+      const h = 52;
+      const clamped = this.clampToViewport(left, top, w, h);
+      btn.style.left = clamped.left + "px";
+      btn.style.top = clamped.top + "px";
+      btn.style.right = "auto";
+      btn.style.bottom = "auto";
+      this.uiState.bubbleLeft = clamped.left;
+      this.uiState.bubbleTop = clamped.top;
+    };
+
+    const bubbleCandidates = () => {
+      const vp = this.getViewportRect();
+      const w = 52;
+      const h = 52;
+      const L = vp.left;
+      const T = vp.top;
+      const R = vp.right - w;
+      const B = vp.bottom - h;
+      return {
+        tl: { left: L, top: T },
+        tr: { left: R, top: T },
+        bl: { left: L, top: B },
+        br: { left: R, top: B },
+        r: { left: R, top: vp.top + (vp.height - h) / 2 },
+        l: { left: L, top: vp.top + (vp.height - h) / 2 },
+        b: { left: vp.left + (vp.width - w) / 2, top: B },
+        t: { left: vp.left + (vp.width - w) / 2, top: T }
+      };
+    };
+
+    const snapBubble = () => {
+      const rect = btn.getBoundingClientRect();
+      const cand = bubbleCandidates();
+      const order = ["br", "bl", "tr", "tl", "r", "l", "b", "t"];
+      let best = { k: "br", dist: Infinity };
+      for (const k of order) {
+        const p = cand[k];
+        const dx = p.left - rect.left;
+        const dy = p.top - rect.top;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < best.dist) best = { k, dist: d, p };
+      }
+      setBubblePos(best.p.left, best.p.top);
+      this.uiState.bubbleDock = best.k;
+      this.saveUIState();
+    };
+
+    const onBubbleDown = (ev) => {
+      if (ev.pointerType === "mouse" && ev.button !== 0) return;
+      bubbleDrag.active = true;
+      bubbleDrag.pointerId = ev.pointerId;
+      bubbleDrag.startX = ev.clientX;
+      bubbleDrag.startY = ev.clientY;
+      const rect = btn.getBoundingClientRect();
+      bubbleDrag.startLeft = rect.left;
+      bubbleDrag.startTop = rect.top;
+      try { btn.setPointerCapture(ev.pointerId); } catch {}
+      ev.preventDefault?.();
+    };
+    const onBubbleMove = (ev) => {
+      if (!bubbleDrag.active || bubbleDrag.pointerId !== ev.pointerId) return;
+      const dx = ev.clientX - bubbleDrag.startX;
+      const dy = ev.clientY - bubbleDrag.startY;
+      setBubblePos(bubbleDrag.startLeft + dx, bubbleDrag.startTop + dy);
+      ev.preventDefault?.();
+    };
+    const onBubbleUp = (ev) => {
+      if (!bubbleDrag.active || bubbleDrag.pointerId !== ev.pointerId) return;
+      bubbleDrag.active = false;
+      bubbleDrag.pointerId = null;
+      snapBubble();
+    };
+
+    btn.addEventListener("pointerdown", onBubbleDown);
+    btn.addEventListener("pointermove", onBubbleMove);
+    btn.addEventListener("pointerup", onBubbleUp);
+    btn.addEventListener("pointercancel", onBubbleUp);
+
+    btn.onclick = (ev) => {
+      // If we dragged significantly, ignore click
+      if (bubbleDrag.active) return;
+      this.showWindow();
+      ev.preventDefault?.();
+    };
+
+    // Restore bubble position
+    const cand = bubbleCandidates();
+    const p = cand[this.uiState.bubbleDock] || cand.br;
+    const bx = Number.isFinite(this.uiState.bubbleLeft) ? this.uiState.bubbleLeft : p.left;
+    const by = Number.isFinite(this.uiState.bubbleTop) ? this.uiState.bubbleTop : p.top;
+    setBubblePos(bx, by);
+    snapBubble();
+
     document.body.appendChild(btn);
     this.launcher = btn;
   }
@@ -432,19 +978,27 @@ controls.appendChild(this.camButton);
     if (!this.container) return;
     this.container.style.setProperty("display", "flex", "important");
     if (this.launcher) this.launcher.style.display = "none";
+    this.uiState.visible = true;
+    this.saveUIState();
+    // After showing, ensure it doesn't cover critical UI
+    setTimeout(() => this.reflowIntoViewport(), 0);
   }
 
-  hideWindow() {
+  hideWindow(save = true) {
     if (!this.container) return;
     this.container.style.setProperty("display", "none", "important");
     this.ensureLauncher();
     if (this.launcher) this.launcher.style.display = "block";
+    this.uiState.visible = false;
+    if (save) this.saveUIState();
   }
 
   toggleMinimize() {
     if (!this.grid) return;
     const hidden = this.grid.style.display === "none";
     this.grid.style.display = hidden ? "block" : "none";
+    this.uiState.minimized = !hidden;
+    this.saveUIState();
   }
 
   // ---------------- Permissions handling ----------------
