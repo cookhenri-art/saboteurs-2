@@ -343,8 +343,9 @@ class DailyVideoManager {
     // Resolve safe insets once body exists
     this.getSafeInsets();
 
-    const containerWidth = this.isMobile ? "300px" : "420px";
-    const containerHeight = this.isMobile ? "420px" : "650px";
+    // Taille de base (comme la V0-0): stable et garantit que le header reste accessible.
+    const containerWidth = this.isMobile ? "320px" : "420px";
+    const containerHeight = this.isMobile ? "460px" : "650px";
 
     this.container.style.cssText = `
       position: fixed;
@@ -404,24 +405,11 @@ background: rgba(10, 14, 39, 0.95);
     const minimizeBtn = this.createControlButton("−", "Minimiser");
     minimizeBtn.onclick = () => this.toggleMinimize();
 
-    // Presets S/M/L
-    const presetS = this.createControlButton("S", "Taille: petite");
-    const presetM = this.createControlButton("M", "Taille: moyenne");
-    const presetL = this.createControlButton("L", "Taille: grande");
-    presetS.style.fontSize = presetM.style.fontSize = presetL.style.fontSize = "12px";
-    presetS.style.padding = presetM.style.padding = presetL.style.padding = "6px 8px";
-    presetS.onclick = () => this.applySizePreset("S");
-    presetM.onclick = () => this.applySizePreset("M");
-    presetL.onclick = () => this.applySizePreset("L");
-
     const closeBtn = this.createControlButton("✕", "Masquer");
     closeBtn.onclick = () => this.hideWindow();
 
-controls.appendChild(this.camButton);
+    controls.appendChild(this.camButton);
     controls.appendChild(this.micButton);
-    controls.appendChild(presetS);
-    controls.appendChild(presetM);
-    controls.appendChild(presetL);
     controls.appendChild(minimizeBtn);
     controls.appendChild(closeBtn);
 
@@ -535,9 +523,10 @@ controls.appendChild(this.camButton);
     const vp = this.getViewportRect();
 
     // Defaults
-    const defaults = this.getPresetDims(this.isMobile ? "M" : "L");
-    const w = this.uiState.width || defaults.w;
-    const h = this.uiState.height || defaults.h;
+    const defaultW = this.isMobile ? 320 : 420;
+    const defaultH = this.isMobile ? 460 : 650;
+    const w = Number.isFinite(this.uiState.width) ? this.uiState.width : defaultW;
+    const h = Number.isFinite(this.uiState.height) ? this.uiState.height : defaultH;
 
     // If dock stored: apply dock
     if (this.uiState.dock) {
@@ -676,34 +665,6 @@ controls.appendChild(this.camButton);
       },
       { passive: true }
     );
-  }
-
-  getPresetDims(size) {
-    // Size presets tuned for mobile first; desktop uses larger.
-    const mobile = {
-      S: { w: 240, h: 320 },
-      M: { w: 300, h: 420 },
-      L: { w: 340, h: 520 }
-    };
-    const desktop = {
-      S: { w: 340, h: 480 },
-      M: { w: 400, h: 580 },
-      L: { w: 460, h: 700 }
-    };
-    const map = this.isMobile ? mobile : desktop;
-    return map[size] || map.M;
-  }
-
-  applySizePreset(size) {
-    if (!this.container) return;
-    const rect = this.container.getBoundingClientRect();
-    const dims = this.getPresetDims(size);
-    this.setPositionAndSize(rect.left, rect.top, dims.w, dims.h);
-    // After size change, snap to avoid overlap
-    const r2 = this.container.getBoundingClientRect();
-    const best = this.pickBestDock(r2.left, r2.top, r2.width, r2.height);
-    this.applyDock(best.k, r2.width, r2.height);
-    this.saveUIState();
   }
 
   createControlButton(label, title) {
@@ -962,6 +923,9 @@ controls.appendChild(this.camButton);
       ev.preventDefault?.();
     };
 
+    // IMPORTANT: append first so getBoundingClientRect() is correct (sinon snap => (0,0) => coin haut-gauche)
+    document.body.appendChild(btn);
+
     // Restore bubble position
     const cand = bubbleCandidates();
     const p = cand[this.uiState.bubbleDock] || cand.br;
@@ -969,8 +933,6 @@ controls.appendChild(this.camButton);
     const by = Number.isFinite(this.uiState.bubbleTop) ? this.uiState.bubbleTop : p.top;
     setBubblePos(bx, by);
     snapBubble();
-
-    document.body.appendChild(btn);
     this.launcher = btn;
   }
 

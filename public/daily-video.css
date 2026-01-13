@@ -69,7 +69,7 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  /* Le positionnement / taille est piloté par daily-video.js (dock + presets).
+  /* Le positionnement / taille est piloté par daily-video.js (dock + gestes).
      Ici on ne fait que des ajustements ergonomiques. */
 
   .daily-header {
