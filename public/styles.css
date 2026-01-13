@@ -1848,3 +1848,163 @@ select:focus-visible {
     box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
   }
 }
+
+
+/* =====================================================
+   DESKTOP BANNER BLUR VARIANT (PC ONLY)
+   Images 420x420 – mobile untouched
+   ===================================================== */
+@media (min-width: 768px) {
+  .banner,
+  .phase-banner,
+  .header-banner {
+    position: relative;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+    min-height: 220px;
+    overflow: hidden;
+  }
+
+  .banner::before,
+  .phase-banner::before,
+  .header-banner::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: inherit;
+    background-size: cover;
+    background-position: center;
+    filter: blur(14px);
+    opacity: 0.35;
+    z-index: 0;
+  }
+
+  .banner > *,
+  .phase-banner > *,
+  .header-banner > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+
+/* =====================================================
+   PHASE A – BANDEAU PC (ZOOM RÉDUIT + LARGEUR CALMÉE)
+   Mobile inchangé
+   ===================================================== */
+@media (min-width: 768px) {
+  #gameBackdrop,
+  #endBackdrop {
+    position: relative;
+    background-size: 80% auto !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    min-height: 190px;
+    max-width: 90%;
+    margin-left: auto;
+    margin-right: auto;
+    overflow: hidden;
+  }
+
+  /* Fond flouté léger derrière */
+  #gameBackdrop::before,
+  #endBackdrop::before {
+    content: "";
+    position: absolute;
+    inset: -18%;
+    background: inherit;
+    background-size: cover;
+    background-position: center;
+    filter: blur(10px);
+    opacity: 0.25;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #gameBackdrop > *,
+  #endBackdrop > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
+
+
+/* =====================================================
+   VIDEO DOCK (prototype) – intégrer la visio dans l'UI
+   - Dock en phase "DAY*"
+   - Floating/PiP le reste du temps
+   ===================================================== */
+#videoDockSlot {
+  display: none;
+  width: 100%;
+  margin-top: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(0,255,255,0.25);
+  background: rgba(0,0,0,0.25);
+  overflow: hidden;
+  position: relative;
+}
+
+#videoDockSlotHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(0,0,0,0.45);
+  border-bottom: 1px solid rgba(0,255,255,0.15);
+}
+
+#videoDockSlotHeader .title {
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--neon-cyan, #00ffff);
+  white-space: nowrap;
+}
+
+#videoDockSlotHeader .actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+#videoDockSlotHeader button {
+  background: rgba(0, 255, 255, 0.10);
+  border: 1px solid rgba(0, 255, 255, 0.28);
+  border-radius: 10px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: #fff;
+  font-weight: 900;
+}
+
+#videoDockSlotBody {
+  height: 180px; /* desktop default */
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  #videoDockSlotBody { height: 150px; }
+}
+
+/* Quand on "dock" la fenêtre Daily, on la force à s'adapter au slot */
+.daily-video-container.docked-temp {
+  position: fixed !important;
+  left: 0;
+  top: 0;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  resize: none !important;
+  overflow: hidden !important;
+  border-radius: 14px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35) !important;
+}
+
+.daily-video-container.docked-temp .daily-header {
+  padding: 6px 10px !important;
+}
+
