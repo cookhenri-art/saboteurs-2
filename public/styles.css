@@ -1851,41 +1851,32 @@ select:focus-visible {
 
 
 /* =====================================================
-   PHASE A – BANDEAU PC (ZOOM RÉDUIT + LARGEUR CALMÉE)
-   Mobile inchangé
+   DESKTOP BANNER BLUR VARIANT (PC ONLY)
+   Images 420x420 – mobile untouched
    ===================================================== */
 @media (min-width: 768px) {
   .banner,
   .phase-banner,
   .header-banner {
     position: relative;
-
-    /* 🔑 Réduction du zoom image */
-    background-size: 80% auto;   /* <- réglage clé */
+    background-size: contain;
     background-repeat: no-repeat;
     background-position: center center;
-
-    /* Bandeau plus élégant */
-    min-height: 190px;
-    max-width: 90%;
-    margin-left: auto;
-    margin-right: auto;
-
+    min-height: 220px;
     overflow: hidden;
   }
 
-  /* Fond flouté doux */
   .banner::before,
   .phase-banner::before,
   .header-banner::before {
     content: "";
     position: absolute;
-    inset: -18%;
+    inset: -20%;
     background: inherit;
     background-size: cover;
     background-position: center;
-    filter: blur(10px);
-    opacity: 0.25;
+    filter: blur(14px);
+    opacity: 0.35;
     z-index: 0;
   }
 
