@@ -58,8 +58,11 @@ class DailyVideoManager {
 
     this.isMobile = window.innerWidth < 768;
 
-    // D3: mode headless par défaut (pas de fenêtre flottante). Pour debug: localStorage.dailyUIVisible='1'
-    this.headless = localStorage.getItem('dailyUIVisible') !== '1';
+    // FIX: dans la version D3, un mode "headless" cachait la fenêtre Daily par défaut,
+    // ce qui donnait l'impression qu'il n'y avait jamais de visio.
+    // Par défaut on affiche la fenêtre. Pour forcer headless: ajouter ?headless=1 dans l'URL.
+    const params = new URLSearchParams(window.location.search || "");
+    this.headless = params.get("headless") === "1";
 
     // Safe area (iOS notch etc.)
     this.safeInset = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -75,8 +78,7 @@ class DailyVideoManager {
     window.addEventListener("resize", () => {
       this.isMobile = window.innerWidth < 768;
 
-    // D3: mode headless par défaut (pas de fenêtre flottante). Pour debug: localStorage.dailyUIVisible='1'
-    this.headless = localStorage.getItem('dailyUIVisible') !== '1';
+      // ne pas basculer automatiquement en headless sur resize
       this.applyUIState({ reason: "resize" });
     });
   }
@@ -714,8 +716,8 @@ background: rgba(10, 14, 39, 0.95);
 
   async joinRoom(roomUrl, userName, permissions = { video: true, audio: true }) {
     this.initContainer();
-    // Hotfix: toujours afficher la fenêtre Daily UI (sinon aucune vidéo n'est visible)
-    this.showWindow();
+    // D3: en mode headless, on ne montre jamais la fenêtre Daily UI
+    if (!this.headless) this.showWindow();
     this.updateStatus("Connexion…");
 
     // Reset prefs at (re)join
@@ -765,7 +767,7 @@ background: rgba(10, 14, 39, 0.95);
     return new Promise((resolve, reject) => {
       if (window.DailyIframe) return resolve();
       const script = document.createElement("script");
-      script.src = "https://unpkg.com/@daily-co/daily-js@0.83.1"; // pinned: avoid unsupported old CDN version
+      script.src = "https://unpkg.com/@daily-co/daily-js";
       script.onload = resolve;
       script.onerror = reject;
       document.head.appendChild(script);
