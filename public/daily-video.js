@@ -732,11 +732,19 @@ background: rgba(10, 14, 39, 0.95);
       this.callFrame = null;
     }
 
-    this.callFrame = window.DailyIframe.createFrame(this.grid, {
-      iframeStyle: { width: "100%", height: "100%", border: "none" },
-      showLeaveButton: false,
-      showFullscreenButton: false
-    });
+    if (this.headless && window.DailyIframe.createCallObject) {
+      // D3: Headless mode => no iframe UI; we manage tracks ourselves (video-tracks.js).
+      this.callFrame = window.DailyIframe.createCallObject({
+        subscribeToTracksAutomatically: true
+      });
+    } else {
+      // Embedded (debug) UI mode
+      this.callFrame = window.DailyIframe.createFrame(this.grid, {
+        iframeStyle: { width: "100%", height: "100%", border: "none" },
+        showLeaveButton: false,
+        showFullscreenButton: false
+      });
+    }
 
     this.setupEventListeners();
 
