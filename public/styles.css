@@ -11,6 +11,11 @@
 /* THÈME 1 : INFILTRATION SPATIALE (Default) */
 :root[data-theme="default"],
 :root {
+  /* Video: active speaker highlight (D2.2/D3) */
+  --speaker-glow: var(--neon-main);
+  --speaker-border: var(--neon-main);
+  --speaker-bg: rgba(0, 255, 255, 0.10);
+
     /* Couleurs de fond */
     --primary-bg: #0a0e1a;
     --secondary-bg: #1a1f35;

@@ -141,3 +141,66 @@ body.layout-right .players-list .player-item {
     --vtile-h: 60px;
   }
 }
+
+
+
+/* =========================================================
+   D2.2 — Inline video slots inside Players List
+   - Non-destructif: n'altère pas le dock/bulle existant
+   ========================================================= */
+
+#playersList .player-left{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+#playersList .player-info{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:6px;
+}
+
+#playersList .player-name{
+  font-weight:900;
+  margin-right:6px;
+}
+
+.player-video-slot{
+  width: var(--vtile-w);
+  height: var(--vtile-h);
+  border-radius: var(--vtile-r);
+  background: rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.08);
+  overflow:hidden;
+  position:relative;
+  flex: 0 0 auto;
+}
+
+.player-video-slot video{
+  width:100%;
+  height:100%;
+  object-fit: cover;
+  display:block;
+}
+
+.player-video-slot::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06);
+  pointer-events:none;
+}
+
+.player-item.dt-speaking .player-video-slot{
+  border-color: var(--vtile-speaking-border);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--vtile-speaking-border) 55%, transparent),
+              0 0 18px color-mix(in srgb, var(--vtile-speaking-border) 45%, transparent);
+}
+
+/* Mobile: éviter d'élargir les rows */
+@media (max-width: 480px){
+  #playersList .player-left{ gap:10px; }
+  .player-video-slot{ width: 72px; height: 52px; }
+}
