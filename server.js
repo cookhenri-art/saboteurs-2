@@ -1501,6 +1501,9 @@ function publicRoomStateFor(room, viewerId) {
     themeId: room.themeId || "default",  // V26: Thème sélectionné
     phaseStartTime: room.phaseStartTime || Date.now(),  // V26: Pour timer hôte
     audio: room.audio,
+    // V9.3.1: Option lobby — partie sans visio
+    // IMPORTANT: doit être exposée au client sinon la checkbox se réinitialise.
+    videoDisabled: !!room.videoDisabled,
     ack: { 
       done: room.phaseAck.size, 
       total: required.length,
@@ -1882,18 +1885,7 @@ io.on("connection", (socket) => {
     if (!room) {
       logger.reject(code, "room_not_found", { playerId });
       return cb && cb({ ok: false, error: "Room introuvable" });
-    
-    // V9.4.4: Interdire les nouveaux joueurs en cours de partie.
-    // Seule une reconnexion via playerToken (joueur déjà connu) est autorisée.
-    if (room.started) {
-      const isKnownByToken = !!(playerToken && room.playerTokens && room.playerTokens.has(playerToken));
-      if (!isKnownByToken) {
-        logger.reject(code, "game_already_started", { playerId, name });
-        return cb && cb({ ok: false, error: "La partie a déjà commencé. Reconnexion uniquement." });
-      }
     }
-
-}
     
     // Vérifier si le token correspond à un joueur existant dans cette room
     if (playerToken && room.playerTokens.has(playerToken)) {
@@ -2008,6 +2000,19 @@ io.on("connection", (socket) => {
     logger.info("theme_selected", { roomCode: room.code, themeId, hostId: socket.data.playerId });
     emitRoom(room);
     cb && cb({ ok: true, themeId });
+  });
+
+  // V9.3.1: Toggle video disabled option
+  socket.on("setVideoDisabled", ({ videoDisabled }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut modifier cette option" });
+    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
+    
+    room.videoDisabled = Boolean(videoDisabled);
+    logger.info("video_disabled_changed", { roomCode: room.code, videoDisabled: room.videoDisabled, hostId: socket.data.playerId });
+    emitRoom(room);
+    cb && cb({ ok: true, videoDisabled: room.videoDisabled });
   });
   
   // Force advance (Phase 1 - S4 Mode hôte amélioré)
