@@ -1660,6 +1660,8 @@ function isNameTaken(room, name, exceptPlayerId = null) {
   if (!needle) return false;
   for (const p of room.players.values()) {
     if (p.status === "left") continue;
+    // V9.3.3: Ignorer aussi les joueurs déconnectés (fermeture navigateur)
+    if (!p.connected) continue;
     if (exceptPlayerId && p.playerId === exceptPlayerId) continue;
     if (normalizePlayerName(p.name) === needle) return true;
   }
@@ -1885,6 +1887,16 @@ io.on("connection", (socket) => {
     if (!room) {
       logger.reject(code, "room_not_found", { playerId });
       return cb && cb({ ok: false, error: "Room introuvable" });
+    }
+    
+    // V9.3.4: Empêcher les nouveaux joueurs de rejoindre une partie déjà commencée
+    // Exception: Les reconnexions avec token valide sont autorisées (gérées plus bas)
+    const existingPlayer = getPlayer(room, playerId);
+    const hasValidToken = playerToken && room.playerTokens.has(playerToken);
+    
+    if (room.started && !existingPlayer && !hasValidToken) {
+      logger.reject(code, "game_started", { playerId, name });
+      return cb && cb({ ok: false, error: "Cette partie a déjà commencé. Vous ne pouvez plus rejoindre." });
     }
     
     // Vérifier si le token correspond à un joueur existant dans cette room
