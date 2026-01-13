@@ -1907,10 +1907,11 @@ io.on("connection", (socket) => {
       return;
     }
     
-    // V9.3.4: Empêcher les nouveaux joueurs de rejoindre une partie déjà commencée
+    // V9.3.7: Empêcher les nouveaux joueurs de rejoindre une partie déjà commencée
     // Exception: Les joueurs existants peuvent se reconnecter
     const existingPlayer = getPlayer(room, playerId);
     
+    // V9.3.7: Si partie commencée ET que c'est un nouveau joueur (pas dans la room)
     if (room.started && !existingPlayer) {
       logger.reject(code, "game_started", { playerId, name });
       return cb && cb({ ok: false, error: "Cette partie a déjà commencé. Vous ne pouvez plus rejoindre." });
