@@ -1,0 +1,65 @@
+/* =========================================================
+   D2.1 — Daily Tracks styles (isolés)
+   ========================================================= */
+
+#daily-tracks-btn {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: #00ffd5;
+  color: #000;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#daily-tracks-panel {
+  position: fixed;
+  right: 16px;
+  bottom: 70px;
+  width: 220px;
+  background: rgba(5, 10, 20, 0.95);
+  border: 2px solid rgba(0, 255, 200, 0.6);
+  border-radius: 14px;
+  padding: 10px;
+  z-index: 9999;
+}
+
+.dt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #9ff;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.dt-header button {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.dt-videos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dt-video {
+  width: 96px;
+  height: 72px;
+  border-radius: 10px;
+  background: #000;
+  object-fit: cover;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.dt-video.speaking {
+  border-color: #00ffd5;
+  box-shadow: 0 0 12px rgba(0,255,200,0.8);
+}
