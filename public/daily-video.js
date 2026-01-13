@@ -177,6 +177,31 @@ controls.appendChild(this.camButton);
     this.container.appendChild(this.grid);
     this.container.appendChild(this.statusMessage);
 
+    // V9.3.8: Écran "Phase privée" (masqué par défaut)
+    this.privatePhaseScreen = document.createElement("div");
+    this.privatePhaseScreen.id = "privatePhaseScreen";
+    this.privatePhaseScreen.style.cssText = `
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      text-align: center;
+      padding: 20px;
+    `;
+    this.privatePhaseScreen.innerHTML = `
+      <div style="font-size: 4rem; margin-bottom: 20px;">🌙</div>
+      <div style="font-size: 1.5rem; font-weight: bold; margin-bottom: 10px;">Phase privée</div>
+      <div style="font-size: 1rem; opacity: 0.7;">Caméra et micro désactivés</div>
+    `;
+
     document.body.appendChild(this.container);
 
     // UI: bouton lanceur (si on ferme la fenêtre)
@@ -481,6 +506,17 @@ controls.appendChild(this.camButton);
     if (this.allowed.video && this.allowed.audio) this.updateStatus("✅ Vidéo + audio");
     if (!this.allowed.video && !this.allowed.audio) this.updateStatus("😴 Phase privée");
 
+
+    // V9.3.8: Afficher écran "Phase privée" si aucune permission
+    if (this.privatePhaseScreen) {
+      if (!this.allowed.video && !this.allowed.audio) {
+        this.privatePhaseScreen.style.display = "flex";
+        this.grid.style.display = "none"; // Masquer la grille vidéo
+      } else {
+        this.privatePhaseScreen.style.display = "none";
+        this.grid.style.display = "block"; // Afficher la grille vidéo
+      }
+    }
     await this.updateButtonStates();
   }
 
