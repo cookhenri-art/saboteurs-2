@@ -1501,9 +1501,6 @@ function publicRoomStateFor(room, viewerId) {
     themeId: room.themeId || "default",  // V26: Thème sélectionné
     phaseStartTime: room.phaseStartTime || Date.now(),  // V26: Pour timer hôte
     audio: room.audio,
-    // V9.3.1: Option lobby — partie sans visio
-    // IMPORTANT: doit être exposée au client sinon la checkbox se réinitialise.
-    videoDisabled: !!room.videoDisabled,
     ack: { 
       done: room.phaseAck.size, 
       total: required.length,
@@ -1660,8 +1657,6 @@ function isNameTaken(room, name, exceptPlayerId = null) {
   if (!needle) return false;
   for (const p of room.players.values()) {
     if (p.status === "left") continue;
-    // V9.3.3: Ignorer aussi les joueurs déconnectés (fermeture navigateur)
-    if (!p.connected) continue;
     if (exceptPlayerId && p.playerId === exceptPlayerId) continue;
     if (normalizePlayerName(p.name) === needle) return true;
   }
@@ -1887,16 +1882,26 @@ io.on("connection", (socket) => {
     if (!room) {
       logger.reject(code, "room_not_found", { playerId });
       return cb && cb({ ok: false, error: "Room introuvable" });
+
+// ==============================
+// V9.4.5: Reconnexion uniquement après démarrage
+// ==============================
+if (room.started) {
+  const hasValidToken = !!(playerToken && room.playerTokens && room.playerTokens.has(playerToken));
+  if (!hasValidToken) {
+    // Fallback: autoriser une reconnexion par NOM si le joueur existe et n'est plus actif
+    const sameName = String(name || "").trim().toLowerCase();
+    const candidate = room.players.find(p => (p.name || "").trim().toLowerCase() === sameName && p.status !== "left");
+    const inactive = candidate && (!candidate.lastSeenAt || (Date.now() - candidate.lastSeenAt) > 120000);
+    if (candidate && inactive) {
+      logger.info("reconnect_by_name", { roomCode: code, oldPlayerId: candidate.playerId, name: candidate.name });
+      joinRoomCommon(socket, room, candidate.playerId, candidate.name, playerToken);
+      return cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === candidate.playerId, reconnectedAs: candidate.playerId });
     }
-    
-    // V9.3.4: Empêcher les nouveaux joueurs de rejoindre une partie déjà commencée
-    // Exception: Les reconnexions avec token valide sont autorisées (gérées plus bas)
-    const existingPlayer = getPlayer(room, playerId);
-    const hasValidToken = playerToken && room.playerTokens.has(playerToken);
-    
-    if (room.started && !existingPlayer && !hasValidToken) {
-      logger.reject(code, "game_started", { playerId, name });
-      return cb && cb({ ok: false, error: "Cette partie a déjà commencé. Vous ne pouvez plus rejoindre." });
+    logger.reject(code, "game_started_reconnect_only", { playerId, name });
+    return cb && cb({ ok: false, error: "Partie déjà commencée. Reconnexion uniquement (même navigateur)." });
+  }
+}
     }
     
     // Vérifier si le token correspond à un joueur existant dans cette room
@@ -2012,19 +2017,6 @@ io.on("connection", (socket) => {
     logger.info("theme_selected", { roomCode: room.code, themeId, hostId: socket.data.playerId });
     emitRoom(room);
     cb && cb({ ok: true, themeId });
-  });
-
-  // V9.3.1: Toggle video disabled option
-  socket.on("setVideoDisabled", ({ videoDisabled }, cb) => {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
-    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut modifier cette option" });
-    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
-    
-    room.videoDisabled = Boolean(videoDisabled);
-    logger.info("video_disabled_changed", { roomCode: room.code, videoDisabled: room.videoDisabled, hostId: socket.data.playerId });
-    emitRoom(room);
-    cb && cb({ ok: true, videoDisabled: room.videoDisabled });
   });
   
   // Force advance (Phase 1 - S4 Mode hôte amélioré)
