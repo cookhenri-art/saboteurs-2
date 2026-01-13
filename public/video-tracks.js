@@ -1,248 +1,238 @@
 /* =========================================================
-   D2.2 — Daily Tracks inline dans Players List (mobile-safe)
-   - Un bouton d'activation (gesture requis sur mobile)
-   - Joins la room Daily via l'API du serveur (source de vérité)
-   - Attache les tracks vidéo dans les slots de la players-list
-   - Non destructif: ne touche pas à DailyVideo (iframe) existant
-   ========================================================= */
+   D3 - Video Tracks Inline (Headless Daily CallFrame)
+   - Aucune UI Daily flottante
+   - Vignettes par joueur dans la players-list
+   - Highlight active speaker (classe .is-speaking)
+   - Bouton d'activation (gesture mobile) -> délègue à window.VideoIntegration.requestVideoStart()
+========================================================= */
 
 (function () {
-  if (window.DAILY_TRACKS_LOADED) return;
-  window.DAILY_TRACKS_LOADED = true;
+  "use strict";
 
-  const STORAGE = {
-    playerId: "is_playerId",
-    name: "is_name",
-    room: "is_roomCode",
-    enabled: "is_daily_tracks_enabled"
-  };
+  const DEBUG = false;
 
-  let callObject = null;
-  let started = false;
+  const peerToPlayerId = new Map();      // session_id/peerId -> playerId
+  const playerToVideoEl = new Map();     // playerId -> <video>
+  let currentSpeaking = null;
+  let bound = false;
 
-  // Track cache: playerId -> MediaStreamTrack
-  const videoTracks = new Map();
-  // Daily peer/session -> playerId mapping
-  const peerToPlayerId = new Map();
-
-  function getRoomCode() {
-    try {
-      const fromStore = localStorage.getItem(STORAGE.room);
-      if (fromStore) return String(fromStore).trim();
-    } catch {}
-    // fallback query param
-    try {
-      const url = new URL(window.location.href);
-      const q = url.searchParams.get("room") || url.searchParams.get("roomCode");
-      if (q) return String(q).trim();
-    } catch {}
-    return "";
-  }
-
-  function getPlayerId() {
-    try {
-      const v = sessionStorage.getItem(STORAGE.playerId) || localStorage.getItem(STORAGE.playerId);
-      if (v) return String(v);
-    } catch {}
-    return "";
-  }
-
-  function getPlayerName() {
-    try {
-      const v = sessionStorage.getItem(STORAGE.name) || localStorage.getItem(STORAGE.name);
-      if (v) return String(v);
-    } catch {}
-    return "player";
-  }
+  function log(...args) { if (DEBUG) console.log("[VideoTracks]", ...args); }
 
   function parsePlayerIdFromUserName(userName) {
-    // Format: "name#<uuid>" (notre convention)
     if (!userName) return "";
-    const s = String(userName);
-    const m = s.match(/#([0-9a-fA-F-]{16,})$/);
-    return m ? m[1] : "";
+    const idx = userName.lastIndexOf("#");
+    if (idx === -1) return "";
+    const maybe = userName.slice(idx + 1).trim();
+    // simple guard: uuid-ish or at least length
+    if (maybe.length < 6) return "";
+    return maybe;
   }
 
-  async function fetchRoomUrl(roomCode) {
-    if (!roomCode) throw new Error("roomCode manquant");
-
-    // 1) essayer l'endpoint info (si la room existe déjà)
-    try {
-      const r = await fetch(`/api/video/room-info/${encodeURIComponent(roomCode)}`, { cache: "no-store" });
-      if (r.ok) {
-        const j = await r.json();
-        if (j && j.ok && j.roomUrl) return j.roomUrl;
-      }
-    } catch {}
-
-    // 2) sinon créer / récupérer via create-room
-    const r2 = await fetch(`/api/video/create-room/${encodeURIComponent(roomCode)}`, { cache: "no-store" });
-    const j2 = await r2.json().catch(() => ({}));
-    if (!r2.ok || !j2 || !j2.ok || !j2.roomUrl) {
-      throw new Error(j2?.error || `Impossible de récupérer l'URL Daily (HTTP ${r2.status})`);
-    }
-    return j2.roomUrl;
-  }
-
-  function ensureSlotsObserver() {
-    const host = document.getElementById("playersList");
-    if (!host || host.__dtObserverBound) return;
-    host.__dtObserverBound = true;
-
-    const obs = new MutationObserver(() => {
-      // Re-attach cached videos after re-render
-      reattachAll();
-    });
-    obs.observe(host, { childList: true, subtree: true });
+  function getPlayerRow(playerId) {
+    if (!playerId) return null;
+    return document.querySelector(`.player-item[data-player-id="${CSS.escape(playerId)}"]`);
   }
 
   function getSlot(playerId) {
-    if (!playerId) return null;
-    return document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+    const row = getPlayerRow(playerId);
+    if (!row) return null;
+    return row.querySelector(".player-video-slot") || null;
   }
 
-  function attachTrackToSlot(playerId, track) {
+  function ensureVideoEl(playerId, isLocal) {
+    let v = playerToVideoEl.get(playerId);
+    if (v) return v;
+
+    v = document.createElement("video");
+    v.autoplay = true;
+    v.playsInline = true;
+    v.muted = !!isLocal; // évite feedback local
+    v.setAttribute("muted", v.muted ? "" : null);
+    v.className = "player-video";
+
+    playerToVideoEl.set(playerId, v);
+    return v;
+  }
+
+  function attachTrackToPlayer(playerId, track, isLocal) {
+    if (!playerId || !track) return;
     const slot = getSlot(playerId);
     if (!slot) return;
 
-    let video = slot.querySelector("video");
-    if (!video) {
-      video = document.createElement("video");
-      video.autoplay = true;
-      video.playsInline = true;
-      video.muted = true; // éviter l'écho (on ne gère ici que la vidéo)
-      slot.appendChild(video);
+    const v = ensureVideoEl(playerId, isLocal);
+    const stream = new MediaStream([track]);
+    try {
+      v.srcObject = stream;
+    } catch (e) {
+      // fallback for very old browsers
+      v.src = URL.createObjectURL(stream);
     }
 
-    const stream = new MediaStream();
-    stream.addTrack(track);
-    video.srcObject = stream;
+    if (!slot.contains(v)) {
+      slot.innerHTML = "";
+      slot.appendChild(v);
+    }
   }
 
-  function reattachAll() {
-    for (const [playerId, track] of videoTracks.entries()) {
-      attachTrackToSlot(playerId, track);
+  function detachPlayer(playerId) {
+    const v = playerToVideoEl.get(playerId);
+    if (v) {
+      try { v.srcObject = null; } catch {}
+      if (v.parentNode) v.parentNode.removeChild(v);
+      playerToVideoEl.delete(playerId);
     }
+    const row = getPlayerRow(playerId);
+    if (row) row.classList.remove("is-speaking");
   }
 
   function setSpeaking(playerId) {
-    document.querySelectorAll(".player-item.dt-speaking").forEach(el => el.classList.remove("dt-speaking"));
-    if (!playerId) return;
-    const row = document.querySelector(`.player-item[data-player-id="${CSS.escape(playerId)}"]`);
-    if (row) row.classList.add("dt-speaking");
+    if (currentSpeaking === playerId) return;
+    if (currentSpeaking) {
+      const prev = getPlayerRow(currentSpeaking);
+      if (prev) prev.classList.remove("is-speaking");
+    }
+    currentSpeaking = playerId || null;
+    if (currentSpeaking) {
+      const row = getPlayerRow(currentSpeaking);
+      if (row) row.classList.add("is-speaking");
+    }
   }
 
-  async function start() {
-    if (started) return;
-    started = true;
+  function bindToCallFrame(callFrame) {
+    if (!callFrame || bound) return;
+    bound = true;
 
-    const roomCode = getRoomCode();
-    const roomUrl = await fetchRoomUrl(roomCode);
+    log("Binding to callFrame");
 
-    ensureSlotsObserver();
-
-    if (!callObject) callObject = Daily.createCallObject();
-
-    callObject.on("track-started", (ev) => {
-      if (ev?.track?.kind !== "video") return;
-
-      const pid =
-        (ev?.participant?.local ? getPlayerId() : "") ||
-        parsePlayerIdFromUserName(ev?.participant?.user_name) ||
-        "";
-
-      const peerKey = ev?.participant?.session_id || ev?.participant?.peerId || ev?.participant?.id || "";
+    callFrame.on("participant-joined", (ev) => {
+      const p = ev?.participant;
+      const peerKey = p?.session_id || p?.peerId || p?.id || "";
+      const pid = parsePlayerIdFromUserName(p?.user_name);
       if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
+    });
 
+    callFrame.on("participant-updated", (ev) => {
+      const p = ev?.participant;
+      const peerKey = p?.session_id || p?.peerId || p?.id || "";
+      const pid = parsePlayerIdFromUserName(p?.user_name);
+      if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
+    });
+
+    callFrame.on("participant-left", (ev) => {
+      const p = ev?.participant;
+      const peerKey = p?.session_id || p?.peerId || p?.id || "";
+      const pid = peerToPlayerId.get(peerKey);
       if (pid) {
-        videoTracks.set(pid, ev.track);
-        attachTrackToSlot(pid, ev.track);
+        peerToPlayerId.delete(peerKey);
+        detachPlayer(pid);
       }
     });
 
-    callObject.on("track-stopped", (ev) => {
+    callFrame.on("track-started", (ev) => {
       if (ev?.track?.kind !== "video") return;
-      const peerKey = ev?.participant?.session_id || ev?.participant?.peerId || ev?.participant?.id || "";
-      const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(ev?.participant?.user_name) || "";
-      if (pid) {
-        videoTracks.delete(pid);
-        const slot = getSlot(pid);
-        if (slot) slot.innerHTML = "";
-      }
+      const p = ev?.participant;
+      const peerKey = p?.session_id || p?.peerId || p?.id || "";
+      const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
+      if (!pid) return;
+      peerToPlayerId.set(peerKey, pid);
+      const isLocal = !!p?.local;
+      attachTrackToPlayer(pid, ev.track, isLocal);
     });
 
-    callObject.on("active-speaker-change", (ev) => {
-      // daily-js callObject returns { peerId } for active speaker
+    callFrame.on("track-stopped", (ev) => {
+      if (ev?.track?.kind !== "video") return;
+      const p = ev?.participant;
+      const peerKey = p?.session_id || p?.peerId || p?.id || "";
+      const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
+      if (pid) detachPlayer(pid);
+    });
+
+    callFrame.on("active-speaker-change", (ev) => {
       const peerId = ev?.peerId || ev?.activeSpeaker?.peerId || "";
       const pid = peerToPlayerId.get(peerId) || "";
       setSpeaking(pid);
     });
 
-    const userName = `${getPlayerName()}#${getPlayerId() || "unknown"}`;
+    // Re-attach on players list re-render
+    const list = document.querySelector("#playersList") || document.querySelector(".players-list") || null;
+    if (list && window.MutationObserver) {
+      const obs = new MutationObserver(() => {
+        // re-append existing videos into new slots
+        for (const [pid, v] of playerToVideoEl.entries()) {
+          const slot = getSlot(pid);
+          if (slot && !slot.contains(v)) {
+            slot.innerHTML = "";
+            slot.appendChild(v);
+          }
+        }
+        if (currentSpeaking) {
+          const row = getPlayerRow(currentSpeaking);
+          if (row) row.classList.add("is-speaking");
+        }
+      });
+      obs.observe(list, { childList: true, subtree: true });
+    }
 
-    await callObject.join({
-      url: roomUrl,
-      userName
-    });
-
-    // Persist user intent (for next reload)
-    try { localStorage.setItem(STORAGE.enabled, "1"); } catch {}
-
-    // attach whatever is already cached (in case UI rendered after join)
-    reattachAll();
+    // Expose helpers
+    window.VideoTracks = window.VideoTracks || {};
+    window.VideoTracks.getVideoElForPlayer = (playerId) => playerToVideoEl.get(playerId) || null;
   }
 
-  async function stop() {
-    started = false;
-    try { localStorage.removeItem(STORAGE.enabled); } catch {}
-    setSpeaking("");
-
-    if (callObject) {
-      try { await callObject.leave(); } catch {}
-      try { callObject.destroy(); } catch {}
-      callObject = null;
+  function waitForCallFrame() {
+    const cf = window.dailyVideo && window.dailyVideo.callFrame;
+    if (cf) {
+      bindToCallFrame(cf);
+      return;
     }
-    videoTracks.clear();
-    peerToPlayerId.clear();
+    setTimeout(waitForCallFrame, 500);
   }
 
   function mountButton() {
-    const btn = document.createElement("button");
-    btn.id = "daily-tracks-btn";
-    btn.textContent = "🎥 Activer la visio (expérimental)";
-    btn.onclick = async () => {
-      // Toggle (pratique en test)
-      if (started) {
-        btn.textContent = "🎥 Activer la visio (expérimental)";
-        await stop();
+    // If an older button exists, keep it
+    let btn = document.getElementById("daily-tracks-btn");
+    if (!btn) {
+      btn = document.createElement("button");
+      btn.id = "daily-tracks-btn";
+      btn.type = "button";
+      btn.textContent = "🎥 Activer la visio";
+      btn.style.cssText = `
+        position: fixed;
+        left: 18px;
+        bottom: 18px;
+        z-index: 9999;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        backdrop-filter: blur(8px);
+      `;
+      document.body.appendChild(btn);
+    } else {
+      btn.textContent = "🎥 Activer la visio";
+    }
+
+    btn.onclick = () => {
+      if (window.VideoIntegration && typeof window.VideoIntegration.requestVideoStart === "function") {
+        window.VideoIntegration.requestVideoStart();
+        btn.textContent = "🎥 Visio demandée…";
+        setTimeout(() => { btn.textContent = "🎥 Visio activée"; }, 1200);
       } else {
-        btn.textContent = "⏳ Connexion visio…";
-        try {
-          await start();
-          btn.textContent = "🎥 Visio active (cliquer pour arrêter)";
-        } catch (e) {
-          console.error("[DailyTracks] start failed:", e);
-          btn.textContent = "🎥 Activer la visio (expérimental)";
-          started = false;
-          alert(`Visio impossible : ${e?.message || e}`);
-        }
+        console.warn("[VideoTracks] VideoIntegration API not ready yet");
       }
     };
-    document.body.appendChild(btn);
-
-    // Auto-restart si l'utilisateur avait activé avant (desktop only)
-    try {
-      const enabled = localStorage.getItem(STORAGE.enabled) === "1";
-      const isMobile = (() => {
-        try { if (window.matchMedia && window.matchMedia("(max-width: 767px)").matches) return true; } catch {}
-        return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-      })();
-      if (enabled && !isMobile) {
-        // On laisse l'UI se rendre puis on tente un start.
-        setTimeout(() => btn.click(), 800);
-      }
-    } catch {}
   }
 
-  window.addEventListener("DOMContentLoaded", mountButton);
+  // Boot
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => {
+      mountButton();
+      waitForCallFrame();
+    });
+  } else {
+    mountButton();
+    waitForCallFrame();
+  }
 })();
