@@ -1848,3 +1848,43 @@ select:focus-visible {
     box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
   }
 }
+
+
+/* =====================================================
+   DESKTOP BANNER BLUR VARIANT (PC ONLY)
+   Images 420x420 – mobile untouched
+   ===================================================== */
+@media (min-width: 768px) {
+  .banner,
+  .phase-banner,
+  .header-banner {
+    position: relative;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center center;
+    min-height: 220px;
+    overflow: hidden;
+  }
+
+  .banner::before,
+  .phase-banner::before,
+  .header-banner::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: inherit;
+    background-size: cover;
+    background-position: center;
+    filter: blur(14px);
+    opacity: 0.35;
+    z-index: 0;
+  }
+
+  .banner > *,
+  .phase-banner > *,
+  .header-banner > * {
+    position: relative;
+    z-index: 1;
+  }
+}
+
