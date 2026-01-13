@@ -29,6 +29,25 @@
     return maybe;
   }
 
+  function resolvePlayerId(participant) {
+    // 1) Preferred: id encoded as "Name#<playerId>"
+    const pid = parsePlayerIdFromUserName(participant?.user_name);
+    if (pid && getPlayerRow(pid)) return pid;
+
+    // 2) Fallback: match by base name against lastKnownState.players
+    // Useful if someone joined with a wrong id (e.g. socket id) but names are unique.
+    const raw = (participant?.user_name || "").trim();
+    const base = raw.includes("#") ? raw.split("#")[0].trim() : raw;
+    if (!base) return "";
+
+    const st = window.lastKnownState;
+    const players = st?.players || [];
+    const match = players.find(p => (p?.name || "").trim() === base);
+    const fallbackId = match?.playerId || "";
+    if (fallbackId && getPlayerRow(fallbackId)) return fallbackId;
+    return "";
+  }
+
   function getPlayerRow(playerId) {
     if (!playerId) return null;
     return document.querySelector(`.player-item[data-player-id="${CSS.escape(playerId)}"]`);
@@ -108,14 +127,14 @@
     callFrame.on("participant-joined", (ev) => {
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
-      const pid = parsePlayerIdFromUserName(p?.user_name);
+      const pid = resolvePlayerId(p);
       if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
     });
 
     callFrame.on("participant-updated", (ev) => {
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
-      const pid = parsePlayerIdFromUserName(p?.user_name);
+      const pid = resolvePlayerId(p);
       if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
     });
 
@@ -133,7 +152,7 @@
       if (ev?.track?.kind !== "video") return;
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
-      const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
+      const pid = peerToPlayerId.get(peerKey) || resolvePlayerId(p) || "";
       if (!pid) return;
       peerToPlayerId.set(peerKey, pid);
       const isLocal = !!p?.local;
@@ -144,7 +163,7 @@
       if (ev?.track?.kind !== "video") return;
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
-      const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
+      const pid = peerToPlayerId.get(peerKey) || resolvePlayerId(p) || "";
       if (pid) detachPlayer(pid);
     });
 
