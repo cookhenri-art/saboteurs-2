@@ -23,8 +23,9 @@
     const idx = userName.lastIndexOf("#");
     if (idx === -1) return "";
     const maybe = userName.slice(idx + 1).trim();
-    // simple guard: uuid-ish or at least length
-    if (maybe.length < 6) return "";
+    // Accept any non-empty id after '#'.
+    // (Some deployments use short ids; we only guard against empty.)
+    if (!maybe) return "";
     return maybe;
   }
 
