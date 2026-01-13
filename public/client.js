@@ -1,3 +1,16 @@
+
+// === V9.4.2 SESSION FALLBACK ===
+(function ensureSessionFallback(){
+  try {
+    if (!sessionStorage.getItem("playerName") && localStorage.getItem("playerName")) {
+      sessionStorage.setItem("playerName", localStorage.getItem("playerName"));
+    }
+    if (!sessionStorage.getItem("roomCode") && localStorage.getItem("roomCode")) {
+      sessionStorage.setItem("roomCode", localStorage.getItem("roomCode"));
+    }
+  } catch(e) {}
+})();
+
 /* Infiltration Spatiale — client (vanilla) V26 */
 
 // Socket.IO: index.html ensures the client library is loaded (local first, CDN fallback).
@@ -507,9 +520,6 @@ function renderLobby() {
   
   // Theme selector (host only)
   renderThemeSelector(isHost);
-  
-  // V9.3.1: Video options (host only)
-  renderVideoOptions(isHost);
 
   function makeCheckbox(key, label, helpText, checked, isRoot=false, isDisabled=false) {
     const row = document.createElement("div");
@@ -1563,7 +1573,19 @@ socket.on("roomState", (s) => {
 
   // If we are ended, show end.
   render();
-});
+}
+  // === V9.4.2 ROOMSTATE RESTORE ===
+  try {
+    if (state && state.roomCode) {
+      showScreen("gameScreen");
+      if (window.dailyVideo) {
+        const hidden = localStorage.getItem("video_hidden") === "1";
+        if (hidden && window.dailyVideo.hideWindow) window.dailyVideo.hideWindow();
+        if (!hidden && window.dailyVideo.showWindow) window.dailyVideo.showWindow();
+      }
+    }
+  } catch(e) {}
+);
 
 socket.on("serverHello", () => {
   clearError();
@@ -1880,46 +1902,6 @@ function renderThemeSelector(isHost) {
   const theme = availableThemes.find(t => t.id === currentThemeId);
   if (theme) {
     descContainer.textContent = theme.description || "";
-  }
-}
-
-
-// V9.3.1: Afficher les options vidéo pour l'hôte
-function renderVideoOptions(isHost) {
-  const videoOptions = $("videoOptions");
-  if (!videoOptions) return;
-  
-  if (!isHost || state.started) {
-    videoOptions.style.display = "none";
-    return;
-  }
-  
-  videoOptions.style.display = "block";
-  
-  const checkbox = $("disableVideoCheckbox");
-  if (!checkbox) return;
-  
-  // Synchroniser la checkbox avec l'état du serveur
-  checkbox.checked = state.videoDisabled || false;
-  
-  // Écouter les changements de la checkbox
-  if (!checkbox.__boundVideoOption) {
-    checkbox.__boundVideoOption = true;
-    checkbox.addEventListener("change", () => {
-      const videoDisabled = checkbox.checked;
-
-      // Si l'état est déjà celui du serveur, ne rien faire.
-      // (évite des émissions inutiles lors des re-renders)
-      if (!!state.videoDisabled === !!videoDisabled) return;
-
-      socket.emit("setVideoDisabled", { videoDisabled }, (res) => {
-        if (!res?.ok) {
-          setError(res?.error || "Erreur changement option vidéo");
-          // Remettre l'ancienne valeur en cas d'erreur
-          checkbox.checked = !videoDisabled;
-        }
-      });
-    });
   }
 }
 
@@ -2250,3 +2232,13 @@ socket.on("newBadges", (data) => {
 console.log("[V26] Nouvelles fonctionnalités chargées !");
 
 
+
+
+// === V9.4.2 VIDEO UI PERSIST ===
+window.addEventListener("beforeunload", () => {
+  try {
+    if (window.dailyVideo && window.dailyVideo.isHidden) {
+      localStorage.setItem("video_hidden", window.dailyVideo.isHidden() ? "1" : "0");
+    }
+  } catch(e) {}
+});
