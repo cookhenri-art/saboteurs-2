@@ -107,10 +107,7 @@ function initVideoForGame(state) {
       // Rejoindre la room avec les permissions initiales
       const permissions = state.videoPermissions || { video: true, audio: true };
       const baseName = state.you?.name || 'Joueur';
-      // IMPORTANT (D3 fix): the UI video slots are keyed by `playerId`.
-      // Some builds also expose `state.you.id` (often a socket/client id) which
-      // must NOT be used for mapping tracks to slots.
-      const youId = state.you?.playerId || state.you?.id || '';
+      const youId = state.you?.playerId || window.playerId || state.you?.id || '';
       const userName = youId ? `${baseName}#${youId}` : baseName;
       
       console.log('[Video] 🚀 Joining room with:', { userName, permissions });
@@ -342,7 +339,7 @@ function cleanupVideo() {
         );
 
         if (!VIDEO_IS_MOBILE && isNightLike && document.pictureInPictureEnabled) {
-          const youId = state.you?.id || state.you?.playerId || '';
+          const youId = state.you?.playerId || window.playerId || state.you?.id || '';
           const selector = youId ? `.player-item[data-player-id="${youId}"] video` : '.player-item video';
           const el = document.querySelector(selector);
 
