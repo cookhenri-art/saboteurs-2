@@ -57,14 +57,16 @@
   function ensureVideoEl(playerId, isLocal) {
     if (videoEls.has(playerId)) return videoEls.get(playerId);
     const v = document.createElement("video");
+    v.className = "player-video"; // D4: Classe pour le CSS
     v.autoplay = true;
     v.playsInline = true;
     v.muted = true; // ALWAYS muted - audio is handled separately
     v.setAttribute("webkit-playsinline", "true");
+    // Styles inline en backup du CSS
     v.style.width = "100%";
     v.style.height = "100%";
     v.style.objectFit = "cover";
-    v.style.borderRadius = "8px";
+    v.style.display = "block";
     videoEls.set(playerId, v);
     return v;
   }
@@ -88,6 +90,9 @@
     const slot = getSlot(playerId);
     if (!slot) {
       log("No slot found for player:", playerId);
+      // Debug: lister tous les slots disponibles
+      const allSlots = document.querySelectorAll('.player-video-slot');
+      log("Available slots:", allSlots.length, Array.from(allSlots).map(s => s.dataset.playerId));
       return;
     }
 
@@ -100,7 +105,16 @@
       slot.appendChild(v);
     }
     
-    log("Video attached to slot for:", playerId);
+    // D4: Forcer les styles inline pour s'assurer de la visibilité
+    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid #00ffff!important;border-radius:8px!important;overflow:hidden!important;";
+    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;";
+    
+    // D4: Debug - vérifier les dimensions du slot
+    const rect = slot.getBoundingClientRect();
+    log("Video attached to slot for:", playerId, "slot size:", rect.width + "x" + rect.height);
+    
+    // D4: Forcer le play
+    v.play().catch(e => log("Video play error:", e));
   }
 
   // D4: Attach audio track for a remote participant

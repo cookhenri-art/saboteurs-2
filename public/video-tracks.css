@@ -16,13 +16,17 @@
 .player-item .player-video-slot {
   width: var(--vtile-w);
   height: var(--vtile-h);
+  min-width: var(--vtile-w);
+  min-height: var(--vtile-h);
   border-radius: var(--vtile-radius);
-  border: 1px solid var(--vtile-border);
+  border: 2px solid var(--vtile-border);
   background: var(--vtile-bg);
   overflow: hidden;
   box-shadow: var(--vtile-shadow);
   flex: 0 0 auto;
   position: relative;
+  /* D4: Forcer la visibilité */
+  display: block !important;
 }
 
 .player-item .player-video-slot:empty::after {
