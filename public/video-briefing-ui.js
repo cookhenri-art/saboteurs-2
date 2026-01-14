@@ -73,7 +73,7 @@
       </div>
       <div class="video-briefing-actions">
         <button class="video-briefing-btn btn-exit" id="briefingExitBtn" title="Retour au jeu">
-          ✕
+          ← Retour
         </button>
       </div>
     `;

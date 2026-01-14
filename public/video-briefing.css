@@ -359,8 +359,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
+  padding-top: 10px;
   
-  background: linear-gradient(rgba(0, 0, 0, 0.8), transparent);
+  background: linear-gradient(rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.5), transparent);
   z-index: 10;
 }
 
@@ -368,6 +369,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  /* Laisser de la place pour le bouton RÈGLES qui est en position fixed */
+  margin-left: 140px;
 }
 
 .video-briefing-title .icon {
@@ -398,19 +401,22 @@
 }
 
 .video-briefing-btn {
-  width: 44px;
+  min-width: 44px;
   height: 44px;
+  padding: 0 15px;
   
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   
   background: var(--control-bg);
   border: 1px solid var(--briefing-border);
   border-radius: 10px;
   
   color: #fff;
-  font-size: 1.2rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
   
   transition: 
@@ -420,7 +426,7 @@
 
 .video-briefing-btn:hover {
   background: var(--control-hover);
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .video-briefing-btn:active {
@@ -428,12 +434,15 @@
 }
 
 .video-briefing-btn.btn-exit {
-  background: rgba(255, 50, 50, 0.2);
-  border-color: rgba(255, 50, 50, 0.4);
+  background: rgba(255, 100, 100, 0.15);
+  border-color: rgba(255, 100, 100, 0.4);
+  color: #ff9999;
+  padding: 0 20px;
 }
 
 .video-briefing-btn.btn-exit:hover {
-  background: rgba(255, 50, 50, 0.4);
+  background: rgba(255, 100, 100, 0.3);
+  color: #fff;
 }
 
 /* ============================================
@@ -477,14 +486,28 @@
   .video-briefing-container {
     flex-direction: column;
     padding: 10px;
+    padding-top: 70px; /* Espace pour le header */
     gap: 10px;
+  }
+  
+  .video-briefing-header {
+    height: 60px;
+    padding: 10px 10px 0 10px;
+  }
+  
+  .video-briefing-title {
+    margin-left: 0; /* Pas de marge sur mobile */
+  }
+  
+  .video-briefing-title .icon {
+    display: none; /* Cacher l'icône sur mobile pour gagner de la place */
   }
   
   .video-focus-wrapper {
     flex: none;
-    height: 50vh;
+    height: 45vh;
     min-height: 200px;
-    max-height: 400px;
+    max-height: 350px;
   }
   
   .video-focus-main {
@@ -517,18 +540,18 @@
     height: calc(var(--thumb-size-mobile) * 0.75);
   }
   
-  .video-briefing-header {
-    height: 50px;
-    padding: 0 10px;
-  }
-  
   .video-briefing-title .text {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     letter-spacing: 1px;
   }
   
   .video-briefing-title .phase-badge {
     display: none;
+  }
+  
+  .video-briefing-btn.btn-exit {
+    padding: 0 12px;
+    font-size: 0.8rem;
   }
   
   .video-briefing-game-ui {
