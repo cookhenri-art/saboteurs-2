@@ -755,6 +755,38 @@
    INLINE MODE ENHANCEMENTS (D3 compatible)
    ============================================ */
 
+/* D4: Style de base pour les vignettes vidéo inline dans la players-list */
+.player-video-slot {
+  width: 64px;
+  height: 48px;
+  min-width: 64px;
+  min-height: 48px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.player-video-slot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Placeholder quand pas de vidéo */
+.player-video-slot:empty::after {
+  content: "📷";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.2rem;
+  opacity: 0.4;
+}
+
 /* Enhanced speaker highlight for inline mode */
 .player-item.is-speaking .player-video-slot {
   border-color: var(--speaker-ring) !important;
