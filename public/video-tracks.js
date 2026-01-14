@@ -206,7 +206,6 @@
       // S'assurer que la barre est visible (au cas où elle aurait été cachée en mode SPLIT)
       container.style.display = 'flex';
     }
-    }
     
     // Vérifier que le container est bien dans le DOM
     if (!document.body.contains(container)) {
