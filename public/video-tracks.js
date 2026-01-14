@@ -768,12 +768,18 @@
     callObject.on("active-speaker-change", (ev) => {
       const peerId = ev?.peerId || ev?.activeSpeaker?.peerId || "";
       const pid = peerToPlayerId.get(peerId) || "";
-      log("active-speaker-change:", pid);
+      
+      // D5: Log amélioré
+      log("🎙️ active-speaker-change event:", { peerId, playerId: pid, raw: ev });
+      
       setSpeaking(pid);
       
-      // D4: Notifier le VideoModeController
+      // D5: Notifier le VideoModeController avec validation
       if (window.videoModeCtrl && pid) {
+        log("🎙️ Notifying VideoModeController of active speaker:", pid);
         window.videoModeCtrl.setActiveSpeaker(pid);
+      } else if (!pid) {
+        log("🎙️ No playerId found for peerId:", peerId);
       }
     });
 

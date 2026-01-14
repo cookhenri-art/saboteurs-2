@@ -440,6 +440,19 @@
       return;
     }
     
+    // D5: Animation de transition si le focus change
+    const isNewFocus = currentFocusId !== playerId;
+    
+    if (isNewFocus && focusMain) {
+      // Ajouter la classe d'animation
+      focusMain.classList.add('focus-changing');
+      
+      // Retirer après l'animation
+      setTimeout(() => {
+        focusMain.classList.remove('focus-changing');
+      }, 400);
+    }
+    
     currentFocusId = playerId;
     
     // Update focus name
@@ -460,7 +473,8 @@
     // Rebuild thumbs to exclude focused player
     rebuildThumbs(playerId);
     
-    log('Focus set to:', playerId, focusedPlayer.name);
+    // D5: Log avec indication si manuel ou auto
+    log('Focus set to:', playerId, focusedPlayer.name, isManual ? '(manual)' : '(auto-speaker)');
   }
 
   function rebuildThumbs(focusedId) {

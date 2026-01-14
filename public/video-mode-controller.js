@@ -313,24 +313,44 @@
     
     /**
      * Active speaker change (depuis Daily)
+     * D5: Amélioration avec meilleur support tous modes
      */
     setActiveSpeaker(playerId) {
       if (this.speakerDebounceTimer) {
         clearTimeout(this.speakerDebounceTimer);
       }
       
+      // D5: Log immédiat pour debug
+      this.log('🎙️ Active speaker detected:', playerId, '(debouncing...)');
+      
       // Debounce pour éviter le clignotement
       this.speakerDebounceTimer = setTimeout(() => {
-        if (this.activeSpeakerId === playerId) return;
+        if (this.activeSpeakerId === playerId) {
+          this.log('🎙️ Same speaker, ignoring');
+          return;
+        }
         
+        const previousSpeaker = this.activeSpeakerId;
         this.activeSpeakerId = playerId;
-        this.log('Active speaker:', playerId);
+        this.log('🎙️ Active speaker confirmed:', playerId, '(was:', previousSpeaker, ')');
         
-        this.emit('activeSpeakerChange', { playerId });
+        // Émettre l'événement pour les highlights (tous modes)
+        this.emit('activeSpeakerChange', { 
+          playerId,
+          previousPlayerId: previousSpeaker 
+        });
         
-        // Auto-focus si pas de focus manuel actif
+        // D5: Auto-focus uniquement si en mode SPLIT ou ADVANCED_FOCUS
+        // ET si pas de focus manuel actif
         if (!this.isManualFocus && playerId) {
-          this.setFocus(playerId, false);
+          const shouldAutoFocus = (this.currentMode === 'SPLIT' || this.currentMode === 'ADVANCED_FOCUS');
+          
+          if (shouldAutoFocus) {
+            this.log('🎙️ Auto-focusing to speaker in mode:', this.currentMode);
+            this.setFocus(playerId, false);
+          } else {
+            this.log('🎙️ Not auto-focusing (mode:', this.currentMode, ')');
+          }
         }
       }, CONFIG.SPEAKER_STABILIZATION_DELAY);
     }

@@ -190,6 +190,28 @@
   
   /* Minimum height */
   min-height: 300px;
+  
+  /* D5: Transition fluide pour changement de focus */
+  transition: border-color 0.3s ease, box-shadow 0.4s ease;
+}
+
+/* D5: Animation d'entrée pour nouveau focus */
+.video-focus-main.focus-changing {
+  animation: focus-transition 0.4s ease-out;
+}
+
+@keyframes focus-transition {
+  0% { 
+    opacity: 0.7; 
+    transform: scale(0.98);
+  }
+  50% { 
+    opacity: 0.9;
+  }
+  100% { 
+    opacity: 1; 
+    transform: scale(1);
+  }
 }
 
 .video-focus-main video {
@@ -197,6 +219,14 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  
+  /* D5: Transition douce pour le changement de source video */
+  transition: opacity 0.25s ease;
+}
+
+/* D5: Fade pendant le changement de source */
+.video-focus-main.focus-changing video {
+  opacity: 0.8;
 }
 
 /* Focus name overlay */
@@ -809,6 +839,29 @@
     0 0 25px var(--speaker-pulse),
     var(--vtile-shadow) !important;
   animation: inline-speaker-pulse 2s ease-in-out infinite;
+}
+
+/* D5: Badge "parle" sur le joueur actif en mode inline */
+.player-item.is-speaking::after {
+  content: "🎙️";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 1.2rem;
+  z-index: 10;
+  filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.8));
+  animation: speaking-badge-pulse 1s ease-in-out infinite;
+}
+
+@keyframes speaking-badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* D5: Highlight plus visible sur le nom du joueur */
+.player-item.is-speaking .player-name {
+  color: var(--speaker-ring) !important;
+  text-shadow: 0 0 10px var(--speaker-pulse);
 }
 
 @keyframes inline-speaker-pulse {
