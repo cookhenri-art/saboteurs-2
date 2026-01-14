@@ -302,6 +302,19 @@ function updateVideoPermissions(state) {
   // Afficher le message de phase
   if (state.videoPhaseMessage) {
     showVideoStatus(state.videoPhaseMessage, 'info');
+  } else {
+    // UX fallback: if the player requested the session but the current phase disables A/V,
+    // we show a clear "waiting for phase" message.
+    try {
+      const requested = videoUserRequestedSession || sessionStorage.getItem('videoUserRequestedSession') === 'true';
+      const perms = state.videoPermissions || {};
+      const avOff = perms.video === false && perms.audio === false;
+      if (requested && avOff) {
+        showVideoStatus('⏳ En attente de validation de phase pour réactiver la visio', 'info');
+      }
+    } catch (e) {
+      // ignore
+    }
   }
 }
 
