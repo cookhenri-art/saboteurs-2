@@ -283,6 +283,14 @@ function updateVideoPermissions(state) {
   // Appliquer les permissions de base
   window.dailyVideo.updatePermissions(permissions);
   
+  // D4 v5.5: Rafraîchir le filtrage des tracks selon les nouvelles permissions
+  if (window.VideoTracksRefresh) {
+    setTimeout(() => {
+      window.VideoTracksRefresh();
+      console.log('[Video] 🔄 Tracks refreshed for new permissions');
+    }, 200);
+  }
+  
   // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
   if (userMutedAudio || userMutedVideo) {
     setTimeout(() => {

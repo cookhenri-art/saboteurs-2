@@ -309,8 +309,77 @@
     return a;
   }
 
+  // D4 v5.5: Vérifier si on a le droit de voir/entendre ce joueur selon les permissions de phase
+  function canReceiveFromPlayer(playerId) {
+    const state = window.lastKnownState;
+    if (!state) return true; // Par défaut, autoriser
+    
+    const myId = getLocalPlayerId();
+    const myPermissions = state.videoPermissions?.[myId];
+    const theirPermissions = state.videoPermissions?.[playerId];
+    
+    // Si pas de permissions définies, autoriser
+    if (!myPermissions || !theirPermissions) return true;
+    
+    // Si je n'ai pas le droit d'avoir vidéo/audio, je suis en mode "isolé"
+    // Dans ce cas, je ne dois recevoir que des joueurs qui ont aussi le droit
+    if (!myPermissions.video && !myPermissions.audio) {
+      // Je suis en mode silencieux - je ne reçois rien
+      log("🔒 I'm in silent mode, blocking receive from:", playerId);
+      return false;
+    }
+    
+    // Si l'autre n'a pas le droit d'émettre, ne pas le recevoir
+    if (!theirPermissions.video && !theirPermissions.audio) {
+      log("🔒 Player in silent mode, blocking receive:", playerId);
+      return false;
+    }
+    
+    // Phases privées spéciales : vérifier si on est dans le même "groupe"
+    const phase = state.phase;
+    
+    // NIGHT_AI_EXCHANGE : seuls IA + partenaire lié se voient
+    if (phase === 'NIGHT_AI_EXCHANGE') {
+      // Trouver l'agent IA
+      const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
+      if (iaPlayer) {
+        const iaId = iaPlayer.playerId;
+        const linkedId = iaPlayer.linkedTo;
+        
+        // Je dois être soit l'IA soit le partenaire lié
+        const iAmInvolved = (myId === iaId || myId === linkedId);
+        const theyAreInvolved = (playerId === iaId || playerId === linkedId);
+        
+        if (!iAmInvolved || !theyAreInvolved) {
+          log("🔒 NIGHT_AI_EXCHANGE: not in private channel, blocking:", playerId);
+          return false;
+        }
+      }
+    }
+    
+    // NIGHT_SABOTEURS : seuls les saboteurs se voient entre eux
+    if (phase === 'NIGHT_SABOTEURS') {
+      const myPlayer = state.players?.find(p => p.playerId === myId);
+      const theirPlayer = state.players?.find(p => p.playerId === playerId);
+      
+      if (myPlayer?.role !== 'saboteur' || theirPlayer?.role !== 'saboteur') {
+        log("🔒 NIGHT_SABOTEURS: not a saboteur, blocking:", playerId);
+        return false;
+      }
+    }
+    
+    return true;
+  }
+
   function attachTrackToPlayer(playerId, track, isLocal) {
     if (!playerId || !track) return;
+    
+    // D4 v5.5: Vérifier les permissions avant d'attacher
+    if (!isLocal && !canReceiveFromPlayer(playerId)) {
+      log("🚫 Blocked video track from:", playerId, "(permissions)");
+      return;
+    }
+    
     const slot = getSlot(playerId);
     if (!slot) {
       log("No slot found for player:", playerId);
@@ -351,6 +420,18 @@
       return;
     }
     
+    // D4 v5.5: Vérifier les permissions avant d'attacher l'audio
+    if (!canReceiveFromPlayer(playerId)) {
+      log("🚫 Blocked audio track from:", playerId, "(permissions)");
+      // S'assurer qu'on n'a pas d'audio résiduel
+      const existingAudio = audioEls.get(playerId);
+      if (existingAudio) {
+        existingAudio.pause();
+        existingAudio.srcObject = null;
+      }
+      return;
+    }
+    
     const a = ensureAudioEl(playerId);
     const stream = new MediaStream([track]);
     try { 
@@ -367,15 +448,40 @@
 
   function reattachAll() {
     log("Reattaching all tracks...");
+    const localId = getLocalPlayerId();
+    
+    // Réattacher les vidéos (avec filtrage des permissions)
     for (const [pid, track] of videoTracks.entries()) {
-      attachTrackToPlayer(pid, track, pid === getLocalPlayerId());
+      attachTrackToPlayer(pid, track, pid === localId);
     }
+    
+    // Réattacher les audios (avec filtrage des permissions)
+    for (const [pid, track] of audioTracks.entries()) {
+      attachAudioTrack(pid, track, pid === localId);
+    }
+    
+    // Couper l'audio des joueurs qu'on ne doit pas entendre
+    for (const [pid, audioEl] of audioEls.entries()) {
+      if (pid !== localId && !canReceiveFromPlayer(pid)) {
+        audioEl.pause();
+        audioEl.srcObject = null;
+        log("🔇 Muted audio from blocked player:", pid);
+      }
+    }
+    
     // restore speaking highlight
     if (currentSpeaking) {
       const row = getPlayerRow(currentSpeaking);
       if (row) row.classList.add("is-speaking");
     }
   }
+  
+  // D4 v5.5: Exposer une fonction pour forcer le recalcul des permissions
+  // Appelée quand les permissions changent (changement de phase)
+  window.VideoTracksRefresh = function() {
+    log("🔄 Permissions refresh requested");
+    reattachAll();
+  };
 
   function setSpeaking(playerId) {
     // clear previous
