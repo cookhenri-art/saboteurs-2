@@ -580,6 +580,16 @@ function cleanupVideo() {
 
     // D4: Synchroniser avec le VideoModeController
     syncWithVideoModeController(state);
+    
+    // D5: Nettoyer les ressources média inutilisées périodiquement
+    if (window.VideoTracksRegistry?.cleanupUnusedResources) {
+      // Ne pas faire à chaque roomState, seulement si on a beaucoup d'éléments
+      const stats = window.VideoTracksRegistry.getStats?.() || {};
+      if (stats.videoEls > 8 || stats.audioEls > 10) {
+        console.log('[Video] 🧹 Running periodic cleanup, stats:', stats);
+        window.VideoTracksRegistry.cleanupUnusedResources();
+      }
+    }
 
     // DEBUG : Logger l'état complet
     console.log('[Video] 📥 roomState received:', {

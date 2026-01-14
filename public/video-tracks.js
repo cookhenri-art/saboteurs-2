@@ -53,8 +53,84 @@
       userMutedVideo = false;
       lastManualMuteTime = 0;
       log("Manual mute state reset");
-    }
+    },
+    // D5: Fonction de nettoyage global pour libérer les ressources
+    cleanupUnusedResources: () => {
+      cleanupUnusedMediaElements();
+    },
+    // D5: Stats pour debug
+    getStats: () => ({
+      videoTracks: videoTracks.size,
+      audioTracks: audioTracks.size,
+      videoEls: videoEls.size,
+      audioEls: audioEls.size,
+      peerMappings: peerToPlayerId.size
+    })
   };
+  
+  // D5: Constante pour limiter le nombre de WebMediaPlayers
+  const MAX_VIDEO_ELEMENTS = 12;
+  const MAX_AUDIO_ELEMENTS = 15;
+  
+  // D5: Fonction de nettoyage des éléments média inutilisés
+  function cleanupUnusedMediaElements() {
+    const state = window.lastKnownState;
+    if (!state || !state.players) return;
+    
+    // Liste des playerIds actifs (vivants et dans la room)
+    const activePlayerIds = new Set(
+      state.players
+        .filter(p => p.status === 'alive' || p.alive !== false)
+        .map(p => p.playerId)
+    );
+    
+    log("🧹 Cleanup: active players:", activePlayerIds.size, "video elements:", videoEls.size);
+    
+    // Nettoyer les vidéos des joueurs qui ne sont plus actifs
+    for (const [pid, videoEl] of videoEls.entries()) {
+      if (!activePlayerIds.has(pid)) {
+        log("🧹 Removing video element for inactive player:", pid);
+        videoEl.srcObject = null;
+        videoEl.load();
+        if (videoEl.parentNode) {
+          videoEl.parentNode.removeChild(videoEl);
+        }
+        videoEls.delete(pid);
+        videoTracks.delete(pid);
+      }
+    }
+    
+    // Nettoyer les audios des joueurs qui ne sont plus actifs
+    for (const [pid, audioEl] of audioEls.entries()) {
+      if (!activePlayerIds.has(pid)) {
+        log("🧹 Removing audio element for inactive player:", pid);
+        audioEl.srcObject = null;
+        audioEl.load();
+        audioEl.remove();
+        audioEls.delete(pid);
+        audioTracks.delete(pid);
+      }
+    }
+    
+    // Si on dépasse encore la limite, garder seulement les N premiers
+    if (videoEls.size > MAX_VIDEO_ELEMENTS) {
+      log("⚠️ Too many video elements:", videoEls.size, "- limiting to", MAX_VIDEO_ELEMENTS);
+      const entries = Array.from(videoEls.entries());
+      const toRemove = entries.slice(MAX_VIDEO_ELEMENTS);
+      for (const [pid, videoEl] of toRemove) {
+        videoEl.srcObject = null;
+        videoEl.load();
+        if (videoEl.parentNode) {
+          videoEl.parentNode.removeChild(videoEl);
+        }
+        videoEls.delete(pid);
+        videoTracks.delete(pid);
+        log("🧹 Force removed excess video:", pid);
+      }
+    }
+    
+    log("🧹 Cleanup complete. Videos:", videoEls.size, "Audios:", audioEls.size);
+  }
 
   function parsePlayerIdFromUserName(userName) {
     if (!userName) return "";
@@ -280,6 +356,19 @@
 
   function ensureVideoEl(playerId, isLocal) {
     if (videoEls.has(playerId)) return videoEls.get(playerId);
+    
+    // D5: Check si on approche de la limite de WebMediaPlayers
+    if (videoEls.size >= MAX_VIDEO_ELEMENTS) {
+      log("⚠️ Approaching video element limit, running cleanup...");
+      cleanupUnusedMediaElements();
+    }
+    
+    // Si toujours au-dessus de la limite après cleanup, ne pas créer
+    if (videoEls.size >= MAX_VIDEO_ELEMENTS) {
+      log("❌ Cannot create video element - limit reached:", MAX_VIDEO_ELEMENTS);
+      return null;
+    }
+    
     const v = document.createElement("video");
     v.className = "player-video"; // D4: Classe pour le CSS
     v.autoplay = true;
@@ -292,12 +381,25 @@
     v.style.objectFit = "cover";
     v.style.display = "block";
     videoEls.set(playerId, v);
+    log("📹 Created video element for:", playerId, "Total:", videoEls.size);
     return v;
   }
 
   // D4: Create audio element for a remote participant
   function ensureAudioEl(playerId) {
     if (audioEls.has(playerId)) return audioEls.get(playerId);
+    
+    // D5: Check limite audio
+    if (audioEls.size >= MAX_AUDIO_ELEMENTS) {
+      log("⚠️ Approaching audio element limit, running cleanup...");
+      cleanupUnusedMediaElements();
+    }
+    
+    if (audioEls.size >= MAX_AUDIO_ELEMENTS) {
+      log("❌ Cannot create audio element - limit reached:", MAX_AUDIO_ELEMENTS);
+      return null;
+    }
+    
     const a = document.createElement("audio");
     a.autoplay = true;
     a.id = `d4-audio-${playerId}`;
@@ -707,6 +809,55 @@
       if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
     });
 
+    // D5: Handler pour participant qui quitte - nettoyage complet
+    callObject.on("participant-left", (ev) => {
+      const p = ev?.participant;
+      const peerKey = p?.session_id || p?.peerId || p?.id || "";
+      const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
+      
+      log("🚪 participant-left:", p?.user_name, "pid:", pid);
+      
+      if (pid) {
+        // Nettoyer la vidéo
+        videoTracks.delete(pid);
+        const videoEl = videoEls.get(pid);
+        if (videoEl) {
+          videoEl.srcObject = null;
+          videoEl.load();
+          if (videoEl.parentNode) {
+            videoEl.parentNode.removeChild(videoEl);
+          }
+          videoEls.delete(pid);
+          log("🧹 Cleaned video for left participant:", pid);
+        }
+        
+        // Nettoyer l'audio
+        audioTracks.delete(pid);
+        const audioEl = audioEls.get(pid);
+        if (audioEl) {
+          audioEl.srcObject = null;
+          audioEl.load();
+          audioEl.remove();
+          audioEls.delete(pid);
+          log("🧹 Cleaned audio for left participant:", pid);
+        }
+        
+        // Nettoyer le slot
+        const slot = getSlot(pid);
+        if (slot) {
+          slot.innerHTML = "";
+        }
+        
+        // Retirer du mapping
+        peerToPlayerId.delete(peerKey);
+        
+        // Notifier le Briefing UI
+        if (window.VideoBriefingUI) {
+          window.VideoBriefingUI.onTrackStopped(pid);
+        }
+      }
+    });
+
     callObject.on("track-started", (ev) => {
       const p = ev?.participant;
       const isLocal = !!p?.local;
@@ -750,6 +901,18 @@
         const slot = getSlot(pid);
         if (slot) slot.innerHTML = "";
         
+        // D5: Nettoyer aussi l'élément vidéo pour libérer les ressources
+        const videoEl = videoEls.get(pid);
+        if (videoEl) {
+          videoEl.srcObject = null;
+          videoEl.load(); // Force le navigateur à libérer les ressources
+          if (videoEl.parentNode) {
+            videoEl.parentNode.removeChild(videoEl);
+          }
+          videoEls.delete(pid);
+          log("🧹 Cleaned up video element for:", pid);
+        }
+        
         // D4: Notifier le Briefing UI
         if (window.VideoBriefingUI) {
           window.VideoBriefingUI.onTrackStopped(pid);
@@ -759,8 +922,10 @@
         const audioEl = audioEls.get(pid);
         if (audioEl) {
           audioEl.srcObject = null;
+          audioEl.load(); // D5: Force libération ressources
           audioEl.remove();
           audioEls.delete(pid);
+          log("🧹 Cleaned up audio element for:", pid);
         }
       }
     });
