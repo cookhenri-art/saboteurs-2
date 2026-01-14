@@ -475,19 +475,15 @@ function renderLobby() {
   for (const p of playersSorted) {
     const item = document.createElement("div");
     item.className = "player-item";
-        item.dataset.playerId = p.playerId;
-const left = document.createElement("div");
+    const left = document.createElement("div");
     left.className = "player-left";
     left.innerHTML = `
-      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
-      <div class="player-info">
-        <div class="player-name">${escapeHtml(p.name)}</div>
-        ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-      </div>
-`;
+      <div style="font-weight:900;">${escapeHtml(p.name)}</div>
+      ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+      ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+      ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+    `;
     const right = document.createElement("div");
     right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
     item.appendChild(left);
