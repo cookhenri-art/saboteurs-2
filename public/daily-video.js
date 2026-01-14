@@ -714,8 +714,8 @@ background: rgba(10, 14, 39, 0.95);
 
   async joinRoom(roomUrl, userName, permissions = { video: true, audio: true }) {
     this.initContainer();
-    // D3: en mode headless, on ne montre jamais la fenêtre Daily UI
-    if (!this.headless) this.showWindow();
+    // Hotfix: toujours afficher la fenêtre Daily UI (sinon aucune vidéo n'est visible)
+    this.showWindow();
     this.updateStatus("Connexion…");
 
     // Reset prefs at (re)join
