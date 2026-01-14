@@ -2337,7 +2337,7 @@ console.log("[V26] Nouvelles fonctionnalités chargées !");
 
 
 // =====================================================
-console.log('[VideoDock] build=D3-fix-dock-v1');
+console.log('[VideoDock] build=D3-fix-dock-v2');
 
 // VIDEO DOCK (prototype)
 // Objectif: en phase DAY*, intégrer la visio dans l'UI (slot) sans refonte Daily.
@@ -2366,14 +2366,27 @@ function shouldDockVideo(state) {
   // Exclusions évidentes
   if (p === "LOBBY" || p === "GAME_ABORTED") return false;
 
-  // Règle D3: on dock quand la phase est "publique" (audio+video pour tous) ou assimilée discussion.
-  // Cela couvre ROLE_REVEAL + CAPTAIN_* + toutes les phases DAY*.
-  const perms = state?.videoPermissions;
-  if (perms && perms.video === true && perms.audio === true) return true;
+  // Règle D3: dock uniquement pendant les phases où l'UI prévoit un slot "discussion".
+  // IMPORTANT: ne pas se baser sur des labels FR, on utilise les clés de phase serveur.
+  // Phases confirmées côté serveur:
+  // - ROLE_REVEAL
+  // - CAPTAIN_CANDIDACY / CAPTAIN_VOTE
+  // - NIGHT_RESULTS (résultats publics)
+  // - DAY_WAKE / DAY_VOTE / DAY_RESULTS
+  // - GAME_OVER (optionnel: on garde flottant pour éviter d'écraser les stats)
+  const DOCK_PHASES = new Set([
+    "ROLE_REVEAL",
+    "CAPTAIN_CANDIDACY",
+    "CAPTAIN_VOTE",
+    "NIGHT_RESULTS",
+    "DAY_WAKE",
+    "DAY_VOTE",
+    "DAY_RESULTS",
+  ]);
 
-  if (p.startsWith("DAY")) return true;
-  if (p === "ROLE_REVEAL") return true;
-  if (p.startsWith("CAPTAIN_")) return true;
+  if (DOCK_PHASES.has(p)) return true;
+  if (p.startsWith("CAPTAIN_")) return true; // futur-proof
+  if (p.startsWith("DAY_")) return true; // futur-proof
 
   // GAME_OVER: laisser flotter (évite dock qui saute quand on scrolle les stats)
   if (p === "GAME_OVER") return false;
@@ -2431,54 +2444,101 @@ function dockVideoToSlot() {
 
   slot.style.display = "block";
 
-  // Calculer la zone du slot
+  // Si le slot n'est plus visible (scroll), on ne dock pas.
   const rect = body.getBoundingClientRect();
-
-  // Si le slot n'est plus visible (scroll), on ne dock pas -> sinon la fenêtre saute en haut/gauche.
   if (!__isDockRectVisible(rect)) {
     undockVideoFromSlot();
     return;
   }
 
-  // Sauvegarder styles si première fois
-  if (!container.dataset.__dockSaved) {
-    container.dataset.__dockSaved = "1";
+  // 🔧 "Vrai" incrustation: on déplace le container Daily DANS le slot.
+  // On conserve le parent original pour pouvoir le remettre en flottant.
+  if (!container.dataset.__dockParentSaved) {
+    container.dataset.__dockParentSaved = "1";
+    container.dataset.__dockParentId = container.parentElement ? (container.parentElement.id || "") : "";
+    // Sauvegarde un marqueur d'insertion
+    container.dataset.__dockNextSiblingId = container.nextElementSibling ? (container.nextElementSibling.id || "") : "";
+    // Sauvegarder styles utiles
+    container.dataset.__dockPos = container.style.position || "";
     container.dataset.__dockLeft = container.style.left || "";
     container.dataset.__dockTop = container.style.top || "";
     container.dataset.__dockRight = container.style.right || "";
     container.dataset.__dockBottom = container.style.bottom || "";
     container.dataset.__dockWidth = container.style.width || "";
     container.dataset.__dockHeight = container.style.height || "";
+    container.dataset.__dockZ = container.style.zIndex || "";
   }
 
-  // Afficher et positionner
+  // Déplacer dans le slot
+  if (container.parentElement !== body) {
+    body.appendChild(container);
+  }
+
   container.style.display = "flex";
-  container.style.left = rect.left + "px";
-  container.style.top = rect.top + "px";
+  container.style.position = "relative";
+  container.style.left = "auto";
+  container.style.top = "auto";
   container.style.right = "auto";
   container.style.bottom = "auto";
-  container.style.width = rect.width + "px";
-  container.style.height = rect.height + "px";
+  container.style.width = "100%";
+  container.style.height = "100%";
+  container.style.zIndex = "1";
+  container.style.transform = "none";
 
-  container.classList.add("docked-temp");
+  container.classList.add("docked-embedded");
+
+  // Daily injecte généralement un <iframe> dans ce container.
+  // En encart, on force l'iframe à prendre 100%.
+  const iframe = container.querySelector('iframe');
+  if (iframe) {
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
+    iframe.style.border = '0';
+  }
   __videoDockIsDocked = true;
+
+  // Masquer la barre interne "Visioconférence" si elle existe (évite double header).
+  try {
+    const titleNodes = Array.from(container.querySelectorAll("*")).filter((n) => {
+      const t = (n.textContent || "").trim();
+      return t === "Visioconférence" || t === "Visio";
+    });
+    titleNodes.forEach((n) => {
+      const header = n.closest("div") || n;
+      // On masque le bloc du titre si petit
+      if (header && header !== container) header.style.display = "none";
+    });
+  } catch {}
 }
 
 function undockVideoFromSlot() {
   const container = document.getElementById("dailyVideoContainer");
   if (!container) return;
 
-  if (container.classList.contains("docked-temp")) {
-    container.classList.remove("docked-temp");
+  if (container.classList.contains("docked-embedded")) {
+    container.classList.remove("docked-embedded");
 
-    // Restaurer
-    if (container.dataset.__dockSaved) {
+    // Restaurer styles
+    if (container.dataset.__dockParentSaved) {
+      container.style.position = container.dataset.__dockPos;
       container.style.left = container.dataset.__dockLeft;
       container.style.top = container.dataset.__dockTop;
       container.style.right = container.dataset.__dockRight;
       container.style.bottom = container.dataset.__dockBottom;
       container.style.width = container.dataset.__dockWidth;
       container.style.height = container.dataset.__dockHeight;
+      container.style.zIndex = container.dataset.__dockZ;
+      container.style.transform = "";
+
+      // Remettre dans le DOM d'origine si possible
+      const parentId = container.dataset.__dockParentId || "";
+      const parent = parentId ? document.getElementById(parentId) : null;
+      if (parent && container.parentElement !== parent) {
+        const sibId = container.dataset.__dockNextSiblingId || "";
+        const sib = sibId ? document.getElementById(sibId) : null;
+        if (sib && sib.parentElement === parent) parent.insertBefore(container, sib);
+        else parent.appendChild(container);
+      }
     }
   }
   __videoDockIsDocked = false;
