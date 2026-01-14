@@ -61,7 +61,8 @@
   const VideoMode = {
     OFF: 'OFF',
     INLINE: 'INLINE',
-    ADVANCED_FOCUS: 'ADVANCED_FOCUS',
+    SPLIT: 'SPLIT',           // D4: Nouveau mode 50/50
+    ADVANCED_FOCUS: 'ADVANCED_FOCUS', // Plein écran
     PIP: 'PIP',
     HIDDEN: 'HIDDEN'
   };
@@ -200,6 +201,50 @@
       this.evaluateMode();
     }
 
+    /**
+     * D4: Bascule vers le mode split (50/50)
+     */
+    setSplitMode() {
+      this.log('Switching to SPLIT mode');
+      this.setMode(VideoMode.SPLIT);
+    }
+
+    /**
+     * D4: Bascule vers le mode plein écran
+     */
+    setFullMode() {
+      this.log('Switching to FULL (ADVANCED_FOCUS) mode');
+      this.setMode(VideoMode.ADVANCED_FOCUS);
+    }
+
+    /**
+     * D4: Bascule vers le mode inline (fermer briefing)
+     */
+    setInlineMode() {
+      this.log('Switching to INLINE mode');
+      this.mobileManuallyActivated = false;
+      this.setMode(VideoMode.INLINE);
+    }
+
+    /**
+     * D4: Cycle entre les modes (pour un bouton toggle)
+     */
+    cycleMode() {
+      switch (this.currentMode) {
+        case VideoMode.INLINE:
+          this.setMode(VideoMode.SPLIT);
+          break;
+        case VideoMode.SPLIT:
+          this.setMode(VideoMode.ADVANCED_FOCUS);
+          break;
+        case VideoMode.ADVANCED_FOCUS:
+          this.setMode(VideoMode.INLINE);
+          break;
+        default:
+          this.setMode(VideoMode.SPLIT);
+      }
+    }
+
     // ============================================
     // MODE EVALUATION (CORE LOGIC)
     // ============================================
@@ -238,7 +283,11 @@
             this.setMode(VideoMode.INLINE);
             return;
           }
-          this.setMode(VideoMode.ADVANCED_FOCUS);
+          // D4: Mode SPLIT par défaut (au lieu de ADVANCED_FOCUS)
+          // L'utilisateur peut passer en plein écran avec le bouton "Max"
+          if (this.currentMode !== VideoMode.ADVANCED_FOCUS && this.currentMode !== VideoMode.SPLIT) {
+            this.setMode(VideoMode.SPLIT);
+          }
           return;
         }
       }
@@ -358,8 +407,16 @@
       return this.currentMode === VideoMode.ADVANCED_FOCUS;
     }
 
+    isSplitMode() {
+      return this.currentMode === VideoMode.SPLIT;
+    }
+
     isInlineMode() {
       return this.currentMode === VideoMode.INLINE;
+    }
+
+    isBriefingActive() {
+      return this.currentMode === VideoMode.ADVANCED_FOCUS || this.currentMode === VideoMode.SPLIT;
     }
 
     getFocusedPlayerId() {

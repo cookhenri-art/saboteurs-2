@@ -72,8 +72,14 @@
         <span class="phase-badge" id="briefingPhaseBadge">DÉBAT</span>
       </div>
       <div class="video-briefing-actions">
-        <button class="video-briefing-btn btn-exit" id="briefingExitBtn" title="Retour au jeu">
-          ← Retour
+        <button class="video-briefing-btn btn-expand" id="briefingExpandBtn" title="Plein écran">
+          ⬆ Max
+        </button>
+        <button class="video-briefing-btn btn-split" id="briefingSplitBtn" title="Mode 50/50">
+          ⬕ Split
+        </button>
+        <button class="video-briefing-btn btn-exit" id="briefingExitBtn" title="Fermer la visio">
+          ✕ Fermer
         </button>
       </div>
     `;
@@ -126,36 +132,57 @@
   }
 
   function bindEvents() {
-    // Exit button
+    // Exit button (fermer complètement)
+    exitBtn = document.getElementById('briefingExitBtn');
     if (exitBtn) {
       exitBtn.addEventListener('click', () => {
         log('Exit button clicked');
-        hide();
-        // Sur mobile, désactive le mode avancé
         if (window.videoModeCtrl) {
-          window.videoModeCtrl.deactivateMobileAdvanced();
+          window.videoModeCtrl.setInlineMode();
         }
       });
     }
     
-    // Expand button (mobile)
+    // Expand button (plein écran)
+    const expandBtn2 = document.getElementById('briefingExpandBtn');
+    if (expandBtn2) {
+      expandBtn2.addEventListener('click', () => {
+        log('Expand to full button clicked');
+        if (window.videoModeCtrl) {
+          window.videoModeCtrl.setFullMode();
+        }
+      });
+    }
+    
+    // Split button (50/50)
+    const splitBtn = document.getElementById('briefingSplitBtn');
+    if (splitBtn) {
+      splitBtn.addEventListener('click', () => {
+        log('Split button clicked');
+        if (window.videoModeCtrl) {
+          window.videoModeCtrl.setSplitMode();
+        }
+      });
+    }
+    
+    // Expand button (mobile - dans le jeu)
     if (expandBtn) {
       expandBtn.addEventListener('click', () => {
         log('Expand button clicked');
         if (window.videoModeCtrl) {
-          window.videoModeCtrl.activateMobileAdvanced();
+          // Par défaut, ouvrir en mode split
+          window.videoModeCtrl.setSplitMode();
+          window.videoModeCtrl.mobileManuallyActivated = true;
         }
-        show();
       });
     }
     
     // ESC key to exit
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && isVisible()) {
-        log('ESC pressed, exiting briefing');
-        hide();
+        log('ESC pressed, closing briefing');
         if (window.videoModeCtrl) {
-          window.videoModeCtrl.deactivateMobileAdvanced();
+          window.videoModeCtrl.setInlineMode();
         }
       }
     });
@@ -185,8 +212,24 @@
       phaseBadge.textContent = getPhaseLabel(phase);
     }
     
+    // Update container class for mode
+    if (container) {
+      container.classList.remove('mode-full', 'mode-split');
+      if (mode === 'ADVANCED_FOCUS') {
+        container.classList.add('mode-full');
+      } else if (mode === 'SPLIT') {
+        container.classList.add('mode-split');
+      }
+    }
+    
+    // Update body class for game content positioning
+    updateBodyClass(mode);
+    
+    // Update button states
+    updateModeButtons(mode);
+    
     // Show/hide based on mode
-    if (mode === 'ADVANCED_FOCUS') {
+    if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
       show();
       updateExpandButton(false);
     } else {
@@ -198,6 +241,20 @@
       } else {
         updateExpandButton(false);
       }
+    }
+  }
+  
+  function updateModeButtons(mode) {
+    const expandBtn2 = document.getElementById('briefingExpandBtn');
+    const splitBtn = document.getElementById('briefingSplitBtn');
+    
+    if (expandBtn2) {
+      expandBtn2.classList.toggle('active', mode === 'ADVANCED_FOCUS');
+      expandBtn2.disabled = mode === 'ADVANCED_FOCUS';
+    }
+    if (splitBtn) {
+      splitBtn.classList.toggle('active', mode === 'SPLIT');
+      splitBtn.disabled = mode === 'SPLIT';
     }
   }
 
@@ -226,11 +283,21 @@
   function hide() {
     if (!container) return;
     container.classList.remove('active');
+    // Retirer la classe split du body
+    document.body.classList.remove('video-split-active');
     log('Briefing UI hidden');
   }
 
   function isVisible() {
     return container && container.classList.contains('active');
+  }
+  
+  function updateBodyClass(mode) {
+    if (mode === 'SPLIT') {
+      document.body.classList.add('video-split-active');
+    } else {
+      document.body.classList.remove('video-split-active');
+    }
   }
 
   function updateExpandButton(visible) {
