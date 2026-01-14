@@ -21,21 +21,6 @@ window.VideoIntegration = window.VideoIntegration || {};
 window.VideoIntegration.requestVideoStart = function () {
   videoUserRequested = true;
   try { localStorage.setItem('videoUserRequested', '1'); } catch (e) {}
-
-  // Mobile: demander explicitement les permissions dans le même geste utilisateur.
-  // Sur certains navigateurs mobiles, l'accès caméra/micro peut être bloqué si la demande
-  // arrive après des appels async (ex: fetch /api/video/create-room). On "préchauffe" donc
-  // les permissions ici, puis on stoppe immédiatement les tracks.
-  if (VIDEO_IS_MOBILE && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        try { stream.getTracks().forEach((t) => t.stop()); } catch (e) {}
-      })
-      .catch(() => {
-        // Ignorer : l'utilisateur peut refuser ici, Daily demandera à nouveau ensuite.
-      });
-  }
   // Si on a déjà un state en mémoire et que la partie est démarrée, tenter l'init tout de suite
   try {
     const st = window.lastKnownState;
@@ -122,7 +107,7 @@ function initVideoForGame(state) {
       // Rejoindre la room avec les permissions initiales
       const permissions = state.videoPermissions || { video: true, audio: true };
       const baseName = state.you?.name || 'Joueur';
-      const youId = state.you?.id || state.you?.playerId || '';
+      const youId = state.you?.playerId || window.playerId || state.you?.id || '';
       const userName = youId ? `${baseName}#${youId}` : baseName;
       
       console.log('[Video] 🚀 Joining room with:', { userName, permissions });
@@ -354,7 +339,7 @@ function cleanupVideo() {
         );
 
         if (!VIDEO_IS_MOBILE && isNightLike && document.pictureInPictureEnabled) {
-          const youId = state.you?.id || state.you?.playerId || '';
+          const youId = state.you?.playerId || window.playerId || state.you?.id || '';
           const selector = youId ? `.player-item[data-player-id="${youId}"] video` : '.player-item video';
           const el = document.querySelector(selector);
 
