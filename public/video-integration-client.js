@@ -423,7 +423,18 @@ function cleanupVideo() {
       hasYou: !!state.you,
       hasVideoPermissions: !!state.videoPermissions
     });
-
+// ✅ D4-MVP : forcer la visio inline en phase discussion
+if (
+  state.phase === 'DAY_WAKE' ||
+  state.phase === 'DAY_DISCUSSION' ||
+  state.phase === 'LOBBY'
+) {
+  if (window.videoMode !== 'INLINE') {
+    console.log('[VideoMode] ▶️ Switching to INLINE (discussion)');
+    window.videoMode = 'INLINE';
+    setVideoMode('INLINE');
+  }
+}
     // 🔧 Robustesse refresh mobile
     // Après un refresh (souvent Android Chrome), on peut recevoir un `roomState`
     // transitoire où `started` est absent / false alors que `phase` indique
