@@ -58,9 +58,6 @@ class DailyVideoManager {
 
     this.isMobile = window.innerWidth < 768;
 
-    // D3: mode headless par défaut (pas de fenêtre flottante). Pour debug: localStorage.dailyUIVisible='1'
-    this.headless = localStorage.getItem('dailyUIVisible') !== '1';
-
     // Safe area (iOS notch etc.)
     this.safeInset = { top: 0, right: 0, bottom: 0, left: 0 };
 
@@ -74,9 +71,6 @@ class DailyVideoManager {
     // Keep layout sane on viewport changes
     window.addEventListener("resize", () => {
       this.isMobile = window.innerWidth < 768;
-
-    // D3: mode headless par défaut (pas de fenêtre flottante). Pour debug: localStorage.dailyUIVisible='1'
-    this.headless = localStorage.getItem('dailyUIVisible') !== '1';
       this.applyUIState({ reason: "resize" });
     });
   }
@@ -374,19 +368,6 @@ background: rgba(10, 14, 39, 0.95);
       overflow: hidden;
       touch-action: none;
 `;
-    // D3: headless = conteneur invisible (on garde l'iframe Daily pour les tracks, mais aucune UI flottante)
-    if (this.headless) {
-      this.container.style.setProperty("display", "block", "important");
-      this.container.style.setProperty("opacity", "0", "important");
-      this.container.style.setProperty("pointer-events", "none", "important");
-      this.container.style.setProperty("width", "1px", "important");
-      this.container.style.setProperty("height", "1px", "important");
-      this.container.style.setProperty("left", "0", "important");
-      this.container.style.setProperty("top", "0", "important");
-      this.container.style.setProperty("transform", "translate(-200%, -200%)", "important");
-      this.container.style.setProperty("z-index", "-1", "important");
-      this.container.setAttribute("aria-hidden", "true");
-    }
 
     const header = document.createElement("div");
     header.className = "daily-header";
@@ -714,8 +695,7 @@ background: rgba(10, 14, 39, 0.95);
 
   async joinRoom(roomUrl, userName, permissions = { video: true, audio: true }) {
     this.initContainer();
-    // D3: en mode headless, on ne montre jamais la fenêtre Daily UI
-    if (!this.headless) this.showWindow();
+    this.showWindow();
     this.updateStatus("Connexion…");
 
     // Reset prefs at (re)join
@@ -776,12 +756,12 @@ background: rgba(10, 14, 39, 0.95);
     if (!this.callFrame) return;
 
     this.callFrame.on("joining-meeting", () => {
-      if (!this.headless) this.container?.style.setProperty("display", "flex", "important");
+      this.container?.style.setProperty("display", "flex", "important");
       this.updateStatus("Connexion à la réunion…");
     });
 
     this.callFrame.on("joined-meeting", async () => {
-      if (!this.headless) this.container?.style.setProperty("display", "flex", "important");
+      this.container?.style.setProperty("display", "flex", "important");
       this.updateStatus("✅ Connecté");
       await this.updateButtonStates();
     });
@@ -827,8 +807,6 @@ background: rgba(10, 14, 39, 0.95);
 
 
   ensureLauncher() {
-    if (this.headless) return;
-
     if (this.launcher) return;
 
     const btn = document.createElement("button");
