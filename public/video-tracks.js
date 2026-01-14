@@ -98,27 +98,61 @@
     }
   }
 
-  function bindToCallFrame(callFrame) {
-    if (!callFrame || bound) return;
+  function bindToDailyApi(api) {
+    if (!api || bound) return;
     bound = true;
 
-    log("Binding to callFrame");
+    log("Binding to Daily api");
 
-    callFrame.on("participant-joined", (ev) => {
+    // Helper: attach any already-available tracks (important if we bind after join)
+    const attachExisting = () => {
+      try {
+        const partsObj = api.participants && api.participants();
+        if (!partsObj) return;
+        const parts = Object.values(partsObj);
+        for (const p of parts) {
+          if (!p) continue;
+          const peerKey = p?.session_id || p?.peerId || p?.id || "";
+          const pid = parsePlayerIdFromUserName(p?.user_name) || "";
+          if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
+
+          const trackObj = p?.tracks?.video || null;
+          const track = trackObj?.persistentTrack || trackObj?.track || null;
+          if (track && track.kind === "video") {
+            attachTrackToPlayer(pid, track, !!p?.local);
+          }
+        }
+      } catch (e) {
+        console.warn("[VideoTracks] attachExisting failed", e);
+      }
+    };
+
+    api.on("participant-joined", (ev) => {
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
       const pid = parsePlayerIdFromUserName(p?.user_name);
       if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
+
+      // If video already present in participant object, attach it
+      const trackObj = p?.tracks?.video || null;
+      const track = trackObj?.persistentTrack || trackObj?.track || null;
+      if (track && track.kind === "video") attachTrackToPlayer(pid, track, !!p?.local);
     });
 
-    callFrame.on("participant-updated", (ev) => {
+    api.on("participant-updated", (ev) => {
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
       const pid = parsePlayerIdFromUserName(p?.user_name);
       if (peerKey && pid) peerToPlayerId.set(peerKey, pid);
+
+      const trackObj = p?.tracks?.video || null;
+      const track = trackObj?.persistentTrack || trackObj?.track || null;
+      if (track && track.kind === "video") {
+        attachTrackToPlayer(pid, track, !!p?.local);
+      }
     });
 
-    callFrame.on("participant-left", (ev) => {
+    api.on("participant-left", (ev) => {
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
       const pid = peerToPlayerId.get(peerKey);
@@ -128,26 +162,27 @@
       }
     });
 
-    callFrame.on("track-started", (ev) => {
-      if (ev?.track?.kind !== "video") return;
+    api.on("track-started", (ev) => {
+      const t = ev?.track;
+      if (!t || t.kind !== "video") return;
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
       const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
       if (!pid) return;
       peerToPlayerId.set(peerKey, pid);
-      const isLocal = !!p?.local;
-      attachTrackToPlayer(pid, ev.track, isLocal);
+      attachTrackToPlayer(pid, t, !!p?.local);
     });
 
-    callFrame.on("track-stopped", (ev) => {
-      if (ev?.track?.kind !== "video") return;
+    api.on("track-stopped", (ev) => {
+      const t = ev?.track;
+      if (!t || t.kind !== "video") return;
       const p = ev?.participant;
       const peerKey = p?.session_id || p?.peerId || p?.id || "";
       const pid = peerToPlayerId.get(peerKey) || parsePlayerIdFromUserName(p?.user_name) || "";
       if (pid) detachPlayer(pid);
     });
 
-    callFrame.on("active-speaker-change", (ev) => {
+    api.on("active-speaker-change", (ev) => {
       const peerId = ev?.peerId || ev?.activeSpeaker?.peerId || "";
       const pid = peerToPlayerId.get(peerId) || "";
       setSpeaking(pid);
@@ -157,7 +192,6 @@
     const list = document.querySelector("#playersList") || document.querySelector(".players-list") || null;
     if (list && window.MutationObserver) {
       const obs = new MutationObserver(() => {
-        // re-append existing videos into new slots
         for (const [pid, v] of playerToVideoEl.entries()) {
           const slot = getSlot(pid);
           if (slot && !slot.contains(v)) {
@@ -176,15 +210,20 @@
     // Expose helpers
     window.VideoTracks = window.VideoTracks || {};
     window.VideoTracks.getVideoElForPlayer = (playerId) => playerToVideoEl.get(playerId) || null;
+
+    // Critical: if we bound after join, attach existing tracks now (and again shortly after)
+    attachExisting();
+    setTimeout(attachExisting, 800);
   }
 
-  function waitForCallFrame() {
-    const cf = window.dailyVideo && window.dailyVideo.callFrame;
-    if (cf) {
-      bindToCallFrame(cf);
+  function waitForDailyApi() {
+    const dv = window.dailyVideo;
+    const api = dv && (dv.callObject || dv.callFrame);
+    if (api && api.on && api.participants) {
+      bindToDailyApi(api);
       return;
     }
-    setTimeout(waitForCallFrame, 500);
+    setTimeout(waitForDailyApi, 500);
   }
 
   function mountButton() {
@@ -229,10 +268,10 @@
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
       mountButton();
-      waitForCallFrame();
+      waitForDailyApi();
     });
   } else {
     mountButton();
-    waitForCallFrame();
+    waitForDailyApi();
   }
 })();
