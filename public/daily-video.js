@@ -58,11 +58,8 @@ class DailyVideoManager {
 
     this.isMobile = window.innerWidth < 768;
 
-    // FIX: dans la version D3, un mode "headless" cachait la fenêtre Daily par défaut,
-    // ce qui donnait l'impression qu'il n'y avait jamais de visio.
-    // Par défaut on affiche la fenêtre. Pour forcer headless: ajouter ?headless=1 dans l'URL.
-    const params = new URLSearchParams(window.location.search || "");
-    this.headless = params.get("headless") === "1";
+    // D3: mode headless par défaut (pas de fenêtre flottante). Pour debug: localStorage.dailyUIVisible='1'
+    this.headless = localStorage.getItem('dailyUIVisible') !== '1';
 
     // Safe area (iOS notch etc.)
     this.safeInset = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -78,7 +75,8 @@ class DailyVideoManager {
     window.addEventListener("resize", () => {
       this.isMobile = window.innerWidth < 768;
 
-      // ne pas basculer automatiquement en headless sur resize
+    // D3: mode headless par défaut (pas de fenêtre flottante). Pour debug: localStorage.dailyUIVisible='1'
+    this.headless = localStorage.getItem('dailyUIVisible') !== '1';
       this.applyUIState({ reason: "resize" });
     });
   }
@@ -520,7 +518,16 @@ background: rgba(10, 14, 39, 0.95);
     // Ensure it is actually in the DOM and above the iframe
     this.grid.appendChild(this.privatePhaseScreen);
 
-    document.body.appendChild(this.container);
+    // D3 UI: if the in-page dock slot exists, embed the call there.
+    // Fallback: floating window on <body> (older UIs / missing slot).
+    const dockHost = document.getElementById("videoDockSlotBody");
+    if (dockHost) {
+      dockHost.appendChild(this.container);
+      this.setEmbeddedMode(true);
+    } else {
+      document.body.appendChild(this.container);
+      this.setEmbeddedMode(false);
+    }
 
     // UI: bouton lanceur (si on ferme la fenêtre)
     this.ensureLauncher();
@@ -825,6 +832,38 @@ background: rgba(10, 14, 39, 0.95);
     }
     this.callFrame = null;
     this.container?.style.setProperty("display", "none", "important");
+  }
+
+  /**
+   * Embedded mode = render inside #videoDockSlotBody (the right-side "Visioconférence" panel).
+   * Floating mode = draggable window appended to <body>.
+   */
+  setEmbeddedMode(isEmbedded) {
+    this.isEmbedded = !!isEmbedded;
+    if (!this.container) return;
+
+    // Toggle a class so CSS can switch positioning rules.
+    this.container.classList.toggle("embedded", this.isEmbedded);
+
+    // In embedded mode we don't want to fight layout with fixed positioning.
+    if (this.isEmbedded) {
+      this.container.style.position = "relative";
+      this.container.style.left = "0";
+      this.container.style.top = "0";
+      this.container.style.right = "0";
+      this.container.style.bottom = "0";
+      this.container.style.width = "100%";
+      this.container.style.height = "100%";
+      this.container.style.maxWidth = "100%";
+      this.container.style.maxHeight = "100%";
+    } else {
+      // Restore default sizing when undocking.
+      this.container.style.position = "fixed";
+      this.container.style.width = "380px";
+      this.container.style.height = "300px";
+      this.container.style.maxWidth = "92vw";
+      this.container.style.maxHeight = "70vh";
+    }
   }
 
 
