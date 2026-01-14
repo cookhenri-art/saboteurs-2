@@ -315,61 +315,111 @@
     if (!state) return true; // Par défaut, autoriser
     
     const myId = getLocalPlayerId();
+    const phase = state.phase;
+    
+    // D4 v5.6: Vérifier d'abord si on est dans une phase privée où on n'est PAS concerné
+    const privateStatus = getPrivatePhaseStatus(state, myId);
+    
+    if (privateStatus.isPrivate && !privateStatus.iAmInvolved) {
+      // On est en phase privée et on n'est pas concerné - bloquer TOUT
+      log("🔒 Private phase, I'm not involved, blocking:", playerId);
+      return false;
+    }
+    
+    if (privateStatus.isPrivate && privateStatus.iAmInvolved) {
+      // On est en phase privée ET on est concerné - vérifier si l'autre est concerné
+      if (!privateStatus.allowedPlayerIds.includes(playerId)) {
+        log("🔒 Private phase, other player not in my group, blocking:", playerId);
+        return false;
+      }
+    }
+    
+    // Vérifications classiques basées sur les permissions
     const myPermissions = state.videoPermissions?.[myId];
     const theirPermissions = state.videoPermissions?.[playerId];
     
-    // Si pas de permissions définies, autoriser
+    // Si pas de permissions définies, utiliser la logique de phase
     if (!myPermissions || !theirPermissions) return true;
     
     // Si je n'ai pas le droit d'avoir vidéo/audio, je suis en mode "isolé"
-    // Dans ce cas, je ne dois recevoir que des joueurs qui ont aussi le droit
     if (!myPermissions.video && !myPermissions.audio) {
-      // Je suis en mode silencieux - je ne reçois rien
-      log("🔒 I'm in silent mode, blocking receive from:", playerId);
+      log("🔒 I'm in silent mode (permissions), blocking receive from:", playerId);
       return false;
     }
     
     // Si l'autre n'a pas le droit d'émettre, ne pas le recevoir
     if (!theirPermissions.video && !theirPermissions.audio) {
-      log("🔒 Player in silent mode, blocking receive:", playerId);
+      log("🔒 Player in silent mode (permissions), blocking receive:", playerId);
       return false;
     }
     
-    // Phases privées spéciales : vérifier si on est dans le même "groupe"
-    const phase = state.phase;
+    return true;
+  }
+  
+  // D4 v5.6: Déterminer le statut de phase privée
+  function getPrivatePhaseStatus(state, myId) {
+    const result = {
+      isPrivate: false,
+      iAmInvolved: false,
+      allowedPlayerIds: [],
+      message: ""
+    };
     
-    // NIGHT_AI_EXCHANGE : seuls IA + partenaire lié se voient
+    if (!state || !state.phase) return result;
+    
+    const phase = state.phase;
+    const myPlayer = state.players?.find(p => p.playerId === myId);
+    
+    // NIGHT_AI_EXCHANGE : phase privée Agent IA + partenaire lié
     if (phase === 'NIGHT_AI_EXCHANGE') {
-      // Trouver l'agent IA
+      result.isPrivate = true;
+      result.message = "🔒 Échange IA privé en cours...";
+      
       const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
       if (iaPlayer) {
         const iaId = iaPlayer.playerId;
         const linkedId = iaPlayer.linkedTo;
         
-        // Je dois être soit l'IA soit le partenaire lié
-        const iAmInvolved = (myId === iaId || myId === linkedId);
-        const theyAreInvolved = (playerId === iaId || playerId === linkedId);
-        
-        if (!iAmInvolved || !theyAreInvolved) {
-          log("🔒 NIGHT_AI_EXCHANGE: not in private channel, blocking:", playerId);
-          return false;
-        }
+        result.allowedPlayerIds = [iaId, linkedId].filter(Boolean);
+        result.iAmInvolved = (myId === iaId || myId === linkedId);
       }
+      return result;
     }
     
-    // NIGHT_SABOTEURS : seuls les saboteurs se voient entre eux
+    // NIGHT_SABOTEURS : phase privée saboteurs entre eux
     if (phase === 'NIGHT_SABOTEURS') {
-      const myPlayer = state.players?.find(p => p.playerId === myId);
-      const theirPlayer = state.players?.find(p => p.playerId === playerId);
+      result.isPrivate = true;
+      result.message = "🔒 Les saboteurs communiquent...";
       
-      if (myPlayer?.role !== 'saboteur' || theirPlayer?.role !== 'saboteur') {
-        log("🔒 NIGHT_SABOTEURS: not a saboteur, blocking:", playerId);
-        return false;
-      }
+      const saboteurs = state.players?.filter(p => p.role === 'saboteur' && p.status === 'alive') || [];
+      result.allowedPlayerIds = saboteurs.map(p => p.playerId);
+      result.iAmInvolved = myPlayer?.role === 'saboteur';
+      
+      return result;
     }
     
-    return true;
+    // NIGHT_AI_AGENT : Agent IA choisit (pas de visio pour les autres)
+    if (phase === 'NIGHT_AI_AGENT') {
+      result.isPrivate = true;
+      result.message = "🔒 L'Agent IA choisit son partenaire...";
+      
+      const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
+      if (iaPlayer) {
+        result.allowedPlayerIds = [iaPlayer.playerId];
+        result.iAmInvolved = (myId === iaPlayer.playerId);
+      }
+      return result;
+    }
+    
+    return result;
   }
+  
+  // D4 v5.6: Exposer le statut de phase privée pour l'UI
+  window.getPrivatePhaseStatus = function() {
+    const state = window.lastKnownState;
+    const myId = getLocalPlayerId();
+    return getPrivatePhaseStatus(state, myId);
+  };
 
   function attachTrackToPlayer(playerId, track, isLocal) {
     if (!playerId || !track) return;
@@ -449,6 +499,26 @@
   function reattachAll() {
     log("Reattaching all tracks...");
     const localId = getLocalPlayerId();
+    const state = window.lastKnownState;
+    
+    // D4 v5.6: Vérifier si on est en phase privée
+    const privateStatus = getPrivatePhaseStatus(state, localId);
+    updatePrivatePhaseOverlay(privateStatus);
+    
+    // Si on n'est pas concerné par la phase privée, bloquer tout
+    if (privateStatus.isPrivate && !privateStatus.iAmInvolved) {
+      log("🔒 Not involved in private phase - blocking all tracks");
+      // Couper tous les audios
+      for (const [pid, audioEl] of audioEls.entries()) {
+        if (pid !== localId) {
+          audioEl.pause();
+          audioEl.srcObject = null;
+        }
+      }
+      // Cacher toutes les vidéos (ne pas supprimer les éléments, juste les cacher)
+      hideAllVideoSlots();
+      return;
+    }
     
     // Réattacher les vidéos (avec filtrage des permissions)
     for (const [pid, track] of videoTracks.entries()) {
@@ -473,6 +543,101 @@
     if (currentSpeaking) {
       const row = getPlayerRow(currentSpeaking);
       if (row) row.classList.add("is-speaking");
+    }
+  }
+  
+  // D4 v5.6: Cacher tous les slots vidéo
+  function hideAllVideoSlots() {
+    const container = document.getElementById('inlineVideoBar');
+    if (container) {
+      container.style.display = 'none';
+    }
+    // Cacher aussi les slots du lobby si visibles
+    document.querySelectorAll('.player-video-slot video').forEach(v => {
+      v.style.display = 'none';
+    });
+  }
+  
+  // D4 v5.6: Afficher/Cacher l'overlay de phase privée
+  function updatePrivatePhaseOverlay(privateStatus) {
+    let overlay = document.getElementById('privatePhaseOverlay');
+    
+    if (privateStatus.isPrivate && !privateStatus.iAmInvolved) {
+      // Créer l'overlay si nécessaire
+      if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'privatePhaseOverlay';
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.85);
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          z-index: 10000;
+          color: #fff;
+          font-family: 'Orbitron', sans-serif;
+        `;
+        overlay.innerHTML = `
+          <div style="font-size: 3rem; margin-bottom: 20px;">🔒</div>
+          <div id="privatePhaseMessage" style="font-size: 1.5rem; text-align: center; max-width: 80%; margin-bottom: 20px;"></div>
+          <div style="font-size: 1rem; opacity: 0.7;">Veuillez patienter...</div>
+          <div style="margin-top: 30px; padding: 20px; background: rgba(255,100,100,0.2); border: 2px solid rgba(255,100,100,0.5); border-radius: 12px;">
+            <div style="font-size: 0.9rem; opacity: 0.8;">🎤 Micro désactivé</div>
+            <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">📹 Caméra désactivée</div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        log("📢 Private phase overlay shown");
+        
+        // Couper aussi le micro et la caméra local
+        forceLocalMute();
+      }
+      
+      // Mettre à jour le message
+      const msgEl = overlay.querySelector('#privatePhaseMessage');
+      if (msgEl) {
+        msgEl.textContent = privateStatus.message;
+      }
+      
+      overlay.style.display = 'flex';
+      
+      // Cacher la barre inline
+      const inlineBar = document.getElementById('inlineVideoBar');
+      if (inlineBar) inlineBar.style.display = 'none';
+      
+    } else {
+      // Cacher l'overlay
+      if (overlay) {
+        overlay.style.display = 'none';
+        log("📢 Private phase overlay hidden");
+      }
+      
+      // Réafficher la barre inline si on est en mode INLINE
+      const controller = window.VideoModeController;
+      const currentMode = controller?.getState?.()?.currentMode;
+      if (currentMode === 'INLINE') {
+        const inlineBar = document.getElementById('inlineVideoBar');
+        if (inlineBar) inlineBar.style.display = 'flex';
+      }
+    }
+  }
+  
+  // D4 v5.6: Forcer le mute local quand on n'est pas concerné par une phase privée
+  function forceLocalMute() {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (callObj) {
+      try {
+        callObj.setLocalAudio(false);
+        callObj.setLocalVideo(false);
+        log("🔇 Forced local mute for private phase");
+      } catch (e) {
+        log("Error forcing local mute:", e);
+      }
     }
   }
   
