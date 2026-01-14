@@ -8,11 +8,12 @@
 // SECTION VIDEO - DAILY.CO INTEGRATION
 // ============================================
 
-console.log('[Video] build=D3-fix-mobile-v1');
+console.log('[Video] build=D3-fix-mobile-v2-syntax');
 
 let videoRoomUrl = null;
 let videoRoomJoined = false;
-let isInitializingVideo = false; // Protection contre appels multiples
+let isInitializingVideo = false; // Protection contre joins multiples
+let isCreatingRoom = false;      // Protection contre create-room multiples
 
 // D3: Sur mobile, l'activation vidéo doit être déclenchée par une interaction utilisateur.
 // IMPORTANT: on exige un geste utilisateur À CHAQUE chargement de page (session), pas un flag persistant.
@@ -154,9 +155,9 @@ function initVideoForGame(state) {
     return;
   }
 
-  // ✨ NOUVEAU : Bloquer si initialisation en cours
-  if (isInitializingVideo) {
-    console.log('[Video] Initialization already in progress, skipping');
+  // Bloquer si une création de room est déjà en cours
+  if (isCreatingRoom) {
+    console.log('[Video] Room creation already in progress, skipping');
     return;
   }
 
@@ -176,10 +177,7 @@ function initVideoForGame(state) {
     return;
   }
 
-  // ✨ Marquer comme en cours
-  isInitializingVideo = true;
-
-  // Si la room est déjà préparée, on join directement (desktop)
+  // Si la room est déjà connue, on join directement (desktop)
   if (videoRoomUrl) {
     joinVideoRoomNow(state);
     return;
@@ -195,6 +193,7 @@ function initVideoForGame(state) {
   const apiUrl = `/api/video/create-room/${state.roomCode}`;
   console.log('[Video] 📡 Fetching:', apiUrl);
 
+  isCreatingRoom = true;
   fetch(apiUrl, {
     method: 'POST',
     headers: {
@@ -211,7 +210,7 @@ function initVideoForGame(state) {
       if (!data.ok) {
         console.error('[Video] ❌ Failed to create room:', data.error);
         showVideoStatus('❌ Impossible de créer la visio', 'error');
-        isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
+        isCreatingRoom = false;
         return;
       }
 
@@ -225,14 +224,14 @@ function initVideoForGame(state) {
 
       // Desktop: join maintenant
       joinVideoRoomNow(state);
-          isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
-          showVideoStatus('❌ Erreur de connexion vidéo', 'error');
-        });
     })
     .catch(err => {
       console.error('[Video] ❌ API error:', err);
-      isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
+      isCreatingRoom = false;
       showVideoStatus('❌ Erreur serveur vidéo', 'error');
+    })
+    .finally(() => {
+      isCreatingRoom = false;
     });
 }
 
