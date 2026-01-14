@@ -650,7 +650,9 @@ function renderGame() {
   $("phaseTitle").textContent = formatPhaseTitle(state);
   $("phaseText").textContent = buildPhaseText(state);
 
-  // VIDEO DOCK (prototype)
+  console.log('[VideoDock] build=D3-fix-dock-v1');
+
+// VIDEO DOCK (prototype)
   updateVideoDockSlot(state);
 
   const ack = state.ack || { done:0, total:0 };
@@ -2335,6 +2337,8 @@ console.log("[V26] Nouvelles fonctionnalités chargées !");
 
 
 // =====================================================
+console.log('[VideoDock] build=D3-fix-dock-v1');
+
 // VIDEO DOCK (prototype)
 // Objectif: en phase DAY*, intégrer la visio dans l'UI (slot) sans refonte Daily.
 // - Dock: positionne la fenêtre Daily au-dessus du slot (même rendu qu'un embed)
@@ -2354,14 +2358,27 @@ let __videoDockHandlersBound = false;
 let __videoDockIsDocked = false;
 
 function shouldDockVideo(state) {
-  if (__videoDockIsMobile) return false; // IMPORTANT: sur mobile, éviter tout dock auto (bloque parfois l'iframe Daily)
+  if (__videoDockIsMobile) return false; // IMPORTANT: sur mobile, éviter tout dock auto
   const p = String(state?.phase || "");
   if (!p) return false;
   if (state?.videoDisabled) return false;
-  // prototype: on "dock" sur les phases de jour / discussion (DAY*)
-  // On évite les écrans de fin / lobby (non concernés)
-  if (p === "LOBBY" || p === "GAME_OVER" || p === "GAME_ABORTED") return false;
-  return p.startsWith("DAY");
+
+  // Exclusions évidentes
+  if (p === "LOBBY" || p === "GAME_ABORTED") return false;
+
+  // Règle D3: on dock quand la phase est "publique" (audio+video pour tous) ou assimilée discussion.
+  // Cela couvre ROLE_REVEAL + CAPTAIN_* + toutes les phases DAY*.
+  const perms = state?.videoPermissions;
+  if (perms && perms.video === true && perms.audio === true) return true;
+
+  if (p.startsWith("DAY")) return true;
+  if (p === "ROLE_REVEAL") return true;
+  if (p.startsWith("CAPTAIN_")) return true;
+
+  // GAME_OVER: laisser flotter (évite dock qui saute quand on scrolle les stats)
+  if (p === "GAME_OVER") return false;
+
+  return false;
 }
 
 function bindVideoDockHandlersOnce() {
@@ -2394,6 +2411,17 @@ function bindVideoDockHandlersOnce() {
   }
 }
 
+function __isDockRectVisible(rect) {
+  // rect is viewport-relative
+  if (!rect) return false;
+  const vw = window.innerWidth || 0;
+  const vh = window.innerHeight || 0;
+  const minVisiblePx = 40; // seuil: on exige un morceau significatif visible
+  const visibleW = Math.min(rect.right, vw) - Math.max(rect.left, 0);
+  const visibleH = Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
+  return visibleW > minVisiblePx && visibleH > minVisiblePx;
+}
+
 function dockVideoToSlot() {
   const slot = document.getElementById("videoDockSlot");
   const body = document.getElementById("videoDockSlotBody");
@@ -2405,6 +2433,12 @@ function dockVideoToSlot() {
 
   // Calculer la zone du slot
   const rect = body.getBoundingClientRect();
+
+  // Si le slot n'est plus visible (scroll), on ne dock pas -> sinon la fenêtre saute en haut/gauche.
+  if (!__isDockRectVisible(rect)) {
+    undockVideoFromSlot();
+    return;
+  }
 
   // Sauvegarder styles si première fois
   if (!container.dataset.__dockSaved) {
@@ -2494,5 +2528,6 @@ window.addEventListener("scroll", () => {
     try { dockVideoToSlot(); } catch {}
   }
 }, { passive: true });
+
 
 

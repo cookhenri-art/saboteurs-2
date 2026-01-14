@@ -8,33 +8,146 @@
 // SECTION VIDEO - DAILY.CO INTEGRATION
 // ============================================
 
+console.log('[Video] build=D3-fix-mobile-v1');
+
 let videoRoomUrl = null;
 let videoRoomJoined = false;
 let isInitializingVideo = false; // Protection contre appels multiples
 
 // D3: Sur mobile, l'activation vidéo doit être déclenchée par une interaction utilisateur.
+// IMPORTANT: on exige un geste utilisateur À CHAQUE chargement de page (session), pas un flag persistant.
 const VIDEO_IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
-let videoUserRequested = localStorage.getItem('videoUserRequested') === '1';
+
+// Desktop: on peut mémoriser la préférence (auto = ok). Mobile: session-only.
+let videoUserRequestedSession = (() => {
+  try { return sessionStorage.getItem('videoUserRequestedSession') === '1'; } catch (e) { return false; }
+})();
+
+let videoUserRequestedPersisted = (() => {
+  try { return localStorage.getItem('videoUserRequested') === '1'; } catch (e) { return false; }
+})();
+
+let isPreparingVideoRoom = false;
 
 // Expose une API simple pour le bouton (video-tracks.js)
 window.VideoIntegration = window.VideoIntegration || {};
 window.VideoIntegration.requestVideoStart = function () {
-  videoUserRequested = true;
-  try { localStorage.setItem('videoUserRequested', '1'); } catch (e) {}
-  // Si on a déjà un state en mémoire et que la partie est démarrée, tenter l'init tout de suite
-  try {
-    const st = window.lastKnownState;
-    if (st && st.started && !st.ended && !st.aborted) {
-      initVideoForGame(st);
+  // Flag session (mobile) + préférence (desktop)
+  videoUserRequestedSession = true;
+  try { sessionStorage.setItem('videoUserRequestedSession', '1'); } catch (e) {}
+
+  if (!VIDEO_IS_MOBILE) {
+    videoUserRequestedPersisted = true;
+    try { localStorage.setItem('videoUserRequested', '1'); } catch (e) {}
+  }
+
+  // IMPORTANT mobile: le join() doit être déclenché DIRECTEMENT ici (handler clic).
+  // => on ne join que si la room est déjà préparée (URL connue).
+  const st = window.lastKnownState;
+  if (!st || !st.started || st.ended || st.aborted) {
+    showVideoStatus('⚠️ Visio: état de partie indisponible', 'warning');
+    return;
+  }
+
+  if (VIDEO_IS_MOBILE) {
+    if (!videoRoomUrl) {
+      showVideoStatus('⏳ Préparation de la visio… Réessaie dans 1s', 'info');
+      // On prépare en arrière-plan via roomState (ou via prepareVideoRoom si dispo)
+      try { prepareVideoRoom(st); } catch (e) {}
+      return;
     }
-  } catch (e) {}
+    // Join DIRECT (pas de fetch / pas de chaîne async avant l'appel)
+    joinVideoRoomNow(st);
+    return;
+  }
+
+  // Desktop: ok de lancer (peut créer/join via async)
+  initVideoForGame(st);
 };
+
+
+/**
+ * Prépare la room Daily côté serveur (crée si besoin) SANS join().
+ * Utilisé pour respecter la règle mobile "join seulement sur geste utilisateur".
+ */
+function prepareVideoRoom(state) {
+  if (videoRoomUrl || isPreparingVideoRoom) return;
+  if (!state?.started || state?.ended || state?.aborted) return;
+  if (state?.videoDisabled) return;
+  if (!state?.roomCode) return;
+
+  isPreparingVideoRoom = true;
+  const apiUrl = `/api/video/create-room/${state.roomCode}`;
+  console.log('[Video] 📡 Preparing room (no-join):', apiUrl);
+
+  fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+    .then(res => res.json())
+    .then(data => {
+      if (data?.ok && data?.roomUrl) {
+        videoRoomUrl = data.roomUrl;
+        console.log('[Video] ✅ Room prepared:', videoRoomUrl);
+      } else {
+        console.warn('[Video] ⚠️ Room prepare failed:', data?.error || data);
+      }
+    })
+    .catch(err => console.warn('[Video] ⚠️ Room prepare error:', err))
+    .finally(() => { isPreparingVideoRoom = false; });
+}
+
+/**
+ * Join la room Daily (DOIT être appelé directement depuis un handler utilisateur sur mobile).
+ * N'appelle JAMAIS l'API create-room.
+ */
+function joinVideoRoomNow(state) {
+  if (videoRoomJoined) {
+    console.log('[Video] Already joined, skipping join');
+    return;
+  }
+  if (isInitializingVideo) {
+    console.log('[Video] Join already in progress, skipping');
+    return;
+  }
+  if (!videoRoomUrl) {
+    console.warn('[Video] joinVideoRoomNow called but no videoRoomUrl yet');
+    showVideoStatus('⏳ Visio pas prête. Réessaie.', 'info');
+    return;
+  }
+
+  isInitializingVideo = true;
+
+  const permissions = state.videoPermissions || { video: true, audio: true };
+  const baseName = state.you?.name || 'Joueur';
+  const youId = state.you?.playerId || window.playerId || state.you?.id || '';
+  const userName = youId ? `${baseName}#${youId}` : baseName;
+
+  console.log('[Video] 🚀 Joining prepared room (direct):', { userName, permissions });
+
+  window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions)
+    .then(() => {
+      videoRoomJoined = true;
+      isInitializingVideo = false;
+      console.log('[Video] ✅ Successfully joined room');
+      showVideoStatus('✅ Visio activée', 'success');
+    })
+    .catch(err => {
+      console.error('[Video] ❌ Join error:', err);
+      isInitializingVideo = false;
+      showVideoStatus('❌ Erreur de connexion vidéo', 'error');
+    });
+}
 
 /**
 
  * Initialise la vidéo quand la partie démarre
  */
 function initVideoForGame(state) {
+  // D3: Sécurité - sur mobile, ne jamais auto-join via initVideoForGame.
+  if (VIDEO_IS_MOBILE) {
+    prepareVideoRoom(state);
+    console.log('[Video] Mobile: initVideoForGame blocked (use user gesture)');
+    return;
+  }
+
   // Ne rien faire si déjà initialisé ou si pas encore démarré
   if (videoRoomJoined) {
     console.log('[Video] Already joined, skipping initialization');
@@ -65,6 +178,12 @@ function initVideoForGame(state) {
 
   // ✨ Marquer comme en cours
   isInitializingVideo = true;
+
+  // Si la room est déjà préparée, on join directement (desktop)
+  if (videoRoomUrl) {
+    joinVideoRoomNow(state);
+    return;
+  }
 
   console.log('[Video] 🎬 Initializing video for game...', {
     roomCode: state.roomCode,
@@ -98,29 +217,14 @@ function initVideoForGame(state) {
 
       videoRoomUrl = data.roomUrl;
       console.log('[Video] ✅ Room created:', videoRoomUrl);
-      
+
       // Afficher un message d'info si c'est une room gratuite
       if (data.isFreeRoom) {
         console.log('[Video] ℹ️ Using FREE Daily.co room (10 participants max)');
       }
 
-      // Rejoindre la room avec les permissions initiales
-      const permissions = state.videoPermissions || { video: true, audio: true };
-      const baseName = state.you?.name || 'Joueur';
-      const youId = state.you?.playerId || window.playerId || state.you?.id || '';
-      const userName = youId ? `${baseName}#${youId}` : baseName;
-      
-      console.log('[Video] 🚀 Joining room with:', { userName, permissions });
-      
-      window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions)
-        .then(() => {
-          videoRoomJoined = true;
-          isInitializingVideo = false; // ✨ Débloquer après succès
-          console.log('[Video] ✅ Successfully joined room');
-          showVideoStatus('✅ Visio activée', 'success');
-        })
-        .catch(err => {
-          console.error('[Video] ❌ Join error:', err);
+      // Desktop: join maintenant
+      joinVideoRoomNow(state);
           isInitializingVideo = false; // ✨ Débloquer en cas d'erreur
           showVideoStatus('❌ Erreur de connexion vidéo', 'error');
         });
@@ -307,12 +411,16 @@ function cleanupVideo() {
     // 1. Initialiser la vidéo au démarrage de la partie
     if (state.started && !state.ended && !state.aborted) {
       // D3: Sur mobile, attendre une action utilisateur explicite
-      if (VIDEO_IS_MOBILE && !videoUserRequested) {
+      prepareVideoRoom(state);
+      if (VIDEO_IS_MOBILE && !videoUserRequestedSession) {
         console.log('[Video] ⏸️ Mobile: waiting for user gesture (button)');
         showVideoStatus('📱 Appuie sur "Activer la visio"', 'info');
       } else {
-        console.log('[Video] 🎯 Conditions met for video initialization');
-        initVideoForGame(state);
+        // Desktop: auto si préférence persistée, ou si non mobile
+        if (!VIDEO_IS_MOBILE && (videoUserRequestedPersisted || true)) {
+          console.log('[Video] 🎯 Conditions met for video initialization');
+          initVideoForGame(state);
+        }
       }
     } else {
       console.log('[Video] ⏸️ Not starting video:', {
