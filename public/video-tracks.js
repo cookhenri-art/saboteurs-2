@@ -375,13 +375,32 @@
       result.isPrivate = true;
       result.message = "🔒 Échange IA privé en cours...";
       
-      const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
-      if (iaPlayer) {
-        const iaId = iaPlayer.playerId;
-        const linkedId = iaPlayer.linkedTo;
+      // D4 v5.7: Utiliser phaseData qui contient iaId et partnerId
+      const phaseData = state.phaseData || {};
+      const iaId = phaseData.iaId;
+      const partnerId = phaseData.partnerId;
+      
+      if (iaId && partnerId) {
+        result.allowedPlayerIds = [iaId, partnerId];
+        result.iAmInvolved = (myId === iaId || myId === partnerId);
+        log("NIGHT_AI_EXCHANGE check: myId=", myId, "iaId=", iaId, "partnerId=", partnerId, "involved=", result.iAmInvolved);
+      } else {
+        // Fallback: chercher via linkedTo
+        const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
+        if (iaPlayer) {
+          const fallbackIaId = iaPlayer.playerId;
+          const fallbackLinkedId = iaPlayer.linkedTo;
+          result.allowedPlayerIds = [fallbackIaId, fallbackLinkedId].filter(Boolean);
+          result.iAmInvolved = (myId === fallbackIaId || myId === fallbackLinkedId);
+          log("NIGHT_AI_EXCHANGE fallback: myId=", myId, "iaId=", fallbackIaId, "linkedTo=", fallbackLinkedId, "involved=", result.iAmInvolved);
+        }
         
-        result.allowedPlayerIds = [iaId, linkedId].filter(Boolean);
-        result.iAmInvolved = (myId === iaId || myId === linkedId);
+        // Double fallback: vérifier si MOI j'ai linkedTo (le partenaire a aussi linkedTo)
+        if (!result.iAmInvolved && myPlayer?.linkedTo) {
+          result.iAmInvolved = true;
+          result.allowedPlayerIds.push(myId);
+          log("NIGHT_AI_EXCHANGE double fallback: I have linkedTo, so I'm involved");
+        }
       }
       return result;
     }
@@ -391,9 +410,19 @@
       result.isPrivate = true;
       result.message = "🔒 Les saboteurs communiquent...";
       
-      const saboteurs = state.players?.filter(p => p.role === 'saboteur' && p.status === 'alive') || [];
-      result.allowedPlayerIds = saboteurs.map(p => p.playerId);
-      result.iAmInvolved = myPlayer?.role === 'saboteur';
+      // D4 v5.7: Utiliser phaseData.actorIds
+      const phaseData = state.phaseData || {};
+      if (phaseData.actorIds && phaseData.actorIds.length > 0) {
+        result.allowedPlayerIds = phaseData.actorIds;
+        result.iAmInvolved = phaseData.actorIds.includes(myId);
+        log("NIGHT_SABOTEURS check: myId=", myId, "actorIds=", phaseData.actorIds, "involved=", result.iAmInvolved);
+      } else {
+        // Fallback: chercher tous les saboteurs
+        const saboteurs = state.players?.filter(p => p.role === 'saboteur' && p.status === 'alive') || [];
+        result.allowedPlayerIds = saboteurs.map(p => p.playerId);
+        result.iAmInvolved = myPlayer?.role === 'saboteur';
+        log("NIGHT_SABOTEURS fallback: role check, involved=", result.iAmInvolved);
+      }
       
       return result;
     }
