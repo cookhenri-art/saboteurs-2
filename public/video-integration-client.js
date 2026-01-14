@@ -260,6 +260,7 @@ function initVideoForGame(state) {
 /**
  * Met à jour les permissions vidéo selon la phase
  * D4 v5.4: Respecte le choix manuel de l'utilisateur
+ * D4 v5.8: Force démute aux phases clés (GAME_OVER, NIGHT_RESULTS, DAY_WAKE, ROLE_REVEAL)
  */
 function updateVideoPermissions(state) {
   if (!videoRoomJoined || !window.dailyVideo.callFrame) {
@@ -271,13 +272,39 @@ function updateVideoPermissions(state) {
 
   console.log('[Video] Updating permissions:', permissions);
   
-  // D4 v5.4: Vérifier si l'utilisateur a manuellement muté
   const registry = window.VideoTracksRegistry;
-  const userMutedAudio = registry?.getUserMutedAudio?.() || false;
-  const userMutedVideo = registry?.getUserMutedVideo?.() || false;
+  const phase = state.phase;
   
-  if (userMutedAudio || userMutedVideo) {
-    console.log('[Video] ⚠️ User has manual mute - preserving user choice:', { userMutedAudio, userMutedVideo });
+  // D4 v5.8: Phases où on force le démute automatique
+  const FORCE_UNMUTE_PHASES = ['GAME_OVER', 'NIGHT_RESULTS', 'DAY_WAKE', 'ROLE_REVEAL'];
+  const shouldForceUnmute = FORCE_UNMUTE_PHASES.includes(phase);
+  
+  if (shouldForceUnmute) {
+    console.log('[Video] 🔊 Phase', phase, '- Forcing unmute for all players');
+    forceUnmuteWithNotification(phase, registry);
+  } else {
+    // D4 v5.4: Vérifier si l'utilisateur a manuellement muté (seulement si pas de force unmute)
+    const userMutedAudio = registry?.getUserMutedAudio?.() || false;
+    const userMutedVideo = registry?.getUserMutedVideo?.() || false;
+    
+    if (userMutedAudio || userMutedVideo) {
+      console.log('[Video] ⚠️ User has manual mute - preserving user choice:', { userMutedAudio, userMutedVideo });
+      
+      // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
+      setTimeout(() => {
+        const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+        if (callFrame) {
+          if (userMutedAudio) {
+            callFrame.setLocalAudio(false);
+            console.log('[Video] 🔇 Re-applied user audio mute');
+          }
+          if (userMutedVideo) {
+            callFrame.setLocalVideo(false);
+            console.log('[Video] 📷 Re-applied user video mute');
+          }
+        }
+      }, 100);
+    }
   }
   
   // Appliquer les permissions de base
@@ -290,80 +317,170 @@ function updateVideoPermissions(state) {
       console.log('[Video] 🔄 Tracks refreshed for new permissions');
     }, 200);
   }
-  
-  // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
-  if (userMutedAudio || userMutedVideo) {
-    setTimeout(() => {
-      const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
-      if (callFrame) {
-        if (userMutedAudio) {
-          callFrame.setLocalAudio(false);
-          console.log('[Video] 🔇 Re-applied user audio mute');
-        }
-        if (userMutedVideo) {
-          callFrame.setLocalVideo(false);
-          console.log('[Video] 📷 Re-applied user video mute');
-        }
-      }
-    }, 100); // Petit délai pour s'assurer que les permissions serveur sont appliquées d'abord
-  }
-
-  // 🎉 V9.3.0.1 : Réactivation forcée en GAME_OVER pour les joueurs morts
-  // Daily.co garde les joueurs morts en mode "spectateur" même si les permissions changent
-  // On force la réactivation des tracks pour permettre le débrief post-game
-  // D4 v5.4: Reset le mute manuel en GAME_OVER (débrief = tout le monde parle)
-  if (state.phase === 'GAME_OVER' && permissions.video && permissions.audio) {
-    console.log('[Video] 🎉 GAME_OVER detected - Force enabling camera and mic for all players');
-    
-    // Reset le mute manuel pour le débrief
-    if (registry?.resetManualMute) {
-      registry.resetManualMute();
-    }
-    
-    // Fonction de réactivation avec retry
-    const forceEnableTracks = (attempt = 1) => {
-      try {
-        const callFrame = window.dailyVideo.callFrame;
-        if (!callFrame) {
-          console.warn('[Video] ⚠️ No callFrame available (attempt ' + attempt + ')');
-          return;
-        }
-        
-        // Vérifier si on est toujours dans la room
-        const meetingState = callFrame.meetingState();
-        if (meetingState !== 'joined-meeting') {
-          console.warn('[Video] ⚠️ Not in meeting state:', meetingState);
-          return;
-        }
-        
-        // Forcer l'activation de la caméra et du micro
-        callFrame.setLocalAudio(true);
-        callFrame.setLocalVideo(true);
-        console.log('[Video] ✅ Camera and mic forcefully enabled (attempt ' + attempt + ')');
-        
-        // Retry après 2 secondes si c'est la première tentative
-        // Certains joueurs morts depuis longtemps ont besoin d'un second passage
-        if (attempt === 1) {
-          setTimeout(() => forceEnableTracks(2), 2000);
-        }
-      } catch (err) {
-        console.warn('[Video] ⚠️ Could not force enable tracks (attempt ' + attempt + '):', err);
-        
-        // Retry une fois en cas d'erreur sur la première tentative
-        if (attempt === 1) {
-          setTimeout(() => forceEnableTracks(2), 2000);
-        }
-      }
-    };
-    
-    // Premier passage après 800ms (au lieu de 500ms)
-    setTimeout(() => forceEnableTracks(1), 800);
-  }
 
   // Afficher le message de phase
   if (state.videoPhaseMessage) {
     showVideoStatus(state.videoPhaseMessage, 'info');
   }
+}
+
+/**
+ * D4 v5.8: Force le démute avec notification visuelle
+ */
+function forceUnmuteWithNotification(phase, registry) {
+  // Reset le mute manuel
+  if (registry?.resetManualMute) {
+    registry.resetManualMute();
+  }
+  
+  // Fonction de réactivation avec retry
+  const forceEnableTracks = (attempt = 1) => {
+    try {
+      const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+      if (!callFrame) {
+        console.warn('[Video] ⚠️ No callFrame available (attempt ' + attempt + ')');
+        return;
+      }
+      
+      // Vérifier si on est toujours dans la room
+      const meetingState = callFrame.meetingState?.();
+      if (meetingState && meetingState !== 'joined-meeting') {
+        console.warn('[Video] ⚠️ Not in meeting state:', meetingState);
+        return;
+      }
+      
+      // Forcer l'activation de la caméra et du micro
+      callFrame.setLocalAudio(true);
+      callFrame.setLocalVideo(true);
+      console.log('[Video] ✅ Camera and mic forcefully enabled (attempt ' + attempt + ')');
+      
+      // Mettre à jour les boutons UI
+      updateMuteButtonsUI(false, false);
+      
+      // Notification visuelle
+      if (attempt === 1) {
+        showUnmuteNotification(phase);
+      }
+      
+      // Retry après 1.5 secondes pour la première tentative
+      if (attempt === 1) {
+        setTimeout(() => forceEnableTracks(2), 1500);
+      }
+    } catch (err) {
+      console.warn('[Video] ⚠️ Could not force enable tracks (attempt ' + attempt + '):', err);
+      if (attempt === 1) {
+        setTimeout(() => forceEnableTracks(2), 1500);
+      }
+    }
+  };
+  
+  // Premier passage après 300ms
+  setTimeout(() => forceEnableTracks(1), 300);
+}
+
+/**
+ * D4 v5.8: Met à jour visuellement les boutons mute
+ */
+function updateMuteButtonsUI(audioMuted, videoMuted) {
+  // Boutons du briefing UI
+  const briefingMicBtn = document.getElementById('briefingMicBtn');
+  const briefingCamBtn = document.getElementById('briefingCamBtn');
+  
+  if (briefingMicBtn) {
+    if (audioMuted) {
+      briefingMicBtn.textContent = '🔇';
+      briefingMicBtn.classList.add('is-off');
+    } else {
+      briefingMicBtn.textContent = '🎤';
+      briefingMicBtn.classList.remove('is-off');
+    }
+  }
+  
+  if (briefingCamBtn) {
+    if (videoMuted) {
+      briefingCamBtn.textContent = '📷';
+      briefingCamBtn.classList.add('is-off');
+    } else {
+      briefingCamBtn.textContent = '📹';
+      briefingCamBtn.classList.remove('is-off');
+    }
+  }
+  
+  // Boutons de la barre inline
+  const inlineMicBtn = document.getElementById('inlineMicBtn');
+  const inlineCamBtn = document.getElementById('inlineCamBtn');
+  
+  if (inlineMicBtn) {
+    if (audioMuted) {
+      inlineMicBtn.textContent = '🔇';
+      inlineMicBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+    } else {
+      inlineMicBtn.textContent = '🎤';
+      inlineMicBtn.style.background = 'rgba(0, 100, 100, 0.5)';
+    }
+  }
+  
+  if (inlineCamBtn) {
+    if (videoMuted) {
+      inlineCamBtn.textContent = '📷';
+      inlineCamBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+    } else {
+      inlineCamBtn.textContent = '📹';
+      inlineCamBtn.style.background = 'rgba(0, 100, 100, 0.5)';
+    }
+  }
+}
+
+/**
+ * D4 v5.8: Affiche une notification de démute
+ */
+function showUnmuteNotification(phase) {
+  // Message selon la phase
+  let message = '🔊 Micro et caméra réactivés';
+  if (phase === 'GAME_OVER') {
+    message = '🎉 Fin de partie - Micro et caméra réactivés pour le débrief !';
+  } else if (phase === 'DAY_WAKE') {
+    message = '☀️ Jour - Micro et caméra réactivés pour la discussion !';
+  } else if (phase === 'NIGHT_RESULTS') {
+    message = '🌙 Résultats - Micro et caméra réactivés !';
+  } else if (phase === 'ROLE_REVEAL') {
+    message = '🎭 Révélation des rôles - Micro et caméra réactivés !';
+  }
+  
+  // Créer la notification
+  let notif = document.getElementById('unmuteNotification');
+  if (!notif) {
+    notif = document.createElement('div');
+    notif.id = 'unmuteNotification';
+    notif.style.cssText = `
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, rgba(0, 150, 100, 0.95), rgba(0, 100, 80, 0.95));
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.95rem;
+      z-index: 10001;
+      box-shadow: 0 4px 20px rgba(0, 255, 150, 0.3);
+      border: 2px solid rgba(0, 255, 150, 0.5);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    `;
+    document.body.appendChild(notif);
+  }
+  
+  notif.textContent = message;
+  notif.style.opacity = '1';
+  
+  // Cacher après 4 secondes
+  setTimeout(() => {
+    notif.style.opacity = '0';
+  }, 4000);
+  
+  console.log('[Video] 📢 Unmute notification shown:', message);
 }
 
 /**
