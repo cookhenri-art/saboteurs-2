@@ -368,6 +368,23 @@ function showVideoStatus(message, type = 'info') {
   }, 3000);
 }
 
+// ✅ D4-MVP : éviter la "fenêtre blanche" en masquant le callframe quand la visio est désactivée.
+// (On garde la room joinée, mais on cache l'UI Daily et on laisse le jeu afficher le message.)
+function setDailyUIVisible(visible) {
+  const dailyContainer = document.getElementById('dailyVideoContainer');
+  const dockContainer = document.getElementById('videoDockContainer');
+  const fallback = document.getElementById('dailyVideoFallback');
+
+  // Par défaut on agit sur le conteneur Daily si présent
+  if (dailyContainer) dailyContainer.style.display = visible ? '' : 'none';
+  if (fallback) fallback.style.display = visible ? 'none' : '';
+  // Sur certains builds, le panneau dock existe : on le laisse visible mais on peut le réduire
+  if (dockContainer && !visible) {
+    // Ne pas casser le layout : on ne force pas display:none sur le dock,
+    // mais on laisse le slot afficher le placeholder.
+  }
+}
+
 /**
  * Nettoie la vidéo (appelé lors de la déconnexion)
  */
@@ -423,18 +440,7 @@ function cleanupVideo() {
       hasYou: !!state.you,
       hasVideoPermissions: !!state.videoPermissions
     });
-// ✅ D4-MVP : forcer la visio inline en phase discussion
-if (
-  state.phase === 'DAY_WAKE' ||
-  state.phase === 'DAY_DISCUSSION' ||
-  state.phase === 'LOBBY'
-) {
-  if (window.videoMode !== 'INLINE') {
-    console.log('[VideoMode] ▶️ Switching to INLINE (discussion)');
-    window.videoMode = 'INLINE';
-    setVideoMode('INLINE');
-  }
-}
+
     // 🔧 Robustesse refresh mobile
     // Après un refresh (souvent Android Chrome), on peut recevoir un `roomState`
     // transitoire où `started` est absent / false alors que `phase` indique
@@ -468,6 +474,25 @@ if (
     // V9.3.0.2: IMPORTANT - Appeler même en GAME_OVER (state.ended=true) pour réactiver les morts
     if (effectiveStarted) {
       updateVideoPermissions(state);
+
+      // ✅ D4-MVP : éviter l'UI Daily "blanche" quand la visio est désactivée.
+      // Si aucune vidéo/audio n'est autorisée (nuit silencieuse, etc.),
+      // on masque le callframe et on affiche un message.
+      try {
+        const perms = state.videoPermissions || {};
+        const noVideo = perms.video === false || perms.camera === false || perms.cameras === false;
+        const noAudio = perms.audio === false || perms.mic === false || perms.micro === false;
+        const allowView = perms.view === true || perms.spectate === true || perms.receive === true;
+
+        const shouldHide = (noVideo && noAudio && !allowView) || state.videoDisabled === true;
+        setDailyUIVisible(!shouldHide);
+
+        if (shouldHide) {
+          showVideoStatus(state.videoMessage || state.videoStatusMessage || '😴 Nuit silencieuse (caméra + micro OFF)', 'info');
+        }
+      } catch (e) {
+        // no-op
+      }
 
       // D3: Auto PiP en phase nuit/action (PC uniquement, jamais forcé mobile)
       try {
