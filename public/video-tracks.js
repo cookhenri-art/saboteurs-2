@@ -6,6 +6,7 @@
    - Re-attach if players list re-renders
    - Active speaker highlight (.is-speaking on .player-item)
    - D4: Integration with VideoModeController and BriefingUI
+   - D4 v5.4: Manual mute state preservation
 ========================================================= */
 (function () {
   "use strict";
@@ -19,15 +20,40 @@
   const audioEls = new Map();        // playerId -> <audio>
   let currentSpeaking = null;
   let bound = false;
+  
+  // D4 v5.4: État manuel du mute (prioritaire sur les permissions serveur)
+  let userMutedAudio = false;  // L'utilisateur a manuellement coupé son micro
+  let userMutedVideo = false;  // L'utilisateur a manuellement coupé sa caméra
+  let lastManualMuteTime = 0;  // Timestamp du dernier mute manuel
 
   function log(...args) { if (DEBUG) console.log("[VideoTracks]", ...args); }
 
-  // D4: Export registry for external access
+  // D4 v5.4: Exposer les fonctions de contrôle manuel
   window.VideoTracksRegistry = {
     getAll: () => new Map(videoTracks),
     get: (playerId) => videoTracks.get(playerId),
     has: (playerId) => videoTracks.has(playerId),
-    getAudio: (playerId) => audioTracks.get(playerId)
+    getAudio: (playerId) => audioTracks.get(playerId),
+    // Nouvelles fonctions pour le mute manuel
+    setUserMutedAudio: (muted) => {
+      userMutedAudio = muted;
+      lastManualMuteTime = Date.now();
+      log("User manually set audio mute:", muted);
+    },
+    setUserMutedVideo: (muted) => {
+      userMutedVideo = muted;
+      lastManualMuteTime = Date.now();
+      log("User manually set video mute:", muted);
+    },
+    getUserMutedAudio: () => userMutedAudio,
+    getUserMutedVideo: () => userMutedVideo,
+    // Réinitialiser le mute manuel (pour les changements de phase importants)
+    resetManualMute: () => {
+      userMutedAudio = false;
+      userMutedVideo = false;
+      lastManualMuteTime = 0;
+      log("Manual mute state reset");
+    }
   };
 
   function parsePlayerIdFromUserName(userName) {
@@ -79,6 +105,18 @@
   function ensureGameScreenSlot(playerId) {
     if (!playerId) return null;
     
+    // D4 v5.4: Ne pas créer la barre si le mode SPLIT est actif
+    const controller = window.VideoModeController;
+    const currentMode = controller?.getState?.()?.currentMode;
+    if (currentMode === 'SPLIT') {
+      // En mode SPLIT, cacher la barre inline si elle existe
+      const existingBar = document.getElementById('inlineVideoBar');
+      if (existingBar) {
+        existingBar.style.display = 'none';
+      }
+      return null; // Ne pas créer de slot - le SPLIT gère les vidéos
+    }
+    
     // Chercher ou créer le conteneur de vignettes dans le gameScreen
     let container = document.getElementById('inlineVideoBar');
     if (!container) {
@@ -94,7 +132,59 @@
         border-radius: 12px;
         margin-bottom: 12px;
         min-height: 70px;
+        align-items: center;
       `;
+      
+      // D4 v5.4: Ajouter les boutons de contrôle mic/cam
+      const controlsDiv = document.createElement('div');
+      controlsDiv.id = 'inlineVideoControls';
+      controlsDiv.style.cssText = `
+        display: flex;
+        gap: 6px;
+        margin-right: 10px;
+        padding-right: 10px;
+        border-right: 1px solid rgba(0, 255, 255, 0.3);
+      `;
+      
+      // Bouton micro
+      const micBtn = document.createElement('button');
+      micBtn.id = 'inlineMicBtn';
+      micBtn.textContent = '🎤';
+      micBtn.title = 'Couper le micro';
+      micBtn.style.cssText = `
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 255, 255, 0.5);
+        background: rgba(0, 100, 100, 0.5);
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      `;
+      micBtn.onclick = () => toggleInlineMic(micBtn);
+      
+      // Bouton caméra
+      const camBtn = document.createElement('button');
+      camBtn.id = 'inlineCamBtn';
+      camBtn.textContent = '📹';
+      camBtn.title = 'Couper la caméra';
+      camBtn.style.cssText = `
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 2px solid rgba(0, 255, 255, 0.5);
+        background: rgba(0, 100, 100, 0.5);
+        color: #fff;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      `;
+      camBtn.onclick = () => toggleInlineCam(camBtn);
+      
+      controlsDiv.appendChild(micBtn);
+      controlsDiv.appendChild(camBtn);
+      container.appendChild(controlsDiv);
       
       // Insérer dans gameScreen (forcer même si display pas vérifié)
       const gameScreen = document.getElementById('gameScreen');
@@ -102,7 +192,7 @@
         const controlPanel = gameScreen.querySelector('.control-panel');
         if (controlPanel) {
           controlPanel.insertBefore(container, controlPanel.firstChild);
-          log("Created inline video bar in gameScreen ✅");
+          log("Created inline video bar with controls in gameScreen ✅");
         } else {
           // Fallback: insérer directement dans gameScreen
           gameScreen.insertBefore(container, gameScreen.firstChild);
@@ -112,6 +202,10 @@
         log("ERROR: gameScreen not found!");
         return null;
       }
+    } else {
+      // S'assurer que la barre est visible (au cas où elle aurait été cachée en mode SPLIT)
+      container.style.display = 'flex';
+    }
     }
     
     // Vérifier que le container est bien dans le DOM
@@ -443,6 +537,140 @@
         console.warn("[VideoTracks] VideoIntegration API not ready yet");
       }
     };
+  }
+
+  // D4 v5.4: Fonctions toggle pour les boutons de la barre inline
+  async function toggleInlineMic(btn) {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (!callObj) {
+      log('No callObject for inline mic toggle');
+      return;
+    }
+    
+    try {
+      const currentState = await callObj.localAudio();
+      const newState = !currentState;
+      await callObj.setLocalAudio(newState);
+      
+      // Mémoriser le choix manuel
+      userMutedAudio = !newState;
+      if (window.VideoTracksRegistry?.setUserMutedAudio) {
+        window.VideoTracksRegistry.setUserMutedAudio(userMutedAudio);
+      }
+      
+      // Mettre à jour le bouton
+      if (btn) {
+        if (userMutedAudio) {
+          btn.textContent = '🔇';
+          btn.style.background = 'rgba(180, 50, 50, 0.7)';
+          btn.title = 'Activer le micro';
+        } else {
+          btn.textContent = '🎤';
+          btn.style.background = 'rgba(0, 100, 100, 0.5)';
+          btn.title = 'Couper le micro';
+        }
+      }
+      
+      // Synchroniser avec le bouton du briefing UI si présent
+      syncBriefingMicButton(userMutedAudio);
+      
+      log('Inline Microphone:', newState ? 'ON' : 'OFF');
+    } catch (e) {
+      log('Error toggling inline mic:', e);
+    }
+  }
+  
+  async function toggleInlineCam(btn) {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (!callObj) {
+      log('No callObject for inline cam toggle');
+      return;
+    }
+    
+    try {
+      const currentState = await callObj.localVideo();
+      const newState = !currentState;
+      await callObj.setLocalVideo(newState);
+      
+      // Mémoriser le choix manuel
+      userMutedVideo = !newState;
+      if (window.VideoTracksRegistry?.setUserMutedVideo) {
+        window.VideoTracksRegistry.setUserMutedVideo(userMutedVideo);
+      }
+      
+      // Mettre à jour le bouton
+      if (btn) {
+        if (userMutedVideo) {
+          btn.textContent = '📷';
+          btn.style.background = 'rgba(180, 50, 50, 0.7)';
+          btn.title = 'Activer la caméra';
+        } else {
+          btn.textContent = '📹';
+          btn.style.background = 'rgba(0, 100, 100, 0.5)';
+          btn.title = 'Couper la caméra';
+        }
+      }
+      
+      // Synchroniser avec le bouton du briefing UI si présent
+      syncBriefingCamButton(userMutedVideo);
+      
+      log('Inline Camera:', newState ? 'ON' : 'OFF');
+    } catch (e) {
+      log('Error toggling inline cam:', e);
+    }
+  }
+  
+  // Synchroniser l'état des boutons entre inline et briefing
+  function syncBriefingMicButton(muted) {
+    const briefingBtn = document.getElementById('briefingMicBtn');
+    if (briefingBtn) {
+      if (muted) {
+        briefingBtn.textContent = '🔇';
+        briefingBtn.classList.add('is-off');
+      } else {
+        briefingBtn.textContent = '🎤';
+        briefingBtn.classList.remove('is-off');
+      }
+    }
+  }
+  
+  function syncBriefingCamButton(off) {
+    const briefingBtn = document.getElementById('briefingCamBtn');
+    if (briefingBtn) {
+      if (off) {
+        briefingBtn.textContent = '📷';
+        briefingBtn.classList.add('is-off');
+      } else {
+        briefingBtn.textContent = '📹';
+        briefingBtn.classList.remove('is-off');
+      }
+    }
+  }
+  
+  // D4 v5.4: Mettre à jour les boutons inline quand l'état change
+  function updateInlineButtons() {
+    const micBtn = document.getElementById('inlineMicBtn');
+    const camBtn = document.getElementById('inlineCamBtn');
+    
+    if (micBtn) {
+      if (userMutedAudio) {
+        micBtn.textContent = '🔇';
+        micBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+      } else {
+        micBtn.textContent = '🎤';
+        micBtn.style.background = 'rgba(0, 100, 100, 0.5)';
+      }
+    }
+    
+    if (camBtn) {
+      if (userMutedVideo) {
+        camBtn.textContent = '📷';
+        camBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+      } else {
+        camBtn.textContent = '📹';
+        camBtn.style.background = 'rgba(0, 100, 100, 0.5)';
+      }
+    }
   }
 
   // Boot

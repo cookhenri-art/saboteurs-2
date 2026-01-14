@@ -259,6 +259,7 @@ function initVideoForGame(state) {
 
 /**
  * Met à jour les permissions vidéo selon la phase
+ * D4 v5.4: Respecte le choix manuel de l'utilisateur
  */
 function updateVideoPermissions(state) {
   if (!videoRoomJoined || !window.dailyVideo.callFrame) {
@@ -269,13 +270,47 @@ function updateVideoPermissions(state) {
   if (!permissions) return;
 
   console.log('[Video] Updating permissions:', permissions);
+  
+  // D4 v5.4: Vérifier si l'utilisateur a manuellement muté
+  const registry = window.VideoTracksRegistry;
+  const userMutedAudio = registry?.getUserMutedAudio?.() || false;
+  const userMutedVideo = registry?.getUserMutedVideo?.() || false;
+  
+  if (userMutedAudio || userMutedVideo) {
+    console.log('[Video] ⚠️ User has manual mute - preserving user choice:', { userMutedAudio, userMutedVideo });
+  }
+  
+  // Appliquer les permissions de base
   window.dailyVideo.updatePermissions(permissions);
+  
+  // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
+  if (userMutedAudio || userMutedVideo) {
+    setTimeout(() => {
+      const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+      if (callFrame) {
+        if (userMutedAudio) {
+          callFrame.setLocalAudio(false);
+          console.log('[Video] 🔇 Re-applied user audio mute');
+        }
+        if (userMutedVideo) {
+          callFrame.setLocalVideo(false);
+          console.log('[Video] 📷 Re-applied user video mute');
+        }
+      }
+    }, 100); // Petit délai pour s'assurer que les permissions serveur sont appliquées d'abord
+  }
 
   // 🎉 V9.3.0.1 : Réactivation forcée en GAME_OVER pour les joueurs morts
   // Daily.co garde les joueurs morts en mode "spectateur" même si les permissions changent
   // On force la réactivation des tracks pour permettre le débrief post-game
+  // D4 v5.4: Reset le mute manuel en GAME_OVER (débrief = tout le monde parle)
   if (state.phase === 'GAME_OVER' && permissions.video && permissions.audio) {
     console.log('[Video] 🎉 GAME_OVER detected - Force enabling camera and mic for all players');
+    
+    // Reset le mute manuel pour le débrief
+    if (registry?.resetManualMute) {
+      registry.resetManualMute();
+    }
     
     // Fonction de réactivation avec retry
     const forceEnableTracks = (attempt = 1) => {

@@ -650,10 +650,30 @@
     
     try {
       const currentState = await callObj.localAudio();
-      await callObj.setLocalAudio(!currentState);
-      isMicMuted = currentState; // inverse
+      const newState = !currentState;
+      await callObj.setLocalAudio(newState);
+      isMicMuted = !newState; // muted = audio OFF
+      
+      // D4 v5.4: Mémoriser le choix manuel dans le registre
+      if (window.VideoTracksRegistry?.setUserMutedAudio) {
+        window.VideoTracksRegistry.setUserMutedAudio(isMicMuted);
+      }
+      
       updateMicButton();
-      log('Microphone:', !currentState ? 'ON' : 'OFF');
+      
+      // D4 v5.4: Synchroniser le bouton inline
+      const inlineMicBtn = document.getElementById('inlineMicBtn');
+      if (inlineMicBtn) {
+        if (isMicMuted) {
+          inlineMicBtn.textContent = '🔇';
+          inlineMicBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+        } else {
+          inlineMicBtn.textContent = '🎤';
+          inlineMicBtn.style.background = 'rgba(0, 100, 100, 0.5)';
+        }
+      }
+      
+      log('Microphone:', newState ? 'ON' : 'OFF', '(manual mute saved)');
     } catch (e) {
       log('Error toggling mic:', e);
     }
@@ -668,10 +688,30 @@
     
     try {
       const currentState = await callObj.localVideo();
-      await callObj.setLocalVideo(!currentState);
-      isCamOff = currentState; // inverse
+      const newState = !currentState;
+      await callObj.setLocalVideo(newState);
+      isCamOff = !newState; // off = video OFF
+      
+      // D4 v5.4: Mémoriser le choix manuel dans le registre
+      if (window.VideoTracksRegistry?.setUserMutedVideo) {
+        window.VideoTracksRegistry.setUserMutedVideo(isCamOff);
+      }
+      
       updateCamButton();
-      log('Camera:', !currentState ? 'ON' : 'OFF');
+      
+      // D4 v5.4: Synchroniser le bouton inline
+      const inlineCamBtn = document.getElementById('inlineCamBtn');
+      if (inlineCamBtn) {
+        if (isCamOff) {
+          inlineCamBtn.textContent = '📷';
+          inlineCamBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+        } else {
+          inlineCamBtn.textContent = '📹';
+          inlineCamBtn.style.background = 'rgba(0, 100, 100, 0.5)';
+        }
+      }
+      
+      log('Camera:', newState ? 'ON' : 'OFF', '(manual mute saved)');
     } catch (e) {
       log('Error toggling camera:', e);
     }
