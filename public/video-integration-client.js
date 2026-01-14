@@ -12,7 +12,26 @@ let videoRoomUrl = null;
 let videoRoomJoined = false;
 let isInitializingVideo = false; // Protection contre appels multiples
 
+// D3: Sur mobile, l'activation vidéo doit être déclenchée par une interaction utilisateur.
+const VIDEO_IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
+let videoUserRequested = localStorage.getItem('videoUserRequested') === '1';
+
+// Expose une API simple pour le bouton (video-tracks.js)
+window.VideoIntegration = window.VideoIntegration || {};
+window.VideoIntegration.requestVideoStart = function () {
+  videoUserRequested = true;
+  try { localStorage.setItem('videoUserRequested', '1'); } catch (e) {}
+  // Si on a déjà un state en mémoire et que la partie est démarrée, tenter l'init tout de suite
+  try {
+    const st = window.lastKnownState;
+    if (st && st.started && !st.ended && !st.aborted) {
+      initVideoForGame(st);
+    }
+  } catch (e) {}
+};
+
 /**
+
  * Initialise la vidéo quand la partie démarre
  */
 function initVideoForGame(state) {
@@ -87,7 +106,9 @@ function initVideoForGame(state) {
 
       // Rejoindre la room avec les permissions initiales
       const permissions = state.videoPermissions || { video: true, audio: true };
-      const userName = state.you?.name || 'Joueur';
+      const baseName = state.you?.name || 'Joueur';
+      const youId = state.you?.id || state.you?.playerId || '';
+      const userName = youId ? `${baseName}#${youId}` : baseName;
       
       console.log('[Video] 🚀 Joining room with:', { userName, permissions });
       
@@ -285,8 +306,14 @@ function cleanupVideo() {
 
     // 1. Initialiser la vidéo au démarrage de la partie
     if (state.started && !state.ended && !state.aborted) {
-      console.log('[Video] 🎯 Conditions met for video initialization');
-      initVideoForGame(state);
+      // D3: Sur mobile, attendre une action utilisateur explicite
+      if (VIDEO_IS_MOBILE && !videoUserRequested) {
+        console.log('[Video] ⏸️ Mobile: waiting for user gesture (button)');
+        showVideoStatus('📱 Appuie sur "Activer la visio"', 'info');
+      } else {
+        console.log('[Video] 🎯 Conditions met for video initialization');
+        initVideoForGame(state);
+      }
     } else {
       console.log('[Video] ⏸️ Not starting video:', {
         started: state.started,
@@ -299,6 +326,33 @@ function cleanupVideo() {
     // V9.3.0.2: IMPORTANT - Appeler même en GAME_OVER (state.ended=true) pour réactiver les morts
     if (state.started) {
       updateVideoPermissions(state);
+
+      // D3: Auto PiP en phase nuit/action (PC uniquement, jamais forcé mobile)
+      try {
+        const isNightLike = (
+          state.phase === 'NIGHT' ||
+          state.phase === 'ACTION' ||
+          state.phase === 'SABOTEURS' ||
+          state.phase === 'DOCTOR' ||
+          state.phase === 'RADAR_OFFICER' ||
+          state.phase === 'SECURITY'
+        );
+
+        if (!VIDEO_IS_MOBILE && isNightLike && document.pictureInPictureEnabled) {
+          const youId = state.you?.id || state.you?.playerId || '';
+          const selector = youId ? `.player-item[data-player-id="${youId}"] video` : '.player-item video';
+          const el = document.querySelector(selector);
+
+          if (el && document.pictureInPictureElement !== el) {
+            el.requestPictureInPicture().catch(() => {});
+          }
+        }
+
+        if (!VIDEO_IS_MOBILE && !isNightLike && document.pictureInPictureElement) {
+          document.exitPictureInPicture().catch(() => {});
+        }
+      } catch (e) {}
+
     }
     
     // 3. Quitter la vidéo en fin de partie

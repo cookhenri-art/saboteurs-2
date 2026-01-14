@@ -1,0 +1,76 @@
+/* =========================================================
+   D3 - Inline Video Tiles in Players List
+   - Uses existing theme CSS variables:
+     --speaker-border, --speaker-glow, --speaker-bg
+========================================================= */
+
+:root {
+  --vtile-w: 72px;
+  --vtile-h: 52px;
+  --vtile-radius: 10px;
+  --vtile-border: rgba(255, 255, 255, 0.14);
+  --vtile-bg: rgba(0, 0, 0, 0.35);
+  --vtile-shadow: 0 10px 30px rgba(0,0,0,0.28);
+}
+
+.player-item .player-video-slot {
+  width: var(--vtile-w);
+  height: var(--vtile-h);
+  border-radius: var(--vtile-radius);
+  border: 1px solid var(--vtile-border);
+  background: var(--vtile-bg);
+  overflow: hidden;
+  box-shadow: var(--vtile-shadow);
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.player-item .player-video-slot:empty::after {
+  content: "🎥";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  opacity: 0.45;
+}
+
+.player-item .player-video-slot video.player-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.player-item.is-speaking .player-video-slot {
+  border-color: var(--speaker-border);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--speaker-border) 45%, transparent),
+    0 0 22px var(--speaker-glow),
+    var(--vtile-shadow);
+}
+
+.player-item.is-speaking .player-video-slot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--speaker-bg);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+/* Small layout helpers: if your player row is flex, keep space sane */
+.player-item .player-left,
+.player-item .player-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Mobile */
+@media (max-width: 520px) {
+  :root {
+    --vtile-w: 84px;
+    --vtile-h: 62px;
+  }
+}

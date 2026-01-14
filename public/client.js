@@ -475,15 +475,19 @@ function renderLobby() {
   for (const p of playersSorted) {
     const item = document.createElement("div");
     item.className = "player-item";
-    const left = document.createElement("div");
+        item.dataset.playerId = p.playerId;
+const left = document.createElement("div");
     left.className = "player-left";
     left.innerHTML = `
-      <div style="font-weight:900;">${escapeHtml(p.name)}</div>
-      ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-      ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-      ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-    `;
+      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
+      <div class="player-info">
+        <div class="player-name">${escapeHtml(p.name)}</div>
+        ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+        ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+      </div>
+`;
     const right = document.createElement("div");
     right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
     item.appendChild(left);
@@ -645,6 +649,9 @@ function renderGame() {
 
   $("phaseTitle").textContent = formatPhaseTitle(state);
   $("phaseText").textContent = buildPhaseText(state);
+
+  // VIDEO DOCK (prototype)
+  updateVideoDockSlot(state);
 
   const ack = state.ack || { done:0, total:0 };
   $("ackLine").textContent = ack.total ? `✅ Validations : ${ack.done}/${ack.total}` : "";
@@ -2325,5 +2332,167 @@ socket.on("newBadges", (data) => {
 });
 
 console.log("[V26] Nouvelles fonctionnalités chargées !");
+
+
+// =====================================================
+// VIDEO DOCK (prototype)
+// Objectif: en phase DAY*, intégrer la visio dans l'UI (slot) sans refonte Daily.
+// - Dock: positionne la fenêtre Daily au-dessus du slot (même rendu qu'un embed)
+// - Undock: restauration à la position flottante (gérée par DailyVideo + localStorage si dispo)
+// =====================================================
+
+const __videoDockIsMobile = (() => {
+  try {
+    // Heuristique fiable : breakpoint + fallback UA
+    if (window.matchMedia && window.matchMedia("(max-width: 767px)").matches) return true;
+  } catch {}
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+})();
+
+
+let __videoDockHandlersBound = false;
+let __videoDockIsDocked = false;
+
+function shouldDockVideo(state) {
+  if (__videoDockIsMobile) return false; // IMPORTANT: sur mobile, éviter tout dock auto (bloque parfois l'iframe Daily)
+  const p = String(state?.phase || "");
+  if (!p) return false;
+  if (state?.videoDisabled) return false;
+  // prototype: on "dock" sur les phases de jour / discussion (DAY*)
+  // On évite les écrans de fin / lobby (non concernés)
+  if (p === "LOBBY" || p === "GAME_OVER" || p === "GAME_ABORTED") return false;
+  return p.startsWith("DAY");
+}
+
+function bindVideoDockHandlersOnce() {
+  if (__videoDockHandlersBound) return;
+  __videoDockHandlersBound = true;
+
+  const expandBtn = document.getElementById("videoDockExpandBtn");
+  const hideBtn = document.getElementById("videoDockHideBtn");
+
+  if (expandBtn) {
+    expandBtn.onclick = () => {
+      undockVideoFromSlot();
+      // Ré-ouvrir la fenêtre si Daily fournit la méthode
+      try { window.dailyVideo?.showWindow?.(); } catch {}
+    };
+  }
+  if (hideBtn) {
+    hideBtn.onclick = () => {
+      // Masque la visio (bulle éventuelle gérée côté DailyVideo)
+      try { window.dailyVideo?.hideWindow?.(); }
+      catch {
+        const c = document.getElementById("dailyVideoContainer");
+        if (c) c.style.display = "none";
+      }
+      // On cache aussi le slot
+      const slot = document.getElementById("videoDockSlot");
+      if (slot) slot.style.display = "none";
+      __videoDockIsDocked = false;
+    };
+  }
+}
+
+function dockVideoToSlot() {
+  const slot = document.getElementById("videoDockSlot");
+  const body = document.getElementById("videoDockSlotBody");
+  const container = document.getElementById("dailyVideoContainer");
+
+  if (!slot || !body || !container) return;
+
+  slot.style.display = "block";
+
+  // Calculer la zone du slot
+  const rect = body.getBoundingClientRect();
+
+  // Sauvegarder styles si première fois
+  if (!container.dataset.__dockSaved) {
+    container.dataset.__dockSaved = "1";
+    container.dataset.__dockLeft = container.style.left || "";
+    container.dataset.__dockTop = container.style.top || "";
+    container.dataset.__dockRight = container.style.right || "";
+    container.dataset.__dockBottom = container.style.bottom || "";
+    container.dataset.__dockWidth = container.style.width || "";
+    container.dataset.__dockHeight = container.style.height || "";
+  }
+
+  // Afficher et positionner
+  container.style.display = "flex";
+  container.style.left = rect.left + "px";
+  container.style.top = rect.top + "px";
+  container.style.right = "auto";
+  container.style.bottom = "auto";
+  container.style.width = rect.width + "px";
+  container.style.height = rect.height + "px";
+
+  container.classList.add("docked-temp");
+  __videoDockIsDocked = true;
+}
+
+function undockVideoFromSlot() {
+  const container = document.getElementById("dailyVideoContainer");
+  if (!container) return;
+
+  if (container.classList.contains("docked-temp")) {
+    container.classList.remove("docked-temp");
+
+    // Restaurer
+    if (container.dataset.__dockSaved) {
+      container.style.left = container.dataset.__dockLeft;
+      container.style.top = container.dataset.__dockTop;
+      container.style.right = container.dataset.__dockRight;
+      container.style.bottom = container.dataset.__dockBottom;
+      container.style.width = container.dataset.__dockWidth;
+      container.style.height = container.dataset.__dockHeight;
+    }
+  }
+  __videoDockIsDocked = false;
+}
+
+function updateVideoDockSlot(state) {
+  bindVideoDockHandlersOnce();
+
+  // IMPORTANT: sur mobile, ne pas déplacer/masquer/redimensionner automatiquement l'iframe Daily.
+  // Cela peut bloquer la connexion ("Connexion à la réunion...") sur iOS/Android.
+  if (__videoDockIsMobile) {
+    const slot = document.getElementById("videoDockSlot");
+    if (slot) slot.style.display = "none";
+    return;
+  }
+
+  const slot = document.getElementById("videoDockSlot");
+  const container = document.getElementById("dailyVideoContainer");
+
+  // Si pas de visio encore join => on ne montre pas le slot (prototype)
+  const joined = !!(window.dailyVideo && window.dailyVideo.callFrame);
+  if (!joined || !container || !slot) {
+    if (slot) slot.style.display = "none";
+    return;
+  }
+
+  if (shouldDockVideo(state)) {
+    // Dock en phase jour (discussion)
+    // Dé-dock propre si on était docké mais la page a scroll (recalcul rect)
+    dockVideoToSlot();
+  } else {
+    // Nuit / autres : on libère l'espace
+    if (__videoDockIsDocked) undockVideoFromSlot();
+    // On laisse Daily gérer sa minimisation/bulle si la phase coupe les perms
+    slot.style.display = "none";
+  }
+}
+
+// Repositionner si resize/scroll quand docké
+window.addEventListener("resize", () => {
+  if (__videoDockIsDocked) {
+    try { dockVideoToSlot(); } catch {}
+  }
+});
+window.addEventListener("scroll", () => {
+  if (__videoDockIsDocked) {
+    try { dockVideoToSlot(); } catch {}
+  }
+}, { passive: true });
 
 
