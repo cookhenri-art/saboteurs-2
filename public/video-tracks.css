@@ -1,25 +1,3 @@
-/* --- Daily video container: embedded vs floating --- */
-#videoDockSlotBody {
-  min-height: 280px;
-}
-
-.daily-video-container.embedded {
-  position: relative !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  box-shadow: none !important;
-}
-
-.daily-video-container.embedded .daily-video-header {
-  display: none !important; /* header is redundant inside the dock panel */
-}
-
-.daily-video-container.embedded #daily-video-frame {
-  height: 100% !important;
-}
 /* =========================================================
    D3 - Inline Video Tiles in Players List
    - Uses existing theme CSS variables:

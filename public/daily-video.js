@@ -518,16 +518,7 @@ background: rgba(10, 14, 39, 0.95);
     // Ensure it is actually in the DOM and above the iframe
     this.grid.appendChild(this.privatePhaseScreen);
 
-    // D3 UI: if the in-page dock slot exists, embed the call there.
-    // Fallback: floating window on <body> (older UIs / missing slot).
-    const dockHost = document.getElementById("videoDockSlotBody");
-    if (dockHost) {
-      dockHost.appendChild(this.container);
-      this.setEmbeddedMode(true);
-    } else {
-      document.body.appendChild(this.container);
-      this.setEmbeddedMode(false);
-    }
+    document.body.appendChild(this.container);
 
     // UI: bouton lanceur (si on ferme la fenêtre)
     this.ensureLauncher();
@@ -832,38 +823,6 @@ background: rgba(10, 14, 39, 0.95);
     }
     this.callFrame = null;
     this.container?.style.setProperty("display", "none", "important");
-  }
-
-  /**
-   * Embedded mode = render inside #videoDockSlotBody (the right-side "Visioconférence" panel).
-   * Floating mode = draggable window appended to <body>.
-   */
-  setEmbeddedMode(isEmbedded) {
-    this.isEmbedded = !!isEmbedded;
-    if (!this.container) return;
-
-    // Toggle a class so CSS can switch positioning rules.
-    this.container.classList.toggle("embedded", this.isEmbedded);
-
-    // In embedded mode we don't want to fight layout with fixed positioning.
-    if (this.isEmbedded) {
-      this.container.style.position = "relative";
-      this.container.style.left = "0";
-      this.container.style.top = "0";
-      this.container.style.right = "0";
-      this.container.style.bottom = "0";
-      this.container.style.width = "100%";
-      this.container.style.height = "100%";
-      this.container.style.maxWidth = "100%";
-      this.container.style.maxHeight = "100%";
-    } else {
-      // Restore default sizing when undocking.
-      this.container.style.position = "fixed";
-      this.container.style.width = "380px";
-      this.container.style.height = "300px";
-      this.container.style.maxWidth = "92vw";
-      this.container.style.maxHeight = "70vh";
-    }
   }
 
 
