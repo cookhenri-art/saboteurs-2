@@ -1,0 +1,143 @@
+:root {
+  /* Valeurs par défaut (seront overridées par tes thèmes via vars existantes si dispo) */
+  --vtile-bg: rgba(0,0,0,0.35);
+  --vtile-border: rgba(255,255,255,0.14);
+  --vtile-text: rgba(255,255,255,0.85);
+
+  --vtile-speaking-border: rgba(255,255,255,0.35);
+  --vtile-speaking-glow: rgba(255,255,255,0.25);
+
+  --vtile-radius: 12px;
+  --vtile-shadow: 0 10px 24px rgba(0,0,0,0.25);
+  --vtile-shadow-speaking: 0 12px 34px rgba(0,0,0,0.35);
+
+  --vtile-w: 76px;
+  --vtile-h: 54px;
+
+  --vtile-gap: 10px;
+  --vtile-pad: 10px;
+
+  --vtile-badge-bg: rgba(0,0,0,0.55);
+  --vtile-badge-text: rgba(255,255,255,0.92);
+
+  --vtile-hint-bg: rgba(0,0,0,0.55);
+  --vtile-hint-text: rgba(255,255,255,0.9);
+}
+
+/* Optionnel : mappe tes 4 thèmes si tu as déjà des vars type --accent / --panel / etc.
+   Remplace les variables ci-dessous par celles de ton projet si elles existent. */
+body.theme-1 { /* ex: néon */
+  --vtile-speaking-glow: color-mix(in srgb, var(--accent, #7cf) 40%, transparent);
+  --vtile-speaking-border: color-mix(in srgb, var(--accent, #7cf) 60%, rgba(255,255,255,0.1));
+}
+body.theme-2 { /* ex: rouge */
+  --vtile-speaking-glow: color-mix(in srgb, var(--accent, #f77) 40%, transparent);
+  --vtile-speaking-border: color-mix(in srgb, var(--accent, #f77) 60%, rgba(255,255,255,0.1));
+}
+body.theme-3 { /* ex: vert */
+  --vtile-speaking-glow: color-mix(in srgb, var(--accent, #7f7) 40%, transparent);
+  --vtile-speaking-border: color-mix(in srgb, var(--accent, #7f7) 60%, rgba(255,255,255,0.1));
+}
+body.theme-4 { /* ex: violet */
+  --vtile-speaking-glow: color-mix(in srgb, var(--accent, #c7f) 40%, transparent);
+  --vtile-speaking-border: color-mix(in srgb, var(--accent, #c7f) 60%, rgba(255,255,255,0.1));
+}
+
+/* --- Players list integration --- */
+
+.players-list .player-item {
+  display: flex;
+  align-items: center;
+  gap: var(--vtile-gap);
+}
+
+/* Layout left/right : la tuile peut précéder ou suivre le contenu */
+body.layout-left .players-list .player-item {
+  flex-direction: row;
+}
+body.layout-right .players-list .player-item {
+  flex-direction: row-reverse;
+}
+
+.players-list .player-item .vtile-slot {
+  width: var(--vtile-w);
+  min-width: var(--vtile-w);
+  height: var(--vtile-h);
+  position: relative;
+  border-radius: var(--vtile-radius);
+  overflow: hidden;
+  background: var(--vtile-bg);
+  border: 1px solid var(--vtile-border);
+  box-shadow: var(--vtile-shadow);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.players-list .player-item .vtile-slot.vtile-hidden {
+  display: none;
+}
+
+/* Vidéo */
+.players-list .player-item .vtile-slot video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Overlay */
+.players-list .player-item .vtile-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--vtile-badge-bg);
+  color: var(--vtile-badge-text);
+  font-size: 11px;
+  line-height: 1.2;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  white-space: nowrap;
+  max-width: calc(100% - 12px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* État fallback / hint */
+.players-list .player-item .vtile-hint {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 8px;
+  background: var(--vtile-hint-bg);
+  color: var(--vtile-hint-text);
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.players-list .player-item.is-speaking .vtile-slot,
+.players-list .player-item .vtile-slot.vtile-speaking {
+  border-color: var(--vtile-speaking-border);
+  box-shadow:
+    var(--vtile-shadow-speaking),
+    0 0 0 2px color-mix(in srgb, var(--vtile-speaking-border) 50%, transparent),
+    0 0 22px var(--vtile-speaking-glow);
+}
+
+/* Ejected: si tu as déjà un style, on évite de trop attirer l’œil */
+.players-list .player-item.is-ejected .vtile-slot {
+  opacity: 0.5;
+  filter: grayscale(0.9);
+}
+
+/* Mobile : un peu plus gros si tu veux */
+@media (max-width: 520px) {
+  :root {
+    --vtile-w: 84px;
+    --vtile-h: 60px;
+  }
+}
