@@ -1,0 +1,673 @@
+/**
+ * D4 - SALLE DE BRIEFING / ADVANCED VIDEO MODE
+ * =============================================
+ * 
+ * Design inspiré des interfaces de visioconférence premium (Zoom, Meet)
+ * avec une touche gaming/sci-fi adaptée aux thèmes de Saboteur.
+ * 
+ * Structure:
+ * - .video-briefing-container : conteneur principal mode avancé
+ * - .video-focus-main : vidéo focus (active speaker / sélection)
+ * - .video-thumbs-sidebar : barre latérale de vignettes
+ * - .video-thumb : vignette individuelle
+ */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES (THEMING)
+   ============================================ */
+
+:root {
+  /* Briefing mode colors */
+  --briefing-bg: linear-gradient(135deg, rgba(8, 12, 30, 0.98) 0%, rgba(15, 25, 50, 0.98) 100%);
+  --briefing-border: rgba(0, 255, 255, 0.25);
+  --briefing-glow: rgba(0, 255, 255, 0.15);
+  
+  /* Focus video */
+  --focus-border: rgba(0, 255, 255, 0.4);
+  --focus-glow: 0 0 40px rgba(0, 255, 255, 0.3);
+  --focus-bg: rgba(0, 0, 0, 0.6);
+  
+  /* Thumbnails */
+  --thumb-size: 120px;
+  --thumb-size-mobile: 90px;
+  --thumb-border: rgba(255, 255, 255, 0.15);
+  --thumb-border-hover: rgba(0, 255, 255, 0.5);
+  --thumb-bg: rgba(0, 0, 0, 0.5);
+  
+  /* Speaker highlight */
+  --speaker-ring: rgba(0, 255, 255, 0.8);
+  --speaker-pulse: rgba(0, 255, 255, 0.4);
+  
+  /* Controls */
+  --control-bg: rgba(0, 0, 0, 0.7);
+  --control-hover: rgba(0, 255, 255, 0.2);
+  
+  /* Animations */
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-bounce: 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Theme overrides (optional - uses existing theme vars) */
+[data-theme="werewolf"] {
+  --briefing-bg: linear-gradient(135deg, rgba(20, 10, 5, 0.98) 0%, rgba(40, 20, 10, 0.98) 100%);
+  --briefing-border: rgba(200, 150, 100, 0.3);
+  --focus-border: rgba(200, 150, 100, 0.5);
+  --speaker-ring: rgba(255, 180, 100, 0.8);
+}
+
+[data-theme="wizard-academy"] {
+  --briefing-bg: linear-gradient(135deg, rgba(25, 15, 40, 0.98) 0%, rgba(45, 25, 70, 0.98) 100%);
+  --briefing-border: rgba(157, 78, 221, 0.3);
+  --focus-border: rgba(157, 78, 221, 0.5);
+  --speaker-ring: rgba(157, 78, 221, 0.8);
+}
+
+[data-theme="mythic-realms"] {
+  --briefing-bg: linear-gradient(135deg, rgba(15, 25, 20, 0.98) 0%, rgba(30, 50, 40, 0.98) 100%);
+  --briefing-border: rgba(100, 200, 150, 0.3);
+  --focus-border: rgba(100, 200, 150, 0.5);
+  --speaker-ring: rgba(100, 200, 150, 0.8);
+}
+
+/* ============================================
+   BRIEFING CONTAINER (MAIN WRAPPER)
+   ============================================ */
+
+.video-briefing-container {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9500;
+  background: var(--briefing-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 20px;
+  box-sizing: border-box;
+  
+  /* Flex layout: focus + sidebar */
+  flex-direction: row;
+  gap: 20px;
+  
+  /* Animation d'entrée */
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity var(--transition-smooth), transform var(--transition-smooth);
+}
+
+.video-briefing-container.active {
+  display: flex;
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ============================================
+   FOCUS VIDEO (MAIN SPEAKER)
+   ============================================ */
+
+.video-focus-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+}
+
+.video-focus-main {
+  flex: 1;
+  position: relative;
+  background: var(--focus-bg);
+  border: 2px solid var(--focus-border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--focus-glow);
+  
+  /* Minimum height */
+  min-height: 300px;
+}
+
+.video-focus-main video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Focus name overlay */
+.video-focus-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 15px 20px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.video-focus-name .name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.video-focus-name .badge-speaker {
+  padding: 4px 10px;
+  background: var(--speaker-ring);
+  color: #000;
+  font-size: 0.75rem;
+  font-weight: 800;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
+}
+
+/* Empty state */
+.video-focus-main.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-focus-main.empty::after {
+  content: "🎥";
+  font-size: 4rem;
+  opacity: 0.3;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Speaker active state */
+.video-focus-main.is-speaking {
+  border-color: var(--speaker-ring);
+  box-shadow: 
+    0 0 0 3px var(--speaker-pulse),
+    0 0 60px var(--speaker-pulse);
+  animation: speaker-glow 2s ease-in-out infinite;
+}
+
+@keyframes speaker-glow {
+  0%, 100% { box-shadow: 0 0 0 3px var(--speaker-pulse), 0 0 40px var(--speaker-pulse); }
+  50% { box-shadow: 0 0 0 5px var(--speaker-pulse), 0 0 80px var(--speaker-pulse); }
+}
+
+/* ============================================
+   THUMBNAILS SIDEBAR
+   ============================================ */
+
+.video-thumbs-sidebar {
+  width: var(--thumb-size);
+  flex-shrink: 0;
+  
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  
+  /* Scrollable */
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--briefing-border) transparent;
+  
+  padding-right: 5px;
+}
+
+.video-thumbs-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.video-thumbs-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.video-thumbs-sidebar::-webkit-scrollbar-thumb {
+  background: var(--briefing-border);
+  border-radius: 3px;
+}
+
+/* ============================================
+   THUMBNAIL ITEM
+   ============================================ */
+
+.video-thumb {
+  width: var(--thumb-size);
+  height: calc(var(--thumb-size) * 0.75);
+  position: relative;
+  
+  background: var(--thumb-bg);
+  border: 2px solid var(--thumb-border);
+  border-radius: 12px;
+  overflow: hidden;
+  
+  cursor: pointer;
+  flex-shrink: 0;
+  
+  transition: 
+    border-color var(--transition-smooth),
+    transform var(--transition-smooth),
+    box-shadow var(--transition-smooth);
+}
+
+.video-thumb:hover {
+  border-color: var(--thumb-border-hover);
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+.video-thumb:active {
+  transform: scale(0.98);
+}
+
+.video-thumb video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Thumbnail name label */
+.video-thumb .thumb-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 8px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Empty thumbnail */
+.video-thumb.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+
+.video-thumb.empty::after {
+  content: "📷";
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
+
+/* Speaking thumbnail */
+.video-thumb.is-speaking {
+  border-color: var(--speaker-ring);
+  box-shadow: 
+    0 0 0 2px var(--speaker-pulse),
+    0 0 15px var(--speaker-pulse);
+}
+
+/* Focused (selected) thumbnail */
+.video-thumb.is-focused {
+  border-color: var(--neon-cyan, #00ffff);
+  border-width: 3px;
+}
+
+/* Dead/ejected player */
+.video-thumb.is-dead {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+  pointer-events: none;
+}
+
+.video-thumb.is-dead::before {
+  content: "💀";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+/* ============================================
+   BRIEFING CONTROLS (TOP BAR)
+   ============================================ */
+
+.video-briefing-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  
+  background: linear-gradient(rgba(0, 0, 0, 0.8), transparent);
+  z-index: 10;
+}
+
+.video-briefing-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.video-briefing-title .icon {
+  font-size: 1.5rem;
+}
+
+.video-briefing-title .text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--neon-cyan, #00ffff);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.video-briefing-title .phase-badge {
+  padding: 4px 12px;
+  background: rgba(255, 165, 0, 0.2);
+  border: 1px solid rgba(255, 165, 0, 0.5);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ffa500;
+}
+
+.video-briefing-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.video-briefing-btn {
+  width: 44px;
+  height: 44px;
+  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  background: var(--control-bg);
+  border: 1px solid var(--briefing-border);
+  border-radius: 10px;
+  
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  
+  transition: 
+    background var(--transition-smooth),
+    transform var(--transition-smooth);
+}
+
+.video-briefing-btn:hover {
+  background: var(--control-hover);
+  transform: scale(1.1);
+}
+
+.video-briefing-btn:active {
+  transform: scale(0.95);
+}
+
+.video-briefing-btn.btn-exit {
+  background: rgba(255, 50, 50, 0.2);
+  border-color: rgba(255, 50, 50, 0.4);
+}
+
+.video-briefing-btn.btn-exit:hover {
+  background: rgba(255, 50, 50, 0.4);
+}
+
+/* ============================================
+   GAME UI OVERLAY (REDUCED)
+   ============================================ */
+
+.video-briefing-game-ui {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: calc(var(--thumb-size) + 40px);
+  
+  max-height: 200px;
+  padding: 15px;
+  
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--briefing-border);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  
+  overflow-y: auto;
+  
+  /* Semi-transparent pour ne pas gêner */
+  opacity: 0.85;
+  transition: opacity var(--transition-smooth);
+}
+
+.video-briefing-game-ui:hover {
+  opacity: 1;
+}
+
+/* ============================================
+   MOBILE LAYOUT
+   ============================================ */
+
+@media (max-width: 768px) {
+  :root {
+    --thumb-size: var(--thumb-size-mobile);
+  }
+  
+  .video-briefing-container {
+    flex-direction: column;
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .video-focus-wrapper {
+    flex: none;
+    height: 50vh;
+    min-height: 200px;
+    max-height: 400px;
+  }
+  
+  .video-focus-main {
+    min-height: unset;
+  }
+  
+  .video-focus-name .name {
+    font-size: 1rem;
+  }
+  
+  .video-thumbs-sidebar {
+    width: 100%;
+    flex-direction: row;
+    max-height: unset;
+    overflow-x: auto;
+    overflow-y: hidden;
+    
+    /* Horizontal scroll */
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+  
+  .video-thumbs-sidebar::-webkit-scrollbar {
+    height: 4px;
+    width: auto;
+  }
+  
+  .video-thumb {
+    width: var(--thumb-size-mobile);
+    height: calc(var(--thumb-size-mobile) * 0.75);
+  }
+  
+  .video-briefing-header {
+    height: 50px;
+    padding: 0 10px;
+  }
+  
+  .video-briefing-title .text {
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+  }
+  
+  .video-briefing-title .phase-badge {
+    display: none;
+  }
+  
+  .video-briefing-game-ui {
+    position: relative;
+    bottom: unset;
+    left: unset;
+    right: unset;
+    max-height: 150px;
+  }
+}
+
+/* ============================================
+   INLINE MODE ENHANCEMENTS (D3 compatible)
+   ============================================ */
+
+/* Enhanced speaker highlight for inline mode */
+.player-item.is-speaking .player-video-slot {
+  border-color: var(--speaker-ring) !important;
+  box-shadow:
+    0 0 0 2px var(--speaker-pulse),
+    0 0 25px var(--speaker-pulse),
+    var(--vtile-shadow) !important;
+  animation: inline-speaker-pulse 2s ease-in-out infinite;
+}
+
+@keyframes inline-speaker-pulse {
+  0%, 100% { 
+    box-shadow: 
+      0 0 0 2px var(--speaker-pulse),
+      0 0 20px var(--speaker-pulse),
+      var(--vtile-shadow);
+  }
+  50% { 
+    box-shadow: 
+      0 0 0 4px var(--speaker-pulse),
+      0 0 35px var(--speaker-pulse),
+      var(--vtile-shadow);
+  }
+}
+
+/* ============================================
+   MOBILE ACTIVATION BUTTON
+   ============================================ */
+
+.video-expand-btn {
+  position: fixed;
+  bottom: 80px;
+  right: 14px;
+  z-index: 9400;
+  
+  padding: 12px 18px;
+  
+  background: linear-gradient(135deg, rgba(0, 255, 255, 0.15), rgba(0, 200, 200, 0.25));
+  border: 2px solid var(--neon-cyan, #00ffff);
+  border-radius: 14px;
+  
+  color: var(--neon-cyan, #00ffff);
+  font-size: 0.9rem;
+  font-weight: 700;
+  
+  cursor: pointer;
+  
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  
+  transition: 
+    transform var(--transition-smooth),
+    box-shadow var(--transition-smooth);
+  
+  display: none; /* Hidden by default, shown when conditions met */
+}
+
+.video-expand-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+}
+
+.video-expand-btn.visible {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.video-expand-btn .icon {
+  font-size: 1.2rem;
+}
+
+/* ============================================
+   TRANSITIONS & ANIMATIONS
+   ============================================ */
+
+/* Fade in for thumbnails */
+.video-thumb {
+  animation: thumb-appear 0.3s ease-out;
+}
+
+@keyframes thumb-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Focus change animation */
+.video-focus-main video {
+  animation: focus-change 0.4s ease-out;
+}
+
+@keyframes focus-change {
+  from {
+    opacity: 0.7;
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.video-thumb:focus-visible,
+.video-briefing-btn:focus-visible {
+  outline: 2px solid var(--neon-cyan, #00ffff);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .video-briefing-container,
+  .video-thumb,
+  .video-focus-main,
+  .video-briefing-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}

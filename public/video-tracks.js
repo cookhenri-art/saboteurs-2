@@ -1,9 +1,10 @@
 /* =========================================================
-   D3.1 HOTFIX - Inline video thumbnails per player (Daily CallObject)
+   D4 BRIEFING MODE - Inline video thumbnails per player (Daily CallObject)
    - NO Daily floating UI
    - Attach video tracks into .player-video-slot[data-player-id]
    - Re-attach if players list re-renders
    - Active speaker highlight (.is-speaking on .player-item)
+   - D4: Integration with VideoModeController and BriefingUI
 ========================================================= */
 (function () {
   "use strict";
@@ -17,6 +18,13 @@
   let bound = false;
 
   function log(...args) { if (DEBUG) console.log("[VideoTracks]", ...args); }
+
+  // D4: Export registry for external access
+  window.VideoTracksRegistry = {
+    getAll: () => new Map(videoTracks),
+    get: (playerId) => videoTracks.get(playerId),
+    has: (playerId) => videoTracks.has(playerId)
+  };
 
   function parsePlayerIdFromUserName(userName) {
     if (!userName) return "";
@@ -128,6 +136,11 @@
 
       videoTracks.set(pid, ev.track);
       attachTrackToPlayer(pid, ev.track, isLocal);
+      
+      // D4: Notifier le Briefing UI
+      if (window.VideoBriefingUI) {
+        window.VideoBriefingUI.onTrackStarted(pid, ev.track);
+      }
     });
 
     callObject.on("track-stopped", (ev) => {
@@ -140,12 +153,22 @@
       videoTracks.delete(pid);
       const slot = getSlot(pid);
       if (slot) slot.innerHTML = "";
+      
+      // D4: Notifier le Briefing UI
+      if (window.VideoBriefingUI) {
+        window.VideoBriefingUI.onTrackStopped(pid);
+      }
     });
 
     callObject.on("active-speaker-change", (ev) => {
       const peerId = ev?.peerId || ev?.activeSpeaker?.peerId || "";
       const pid = peerToPlayerId.get(peerId) || "";
       setSpeaking(pid);
+      
+      // D4: Notifier le VideoModeController
+      if (window.videoModeCtrl && pid) {
+        window.videoModeCtrl.setActiveSpeaker(pid);
+      }
     });
 
     // Observe rerenders of players list

@@ -8,7 +8,25 @@
 // SECTION VIDEO - DAILY.CO INTEGRATION
 // ============================================
 
-console.log('[Video] build=D3-fix-mobile-v2-syntax');
+console.log('[Video] build=D4-briefing-mode-v1');
+
+// ============================================
+// D4: INTEGRATION WITH VideoModeController
+// ============================================
+
+/**
+ * D4: Synchronise l'état avec le VideoModeController
+ * Appelé à chaque roomState pour mettre à jour le contrôleur
+ */
+function syncWithVideoModeController(state) {
+  if (!window.videoModeCtrl) return;
+  
+  // Mettre à jour l'état du contrôleur
+  window.videoModeCtrl.updateFromRoomState(state);
+  
+  // Signaler si la vidéo est connectée
+  window.videoModeCtrl.setVideoJoined(videoRoomJoined);
+}
 
 let videoRoomUrl = null;
 let videoRoomJoined = false;
@@ -161,7 +179,11 @@ function initVideoForGame(state) {
     return;
   }
 
-  if (!state.started) {
+  // Robustesse: si `started` manque mais que la `phase` n'est pas le lobby,
+  // on considère que la partie est en cours (cas typique après refresh mobile).
+  const phase = String(state?.phase || "");
+  const effectiveStarted = (state?.started === true) || (!!phase && phase !== "LOBBY" && phase !== "GAME_ABORTED");
+  if (!effectiveStarted) {
     console.log('[Video] Game not started yet, skipping');
     return;
   }
@@ -396,6 +418,9 @@ function cleanupVideo() {
     // Stocker l'état pour debug
     window.lastKnownState = state;
 
+    // D4: Synchroniser avec le VideoModeController
+    syncWithVideoModeController(state);
+
     // DEBUG : Logger l'état complet
     console.log('[Video] 📥 roomState received:', {
       started: state.started,
@@ -407,8 +432,15 @@ function cleanupVideo() {
       hasVideoPermissions: !!state.videoPermissions
     });
 
+    // 🔧 Robustesse refresh mobile
+    // Après un refresh (souvent Android Chrome), on peut recevoir un `roomState`
+    // transitoire où `started` est absent / false alors que `phase` indique
+    // clairement qu'on est déjà en partie. On dérive un "started" effectif.
+    const phase = String(state.phase || '');
+    const effectiveStarted = (state.started === true) || (!!phase && phase !== 'LOBBY' && phase !== 'GAME_ABORTED');
+
     // 1. Initialiser la vidéo au démarrage de la partie
-    if (state.started && !state.ended && !state.aborted) {
+    if (effectiveStarted && !state.ended && !state.aborted) {
       // D3: Sur mobile, attendre une action utilisateur explicite
       prepareVideoRoom(state);
       if (VIDEO_IS_MOBILE && !videoUserRequestedSession) {
@@ -431,7 +463,7 @@ function cleanupVideo() {
     
     // 2. Mettre à jour les permissions selon la phase
     // V9.3.0.2: IMPORTANT - Appeler même en GAME_OVER (state.ended=true) pour réactiver les morts
-    if (state.started) {
+    if (effectiveStarted) {
       updateVideoPermissions(state);
 
       // D3: Auto PiP en phase nuit/action (PC uniquement, jamais forcé mobile)
@@ -518,10 +550,12 @@ function createVideoToggleButton() {
     if (!videoRoomJoined) {
       // Tenter de rejoindre manuellement
       const state = window.lastKnownState; // Vous devez stocker state globalement
-      if (state && state.started) {
+      const phase = String(state?.phase || "");
+      const effectiveStarted = (state?.started === true) || (!!phase && phase !== "LOBBY" && phase !== "GAME_ABORTED");
+      if (state && effectiveStarted) {
         initVideoForGame(state);
       } else {
-        showVideoStatus('⚠️ Attendez le début de la partie', 'warning');
+        showVideoStatus('⚠️ Visio: état de partie indisponible', 'warning');
       }
     } else {
       // Toggle minimiser/maximiser
