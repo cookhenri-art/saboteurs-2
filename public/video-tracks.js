@@ -46,13 +46,33 @@
   function getSlot(playerId) {
     if (!playerId) return null;
     
-    // D'abord chercher dans la players-list (lobby)
-    let slot = document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
-    if (slot) return slot;
+    // Vérifier si on est dans le gameScreen (pas le lobby)
+    const lobbyScreen = document.getElementById('lobbyScreen');
+    const gameScreen = document.getElementById('gameScreen');
+    const isInGame = gameScreen && gameScreen.style.display !== 'none';
+    const isInLobby = lobbyScreen && lobbyScreen.style.display !== 'none';
     
-    // Si pas trouvé, créer/chercher dans le dock vidéo du gameScreen
-    slot = ensureGameScreenSlot(playerId);
-    return slot;
+    log("getSlot check:", playerId.slice(0,8), "isInGame:", isInGame, "isInLobby:", isInLobby);
+    
+    // Si on est dans le gameScreen, utiliser les slots du gameScreen
+    if (isInGame && !isInLobby) {
+      return ensureGameScreenSlot(playerId);
+    }
+    
+    // Sinon chercher dans la players-list (lobby)
+    let slot = document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+    if (slot) {
+      const rect = slot.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return slot;
+      }
+      // Slot existe mais invisible - utiliser gameScreen
+      log("Lobby slot invisible, using game slot");
+      return ensureGameScreenSlot(playerId);
+    }
+    
+    // Fallback: créer dans gameScreen
+    return ensureGameScreenSlot(playerId);
   }
   
   // D4: Créer les slots vidéo dans le gameScreen quand le lobby est caché
@@ -65,7 +85,7 @@
       container = document.createElement('div');
       container.id = 'inlineVideoBar';
       container.style.cssText = `
-        display: flex;
+        display: flex !important;
         gap: 8px;
         flex-wrap: wrap;
         padding: 10px;
@@ -73,35 +93,60 @@
         border: 2px solid rgba(0, 255, 255, 0.4);
         border-radius: 12px;
         margin-bottom: 12px;
+        min-height: 70px;
       `;
       
-      // Insérer au début du gameScreen
+      // Insérer dans gameScreen (forcer même si display pas vérifié)
       const gameScreen = document.getElementById('gameScreen');
       if (gameScreen) {
         const controlPanel = gameScreen.querySelector('.control-panel');
         if (controlPanel) {
           controlPanel.insertBefore(container, controlPanel.firstChild);
+          log("Created inline video bar in gameScreen ✅");
+        } else {
+          // Fallback: insérer directement dans gameScreen
+          gameScreen.insertBefore(container, gameScreen.firstChild);
+          log("Created inline video bar (fallback) ✅");
         }
+      } else {
+        log("ERROR: gameScreen not found!");
+        return null;
       }
-      log("Created inline video bar in gameScreen");
     }
     
-    // Chercher le slot existant
+    // Vérifier que le container est bien dans le DOM
+    if (!document.body.contains(container)) {
+      log("Container not in DOM, reinserting...");
+      const gameScreen = document.getElementById('gameScreen');
+      if (gameScreen) {
+        const controlPanel = gameScreen.querySelector('.control-panel');
+        if (controlPanel) {
+          controlPanel.insertBefore(container, controlPanel.firstChild);
+        } else {
+          gameScreen.insertBefore(container, gameScreen.firstChild);
+        }
+      }
+    }
+    
+    // Chercher le slot existant dans le container
     let slot = container.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
     if (slot) return slot;
     
     // Créer le slot
     slot = document.createElement('div');
-    slot.className = 'player-video-slot';
+    slot.className = 'player-video-slot game-slot';
     slot.dataset.playerId = playerId;
     slot.style.cssText = `
-      width: 80px;
-      height: 60px;
-      background: rgba(0, 30, 60, 0.9);
-      border: 2px solid rgba(0, 255, 255, 0.5);
-      border-radius: 8px;
-      overflow: hidden;
-      position: relative;
+      width: 80px !important;
+      height: 60px !important;
+      min-width: 80px !important;
+      min-height: 60px !important;
+      background: rgba(0, 30, 60, 0.9) !important;
+      border: 2px solid rgba(0, 255, 255, 0.5) !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      position: relative !important;
+      display: block !important;
     `;
     
     // Ajouter le nom du joueur
@@ -120,6 +165,7 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      z-index: 1;
     `;
     
     // Trouver le nom du joueur

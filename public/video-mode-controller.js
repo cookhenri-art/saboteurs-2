@@ -278,12 +278,7 @@
       if (CONFIG.ADVANCED_PHASES.includes(phase)) {
         // Vérifier le seuil de joueurs
         if (playerCount >= CONFIG.PLAYER_THRESHOLD) {
-          // Mobile: nécessite activation manuelle
-          if (IS_MOBILE && !this.mobileManuallyActivated) {
-            this.setMode(VideoMode.INLINE);
-            return;
-          }
-          // D4: Mode SPLIT par défaut (au lieu de ADVANCED_FOCUS)
+          // D4: Mode SPLIT par défaut sur TOUS les appareils (y compris mobile)
           // L'utilisateur peut passer en plein écran avec le bouton "Max"
           if (this.currentMode !== VideoMode.ADVANCED_FOCUS && this.currentMode !== VideoMode.SPLIT) {
             this.setMode(VideoMode.SPLIT);
