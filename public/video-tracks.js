@@ -45,8 +45,93 @@
 
   function getSlot(playerId) {
     if (!playerId) return null;
-    // Current client.js uses: <div class="player-video-slot" data-player-id="...">
-    return document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+    
+    // D'abord chercher dans la players-list (lobby)
+    let slot = document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+    if (slot) return slot;
+    
+    // Si pas trouvé, créer/chercher dans le dock vidéo du gameScreen
+    slot = ensureGameScreenSlot(playerId);
+    return slot;
+  }
+  
+  // D4: Créer les slots vidéo dans le gameScreen quand le lobby est caché
+  function ensureGameScreenSlot(playerId) {
+    if (!playerId) return null;
+    
+    // Chercher ou créer le conteneur de vignettes dans le gameScreen
+    let container = document.getElementById('inlineVideoBar');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'inlineVideoBar';
+      container.style.cssText = `
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        padding: 10px;
+        background: rgba(0, 20, 40, 0.8);
+        border: 2px solid rgba(0, 255, 255, 0.4);
+        border-radius: 12px;
+        margin-bottom: 12px;
+      `;
+      
+      // Insérer au début du gameScreen
+      const gameScreen = document.getElementById('gameScreen');
+      if (gameScreen) {
+        const controlPanel = gameScreen.querySelector('.control-panel');
+        if (controlPanel) {
+          controlPanel.insertBefore(container, controlPanel.firstChild);
+        }
+      }
+      log("Created inline video bar in gameScreen");
+    }
+    
+    // Chercher le slot existant
+    let slot = container.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+    if (slot) return slot;
+    
+    // Créer le slot
+    slot = document.createElement('div');
+    slot.className = 'player-video-slot';
+    slot.dataset.playerId = playerId;
+    slot.style.cssText = `
+      width: 80px;
+      height: 60px;
+      background: rgba(0, 30, 60, 0.9);
+      border: 2px solid rgba(0, 255, 255, 0.5);
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
+    `;
+    
+    // Ajouter le nom du joueur
+    const nameLabel = document.createElement('div');
+    nameLabel.className = 'slot-name';
+    nameLabel.style.cssText = `
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 2px 4px;
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      font-size: 0.65rem;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `;
+    
+    // Trouver le nom du joueur
+    const state = window.lastKnownState;
+    const player = state?.players?.find(p => p.playerId === playerId);
+    nameLabel.textContent = player?.name || playerId.slice(0, 6);
+    
+    slot.appendChild(nameLabel);
+    container.appendChild(slot);
+    
+    log("Created game slot for:", playerId, player?.name);
+    return slot;
   }
 
   function getPlayerRow(playerId) {
