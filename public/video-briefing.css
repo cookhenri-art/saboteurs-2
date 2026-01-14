@@ -671,3 +671,22 @@
     transition: none !important;
   }
 }
+
+/* ============================================
+   D4 HEADLESS: HIDE DAILY NATIVE UI
+   ============================================ */
+
+/* Masquer complètement le container Daily natif en mode D4 */
+#dailyVideoContainer {
+  display: none !important;
+}
+
+/* Masquer le dock vidéo obsolète */
+#videoDockSlot {
+  display: none !important;
+}
+
+/* Masquer le launcher bubble Daily */
+.daily-video-launcher {
+  display: none !important;
+}

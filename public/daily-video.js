@@ -58,11 +58,11 @@ class DailyVideoManager {
 
     this.isMobile = window.innerWidth < 768;
 
-    // FIX: dans la version D3, un mode "headless" cachait la fenêtre Daily par défaut,
-    // ce qui donnait l'impression qu'il n'y avait jamais de visio.
-    // Par défaut on affiche la fenêtre. Pour forcer headless: ajouter ?headless=1 dans l'URL.
+    // D4: Mode headless forcé par défaut pour utiliser notre propre UI (Salle de Briefing)
+    // La fenêtre Daily native ne doit JAMAIS s'afficher - on utilise video-tracks.js + video-briefing-ui.js
+    // Pour réactiver l'ancienne UI Daily, ajouter ?legacyDaily=1 dans l'URL
     const params = new URLSearchParams(window.location.search || "");
-    this.headless = params.get("headless") === "1";
+    this.headless = params.get("legacyDaily") !== "1"; // D4: headless par défaut
 
     // Safe area (iOS notch etc.)
     this.safeInset = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -715,11 +715,14 @@ background: rgba(10, 14, 39, 0.95);
   // --------------- Daily join / lifecycle ----------------
 
   async joinRoom(roomUrl, userName, permissions = { video: true, audio: true }) {
-    this.initContainer();
-    // D3: en mode headless, on ne montre jamais la fenêtre Daily UI
-    if (!this.headless) this.showWindow();
-    this.updateStatus("Connexion…");
-
+    // D4: En mode headless, on n'initialise PAS le container UI Daily
+    if (!this.headless) {
+      this.initContainer();
+      this.showWindow();
+    }
+    
+    console.log('[DailyUI] joinRoom called, headless:', this.headless);
+    
     // Reset prefs at (re)join
     this.userPref = { video: null, audio: null };
     this.allowed = { ...permissions };
@@ -732,13 +735,28 @@ background: rgba(10, 14, 39, 0.95);
     if (this.callFrame) {
       try { await this.callFrame.destroy(); } catch {}
       this.callFrame = null;
+      this.callObject = null;
     }
 
-    this.callFrame = window.DailyIframe.createFrame(this.grid, {
-      iframeStyle: { width: "100%", height: "100%", border: "none" },
-      showLeaveButton: false,
-      showFullscreenButton: false
-    });
+    // D4: Utiliser CallObject (headless) au lieu de Frame pour contrôle total
+    // Le Frame crée une UI Daily visible - le CallObject est purement API
+    if (this.headless) {
+      // Mode D4: CallObject headless
+      this.callFrame = window.DailyIframe.createCallObject({
+        dailyConfig: {
+          experimentalChromeVideoMuteLightOff: true
+        }
+      });
+      // Exposer pour video-tracks.js
+      this.callObject = this.callFrame;
+    } else {
+      // Mode legacy: Frame avec UI Daily
+      this.callFrame = window.DailyIframe.createFrame(this.grid, {
+        iframeStyle: { width: "100%", height: "100%", border: "none" },
+        showLeaveButton: false,
+        showFullscreenButton: false
+      });
+    }
 
     this.setupEventListeners();
 

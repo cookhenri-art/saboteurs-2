@@ -31,7 +31,12 @@
     MANUAL_FOCUS_TIMEOUT: 12000,
     
     // Phases qui activent le mode avancé
-    ADVANCED_PHASES: ['DEBATE', 'VOTING', 'DAY_DEBATE', 'DAY_VOTE', 'DISCUSSION', 'GAME_OVER'],
+    ADVANCED_PHASES: [
+      'DEBATE', 'VOTING', 'DAY_DEBATE', 'DAY_VOTE', 'DISCUSSION', 'GAME_OVER',
+      // Phases spécifiques Saboteur
+      'ROLE_REVEAL', 'CAPTAIN_CANDIDACY', 'CAPTAIN_VOTE', 'DAY', 'DAY_DISCUSSION',
+      'EJECTION_REVEAL', 'FINAL_VOTE'
+    ],
     
     // Phases de nuit (PiP possible)
     NIGHT_PHASES: ['NIGHT', 'NIGHT_SABOTEURS', 'SABOTEURS', 'DOCTOR', 'RADAR_OFFICER', 'SECURITY', 'ACTION'],

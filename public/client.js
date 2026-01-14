@@ -2545,6 +2545,14 @@ function undockVideoFromSlot() {
 }
 
 function updateVideoDockSlot(state) {
+  // D4: En mode headless (par défaut), on n'utilise plus le VideoDock
+  // Le mode "Salle de Briefing" gère l'affichage via video-briefing-ui.js
+  if (window.dailyVideo && window.dailyVideo.headless) {
+    const slot = document.getElementById("videoDockSlot");
+    if (slot) slot.style.display = "none";
+    return;
+  }
+  
   bindVideoDockHandlersOnce();
 
   // IMPORTANT: sur mobile, ne pas déplacer/masquer/redimensionner automatiquement l'iframe Daily.
