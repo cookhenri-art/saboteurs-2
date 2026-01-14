@@ -1134,3 +1134,25 @@ body.video-split-active .role-card img {
   max-width: 100px !important;
   max-height: 100px !important;
 }
+
+/* ============================================
+   D4 FINAL - BACKGROUND POSITION EN MODE SPLIT
+   Affiche le BAS de l'image (personnages/actions)
+   uniquement quand la visio conférence est active
+   ============================================ */
+
+body.video-split-active #gameBackdrop,
+body.video-split-active #endBackdrop,
+body.video-split-active .banner,
+body.video-split-active .phase-banner,
+body.video-split-active .header-banner {
+  background-position: center bottom !important;
+}
+
+body.video-split-active #gameBackdrop::before,
+body.video-split-active #endBackdrop::before,
+body.video-split-active .banner::before,
+body.video-split-active .phase-banner::before,
+body.video-split-active .header-banner::before {
+  background-position: center bottom !important;
+}
