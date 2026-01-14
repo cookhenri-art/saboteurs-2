@@ -994,3 +994,143 @@ body.video-split-active #topRightButtons {
 .container {
   transition: padding-top 0.3s ease;
 }
+
+/* ============================================
+   D4 FINAL - OPTIMISATIONS SPLIT MODE
+   ============================================ */
+
+/* Cacher le background du thème en mode SPLIT pour économiser l'espace */
+body.video-split-active #gameScreen .game-background,
+body.video-split-active #gameScreen .scene-image,
+body.video-split-active #gameScreen .theme-background,
+body.video-split-active .game-header-image,
+body.video-split-active .scene-banner {
+  display: none !important;
+}
+
+/* Réduire la hauteur du conteneur SPLIT sur PC */
+.video-briefing-container.mode-split {
+  height: 42vh !important;
+  min-height: 250px !important;
+  max-height: 380px !important;
+}
+
+/* Ajustement du padding-top du contenu en conséquence */
+body.video-split-active .container {
+  padding-top: calc(42vh + 15px) !important;
+}
+
+body.video-split-active #topLeftButtons,
+body.video-split-active #topRightButtons {
+  top: calc(42vh + 10px) !important;
+}
+
+/* ============================================
+   D4 FINAL - MOBILE SPLIT OPTIMISÉ
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Réduire encore plus la hauteur sur mobile */
+  .video-briefing-container.mode-split {
+    height: 35vh !important;
+    min-height: 200px !important;
+    max-height: 280px !important;
+    padding-top: 45px !important;
+    padding-bottom: 8px !important;
+  }
+  
+  body.video-split-active .container {
+    padding-top: calc(35vh + 10px) !important;
+  }
+  
+  body.video-split-active #topLeftButtons,
+  body.video-split-active #topRightButtons {
+    top: calc(35vh + 5px) !important;
+  }
+  
+  /* Thumbs plus compactes sur mobile en mode split */
+  .mode-split .video-thumbs-sidebar {
+    width: 80px !important;
+    gap: 5px !important;
+  }
+  
+  .mode-split .video-thumb {
+    width: 75px !important;
+    height: 55px !important;
+  }
+  
+  /* Header plus compact */
+  .mode-split .video-briefing-header {
+    height: 40px !important;
+    padding: 3px 10px !important;
+  }
+  
+  .mode-split .video-briefing-title .text {
+    font-size: 0.75rem !important;
+  }
+  
+  /* Focus name plus compact */
+  .mode-split .video-focus-name {
+    padding: 4px 8px !important;
+  }
+  
+  .mode-split .video-focus-name .name {
+    font-size: 0.85rem !important;
+  }
+}
+
+/* ============================================
+   D4 FINAL - TRÈS PETITS ÉCRANS MOBILE
+   ============================================ */
+
+@media (max-width: 480px) {
+  .video-briefing-container.mode-split {
+    height: 30vh !important;
+    min-height: 180px !important;
+    max-height: 240px !important;
+  }
+  
+  body.video-split-active .container {
+    padding-top: calc(30vh + 10px) !important;
+  }
+  
+  .mode-split .video-thumbs-sidebar {
+    width: 65px !important;
+  }
+  
+  .mode-split .video-thumb {
+    width: 60px !important;
+    height: 45px !important;
+  }
+}
+
+/* ============================================
+   D4 FINAL - SCROLL RESET
+   ============================================ */
+
+/* Assurer que le contenu du jeu reste visible sans scroll */
+body.video-split-active #gameScreen {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Control panel compact en mode split */
+body.video-split-active .control-panel {
+  padding-top: 10px !important;
+}
+
+body.video-split-active .control-panel > .card:first-child {
+  margin-top: 0 !important;
+}
+
+/* Role card plus compacte en mode split */
+body.video-split-active .role-reveal-card,
+body.video-split-active .role-card {
+  padding: 12px !important;
+}
+
+body.video-split-active .role-reveal-card img,
+body.video-split-active .role-card img {
+  max-width: 100px !important;
+  max-height: 100px !important;
+}

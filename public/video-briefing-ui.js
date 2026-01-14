@@ -257,6 +257,23 @@
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
       show();
       updateExpandButton(false);
+      
+      // D4 FINAL: Reset scroll position quand on entre en mode SPLIT/ADVANCED
+      // Pour s'assurer que tout est visible sans scroll
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Reset aussi le scroll du gameScreen si présent
+        const gameScreen = document.getElementById('gameScreen');
+        if (gameScreen) {
+          gameScreen.scrollTop = 0;
+        }
+        const container = document.querySelector('.container');
+        if (container) {
+          container.scrollTop = 0;
+        }
+        log('Scroll reset to top');
+      }, 100);
+      
     } else {
       hide();
       // Show expand button if conditions allow advanced mode
@@ -266,6 +283,11 @@
       } else {
         updateExpandButton(false);
       }
+      
+      // D4 FINAL: Reset scroll aussi quand on quitte le mode SPLIT
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 100);
     }
   }
   
