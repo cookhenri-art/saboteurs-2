@@ -2337,7 +2337,7 @@ console.log("[V26] Nouvelles fonctionnalités chargées !");
 
 
 // =====================================================
-console.log('[VideoDock] build=D3-fix-dock-v2');
+console.log('[VideoDock] build=D3-fix-dock-v1');
 
 // VIDEO DOCK (prototype)
 // Objectif: en phase DAY*, intégrer la visio dans l'UI (slot) sans refonte Daily.
@@ -2364,32 +2364,16 @@ function shouldDockVideo(state) {
   if (state?.videoDisabled) return false;
 
   // Exclusions évidentes
-  // ✅ D4-MVP : on autorise le dock dès le lobby (zone "VISIO (discussion)")
-  if (p === "GAME_ABORTED") return false;
+  if (p === "LOBBY" || p === "GAME_ABORTED") return false;
 
-  // Règle D3: dock uniquement pendant les phases où l'UI prévoit un slot "discussion".
-  // IMPORTANT: ne pas se baser sur des labels FR, on utilise les clés de phase serveur.
-  // Phases confirmées côté serveur:
-  // - ROLE_REVEAL
-  // - CAPTAIN_CANDIDACY / CAPTAIN_VOTE
-  // - NIGHT_RESULTS (résultats publics)
-  // - DAY_WAKE / DAY_VOTE / DAY_RESULTS
-  // - GAME_OVER (optionnel: on garde flottant pour éviter d'écraser les stats)
-  const DOCK_PHASES = new Set([
-    // ✅ D4-MVP : dock en lobby aussi
-    "LOBBY",
-    "ROLE_REVEAL",
-    "CAPTAIN_CANDIDACY",
-    "CAPTAIN_VOTE",
-    "NIGHT_RESULTS",
-    "DAY_WAKE",
-    "DAY_VOTE",
-    "DAY_RESULTS",
-  ]);
+  // Règle D3: on dock quand la phase est "publique" (audio+video pour tous) ou assimilée discussion.
+  // Cela couvre ROLE_REVEAL + CAPTAIN_* + toutes les phases DAY*.
+  const perms = state?.videoPermissions;
+  if (perms && perms.video === true && perms.audio === true) return true;
 
-  if (DOCK_PHASES.has(p)) return true;
-  if (p.startsWith("CAPTAIN_")) return true; // futur-proof
-  if (p.startsWith("DAY_")) return true; // futur-proof
+  if (p.startsWith("DAY")) return true;
+  if (p === "ROLE_REVEAL") return true;
+  if (p.startsWith("CAPTAIN_")) return true;
 
   // GAME_OVER: laisser flotter (évite dock qui saute quand on scrolle les stats)
   if (p === "GAME_OVER") return false;
@@ -2438,179 +2422,65 @@ function __isDockRectVisible(rect) {
   return visibleW > minVisiblePx && visibleH > minVisiblePx;
 }
 
-// ✅ D4-MVP : fallback DOM pour le dock central.
-// Si le thème n'inclut pas #videoDockSlot / #videoDockPlaceholder,
-// on crée un slot centré (overlay) pour permettre le "dock" dans la zone visio.
-function __ensureVideoDockElements() {
-  let slot = document.getElementById("videoDockSlot");
-  let placeholder = document.getElementById("videoDockPlaceholder");
-  let slotBody = document.getElementById("videoDockSlotBody");
-
-  if (slot && placeholder && slotBody) return { slot, placeholder, slotBody };
-
-  // Racine fallback
-  let root = document.getElementById("videoDockFallbackRoot");
-  if (!root) {
-    root = document.createElement("div");
-    root.id = "videoDockFallbackRoot";
-    root.style.position = "fixed";
-    root.style.left = "50%";
-    root.style.top = "52%";
-    root.style.transform = "translate(-50%, -50%)";
-    root.style.width = "min(860px, 92vw)";
-    root.style.height = "min(520px, 64vh)";
-    root.style.zIndex = "9998";
-    root.style.pointerEvents = "none"; // le contenu interne repasse en auto
-    document.body.appendChild(root);
-  }
-
-  // Placeholder (sert de repère de visibilité)
-  if (!placeholder) {
-    placeholder = document.createElement("div");
-    placeholder.id = "videoDockPlaceholder";
-    placeholder.style.width = "100%";
-    placeholder.style.height = "1px";
-    placeholder.style.pointerEvents = "none";
-    root.appendChild(placeholder);
-  }
-
-  // Slot
-  if (!slot) {
-    slot = document.createElement("div");
-    slot.id = "videoDockSlot";
-    slot.style.display = "none";
-    slot.style.width = "100%";
-    slot.style.height = "100%";
-    slot.style.border = "2px solid rgba(0, 255, 255, 0.6)";
-    slot.style.borderRadius = "10px";
-    slot.style.background = "rgba(0,0,0,0.55)";
-    slot.style.boxShadow = "0 0 16px rgba(0, 255, 255, 0.25)";
-    slot.style.overflow = "hidden";
-    slot.style.pointerEvents = "auto";
-
-    // Header minimal (boutons)
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.justifyContent = "flex-end";
-    header.style.gap = "8px";
-    header.style.padding = "8px";
-
-    const mkBtn = (id, label) => {
-      const b = document.createElement("button");
-      b.id = id;
-      b.type = "button";
-      b.textContent = label;
-      b.style.background = "rgba(0,0,0,0.25)";
-      b.style.border = "1px solid rgba(0,255,255,0.35)";
-      b.style.color = "#dfffff";
-      b.style.borderRadius = "8px";
-      b.style.padding = "6px 10px";
-      b.style.cursor = "pointer";
-      return b;
-    };
-    header.appendChild(mkBtn("videoDockExpandBtn", "⤢"));
-    header.appendChild(mkBtn("videoDockHideBtn", "✕"));
-    slot.appendChild(header);
-
-    slotBody = document.createElement("div");
-    slotBody.id = "videoDockSlotBody";
-    slotBody.style.width = "100%";
-    slotBody.style.height = "calc(100% - 48px)";
-    slotBody.style.display = "flex";
-    slotBody.style.alignItems = "stretch";
-    slotBody.style.justifyContent = "stretch";
-    slot.appendChild(slotBody);
-    root.appendChild(slot);
-  }
-
-  // Si le body n'existe pas (slot présent mais incomplet)
-  if (!slotBody) {
-    slotBody = document.createElement("div");
-    slotBody.id = "videoDockSlotBody";
-    slot.appendChild(slotBody);
-  }
-
-  // Rebranche les handlers des boutons si on vient de créer le fallback
-  __wireDockButtons();
-
-  return { slot, placeholder, slotBody };
-}
-
 function dockVideoToSlot() {
-  // ✅ D4-MVP : garantit l'existence du slot (sinon le dock ne peut jamais se faire)
-  __ensureVideoDockElements();
   const slot = document.getElementById("videoDockSlot");
-  const slotBody = document.getElementById("videoDockSlotBody");
-  const placeholder = document.getElementById("videoDockPlaceholder");
+  const body = document.getElementById("videoDockSlotBody");
   const container = document.getElementById("dailyVideoContainer");
 
-  if (!slot || !slotBody || !placeholder) return;
+  if (!slot || !body || !container) return;
 
-  // Assure que le container Daily vit DANS le slot (évite qu'il reparte offscreen / hidden)
-  if (container && container.parentElement !== slotBody) {
-    slotBody.appendChild(container);
-  }
+  slot.style.display = "block";
 
-  // Si le placeholder n'est plus visible (scroll), on ne dock pas.
-  const rect = placeholder.getBoundingClientRect();
+  // Calculer la zone du slot
+  const rect = body.getBoundingClientRect();
+
+  // Si le slot n'est plus visible (scroll), on ne dock pas -> sinon la fenêtre saute en haut/gauche.
   if (!__isDockRectVisible(rect)) {
     undockVideoFromSlot();
     return;
   }
 
-  // Sauvegarde le parent original du slot une seule fois
-  if (!slot.dataset.__dockParentSaved) {
-    slot.dataset.__dockParentSaved = "1";
-    slot.dataset.__dockParentId = slot.parentElement ? (slot.parentElement.id || "") : "";
-    slot.dataset.__dockNextSiblingId = slot.nextElementSibling ? (slot.nextElementSibling.id || "") : "";
+  // Sauvegarder styles si première fois
+  if (!container.dataset.__dockSaved) {
+    container.dataset.__dockSaved = "1";
+    container.dataset.__dockLeft = container.style.left || "";
+    container.dataset.__dockTop = container.style.top || "";
+    container.dataset.__dockRight = container.style.right || "";
+    container.dataset.__dockBottom = container.style.bottom || "";
+    container.dataset.__dockWidth = container.style.width || "";
+    container.dataset.__dockHeight = container.style.height || "";
   }
 
-  if (slot.parentElement !== placeholder) {
-    placeholder.appendChild(slot);
-  }
-  slot.style.display = "block";
+  // Afficher et positionner
+  container.style.display = "flex";
+  container.style.left = rect.left + "px";
+  container.style.top = rect.top + "px";
+  container.style.right = "auto";
+  container.style.bottom = "auto";
+  container.style.width = rect.width + "px";
+  container.style.height = rect.height + "px";
 
-  // Cache l'UI interne Daily (header/status) : on utilise nos propres contrôles.
-  try {
-    const dailyHeader = slot.querySelector('.daily-header');
-    const dailyStatus = slot.querySelector('.daily-status');
-    if (dailyHeader) dailyHeader.style.display = 'none';
-    if (dailyStatus) dailyStatus.style.display = 'none';
-  } catch {}
-
+  container.classList.add("docked-temp");
   __videoDockIsDocked = true;
 }
 
 function undockVideoFromSlot() {
-  const slot = document.getElementById("videoDockSlot");
-  const slotBody = document.getElementById("videoDockSlotBody");
   const container = document.getElementById("dailyVideoContainer");
-  if (!slot) return;
+  if (!container) return;
 
-  // Toujours: maintenir Daily DANS le slot
-  if (container && slotBody && container.parentElement !== slotBody) {
-    slotBody.appendChild(container);
-  }
+  if (container.classList.contains("docked-temp")) {
+    container.classList.remove("docked-temp");
 
-  if (slot.dataset.__dockParentSaved) {
-    const parentId = slot.dataset.__dockParentId || "";
-    const parent = parentId ? document.getElementById(parentId) : null;
-    if (parent && slot.parentElement !== parent) {
-      const sibId = slot.dataset.__dockNextSiblingId || "";
-      const sib = sibId ? document.getElementById(sibId) : null;
-      if (sib && sib.parentElement === parent) parent.insertBefore(slot, sib);
-      else parent.appendChild(slot);
+    // Restaurer
+    if (container.dataset.__dockSaved) {
+      container.style.left = container.dataset.__dockLeft;
+      container.style.top = container.dataset.__dockTop;
+      container.style.right = container.dataset.__dockRight;
+      container.style.bottom = container.dataset.__dockBottom;
+      container.style.width = container.dataset.__dockWidth;
+      container.style.height = container.dataset.__dockHeight;
     }
   }
-
-  // Restore Daily internal UI hidden state (optional)
-  try {
-    const dailyHeader = slot.querySelector('.daily-header');
-    const dailyStatus = slot.querySelector('.daily-status');
-    if (dailyHeader) dailyHeader.style.display = 'none';
-    if (dailyStatus) dailyStatus.style.display = 'none';
-  } catch {}
-
   __videoDockIsDocked = false;
 }
 
@@ -2619,40 +2489,20 @@ function updateVideoDockSlot(state) {
 
   // IMPORTANT: sur mobile, ne pas déplacer/masquer/redimensionner automatiquement l'iframe Daily.
   // Cela peut bloquer la connexion ("Connexion à la réunion...") sur iOS/Android.
-  // ✅ D4-MVP : bugfix - appel de la fonction (sinon always true => jamais de dock)
-  if (__videoDockIsMobile()) {
-    // On garde le panneau visio visible (boutons / feedback), mais on ne "dock" jamais.
-    __ensureVideoDockElements();
+  if (__videoDockIsMobile) {
     const slot = document.getElementById("videoDockSlot");
-    if (__videoDockIsDocked) {
-      try { undockVideoFromSlot(); } catch {}
-    }
-    if (slot) slot.style.display = "block";
+    if (slot) slot.style.display = "none";
     return;
   }
-
-  // ✅ D4-MVP : fallback DOM si le thème n'a pas de slot central
-  __ensureVideoDockElements();
 
   const slot = document.getElementById("videoDockSlot");
   const container = document.getElementById("dailyVideoContainer");
 
-  // Le panneau visio ne doit jamais disparaître (sinon on perd les contrôles).
-  if (slot) slot.style.display = "block";
-
-  // Si la visio n'est pas join, on n'essaie juste pas de déplacer quoi que ce soit.
+  // Si pas de visio encore join => on ne montre pas le slot (prototype)
   const joined = !!(window.dailyVideo && window.dailyVideo.callFrame);
   if (!joined || !container || !slot) {
-    if (__videoDockIsDocked) {
-      try { undockVideoFromSlot(); } catch {}
-    }
+    if (slot) slot.style.display = "none";
     return;
-  }
-
-  // Assurer que l'iframe Daily est bien dans le body du panneau visio
-  const body = document.getElementById("videoDockSlotBody");
-  if (body && container.parentElement !== body) {
-    body.appendChild(container);
   }
 
   if (shouldDockVideo(state)) {
@@ -2662,8 +2512,8 @@ function updateVideoDockSlot(state) {
   } else {
     // Nuit / autres : on libère l'espace
     if (__videoDockIsDocked) undockVideoFromSlot();
-    // On garde le panneau visible, même si la phase coupe les perms (badge/message = côté jeu).
-    slot.style.display = "block";
+    // On laisse Daily gérer sa minimisation/bulle si la phase coupe les perms
+    slot.style.display = "none";
   }
 }
 

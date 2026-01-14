@@ -161,11 +161,7 @@ function initVideoForGame(state) {
     return;
   }
 
-  // Robustesse: si `started` manque mais que la `phase` n'est pas le lobby,
-  // on considère que la partie est en cours (cas typique après refresh mobile).
-  const phase = String(state?.phase || "");
-  const effectiveStarted = (state?.started === true) || (!!phase && phase !== "LOBBY" && phase !== "GAME_ABORTED");
-  if (!effectiveStarted) {
+  if (!state.started) {
     console.log('[Video] Game not started yet, skipping');
     return;
   }
@@ -302,19 +298,6 @@ function updateVideoPermissions(state) {
   // Afficher le message de phase
   if (state.videoPhaseMessage) {
     showVideoStatus(state.videoPhaseMessage, 'info');
-  } else {
-    // UX fallback: if the player requested the session but the current phase disables A/V,
-    // we show a clear "waiting for phase" message.
-    try {
-      const requested = videoUserRequestedSession || sessionStorage.getItem('videoUserRequestedSession') === 'true';
-      const perms = state.videoPermissions || {};
-      const avOff = perms.video === false && perms.audio === false;
-      if (requested && avOff) {
-        showVideoStatus('⏳ En attente de validation de phase pour réactiver la visio', 'info');
-      }
-    } catch (e) {
-      // ignore
-    }
   }
 }
 
@@ -366,23 +349,6 @@ function showVideoStatus(message, type = 'info') {
     notification.style.transition = 'all 0.3s ease-out';
     setTimeout(() => notification.remove(), 300);
   }, 3000);
-}
-
-// ✅ D4-MVP : éviter la "fenêtre blanche" en masquant le callframe quand la visio est désactivée.
-// (On garde la room joinée, mais on cache l'UI Daily et on laisse le jeu afficher le message.)
-function setDailyUIVisible(visible) {
-  const dailyContainer = document.getElementById('dailyVideoContainer');
-  const dockContainer = document.getElementById('videoDockContainer');
-  const fallback = document.getElementById('dailyVideoFallback');
-
-  // Par défaut on agit sur le conteneur Daily si présent
-  if (dailyContainer) dailyContainer.style.display = visible ? '' : 'none';
-  if (fallback) fallback.style.display = visible ? 'none' : '';
-  // Sur certains builds, le panneau dock existe : on le laisse visible mais on peut le réduire
-  if (dockContainer && !visible) {
-    // Ne pas casser le layout : on ne force pas display:none sur le dock,
-    // mais on laisse le slot afficher le placeholder.
-  }
 }
 
 /**
@@ -441,15 +407,8 @@ function cleanupVideo() {
       hasVideoPermissions: !!state.videoPermissions
     });
 
-    // 🔧 Robustesse refresh mobile
-    // Après un refresh (souvent Android Chrome), on peut recevoir un `roomState`
-    // transitoire où `started` est absent / false alors que `phase` indique
-    // clairement qu'on est déjà en partie. On dérive un "started" effectif.
-    const phase = String(state.phase || '');
-    const effectiveStarted = (state.started === true) || (!!phase && phase !== 'LOBBY' && phase !== 'GAME_ABORTED');
-
     // 1. Initialiser la vidéo au démarrage de la partie
-    if (effectiveStarted && !state.ended && !state.aborted) {
+    if (state.started && !state.ended && !state.aborted) {
       // D3: Sur mobile, attendre une action utilisateur explicite
       prepareVideoRoom(state);
       if (VIDEO_IS_MOBILE && !videoUserRequestedSession) {
@@ -472,27 +431,8 @@ function cleanupVideo() {
     
     // 2. Mettre à jour les permissions selon la phase
     // V9.3.0.2: IMPORTANT - Appeler même en GAME_OVER (state.ended=true) pour réactiver les morts
-    if (effectiveStarted) {
+    if (state.started) {
       updateVideoPermissions(state);
-
-      // ✅ D4-MVP : éviter l'UI Daily "blanche" quand la visio est désactivée.
-      // Si aucune vidéo/audio n'est autorisée (nuit silencieuse, etc.),
-      // on masque le callframe et on affiche un message.
-      try {
-        const perms = state.videoPermissions || {};
-        const noVideo = perms.video === false || perms.camera === false || perms.cameras === false;
-        const noAudio = perms.audio === false || perms.mic === false || perms.micro === false;
-        const allowView = perms.view === true || perms.spectate === true || perms.receive === true;
-
-        const shouldHide = (noVideo && noAudio && !allowView) || state.videoDisabled === true;
-        setDailyUIVisible(!shouldHide);
-
-        if (shouldHide) {
-          showVideoStatus(state.videoMessage || state.videoStatusMessage || '😴 Nuit silencieuse (caméra + micro OFF)', 'info');
-        }
-      } catch (e) {
-        // no-op
-      }
 
       // D3: Auto PiP en phase nuit/action (PC uniquement, jamais forcé mobile)
       try {
@@ -578,12 +518,10 @@ function createVideoToggleButton() {
     if (!videoRoomJoined) {
       // Tenter de rejoindre manuellement
       const state = window.lastKnownState; // Vous devez stocker state globalement
-      const phase = String(state?.phase || "");
-      const effectiveStarted = (state?.started === true) || (!!phase && phase !== "LOBBY" && phase !== "GAME_ABORTED");
-      if (state && effectiveStarted) {
+      if (state && state.started) {
         initVideoForGame(state);
       } else {
-        showVideoStatus('⚠️ Visio: état de partie indisponible', 'warning');
+        showVideoStatus('⚠️ Attendez le début de la partie', 'warning');
       }
     } else {
       // Toggle minimiser/maximiser
