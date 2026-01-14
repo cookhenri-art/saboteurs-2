@@ -72,6 +72,13 @@
         <span class="phase-badge" id="briefingPhaseBadge">DÉBAT</span>
       </div>
       <div class="video-briefing-actions">
+        <button class="video-briefing-btn btn-mic" id="briefingMicBtn" title="Micro">
+          🎤
+        </button>
+        <button class="video-briefing-btn btn-cam" id="briefingCamBtn" title="Caméra">
+          📷
+        </button>
+        <span class="actions-separator"></span>
         <button class="video-briefing-btn btn-expand" id="briefingExpandBtn" title="Plein écran">
           ⬆ Max
         </button>
@@ -140,6 +147,24 @@
         if (window.videoModeCtrl) {
           window.videoModeCtrl.setInlineMode();
         }
+      });
+    }
+    
+    // Microphone toggle button
+    const micBtn = document.getElementById('briefingMicBtn');
+    if (micBtn) {
+      micBtn.addEventListener('click', async () => {
+        log('Mic button clicked');
+        await toggleMicrophone();
+      });
+    }
+    
+    // Camera toggle button
+    const camBtn = document.getElementById('briefingCamBtn');
+    if (camBtn) {
+      camBtn.addEventListener('click', async () => {
+        log('Camera button clicked');
+        await toggleCamera();
       });
     }
     
@@ -277,6 +302,7 @@
     
     container.classList.add('active');
     refreshParticipants();
+    syncControlStates(); // D4: Synchroniser l'état des boutons micro/caméra
     log('Briefing UI shown');
   }
 
@@ -606,6 +632,93 @@
     thumbElements.forEach((el, id) => {
       el.classList.toggle('is-speaking', id === speakerId);
     });
+  }
+
+  // ============================================
+  // MICROPHONE / CAMERA CONTROLS
+  // ============================================
+  
+  let isMicMuted = false;
+  let isCamOff = false;
+  
+  async function toggleMicrophone() {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (!callObj) {
+      log('No callObject for mic toggle');
+      return;
+    }
+    
+    try {
+      const currentState = await callObj.localAudio();
+      await callObj.setLocalAudio(!currentState);
+      isMicMuted = currentState; // inverse
+      updateMicButton();
+      log('Microphone:', !currentState ? 'ON' : 'OFF');
+    } catch (e) {
+      log('Error toggling mic:', e);
+    }
+  }
+  
+  async function toggleCamera() {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (!callObj) {
+      log('No callObject for camera toggle');
+      return;
+    }
+    
+    try {
+      const currentState = await callObj.localVideo();
+      await callObj.setLocalVideo(!currentState);
+      isCamOff = currentState; // inverse
+      updateCamButton();
+      log('Camera:', !currentState ? 'ON' : 'OFF');
+    } catch (e) {
+      log('Error toggling camera:', e);
+    }
+  }
+  
+  function updateMicButton() {
+    const btn = document.getElementById('briefingMicBtn');
+    if (!btn) return;
+    
+    if (isMicMuted) {
+      btn.textContent = '🔇';
+      btn.classList.add('is-off');
+      btn.title = 'Activer le micro';
+    } else {
+      btn.textContent = '🎤';
+      btn.classList.remove('is-off');
+      btn.title = 'Couper le micro';
+    }
+  }
+  
+  function updateCamButton() {
+    const btn = document.getElementById('briefingCamBtn');
+    if (!btn) return;
+    
+    if (isCamOff) {
+      btn.textContent = '📷';
+      btn.classList.add('is-off');
+      btn.title = 'Activer la caméra';
+    } else {
+      btn.textContent = '📹';
+      btn.classList.remove('is-off');
+      btn.title = 'Couper la caméra';
+    }
+  }
+  
+  async function syncControlStates() {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (!callObj) return;
+    
+    try {
+      isMicMuted = !(await callObj.localAudio());
+      isCamOff = !(await callObj.localVideo());
+      updateMicButton();
+      updateCamButton();
+    } catch (e) {
+      log('Error syncing control states:', e);
+    }
   }
 
   // ============================================

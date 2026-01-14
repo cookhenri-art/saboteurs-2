@@ -534,6 +534,42 @@
   color: #fff;
 }
 
+/* D4: Boutons Micro/Caméra */
+.video-briefing-btn.btn-mic,
+.video-briefing-btn.btn-cam {
+  width: 44px;
+  padding: 0;
+  background: rgba(0, 255, 200, 0.15);
+  border-color: rgba(0, 255, 200, 0.4);
+  color: #00ffcc;
+  font-size: 1.2rem;
+}
+
+.video-briefing-btn.btn-mic:hover,
+.video-briefing-btn.btn-cam:hover {
+  background: rgba(0, 255, 200, 0.3);
+}
+
+.video-briefing-btn.btn-mic.is-off,
+.video-briefing-btn.btn-cam.is-off {
+  background: rgba(255, 100, 100, 0.2);
+  border-color: rgba(255, 100, 100, 0.5);
+  color: #ff6666;
+}
+
+.video-briefing-btn.btn-mic.is-off:hover,
+.video-briefing-btn.btn-cam.is-off:hover {
+  background: rgba(255, 100, 100, 0.35);
+}
+
+/* Séparateur entre contrôles et actions */
+.video-briefing-actions .actions-separator {
+  width: 1px;
+  height: 30px;
+  background: var(--briefing-border);
+  margin: 0 8px;
+}
+
 .video-briefing-btn.active {
   opacity: 0.5;
   cursor: default;
@@ -871,19 +907,40 @@
    ============================================ */
 
 /* Quand le mode split est actif, décaler le contenu du jeu vers le bas */
+body.video-split-active {
+  overflow-x: hidden;
+}
+
 body.video-split-active .container {
-  padding-top: calc(50vh + 20px) !important;
-  min-height: calc(50vh - 20px);
+  padding-top: calc(50vh + 10px) !important;
+  min-height: 50vh;
+  margin-top: 0 !important;
+}
+
+body.video-split-active #gameScreen {
+  margin-top: 0;
+  padding-top: 10px;
 }
 
 body.video-split-active #gameScreen .control-panel {
   margin-top: 0;
 }
 
+/* Positionner les boutons fixes (règles, son) sous le briefing */
+body.video-split-active #topLeftButtons,
+body.video-split-active #topRightButtons {
+  top: calc(50vh + 15px) !important;
+}
+
 /* Mobile: ajustement du décalage */
 @media (max-width: 768px) {
   body.video-split-active .container {
     padding-top: calc(45vh + 10px) !important;
+  }
+  
+  body.video-split-active #topLeftButtons,
+  body.video-split-active #topRightButtons {
+    top: calc(45vh + 10px) !important;
   }
 }
 
