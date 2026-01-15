@@ -255,41 +255,22 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
-      // D5 V3.15: BLOQUER le scroll pendant toute la séquence
-      const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
-      
-      // Sauvegarder le style actuel
-      const originalOverflow = document.body.style.overflow;
-      const originalPosition = document.body.style.position;
-      const originalTop = document.body.style.top;
-      const originalWidth = document.body.style.width;
-      
-      // VERROUILLER le scroll
-      document.body.style.overflow = 'hidden';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollPos}px`;
-      document.body.style.width = '100%';
+      // D5 V3.16: Sauvegarder scroll AVANT show() (même système que client.js)
+      const scrollBeforeShow = window.pageYOffset || document.documentElement.scrollTop;
       
       show();
       updateExpandButton(false);
       
-      // DÉVERROUILLER le scroll après que tout soit fini
+      // D5 V3.16: Restaurer scroll APRÈS show() (cohérent avec client.js)
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          // Récupérer la position depuis le top du body (valeur absolue)
-          const topValue = document.body.style.top;
-          const savedScrollPos = topValue ? Math.abs(parseInt(topValue)) : scrollPos;
-          
-          document.body.style.overflow = originalOverflow;
-          document.body.style.position = originalPosition;
-          document.body.style.top = originalTop;
-          document.body.style.width = originalWidth;
-          window.scrollTo(0, savedScrollPos);
-          log(`[Scroll Fix V3.15] Déverrouillé après show(): ${savedScrollPos}`);
-        });
+        window.scrollTo(0, scrollBeforeShow);
+        log(`[Scroll V3.16] Position restaurée après show() ${mode}: ${scrollBeforeShow}`);
       });
       
     } else {
+      // D5 V3.16: Sauvegarder scroll AVANT hide()
+      const scrollBeforeHide = window.pageYOffset || document.documentElement.scrollTop;
+      
       hide();
       // Show expand button if conditions allow advanced mode
       const ctrl = window.videoModeCtrl;
@@ -299,9 +280,11 @@
         updateExpandButton(false);
       }
       
-      // D5 V3.9: Laisser le scroll intelligent gérer la position
-      setTimeout(() => {
-        // Position gérée par client.js smart scroll
+      // D5 V3.16: Restaurer scroll APRÈS hide()
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollBeforeHide);
+        log(`[Scroll V3.16] Position restaurée après hide() ${mode}: ${scrollBeforeHide}`);
+      });
       }, 50);
     }
   }
@@ -356,20 +339,11 @@
   }
   
   function updateBodyClass(mode) {
-    // D5 V3.12: Capturer position scroll AVANT le changement de classe CSS
-    const scrollBefore = window.pageYOffset || document.documentElement.scrollTop;
-    
     if (mode === 'SPLIT') {
       document.body.classList.add('video-split-active');
     } else {
       document.body.classList.remove('video-split-active');
     }
-    
-    // D5 V3.12: Restaurer position APRÈS le changement (le CSS cause un reflow)
-    requestAnimationFrame(() => {
-      window.scrollTo(0, scrollBefore);
-      log(`[Scroll Fix V3.12] Position restaurée après mode ${mode}: ${scrollBefore}`);
-    });
   }
 
   function updateExpandButton(visible) {

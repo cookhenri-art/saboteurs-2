@@ -79,7 +79,7 @@ if (isDebugMode) {
 let state = null;
 let lastAudioToken = null;
 let lobbyIntroPlayed = false; // Track if we've played the lobby intro for this session
-let endImagesPreloaded = false; // D5 V3.15: Track if end game images have been preloaded
+let endImagesPreloaded = false; // D5 V3.16: Track if end game images have been preloaded
 
 let autoReconnectAttempted = false;
 let disconnectReloadTimer = null;
@@ -585,16 +585,14 @@ const left = document.createElement("div");
 }
 
 function renderGame() {
-  // D5 V3.15: Précharger les images de fin de partie dès le début
-  // pour éviter l'écran noir quand on arrive à GAME_OVER
+  // D5 V3.16: Précharger les images de fin dès le début de la partie
   if (!endImagesPreloaded && state.started) {
     endImagesPreloaded = true;
     
-    // Précharger les 3 images possibles de fin
     const imagesToPreload = [
-      getThemeImagePath("image-fin-stats-explosion2.png"),  // Victoire SABOTEURS
-      getThemeImagePath("image-fin-stats-station2.png"),    // Victoire ASTRONAUTES/AMOUREUX
-      getThemeImagePath("cockpit.png")                       // Partie annulée
+      getThemeImagePath("image-fin-stats-explosion2.png"),
+      getThemeImagePath("image-fin-stats-station2.png"),
+      getThemeImagePath("cockpit.png")
     ];
     
     imagesToPreload.forEach(src => {
