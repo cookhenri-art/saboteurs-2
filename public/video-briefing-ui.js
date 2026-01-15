@@ -260,6 +260,8 @@
       
       // D4 FINAL: Reset scroll position quand on entre en mode SPLIT/ADVANCED
       // Pour s'assurer que tout est visible sans scroll
+      // 🔥 D5 V3.4.1: DÉSACTIVÉ pour préserver la position de scroll entre phases
+      /*
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         // Reset aussi le scroll du gameScreen si présent
@@ -273,6 +275,7 @@
         }
         log('Scroll reset to top');
       }, 100);
+      */
       
     } else {
       hide();
@@ -285,9 +288,12 @@
       }
       
       // D4 FINAL: Reset scroll aussi quand on quitte le mode SPLIT
+      // 🔥 D5 V3.4.1: DÉSACTIVÉ pour préserver la position de scroll entre phases
+      /*
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }, 100);
+      */
     }
   }
   
