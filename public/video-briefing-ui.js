@@ -332,11 +332,20 @@
   }
   
   function updateBodyClass(mode) {
+    // D5 V3.12: Capturer position scroll AVANT le changement de classe CSS
+    const scrollBefore = window.pageYOffset || document.documentElement.scrollTop;
+    
     if (mode === 'SPLIT') {
       document.body.classList.add('video-split-active');
     } else {
       document.body.classList.remove('video-split-active');
     }
+    
+    // D5 V3.12: Restaurer position APRÈS le changement (le CSS cause un reflow)
+    requestAnimationFrame(() => {
+      window.scrollTo(0, scrollBefore);
+      log(`[Scroll Fix V3.12] Position restaurée après mode ${mode}: ${scrollBefore}`);
+    });
   }
 
   function updateExpandButton(visible) {
