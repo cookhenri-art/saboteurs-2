@@ -1,25 +1,29 @@
 /**
- * VIDEO BRIEFING UI - D5 V3.26 INSTANT
+ * VIDEO BRIEFING UI - D5 V3.27 MINIMAL
  * ======================================
  * 
- * VERSION: 3.26 INSTANT
- * BUILD: 2026-01-16 01:00 UTC
+ * VERSION: 3.27 MINIMAL (PERFORMANCE)
+ * BUILD: 2026-01-16 01:30 UTC
  * 
- * Gère le DOM et le rendu du mode "Salle de Briefing".
+ * VERSION MINIMALE SANS CODE INUTILE
  * 
- * CHANGELOG V3.26:
- * - [V3.23] TOUS les padding-top supprimés (fix scroll définitif)
- * - [V3.24] Code ultra-simplifié - aucun timeout inutile
- * - [V3.25] Optimisation vidéo - cache permissions (erreur corrigée)
- * - [V3.26] Thème default instantané - pas d'attente du fetch API
+ * GARDE SEULEMENT:
+ * - [V3.23] Fix scroll (padding-top supprimés)
+ * - [V3.24] Code simple sans monitoring
+ * - [V3.25] Cache permissions vidéo
+ * - [V3.26] Thème instantané
+ * 
+ * SUPPRIMÉ:
+ * - Tout le code V3.21 (setInterval, monitoring, logs verbeux)
+ * - Timeouts inutiles
  */
 
 (function() {
   'use strict';
 
-  // V3.26 INSTANT - Chargement instantané
-  console.log('%c🚀 VIDEO BRIEFING UI V3.26 INSTANT LOADED 🚀', 
-    'background: #00ff00; color: #000000; font-size: 16px; font-weight: bold; padding: 8px;');
+  // V3.27 MINIMAL - Version ultra-propre
+  console.log('%c💎 VIDEO BRIEFING UI V3.27 MINIMAL LOADED 💎', 
+    'background: #ff00ff; color: #ffffff; font-size: 16px; font-weight: bold; padding: 8px;');
 
   const DEBUG = true;
   
