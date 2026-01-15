@@ -1804,7 +1804,42 @@ function tRoleHelp(roleKey) {
   return helps[roleKey] || "";
 }
 
-// Charger la liste des thèmes disponibles
+// ============================================
+// V3.26 INSTANT: Thème par défaut immédiat
+// ============================================
+
+console.log("[themes] V3.26 INSTANT: Applying default theme immediately (before API)...");
+
+// Thème default minimal pour affichage instantané
+const DEFAULT_THEME_FALLBACK = {
+  id: "default",
+  name: "Infiltration Spatiale",
+  description: "Mission spatiale avec saboteurs",
+  roles: {
+    // Les rôles seront chargés après le fetch
+    // Mais le thème CSS et les traductions sont déjà OK
+  }
+};
+
+// Appliquer IMMÉDIATEMENT (avant le fetch)
+currentTheme = DEFAULT_THEME_FALLBACK;
+homeSelectedTheme = "default";
+
+// Appliquer les styles CSS immédiatement
+applyThemeStyles("default");
+console.log("[themes] V3.26: Default styles applied immediately");
+
+// Appliquer les traductions immédiatement
+applyThemeTranslations();
+console.log("[themes] V3.26: Default translations applied immediately");
+
+// ✅ À ce stade, l'utilisateur VOIT DÉJÀ le contenu !
+// Le fetch est en arrière-plan pour charger les autres thèmes
+
+// ============================================
+// Charger les thèmes complets depuis l'API
+// ============================================
+
 console.log("[themes] Fetching themes from server...");
 fetch("/api/themes")
   .then(r => r.json())
@@ -1815,21 +1850,16 @@ fetch("/api/themes")
       console.log("[themes] Loaded themes:", availableThemes.map(t => t.id));
       console.log("[themes] Available themes count:", availableThemes.length);
       
-      // Appliquer le thème par défaut au chargement
+      // Remplacer le fallback par le vrai thème
       const defaultTheme = availableThemes.find(t => t.id === "default");
       if (defaultTheme) {
         currentTheme = defaultTheme;
         homeSelectedTheme = "default";
-        console.log("[themes] Set default theme:", currentTheme.id);
+        console.log("[themes] Updated to real default theme:", currentTheme.id);
         console.log("[themes] Default theme has roles:", Object.keys(currentTheme.roles || {}));
         
-        // Appliquer les styles CSS
-        applyThemeStyles("default");
-        
-        // Appliquer les traductions
-        applyThemeTranslations();
-        
-        // Rendre le sélecteur de thème sur la page d'accueil
+        // Pas besoin de réappliquer les styles (déjà fait)
+        // Juste rendre le sélecteur pour les autres thèmes
         renderHomeThemeSelector();
       } else {
         console.error("[themes] No default theme found!");
@@ -1838,7 +1868,11 @@ fetch("/api/themes")
       console.error("[themes] Invalid response format:", data);
     }
   })
-  .catch(e => console.error("[themes] Failed to load:", e));
+  .catch(e => {
+    console.error("[themes] Failed to load:", e);
+    console.log("[themes] Using fallback default theme (no problem)");
+    // Pas grave, on garde le fallback
+  });
 
 // Détecte et applique automatiquement le changement de thème
 /**
