@@ -255,7 +255,7 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
-      // D5 V3.14: BLOQUER le scroll pendant toute la séquence
+      // D5 V3.15: BLOQUER le scroll pendant toute la séquence
       const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
       
       // Sauvegarder le style actuel
@@ -276,12 +276,16 @@
       // DÉVERROUILLER le scroll après que tout soit fini
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+          // Récupérer la position depuis le top du body (valeur absolue)
+          const topValue = document.body.style.top;
+          const savedScrollPos = topValue ? Math.abs(parseInt(topValue)) : scrollPos;
+          
           document.body.style.overflow = originalOverflow;
           document.body.style.position = originalPosition;
           document.body.style.top = originalTop;
           document.body.style.width = originalWidth;
-          window.scrollTo(0, scrollPos);
-          log(`[Scroll Fix V3.14] Déverrouillé après show(): ${scrollPos}`);
+          window.scrollTo(0, savedScrollPos);
+          log(`[Scroll Fix V3.15] Déverrouillé après show(): ${savedScrollPos}`);
         });
       });
       
