@@ -258,20 +258,11 @@
       show();
       updateExpandButton(false);
       
-      // D4 FINAL: Reset scroll position quand on entre en mode SPLIT/ADVANCED
-      // Pour s'assurer que tout est visible sans scroll
+      // D5 V3.9: Mémoriser et restaurer la position au lieu de forcer à 0
+      // Laisse le scroll intelligent de client.js gérer la position
       setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        // Reset aussi le scroll du gameScreen si présent
-        const gameScreen = document.getElementById('gameScreen');
-        if (gameScreen) {
-          gameScreen.scrollTop = 0;
-        }
-        const container = document.querySelector('.container');
-        if (container) {
-          container.scrollTop = 0;
-        }
-        log('Scroll reset to top');
+        // Ne rien faire - le scroll intelligent de client.js prendra le relais
+        log('Scroll handled by smart scroll system');
       }, 100);
       
     } else {
@@ -284,10 +275,10 @@
         updateExpandButton(false);
       }
       
-      // D4 FINAL: Reset scroll aussi quand on quitte le mode SPLIT
+      // D5 V3.9: Laisser le scroll intelligent gérer la position
       setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+        // Position gérée par client.js smart scroll
+      }, 50);
     }
   }
   

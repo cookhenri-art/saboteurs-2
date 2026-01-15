@@ -1637,9 +1637,28 @@ $("joinRoomBtn").onclick = () => {
 
 
 // receive state
-// D5 V3.6: Tracking pour scroll intelligent
+// D5 V3.9: Scroll intelligent avec mémorisation de position
 let lastScrolledPhase = null;
 let scrollTimeout = null;
+let savedScrollPosition = null;
+let videoModeChangeTimeout = null;
+
+// Sauvegarder la position actuelle
+function saveScrollPosition() {
+  savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+  console.log('[Scroll Memory] Position sauvegardée:', savedScrollPosition);
+}
+
+// Restaurer la position sauvegardée
+function restoreScrollPosition() {
+  if (savedScrollPosition !== null) {
+    console.log('[Scroll Memory] Restauration position:', savedScrollPosition);
+    window.scrollTo({
+      top: savedScrollPosition,
+      behavior: 'smooth'
+    });
+  }
+}
 
 function smartScrollToOptimalPosition() {
   if (scrollTimeout) {
@@ -1651,10 +1670,10 @@ function smartScrollToOptimalPosition() {
     let targetY;
     
     if (videoMode === 'SPLIT') {
-      targetY = 0;
+      targetY = 300;
       console.log('[Smart Scroll] Mode SPLIT détecté → position 300px');
     } else {
-      targetY = 0;
+      targetY = 200;
       console.log('[Smart Scroll] Mode INLINE/OFF détecté → position 200px');
     }
     
@@ -1662,6 +1681,9 @@ function smartScrollToOptimalPosition() {
       top: targetY,
       behavior: 'smooth'
     });
+    
+    // Sauvegarder cette nouvelle position
+    savedScrollPosition = targetY;
     
     console.log('[Smart Scroll] Phase:', state.phase, 'Mode vidéo:', videoMode, 'Position:', targetY);
   }, 200);
