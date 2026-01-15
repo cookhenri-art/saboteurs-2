@@ -1148,10 +1148,33 @@
     document.addEventListener("DOMContentLoaded", () => {
       mountButton();
       waitForCallObject();
+      startPeriodicCleanup(); // D5: Démarrer le nettoyage périodique
     });
   } else {
     mountButton();
     waitForCallObject();
+    startPeriodicCleanup(); // D5: Démarrer le nettoyage périodique
+  }
+  
+  // D5: Nettoyage périodique automatique
+  function startPeriodicCleanup() {
+    const CLEANUP_INTERVAL = 30000; // Vérifier toutes les 30 secondes
+    const CLEANUP_THRESHOLD = 8; // Déclencher si > 8 vidéos
+    
+    setInterval(() => {
+      const stats = window.VideoTracksRegistry.getStats();
+      
+      if (stats.videoEls > CLEANUP_THRESHOLD) {
+        log('🧹 Periodic cleanup triggered - videoEls:', stats.videoEls, 'threshold:', CLEANUP_THRESHOLD);
+        cleanupUnusedMediaElements();
+        
+        // Log final stats
+        const newStats = window.VideoTracksRegistry.getStats();
+        log('🧹 Cleanup complete - new stats:', newStats);
+      }
+    }, CLEANUP_INTERVAL);
+    
+    log('🧹 Periodic cleanup started (every 30s, threshold:', CLEANUP_THRESHOLD, ')');
   }
   
   log("Module loaded ✅");

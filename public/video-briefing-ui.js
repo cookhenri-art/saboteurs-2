@@ -655,19 +655,42 @@
   // ============================================
   
   function updateSpeakerHighlights(speakerId) {
-    // Update focus speaker badge
+    // D5: Update focus speaker badge (mode SPLIT/ADVANCED_FOCUS)
     const badge = document.getElementById('focusSpeakerBadge');
     if (badge) {
       badge.style.display = (speakerId === currentFocusId) ? 'inline-block' : 'none';
     }
     
-    // Update focus main speaking state
+    // D5: Update focus main speaking state (mode SPLIT/ADVANCED_FOCUS)
     focusMain?.classList.toggle('is-speaking', speakerId === currentFocusId);
     
-    // Update thumbnails
+    // D5: Update thumbnails in sidebar (mode SPLIT/ADVANCED_FOCUS)
     thumbElements.forEach((el, id) => {
       el.classList.toggle('is-speaking', id === speakerId);
     });
+    
+    // D5 NEW: Update player-item highlights in INLINE mode (lobby & game lists)
+    updateInlineModeSpeakerHighlights(speakerId);
+  }
+  
+  /**
+   * D5: Gestion des highlights en mode INLINE
+   * Ajoute/retire la classe .is-speaking sur les .player-item
+   */
+  function updateInlineModeSpeakerHighlights(speakerId) {
+    // Retirer tous les anciens highlights
+    document.querySelectorAll('.player-item.is-speaking').forEach(item => {
+      item.classList.remove('is-speaking');
+    });
+    
+    // Ajouter le nouveau highlight si un speaker est actif
+    if (speakerId) {
+      const playerItem = document.querySelector(`.player-item[data-player-id="${CSS.escape(speakerId)}"]`);
+      if (playerItem) {
+        playerItem.classList.add('is-speaking');
+        log('🎙️ INLINE highlight added to:', speakerId.slice(0, 8));
+      }
+    }
   }
 
   // ============================================
