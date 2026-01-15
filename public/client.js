@@ -184,17 +184,13 @@ setInterval(() => {
 function showScreen(screenId) {
   console.log("[SCROLL-DEBUG] showScreen called:", screenId);
   
-  // D5 v3.5: Sauvegarder la position de scroll actuelle
-  if (screenId === "gameScreen") {
-    savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
-    savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
-    console.log("[SCROLL-DEBUG] Saved before showing gameScreen:", savedScrollPosition);
-  }
+  // D5 v3.6: PAS de sauvegarde ici - le setInterval s'en charge déjà
+  // (Les anciennes lignes 189-191 écrasaient la vraie sauvegarde en lisant window.scrollY=0 après render())
   
   for (const el of document.querySelectorAll(".screen")) el.classList.remove("active");
   $(screenId).classList.add("active");
   
-  // D5 v3.5: Restaurer la position de scroll pour gameScreen
+  // D5 v3.6: Restaurer la position de scroll pour gameScreen
   if (screenId === "gameScreen" && (savedScrollPosition.x !== 0 || savedScrollPosition.y !== 0)) {
     console.log("[SCROLL-DEBUG] Attempting to restore position:", savedScrollPosition);
     
