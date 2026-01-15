@@ -255,15 +255,17 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
+      // D5 V3.13: Capturer scroll AVANT show() qui ajoute la classe CSS
+      const scrollBeforeShow = window.pageYOffset || document.documentElement.scrollTop;
+      
       show();
       updateExpandButton(false);
       
-      // D5 V3.9: Mémoriser et restaurer la position au lieu de forcer à 0
-      // Laisse le scroll intelligent de client.js gérer la position
-      setTimeout(() => {
-        // Ne rien faire - le scroll intelligent de client.js prendra le relais
-        log('Scroll handled by smart scroll system');
-      }, 100);
+      // D5 V3.13: Restaurer immédiatement après show()
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollBeforeShow);
+        log(`[Scroll Fix V3.13] Position restaurée après show(): ${scrollBeforeShow}`);
+      });
       
     } else {
       hide();
