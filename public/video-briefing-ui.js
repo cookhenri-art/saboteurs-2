@@ -227,11 +227,6 @@
   // ============================================
   
   function handleModeChange(data) {
-    // V3.17 DIAGNOSTIC - Log initial
-    const scrollStart = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] ========== MODE CHANGE START ==========');
-    console.log('[V3.17] Mode:', data.mode, 'Phase:', data.phase, 'Scroll initial:', scrollStart);
-    
     log('Mode change:', data);
     
     const { mode, phase } = data;
@@ -244,47 +239,29 @@
     
     // Update container class for mode
     if (container) {
-      const scroll1 = window.pageYOffset || document.documentElement.scrollTop;
-      console.log('[V3.17] AVANT container class change - scroll:', scroll1);
-      
       container.classList.remove('mode-full', 'mode-split');
       if (mode === 'ADVANCED_FOCUS') {
         container.classList.add('mode-full');
       } else if (mode === 'SPLIT') {
         container.classList.add('mode-split');
       }
-      
-      const scroll2 = window.pageYOffset || document.documentElement.scrollTop;
-      console.log('[V3.17] APRÈS container class change - scroll:', scroll2, 'delta:', scroll2 - scroll1);
     }
     
     // Update body class for game content positioning
-    const scroll3 = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] AVANT updateBodyClass - scroll:', scroll3);
     updateBodyClass(mode);
-    const scroll4 = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] APRÈS updateBodyClass - scroll:', scroll4, 'delta:', scroll4 - scroll3);
     
     // Update button states
     updateModeButtons(mode);
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
-      const scroll5 = window.pageYOffset || document.documentElement.scrollTop;
-      console.log('[V3.17] AVANT show() - scroll:', scroll5);
-      
       show();
       updateExpandButton(false);
-      
-      const scroll6 = window.pageYOffset || document.documentElement.scrollTop;
-      console.log('[V3.17] APRÈS show() - scroll:', scroll6, 'delta:', scroll6 - scroll5);
       
       // D5 V3.9: Mémoriser et restaurer la position au lieu de forcer à 0
       // Laisse le scroll intelligent de client.js gérer la position
       setTimeout(() => {
-        const scrollFinal = window.pageYOffset || document.documentElement.scrollTop;
-        console.log('[V3.17] ========== MODE CHANGE END (après 100ms) ==========');
-        console.log('[V3.17] Scroll final:', scrollFinal, 'Delta total:', scrollFinal - scrollStart);
+        // Ne rien faire - le scroll intelligent de client.js prendra le relais
         log('Scroll handled by smart scroll system');
       }, 100);
       
@@ -300,9 +277,7 @@
       
       // D5 V3.9: Laisser le scroll intelligent gérer la position
       setTimeout(() => {
-        const scrollFinal = window.pageYOffset || document.documentElement.scrollTop;
-        console.log('[V3.17] ========== MODE CHANGE END (hide) ==========');
-        console.log('[V3.17] Scroll final:', scrollFinal);
+        // Position gérée par client.js smart scroll
       }, 50);
     }
   }
@@ -338,25 +313,9 @@
   function show() {
     if (!container) init();
     
-    // V3.17 DIAGNOSTIC - Log scroll AVANT chaque action
-    const scroll1 = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] AVANT classList.add - scroll:', scroll1);
-    
     container.classList.add('active');
-    
-    const scroll2 = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] APRÈS classList.add - scroll:', scroll2, 'delta:', scroll2 - scroll1);
-    
     refreshParticipants();
-    
-    const scroll3 = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] APRÈS refreshParticipants - scroll:', scroll3, 'delta:', scroll3 - scroll2);
-    
     syncControlStates(); // D4: Synchroniser l'état des boutons micro/caméra
-    
-    const scroll4 = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] APRÈS syncControlStates - scroll:', scroll4, 'delta:', scroll4 - scroll3);
-    
     log('Briefing UI shown');
   }
 
@@ -373,18 +332,11 @@
   }
   
   function updateBodyClass(mode) {
-    // V3.17 DIAGNOSTIC
-    const scrollBefore = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] updateBodyClass AVANT - mode:', mode, 'scroll:', scrollBefore);
-    
     if (mode === 'SPLIT') {
       document.body.classList.add('video-split-active');
     } else {
       document.body.classList.remove('video-split-active');
     }
-    
-    const scrollAfter = window.pageYOffset || document.documentElement.scrollTop;
-    console.log('[V3.17] updateBodyClass APRÈS - scroll:', scrollAfter, 'delta:', scrollAfter - scrollBefore);
   }
 
   function updateExpandButton(visible) {
