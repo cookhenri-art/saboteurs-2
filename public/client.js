@@ -1636,6 +1636,10 @@ $("joinRoomBtn").onclick = () => {
 };
 
 
+// V3.29 FINAL: Debounced scroll restoration
+let scrollRestoreTimeout = null;
+let lastScrollPosition = 0;
+
 // receive state
 socket.on("roomState", (s) => {
   state = s;
@@ -1647,17 +1651,27 @@ socket.on("roomState", (s) => {
   // audio per phase
   audioManager.play(state.audio);
 
-  // V3.28 STABLE: Sauvegarder la position scroll AVANT le render
-  const scrollBeforeRender = window.pageYOffset || document.documentElement.scrollTop;
+  // V3.29 FINAL: Sauvegarder SEULEMENT si pas de restore en cours
+  if (!scrollRestoreTimeout) {
+    lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+    console.log("[V3.29 Scroll] Position saved:", lastScrollPosition);
+  }
 
   // If we are ended, show end.
   render();
   
-  // V3.28 STABLE: Restaurer la position scroll APRÈS le render
-  requestAnimationFrame(() => {
-    window.scrollTo(0, scrollBeforeRender);
-    console.log("[V3.28 Scroll Restore] Position restaurée:", scrollBeforeRender);
-  });
+  // V3.29 FINAL: Debounced restoration (évite les conflits de multiples roomState)
+  if (scrollRestoreTimeout) {
+    clearTimeout(scrollRestoreTimeout);
+  }
+  
+  scrollRestoreTimeout = setTimeout(() => {
+    requestAnimationFrame(() => {
+      window.scrollTo(0, lastScrollPosition);
+      console.log("[V3.29 Scroll Restore] Position restaurée:", lastScrollPosition);
+      scrollRestoreTimeout = null;
+    });
+  }, 50); // 50ms debounce
 });
 
 socket.on("serverHello", () => {
