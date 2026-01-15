@@ -1046,7 +1046,7 @@ body.video-split-active #topRightButtons {
 /* Mobile: ajustement du décalage */
 @media (max-width: 768px) {
   body.video-split-active .container {
-    padding-top: calc(45vh + 10px) !important;
+    /* padding-top: calc(45vh + 10px) !important; SUPPRIMÉ V3.23 */
   }
   
   body.video-split-active #topLeftButtons,
@@ -1082,7 +1082,7 @@ body.video-split-active .scene-banner {
 
 /* Ajustement du padding-top du contenu en conséquence */
 body.video-split-active .container {
-  padding-top: calc(42vh + 15px) !important;
+  /* padding-top: calc(42vh + 15px) !important; SUPPRIMÉ V3.23 */
 }
 
 body.video-split-active #topLeftButtons,
@@ -1105,7 +1105,7 @@ body.video-split-active #topRightButtons {
   }
   
   body.video-split-active .container {
-    padding-top: calc(35vh + 10px) !important;
+    /* padding-top: calc(35vh + 10px) !important; SUPPRIMÉ V3.23 */
   }
   
   body.video-split-active #topLeftButtons,
@@ -1156,7 +1156,7 @@ body.video-split-active #topRightButtons {
   }
   
   body.video-split-active .container {
-    padding-top: calc(30vh + 10px) !important;
+    /* padding-top: calc(30vh + 10px) !important; SUPPRIMÉ V3.23 */
   }
   
   .mode-split .video-thumbs-sidebar {

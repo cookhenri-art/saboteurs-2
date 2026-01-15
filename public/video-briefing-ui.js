@@ -1,9 +1,9 @@
 /**
- * VIDEO BRIEFING UI - D5 V3.22 ABSOLUTE
- * =======================================
+ * VIDEO BRIEFING UI - D5 V3.23 ULTIMATE FIX
+ * ===========================================
  * 
- * VERSION: 3.22 ABSOLUTE
- * BUILD: 2026-01-15 22:30 UTC
+ * VERSION: 3.23 ULTIMATE FIX
+ * BUILD: 2026-01-15 23:00 UTC
  * 
  * Gère le DOM et le rendu du mode "Salle de Briefing".
  * Écoute les événements du VideoModeController et met à jour l'interface.
@@ -14,16 +14,17 @@
  * - Gérer les interactions utilisateur (clic thumbnail, boutons)
  * - Synchroniser avec video-tracks.js
  * - [V3.21] COORDINATION avec client.js via flag global
- * - [V3.22] ABSOLUTE - Container vidéo ne POUSSE PAS le contenu (padding-top supprimé)
+ * - [V3.22] ABSOLUTE - Container vidéo ne POUSSE PAS le contenu
+ * - [V3.23] ULTIMATE - TOUS les padding-top supprimés (desktop + mobile + tablette)
  */
 
 (function() {
   'use strict';
 
-  // 🔥🔥🔥 V3.22 ABSOLUTE VERSION 🔥🔥🔥
-  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.22 ABSOLUTE LOADED 🔥🔥🔥', 
-    'background: #ff6600; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-15 22:30 UTC | Fix: Container ne pousse plus le contenu', 
+  // 🔥🔥🔥 V3.23 ULTIMATE FIX VERSION 🔥🔥🔥
+  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.23 ULTIMATE FIX LOADED 🔥🔥🔥', 
+    'background: #ff00ff; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
+  console.log('%cBuild: 2026-01-15 23:00 UTC | Fix: TOUS padding-top supprimés (5 occurrences)', 
     'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
