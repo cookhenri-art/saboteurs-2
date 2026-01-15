@@ -255,16 +255,34 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
-      // D5 V3.13: Capturer scroll AVANT show() qui ajoute la classe CSS
-      const scrollBeforeShow = window.pageYOffset || document.documentElement.scrollTop;
+      // D5 V3.14: BLOQUER le scroll pendant toute la séquence
+      const scrollPos = window.pageYOffset || document.documentElement.scrollTop;
+      
+      // Sauvegarder le style actuel
+      const originalOverflow = document.body.style.overflow;
+      const originalPosition = document.body.style.position;
+      const originalTop = document.body.style.top;
+      const originalWidth = document.body.style.width;
+      
+      // VERROUILLER le scroll
+      document.body.style.overflow = 'hidden';
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollPos}px`;
+      document.body.style.width = '100%';
       
       show();
       updateExpandButton(false);
       
-      // D5 V3.13: Restaurer immédiatement après show()
+      // DÉVERROUILLER le scroll après que tout soit fini
       requestAnimationFrame(() => {
-        window.scrollTo(0, scrollBeforeShow);
-        log(`[Scroll Fix V3.13] Position restaurée après show(): ${scrollBeforeShow}`);
+        requestAnimationFrame(() => {
+          document.body.style.overflow = originalOverflow;
+          document.body.style.position = originalPosition;
+          document.body.style.top = originalTop;
+          document.body.style.width = originalWidth;
+          window.scrollTo(0, scrollPos);
+          log(`[Scroll Fix V3.14] Déverrouillé après show(): ${scrollPos}`);
+        });
       });
       
     } else {
