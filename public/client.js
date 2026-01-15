@@ -176,7 +176,7 @@ setInterval(() => {
     savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
     savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
     if (oldY !== savedScrollPosition.y) {
-      console.log("[SCROLL-DEBUG] Auto-saved position:", JSON.stringify(savedScrollPosition));
+      console.log("[SCROLL-DEBUG] Auto-saved position:", savedScrollPosition);
     }
   }
 }, 500);
@@ -190,13 +190,13 @@ function showScreen(screenId) {
   for (const el of document.querySelectorAll(".screen")) el.classList.remove("active");
   $(screenId).classList.add("active");
   
-  // D5 v3.7: Restaurer la position de scroll pour gameScreen
+  // D5 v3.6: Restaurer la position de scroll pour gameScreen
   if (screenId === "gameScreen" && (savedScrollPosition.x !== 0 || savedScrollPosition.y !== 0)) {
-    console.log("[SCROLL-DEBUG] Attempting to restore position:", JSON.stringify(savedScrollPosition));
+    console.log("[SCROLL-DEBUG] Attempting to restore position:", savedScrollPosition);
     
     // Triple restauration pour plus de fiabilité
     const currentScroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
-    console.log("[SCROLL-DEBUG] Current scroll before restore:", JSON.stringify(currentScroll));
+    console.log("[SCROLL-DEBUG] Current scroll before restore:", currentScroll);
     
     window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
     console.log("[SCROLL-DEBUG] Restore 1/3 (immediate) done");
@@ -209,8 +209,8 @@ function showScreen(screenId) {
     setTimeout(() => {
       window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
       const finalScroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
-      console.log("[SCROLL-DEBUG] Restore 3/3 (timeout) done. Final position:", JSON.stringify(finalScroll));
-    }, 100); // 🔥 D5 v3.7: Augmenté de 50ms → 100ms pour laisser le DOM se stabiliser
+      console.log("[SCROLL-DEBUG] Restore 3/3 (timeout) done. Final position:", finalScroll);
+    }, 50);
   }
   
   // Reset lobby intro flag when returning to home
@@ -1694,13 +1694,6 @@ $("joinRoomBtn").onclick = () => {
 
 // receive state
 socket.on("roomState", (s) => {
-  // 🔥 D5 v3.7: Sauvegarder la position de scroll AVANT de modifier le DOM
-  if (document.querySelector("#gameScreen.active") !== null) {
-    savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
-    savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
-    console.log("[SCROLL-DEBUG] Pre-render save:", JSON.stringify(savedScrollPosition));
-  }
-  
   state = s;
   refreshBuildBadge();
 
