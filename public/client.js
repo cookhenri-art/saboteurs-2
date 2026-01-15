@@ -1662,8 +1662,15 @@ socket.on("roomState", (s) => {
   // If we are ended, show end.
   render();
   
-  // D5 V3.11: Restaurer la position APRÈS le render
+  // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
   requestAnimationFrame(() => {
+    // V3.21 COORDINATION: Si BriefingUI gère le scroll, on ne touche pas
+    if (window.__briefingUIScrollLock) {
+      console.log('[Scroll Restore] ⏸️ SKIP - BriefingUI gère le scroll (flag actif)');
+      return;
+    }
+    
+    // Sinon, restaurer normalement
     window.scrollTo(0, scrollBeforeRender);
     console.log('[Scroll Restore] Position restaurée:', scrollBeforeRender);
   });
