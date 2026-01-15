@@ -1637,15 +1637,6 @@ $("joinRoomBtn").onclick = () => {
 
 
 // receive state
-// D5 V3.10: AUCUN SCROLL AUTOMATIQUE - Position maintenue naturellement
-// On laisse le navigateur et l'utilisateur gérer le scroll
-let lastScrolledPhase = null;
-
-function noAutoScroll() {
-  // Ne rien faire - pas de scroll automatique
-  console.log('[No Auto Scroll] Position maintenue par l\'utilisateur');
-}
-
 socket.on("roomState", (s) => {
   state = s;
   refreshBuildBadge();
@@ -1656,31 +1647,8 @@ socket.on("roomState", (s) => {
   // audio per phase
   audioManager.play(state.audio);
 
-  // D5 V3.11: Sauvegarder la position AVANT le render
-  const scrollBeforeRender = window.pageYOffset || document.documentElement.scrollTop;
-
   // If we are ended, show end.
   render();
-  
-  // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
-  requestAnimationFrame(() => {
-    // V3.21 COORDINATION: Si BriefingUI gère le scroll, on ne touche pas
-    if (window.__briefingUIScrollLock) {
-      console.log('[Scroll Restore] ⏸️ SKIP - BriefingUI gère le scroll (flag actif)');
-      return;
-    }
-    
-    // Sinon, restaurer normalement
-    window.scrollTo(0, scrollBeforeRender);
-    console.log('[Scroll Restore] Position restaurée:', scrollBeforeRender);
-  });
-  
-  // Log pour debug
-  const currentPhase = state.phase;
-  if (currentPhase && currentPhase !== lastScrolledPhase) {
-    lastScrolledPhase = currentPhase;
-    console.log('[No Auto Scroll] Phase:', currentPhase, '- Position:', scrollBeforeRender);
-  }
 });
 
 socket.on("serverHello", () => {
@@ -1804,42 +1772,7 @@ function tRoleHelp(roleKey) {
   return helps[roleKey] || "";
 }
 
-// ============================================
-// V3.26 INSTANT: Thème par défaut immédiat
-// ============================================
-
-console.log("[themes] V3.26 INSTANT: Applying default theme immediately (before API)...");
-
-// Thème default minimal pour affichage instantané
-const DEFAULT_THEME_FALLBACK = {
-  id: "default",
-  name: "Infiltration Spatiale",
-  description: "Mission spatiale avec saboteurs",
-  roles: {
-    // Les rôles seront chargés après le fetch
-    // Mais le thème CSS et les traductions sont déjà OK
-  }
-};
-
-// Appliquer IMMÉDIATEMENT (avant le fetch)
-currentTheme = DEFAULT_THEME_FALLBACK;
-homeSelectedTheme = "default";
-
-// Appliquer les styles CSS immédiatement
-applyThemeStyles("default");
-console.log("[themes] V3.26: Default styles applied immediately");
-
-// Appliquer les traductions immédiatement
-applyThemeTranslations();
-console.log("[themes] V3.26: Default translations applied immediately");
-
-// ✅ À ce stade, l'utilisateur VOIT DÉJÀ le contenu !
-// Le fetch est en arrière-plan pour charger les autres thèmes
-
-// ============================================
-// Charger les thèmes complets depuis l'API
-// ============================================
-
+// Charger la liste des thèmes disponibles
 console.log("[themes] Fetching themes from server...");
 fetch("/api/themes")
   .then(r => r.json())
@@ -1850,16 +1783,21 @@ fetch("/api/themes")
       console.log("[themes] Loaded themes:", availableThemes.map(t => t.id));
       console.log("[themes] Available themes count:", availableThemes.length);
       
-      // Remplacer le fallback par le vrai thème
+      // Appliquer le thème par défaut au chargement
       const defaultTheme = availableThemes.find(t => t.id === "default");
       if (defaultTheme) {
         currentTheme = defaultTheme;
         homeSelectedTheme = "default";
-        console.log("[themes] Updated to real default theme:", currentTheme.id);
+        console.log("[themes] Set default theme:", currentTheme.id);
         console.log("[themes] Default theme has roles:", Object.keys(currentTheme.roles || {}));
         
-        // Pas besoin de réappliquer les styles (déjà fait)
-        // Juste rendre le sélecteur pour les autres thèmes
+        // Appliquer les styles CSS
+        applyThemeStyles("default");
+        
+        // Appliquer les traductions
+        applyThemeTranslations();
+        
+        // Rendre le sélecteur de thème sur la page d'accueil
         renderHomeThemeSelector();
       } else {
         console.error("[themes] No default theme found!");
@@ -1868,11 +1806,7 @@ fetch("/api/themes")
       console.error("[themes] Invalid response format:", data);
     }
   })
-  .catch(e => {
-    console.error("[themes] Failed to load:", e);
-    console.log("[themes] Using fallback default theme (no problem)");
-    // Pas grave, on garde le fallback
-  });
+  .catch(e => console.error("[themes] Failed to load:", e));
 
 // Détecte et applique automatiquement le changement de thème
 /**
