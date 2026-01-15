@@ -1,6 +1,9 @@
 /**
- * VIDEO BRIEFING UI - D4
- * ======================
+ * VIDEO BRIEFING UI - D5 V3.20 ULTIMATE SCROLL FIX
+ * ==================================================
+ * 
+ * VERSION: 3.20 ULTIMATE DIAGNOSTIC + FIX
+ * BUILD: 2026-01-15 21:15 UTC
  * 
  * Gère le DOM et le rendu du mode "Salle de Briefing".
  * Écoute les événements du VideoModeController et met à jour l'interface.
@@ -10,10 +13,17 @@
  * - Attacher les flux vidéo aux éléments
  * - Gérer les interactions utilisateur (clic thumbnail, boutons)
  * - Synchroniser avec video-tracks.js
+ * - [V3.20] FIX SCROLL ULTIME avec diagnostic complet
  */
 
 (function() {
   'use strict';
+
+  // 🔥🔥🔥 V3.20 ULTIMATE VERSION 🔥🔥🔥
+  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.20 ULTIMATE LOADED 🔥🔥🔥', 
+    'background: #ff0000; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
+  console.log('%cBuild: 2026-01-15 21:15 UTC | Scroll Fix: ULTIMATE', 
+    'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
   
@@ -255,18 +265,115 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
+      // ============================================
+      // V3.20 ULTIMATE: SCROLL FIX MULTI-COUCHES
+      // ============================================
+      
+      console.log('%c🎯 V3.20: MODE SPLIT ACTIVÉ - DÉBUT FIX SCROLL', 
+        'background: #00ff00; color: #000000; font-size: 16px; font-weight: bold; padding: 5px;');
+      
+      // ÉTAPE 1: Capturer position initiale
+      const scrollStart = window.pageYOffset || document.documentElement.scrollTop;
+      console.log('[V3.20] 📍 Position initiale:', scrollStart);
+      
+      // ÉTAPE 2: Désactiver smooth scroll temporairement
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.scrollBehavior = 'auto';
+      
+      // ÉTAPE 3: Monitorer le scroll en temps réel
+      let scrollChanges = [];
+      const scrollMonitor = setInterval(() => {
+        const current = window.pageYOffset || document.documentElement.scrollTop;
+        if (current !== scrollStart) {
+          scrollChanges.push({ time: Date.now(), position: current, delta: current - scrollStart });
+          console.warn('[V3.20] ⚠️ SCROLL DÉTECTÉ:', current, 'delta:', current - scrollStart);
+        }
+      }, 10); // Check toutes les 10ms
+      
+      // ÉTAPE 4: Fonction de restauration agressive
+      const forceScrollRestore = (reason) => {
+        const current = window.pageYOffset || document.documentElement.scrollTop;
+        if (current !== scrollStart) {
+          window.scrollTo({ top: scrollStart, behavior: 'auto' });
+          console.log(`[V3.20] ✅ Scroll restauré (${reason}):`, scrollStart, 'was:', current);
+          return true;
+        }
+        return false;
+      };
+      
+      // ÉTAPE 5: show() avec surveillance
+      console.log('[V3.20] 🎬 Appel show()...');
       show();
+      console.log('[V3.20] ✓ show() terminé');
+      
       updateExpandButton(false);
       
-      // D5 V3.9: Mémoriser et restaurer la position au lieu de forcer à 0
-      // Laisse le scroll intelligent de client.js gérer la position
-      setTimeout(() => {
-        // Ne rien faire - le scroll intelligent de client.js prendra le relais
-        log('Scroll handled by smart scroll system');
-      }, 100);
+      // ÉTAPE 6: Restauration multi-tentatives (progressive et agressive)
+      
+      // Tentative immédiate
+      requestAnimationFrame(() => {
+        forceScrollRestore('RAF-1');
+        
+        // Tentative après 1 frame
+        requestAnimationFrame(() => {
+          forceScrollRestore('RAF-2');
+          
+          // Tentative après 2 frames
+          requestAnimationFrame(() => {
+            forceScrollRestore('RAF-3');
+            
+            // Tentatives avec délais
+            setTimeout(() => {
+              forceScrollRestore('Timeout-10ms');
+            }, 10);
+            
+            setTimeout(() => {
+              forceScrollRestore('Timeout-50ms');
+            }, 50);
+            
+            setTimeout(() => {
+              forceScrollRestore('Timeout-100ms');
+              
+              // ÉTAPE 7: Arrêter le monitoring et rapport final
+              clearInterval(scrollMonitor);
+              
+              const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
+              console.log('%c📊 V3.20: RAPPORT FINAL SCROLL', 
+                'background: #0088ff; color: #ffffff; font-size: 14px; font-weight: bold; padding: 5px;');
+              console.log('[V3.20] Position finale:', scrollEnd);
+              console.log('[V3.20] Delta total:', scrollEnd - scrollStart);
+              console.log('[V3.20] Changements détectés:', scrollChanges.length);
+              if (scrollChanges.length > 0) {
+                console.table(scrollChanges);
+              }
+              
+              // Restaurer smooth scroll
+              document.documentElement.style.scrollBehavior = originalScrollBehavior;
+              document.body.style.scrollBehavior = originalScrollBehavior;
+              
+              if (scrollEnd === scrollStart) {
+                console.log('%c✅ V3.20: SUCCÈS - SCROLL STABLE', 
+                  'background: #00ff00; color: #000000; font-size: 16px; font-weight: bold; padding: 5px;');
+              } else {
+                console.error('%c❌ V3.20: ÉCHEC - SCROLL A BOUGÉ', 
+                  'background: #ff0000; color: #ffffff; font-size: 16px; font-weight: bold; padding: 5px;');
+              }
+            }, 100);
+          });
+        });
+      });
       
     } else {
+      // ============================================
+      // V3.20 ULTIMATE: SCROLL FIX POUR HIDE
+      // ============================================
+      
+      console.log('[V3.20] 🔽 MODE HIDE - Début fix scroll');
+      const scrollStart = window.pageYOffset || document.documentElement.scrollTop;
+      
       hide();
+      
       // Show expand button if conditions allow advanced mode
       const ctrl = window.videoModeCtrl;
       if (ctrl && ctrl.canActivateAdvanced() && ctrl.isVideoJoined) {
@@ -275,10 +382,14 @@
         updateExpandButton(false);
       }
       
-      // D5 V3.9: Laisser le scroll intelligent gérer la position
-      setTimeout(() => {
-        // Position gérée par client.js smart scroll
-      }, 50);
+      // Restauration pour hide
+      requestAnimationFrame(() => {
+        const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollEnd !== scrollStart) {
+          window.scrollTo(0, scrollStart);
+          console.log('[V3.20] ✅ Scroll restauré après hide:', scrollStart);
+        }
+      });
     }
   }
   
