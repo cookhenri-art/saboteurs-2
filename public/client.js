@@ -475,19 +475,15 @@ function renderLobby() {
   for (const p of playersSorted) {
     const item = document.createElement("div");
     item.className = "player-item";
-        item.dataset.playerId = p.playerId;
-const left = document.createElement("div");
+    const left = document.createElement("div");
     left.className = "player-left";
     left.innerHTML = `
-      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
-      <div class="player-info">
-        <div class="player-name">${escapeHtml(p.name)}</div>
-        ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-      </div>
-`;
+      <div style="font-weight:900;">${escapeHtml(p.name)}</div>
+      ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+      ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+      ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+    `;
     const right = document.createElement("div");
     right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
     item.appendChild(left);
@@ -584,11 +580,6 @@ const left = document.createElement("div");
 }
 
 function renderGame() {
-  // V9.3.5: Debug mode manuel
-  if (state.phase === "MANUAL_ROLE_PICK") {
-    console.log('[MANUAL_DEBUG] renderGame called, phase:', state.phase, 'phaseData:', state.phaseData);
-  }
-  
   $("hudRoom").textContent = state.roomCode;
   setBackdrop();
 
@@ -649,11 +640,6 @@ function renderGame() {
 
   $("phaseTitle").textContent = formatPhaseTitle(state);
   $("phaseText").textContent = buildPhaseText(state);
-
-  console.log('[VideoDock] build=D3-fix-dock-v1');
-
-// VIDEO DOCK (prototype)
-  updateVideoDockSlot(state);
 
   const ack = state.ack || { done:0, total:0 };
   $("ackLine").textContent = ack.total ? `✅ Validations : ${ack.done}/${ack.total}` : "";
@@ -752,7 +738,7 @@ if (actorOnly.has(state.phase) && !isActorNow) {
 
     const card = document.createElement("div");
     card.className = "choice-card";
-    card.dataset.playerId = state.playerId;
+    card.dataset.playerId = id;
     card.innerHTML = `<div style="font-weight:900; font-size:1.1rem;">${label}</div>
       <div style="opacity:.9; margin-top:6px;">Places restantes : <b>${count}</b></div>`;
     card.onclick = () => {
@@ -2162,65 +2148,6 @@ function generateTutorialContent() {
     <!-- Écran 4 -->
     <div class="tutorial-screen" data-screen="4" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
-        <div style="font-size: 4rem; margin-bottom: 10px;">🎥</div>
-        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Visioconférence</h2>
-      </div>
-      <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">📹 Contrôles Vidéo</h3>
-        <ul style="font-size: 1rem; line-height: 1.7; color: var(--text-primary); padding-left: 20px;">
-          <li><strong>🎤 Micro</strong> : Cliquez pour activer/désactiver votre micro</li>
-          <li><strong>📷 Caméra</strong> : Cliquez pour activer/désactiver votre caméra</li>
-          <li><strong>⬆ Max</strong> : Mode plein écran (briefing étendu)</li>
-          <li><strong>⬕ Split</strong> : Mode 50/50 (jeu + vidéo)</li>
-        </ul>
-      </div>
-      <div>
-        <h3 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.2rem; margin-bottom: 10px;">🔊 Activation Automatique</h3>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.95rem;">
-          <div style="padding: 10px; background: rgba(0,255,0,0.1); border-left: 3px solid var(--neon-green); border-radius: 6px;">
-            <div style="color: var(--neon-green); font-weight: 700; margin-bottom: 5px;">✅ Micro + Caméra ON</div>
-            <div style="color: var(--text-secondary);">• Jour (débat/vote)<br>• Fin de partie<br>• Révélation des rôles</div>
-          </div>
-          <div style="padding: 10px; background: rgba(128,0,128,0.1); border-left: 3px solid var(--neon-purple, var(--neon-cyan)); border-radius: 6px;">
-            <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 Certains Rôles</div>
-            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange Agent IA<br>• Actions spéciales</div>
-          </div>
-        </div>
-        <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
-          💡 <strong>Astuce :</strong> Vous pouvez désactiver votre micro/caméra manuellement à tout moment.
-        </p>
-      </div>
-    </div>
-
-    <!-- Écran 5 -->
-    <div class="tutorial-screen" data-screen="5" style="display:none;">
-      <div style="text-align:center; margin-bottom: 25px;">
-        <div style="font-size: 4rem; margin-bottom: 10px;">📱</div>
-        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Visio sur Mobile</h2>
-      </div>
-      <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">🎥 Activation sur Mobile</h3>
-        <ul style="font-size: 1rem; line-height: 1.7; color: var(--text-primary); padding-left: 20px;">
-          <li><strong>1ère connexion</strong> : Autoriser l'accès micro/caméra dans le navigateur</li>
-          <li><strong>Bouton "📹 Visio activée"</strong> : En bas à gauche pour activer/désactiver</li>
-          <li><strong>Après un refresh</strong> : Retaper sur "Activer visio" puis valider</li>
-        </ul>
-      </div>
-      <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
-        <div style="font-size: 1.8rem; text-align: center; margin-bottom: 10px;">📱 👆</div>
-        <div style="text-align: center; color: var(--text-primary); font-size: 1rem; line-height: 1.6;">
-          <strong>Sur PC</strong> : La visio s'active automatiquement<br>
-          <strong>Sur Mobile</strong> : Utiliser le bouton en bas à gauche
-        </div>
-      </div>
-      <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
-        💡 <strong>Astuce :</strong> Si la vidéo ne s'affiche pas après refresh, vérifier que le bouton "Visio activée" est bien actif (vert).
-      </p>
-    </div>
-
-    <!-- Écran 6 -->
-    <div class="tutorial-screen" data-screen="6" style="display:none;">
-      <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
         <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
       </div>
@@ -2289,7 +2216,7 @@ function updateTutorialScreen() {
   }
   
   if (nextBtn) {
-    if (currentTutorialScreen === 6) {
+    if (currentTutorialScreen === 4) {
       nextBtn.textContent = "Commencer ! 🚀";
     } else {
       nextBtn.textContent = "Suivant →";
@@ -2309,7 +2236,7 @@ $("tutorialPrev")?.addEventListener("click", () => {
 });
 
 $("tutorialNext")?.addEventListener("click", () => {
-  if (currentTutorialScreen < 6) {
+  if (currentTutorialScreen < 4) {
     currentTutorialScreen++;
     updateTutorialScreen();
   } else {
@@ -2393,268 +2320,5 @@ socket.on("newBadges", (data) => {
 });
 
 console.log("[V26] Nouvelles fonctionnalités chargées !");
-
-
-// =====================================================
-console.log('[VideoDock] build=D3-fix-dock-v2');
-
-// VIDEO DOCK (prototype)
-// Objectif: en phase DAY*, intégrer la visio dans l'UI (slot) sans refonte Daily.
-// - Dock: positionne la fenêtre Daily au-dessus du slot (même rendu qu'un embed)
-// - Undock: restauration à la position flottante (gérée par DailyVideo + localStorage si dispo)
-// =====================================================
-
-const __videoDockIsMobile = (() => {
-  try {
-    // Heuristique fiable : breakpoint + fallback UA
-    if (window.matchMedia && window.matchMedia("(max-width: 767px)").matches) return true;
-  } catch {}
-  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-})();
-
-
-let __videoDockHandlersBound = false;
-let __videoDockIsDocked = false;
-
-function shouldDockVideo(state) {
-  if (__videoDockIsMobile) return false; // IMPORTANT: sur mobile, éviter tout dock auto
-  const p = String(state?.phase || "");
-  if (!p) return false;
-  if (state?.videoDisabled) return false;
-
-  // Exclusions évidentes
-  if (p === "LOBBY" || p === "GAME_ABORTED") return false;
-
-  // Règle D3: dock uniquement pendant les phases où l'UI prévoit un slot "discussion".
-  // IMPORTANT: ne pas se baser sur des labels FR, on utilise les clés de phase serveur.
-  // Phases confirmées côté serveur:
-  // - ROLE_REVEAL
-  // - CAPTAIN_CANDIDACY / CAPTAIN_VOTE
-  // - NIGHT_RESULTS (résultats publics)
-  // - DAY_WAKE / DAY_VOTE / DAY_RESULTS
-  // - GAME_OVER (optionnel: on garde flottant pour éviter d'écraser les stats)
-  const DOCK_PHASES = new Set([
-    "ROLE_REVEAL",
-    "CAPTAIN_CANDIDACY",
-    "CAPTAIN_VOTE",
-    "NIGHT_RESULTS",
-    "DAY_WAKE",
-    "DAY_VOTE",
-    "DAY_RESULTS",
-  ]);
-
-  if (DOCK_PHASES.has(p)) return true;
-  if (p.startsWith("CAPTAIN_")) return true; // futur-proof
-  if (p.startsWith("DAY_")) return true; // futur-proof
-
-  // GAME_OVER: laisser flotter (évite dock qui saute quand on scrolle les stats)
-  if (p === "GAME_OVER") return false;
-
-  return false;
-}
-
-function bindVideoDockHandlersOnce() {
-  if (__videoDockHandlersBound) return;
-  __videoDockHandlersBound = true;
-
-  const expandBtn = document.getElementById("videoDockExpandBtn");
-  const hideBtn = document.getElementById("videoDockHideBtn");
-
-  if (expandBtn) {
-    expandBtn.onclick = () => {
-      undockVideoFromSlot();
-      // Ré-ouvrir la fenêtre si Daily fournit la méthode
-      try { window.dailyVideo?.showWindow?.(); } catch {}
-    };
-  }
-  if (hideBtn) {
-    hideBtn.onclick = () => {
-      // Masque la visio (bulle éventuelle gérée côté DailyVideo)
-      try { window.dailyVideo?.hideWindow?.(); }
-      catch {
-        const c = document.getElementById("dailyVideoContainer");
-        if (c) c.style.display = "none";
-      }
-      // On cache aussi le slot
-      const slot = document.getElementById("videoDockSlot");
-      if (slot) slot.style.display = "none";
-      __videoDockIsDocked = false;
-    };
-  }
-}
-
-function __isDockRectVisible(rect) {
-  // rect is viewport-relative
-  if (!rect) return false;
-  const vw = window.innerWidth || 0;
-  const vh = window.innerHeight || 0;
-  const minVisiblePx = 40; // seuil: on exige un morceau significatif visible
-  const visibleW = Math.min(rect.right, vw) - Math.max(rect.left, 0);
-  const visibleH = Math.min(rect.bottom, vh) - Math.max(rect.top, 0);
-  return visibleW > minVisiblePx && visibleH > minVisiblePx;
-}
-
-function dockVideoToSlot() {
-  const slot = document.getElementById("videoDockSlot");
-  const body = document.getElementById("videoDockSlotBody");
-  const container = document.getElementById("dailyVideoContainer");
-
-  if (!slot || !body || !container) return;
-
-  slot.style.display = "block";
-
-  // Si le slot n'est plus visible (scroll), on ne dock pas.
-  const rect = body.getBoundingClientRect();
-  if (!__isDockRectVisible(rect)) {
-    undockVideoFromSlot();
-    return;
-  }
-
-  // 🔧 "Vrai" incrustation: on déplace le container Daily DANS le slot.
-  // On conserve le parent original pour pouvoir le remettre en flottant.
-  if (!container.dataset.__dockParentSaved) {
-    container.dataset.__dockParentSaved = "1";
-    container.dataset.__dockParentId = container.parentElement ? (container.parentElement.id || "") : "";
-    // Sauvegarde un marqueur d'insertion
-    container.dataset.__dockNextSiblingId = container.nextElementSibling ? (container.nextElementSibling.id || "") : "";
-    // Sauvegarder styles utiles
-    container.dataset.__dockPos = container.style.position || "";
-    container.dataset.__dockLeft = container.style.left || "";
-    container.dataset.__dockTop = container.style.top || "";
-    container.dataset.__dockRight = container.style.right || "";
-    container.dataset.__dockBottom = container.style.bottom || "";
-    container.dataset.__dockWidth = container.style.width || "";
-    container.dataset.__dockHeight = container.style.height || "";
-    container.dataset.__dockZ = container.style.zIndex || "";
-  }
-
-  // Déplacer dans le slot
-  if (container.parentElement !== body) {
-    body.appendChild(container);
-  }
-
-  container.style.display = "flex";
-  container.style.position = "relative";
-  container.style.left = "auto";
-  container.style.top = "auto";
-  container.style.right = "auto";
-  container.style.bottom = "auto";
-  container.style.width = "100%";
-  container.style.height = "100%";
-  container.style.zIndex = "1";
-  container.style.transform = "none";
-
-  container.classList.add("docked-embedded");
-
-  // Daily injecte généralement un <iframe> dans ce container.
-  // En encart, on force l'iframe à prendre 100%.
-  const iframe = container.querySelector('iframe');
-  if (iframe) {
-    iframe.style.width = '100%';
-    iframe.style.height = '100%';
-    iframe.style.border = '0';
-  }
-  __videoDockIsDocked = true;
-
-  // Masquer la barre interne "Visioconférence" si elle existe (évite double header).
-  try {
-    const titleNodes = Array.from(container.querySelectorAll("*")).filter((n) => {
-      const t = (n.textContent || "").trim();
-      return t === "Visioconférence" || t === "Visio";
-    });
-    titleNodes.forEach((n) => {
-      const header = n.closest("div") || n;
-      // On masque le bloc du titre si petit
-      if (header && header !== container) header.style.display = "none";
-    });
-  } catch {}
-}
-
-function undockVideoFromSlot() {
-  const container = document.getElementById("dailyVideoContainer");
-  if (!container) return;
-
-  if (container.classList.contains("docked-embedded")) {
-    container.classList.remove("docked-embedded");
-
-    // Restaurer styles
-    if (container.dataset.__dockParentSaved) {
-      container.style.position = container.dataset.__dockPos;
-      container.style.left = container.dataset.__dockLeft;
-      container.style.top = container.dataset.__dockTop;
-      container.style.right = container.dataset.__dockRight;
-      container.style.bottom = container.dataset.__dockBottom;
-      container.style.width = container.dataset.__dockWidth;
-      container.style.height = container.dataset.__dockHeight;
-      container.style.zIndex = container.dataset.__dockZ;
-      container.style.transform = "";
-
-      // Remettre dans le DOM d'origine si possible
-      const parentId = container.dataset.__dockParentId || "";
-      const parent = parentId ? document.getElementById(parentId) : null;
-      if (parent && container.parentElement !== parent) {
-        const sibId = container.dataset.__dockNextSiblingId || "";
-        const sib = sibId ? document.getElementById(sibId) : null;
-        if (sib && sib.parentElement === parent) parent.insertBefore(container, sib);
-        else parent.appendChild(container);
-      }
-    }
-  }
-  __videoDockIsDocked = false;
-}
-
-function updateVideoDockSlot(state) {
-  // D4: En mode headless (par défaut), on n'utilise plus le VideoDock
-  // Le mode "Salle de Briefing" gère l'affichage via video-briefing-ui.js
-  if (window.dailyVideo && window.dailyVideo.headless) {
-    const slot = document.getElementById("videoDockSlot");
-    if (slot) slot.style.display = "none";
-    return;
-  }
-  
-  bindVideoDockHandlersOnce();
-
-  // IMPORTANT: sur mobile, ne pas déplacer/masquer/redimensionner automatiquement l'iframe Daily.
-  // Cela peut bloquer la connexion ("Connexion à la réunion...") sur iOS/Android.
-  if (__videoDockIsMobile) {
-    const slot = document.getElementById("videoDockSlot");
-    if (slot) slot.style.display = "none";
-    return;
-  }
-
-  const slot = document.getElementById("videoDockSlot");
-  const container = document.getElementById("dailyVideoContainer");
-
-  // Si pas de visio encore join => on ne montre pas le slot (prototype)
-  const joined = !!(window.dailyVideo && window.dailyVideo.callFrame);
-  if (!joined || !container || !slot) {
-    if (slot) slot.style.display = "none";
-    return;
-  }
-
-  if (shouldDockVideo(state)) {
-    // Dock en phase jour (discussion)
-    // Dé-dock propre si on était docké mais la page a scroll (recalcul rect)
-    dockVideoToSlot();
-  } else {
-    // Nuit / autres : on libère l'espace
-    if (__videoDockIsDocked) undockVideoFromSlot();
-    // On laisse Daily gérer sa minimisation/bulle si la phase coupe les perms
-    slot.style.display = "none";
-  }
-}
-
-// Repositionner si resize/scroll quand docké
-window.addEventListener("resize", () => {
-  if (__videoDockIsDocked) {
-    try { dockVideoToSlot(); } catch {}
-  }
-});
-window.addEventListener("scroll", () => {
-  if (__videoDockIsDocked) {
-    try { dockVideoToSlot(); } catch {}
-  }
-}, { passive: true });
-
 
 
