@@ -1643,7 +1643,7 @@ let lastScrolledPhase = null;
 
 function noAutoScroll() {
   // Ne rien faire - pas de scroll automatique
-  console.log('[No Auto Scroll] Position maintenue par l'utilisateur');
+  console.log('[No Auto Scroll] Position maintenue par l\'utilisateur');
 }
 
 socket.on("roomState", (s) => {
