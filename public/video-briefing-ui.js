@@ -1,19 +1,29 @@
 /**
- * VIDEO BRIEFING UI - D4
- * ======================
+ * VIDEO BRIEFING UI - D5 V3.27 MINIMAL
+ * ======================================
  * 
- * Gère le DOM et le rendu du mode "Salle de Briefing".
- * Écoute les événements du VideoModeController et met à jour l'interface.
+ * VERSION: 3.27 MINIMAL (PERFORMANCE)
+ * BUILD: 2026-01-16 01:30 UTC
  * 
- * Responsabilités:
- * - Créer/détruire le DOM du mode briefing
- * - Attacher les flux vidéo aux éléments
- * - Gérer les interactions utilisateur (clic thumbnail, boutons)
- * - Synchroniser avec video-tracks.js
+ * VERSION MINIMALE SANS CODE INUTILE
+ * 
+ * GARDE SEULEMENT:
+ * - [V3.23] Fix scroll (padding-top supprimés)
+ * - [V3.24] Code simple sans monitoring
+ * - [V3.25] Cache permissions vidéo
+ * - [V3.26] Thème instantané
+ * 
+ * SUPPRIMÉ:
+ * - Tout le code V3.21 (setInterval, monitoring, logs verbeux)
+ * - Timeouts inutiles
  */
 
 (function() {
   'use strict';
+
+  // V3.27 MINIMAL - Version ultra-propre
+  console.log('%c💎 VIDEO BRIEFING UI V3.27 MINIMAL LOADED 💎', 
+    'background: #ff00ff; color: #ffffff; font-size: 16px; font-weight: bold; padding: 8px;');
 
   const DEBUG = true;
   
@@ -255,28 +265,23 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
+      // V3.24 CLEAN: Flag simple + show immédiat
+      window.__briefingUIScrollLock = true;
+      
       show();
       updateExpandButton(false);
       
-      // D4 FINAL: Reset scroll position quand on entre en mode SPLIT/ADVANCED
-      // Pour s'assurer que tout est visible sans scroll
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        // Reset aussi le scroll du gameScreen si présent
-        const gameScreen = document.getElementById('gameScreen');
-        if (gameScreen) {
-          gameScreen.scrollTop = 0;
-        }
-        const container = document.querySelector('.container');
-        if (container) {
-          container.scrollTop = 0;
-        }
-        log('Scroll reset to top');
-      }, 100);
+      // Libérer le flag après render
+      requestAnimationFrame(() => {
+        window.__briefingUIScrollLock = false;
+      });
       
     } else {
+      // Hide mode
+      window.__briefingUIScrollLock = true;
+      
       hide();
-      // Show expand button if conditions allow advanced mode
+      
       const ctrl = window.videoModeCtrl;
       if (ctrl && ctrl.canActivateAdvanced() && ctrl.isVideoJoined) {
         updateExpandButton(true);
@@ -284,10 +289,10 @@
         updateExpandButton(false);
       }
       
-      // D4 FINAL: Reset scroll aussi quand on quitte le mode SPLIT
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+      // Libérer le flag après render
+      requestAnimationFrame(() => {
+        window.__briefingUIScrollLock = false;
+      });
     }
   }
   
