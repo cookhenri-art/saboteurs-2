@@ -163,44 +163,65 @@ socket.on("connect_error", () => {
   setError("Connexion au serveur impossible. Lance l'application via le serveur (npm install puis npm start) et ouvre l'URL affichée (ex: http://localhost:3000). Sur Render, attends que le service soit démarré.");
 });
 
-// D5 v3.4.4: Préserver la position de scroll entre les changements de phase
+// D5 v3.5: Préserver la position de scroll entre les changements de phase
 let savedScrollPosition = { x: 0, y: 0 };
 
-// D5 v3.4.4: Sauvegarder le scroll périodiquement (toutes les 500ms si en jeu)
+// D5 v3.5: DEBUG - Tracer tous les changements de scroll
+console.log("[SCROLL-DEBUG] System initialized");
+
+// D5 v3.5: Sauvegarder le scroll périodiquement (toutes les 500ms si en jeu)
 setInterval(() => {
   if (document.querySelector("#gameScreen.active") !== null) {
+    const oldY = savedScrollPosition.y;
     savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
     savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
+    if (oldY !== savedScrollPosition.y) {
+      console.log("[SCROLL-DEBUG] Auto-saved position:", savedScrollPosition);
+    }
   }
 }, 500);
 
 function showScreen(screenId) {
-  // D5 v3.4.4: Sauvegarder la position de scroll actuelle
+  console.log("[SCROLL-DEBUG] showScreen called:", screenId);
+  
+  // D5 v3.5: Sauvegarder la position de scroll actuelle
   if (screenId === "gameScreen") {
     savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
     savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
+    console.log("[SCROLL-DEBUG] Saved before showing gameScreen:", savedScrollPosition);
   }
   
   for (const el of document.querySelectorAll(".screen")) el.classList.remove("active");
   $(screenId).classList.add("active");
   
-  // D5 v3.4.4: Restaurer la position de scroll pour gameScreen
+  // D5 v3.5: Restaurer la position de scroll pour gameScreen
   if (screenId === "gameScreen" && (savedScrollPosition.x !== 0 || savedScrollPosition.y !== 0)) {
-    // Double restauration pour plus de fiabilité
+    console.log("[SCROLL-DEBUG] Attempting to restore position:", savedScrollPosition);
+    
+    // Triple restauration pour plus de fiabilité
+    const currentScroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
+    console.log("[SCROLL-DEBUG] Current scroll before restore:", currentScroll);
+    
     window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
+    console.log("[SCROLL-DEBUG] Restore 1/3 (immediate) done");
+    
     requestAnimationFrame(() => {
       window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
+      console.log("[SCROLL-DEBUG] Restore 2/3 (animFrame) done");
     });
-    // Et encore une fois après un délai court
+    
     setTimeout(() => {
       window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
+      const finalScroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
+      console.log("[SCROLL-DEBUG] Restore 3/3 (timeout) done. Final position:", finalScroll);
     }, 50);
   }
   
   // Reset lobby intro flag when returning to home
   if (screenId === "homeScreen") {
     lobbyIntroPlayed = false;
-    // D5 v3.4.4: Reset scroll position aussi
+    // D5 v3.5: Reset scroll position aussi
+    console.log("[SCROLL-DEBUG] Reset position (returning home)");
     savedScrollPosition = { x: 0, y: 0 };
   }
 }

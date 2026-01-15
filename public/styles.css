@@ -1912,17 +1912,17 @@ select:focus-visible {
 
 /* =====================================================
    PHASE A – BANDEAU (PC + MOBILE UNIFORMISÉ)
-   D5 v3.4.4: Compression verticale + position haute
+   D5 v3.5: Position très haute 25% sans compression
    ===================================================== */
 @media (min-width: 768px) {
   #gameBackdrop,
   #endBackdrop {
     position: relative;
-    /* D5 v3.4.4: Compression verticale 85% pour voir haut+bas */
-    background-size: 65% 85% !important;
+    /* D5 v3.5: Pas de compression - ratio naturel */
+    background-size: 65% auto !important;
     background-repeat: no-repeat !important;
-    /* D5 v3.4.4: Position haute pour montrer les têtes */
-    background-position: center 35% !important;
+    /* D5 v3.5: Position très haute pour garantir têtes visibles */
+    background-position: center 25% !important;
     min-height: 190px;
     max-width: 90%;
     margin-left: auto;
@@ -1952,13 +1952,13 @@ select:focus-visible {
   }
 }
 
-/* D5 v3.4.4: MOBILE - Même compression et position que PC */
+/* D5 v3.5: MOBILE - Même position que PC */
 @media (max-width: 767px) {
   #gameBackdrop,
   #endBackdrop {
     /* Override inline styles */
-    background-size: 65% 85% !important;
-    background-position: center 35% !important;
+    background-size: 65% auto !important;
+    background-position: center 25% !important;
   }
 }
 
