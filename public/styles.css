@@ -1882,7 +1882,7 @@ select:focus-visible {
     position: relative;
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: center 60%;
+    background-position: center 70%;
     min-height: 250px;
     overflow: hidden;
   }
@@ -1921,7 +1921,7 @@ select:focus-visible {
     background-size: 80% auto !important;
     background-repeat: no-repeat !important;
     /* D5 v3.3: Déplacer vers le bas pour centrer le vaisseau */
-    background-position: center 60% !important;
+    background-position: center 70% !important;
     min-height: 250px;
     max-width: 90%;
     margin-left: auto;
