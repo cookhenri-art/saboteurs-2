@@ -1647,8 +1647,17 @@ socket.on("roomState", (s) => {
   // audio per phase
   audioManager.play(state.audio);
 
+  // V3.28 STABLE: Sauvegarder la position scroll AVANT le render
+  const scrollBeforeRender = window.pageYOffset || document.documentElement.scrollTop;
+
   // If we are ended, show end.
   render();
+  
+  // V3.28 STABLE: Restaurer la position scroll APRÈS le render
+  requestAnimationFrame(() => {
+    window.scrollTo(0, scrollBeforeRender);
+    console.log("[V3.28 Scroll Restore] Position restaurée:", scrollBeforeRender);
+  });
 });
 
 socket.on("serverHello", () => {
