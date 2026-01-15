@@ -16,6 +16,10 @@
   --speaker-border: var(--neon-main);
   --speaker-bg: rgba(0, 255, 255, 0.10);
 
+  /* D5 v3.4: Video backgrounds par thème */
+  --video-bg-main: url('/images/default/video-bg.png');
+  --video-bg-fallback: linear-gradient(135deg, #0a1530 0%, #050a15 100%);
+
     /* Couleurs de fond */
     --primary-bg: #0a0e1a;
     --secondary-bg: #1a1f35;
@@ -51,6 +55,10 @@
 
 /* THÈME 2 : LA CHASSE AU LOUP (Werewolf) */
 :root[data-theme="werewolf"] {
+    /* D5 v3.4: Video backgrounds par thème */
+    --video-bg-main: url('/images/werewolf/video-bg.png');
+    --video-bg-fallback: linear-gradient(135deg, #1a2832 0%, #0f1419 100%);
+
     /* Couleurs de fond */
     --primary-bg: #0f1419;
     --secondary-bg: #1a2332;
@@ -86,6 +94,10 @@
 
 /* THÈME 3 : L'ACADÉMIE DES SORCIERS (Wizard Academy) */
 :root[data-theme="wizard-academy"] {
+    /* D5 v3.4: Video backgrounds par thème */
+    --video-bg-main: url('/images/wizard-academy/video-bg.png');
+    --video-bg-fallback: linear-gradient(135deg, #2d1b4e 0%, #1a0f2e 100%);
+
     /* Couleurs de fond */
     --primary-bg: #1a0f2e;
     --secondary-bg: #2d1b4e;
@@ -123,6 +135,10 @@
 
 /* THÈME 4 : LA CONFRÉRIE FANTASTIQUE (Mythic Realms) */
 :root[data-theme="mythic-realms"] {
+    /* D5 v3.4: Video backgrounds par thème */
+    --video-bg-main: url('/images/mythic-realms/video-bg.png');
+    --video-bg-fallback: linear-gradient(135deg, #1b263b 0%, #0d1b2a 100%);
+
     /* Couleurs de fond */
     --primary-bg: #0d1b2a;
     --secondary-bg: #1b263b;
@@ -1904,7 +1920,8 @@ select:focus-visible {
     position: relative;
     background-size: 80% auto !important;
     background-repeat: no-repeat !important;
-    background-position: center center !important;
+    /* D5 v3.3: Déplacer vers le bas pour centrer le vaisseau */
+    background-position: center 60% !important;
     min-height: 190px;
     max-width: 90%;
     margin-left: auto;

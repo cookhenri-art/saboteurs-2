@@ -2195,6 +2195,32 @@ function generateTutorialContent() {
     <!-- Écran 5 -->
     <div class="tutorial-screen" data-screen="5" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">📱</div>
+        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Visio sur Mobile</h2>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">🎥 Activation sur Mobile</h3>
+        <ul style="font-size: 1rem; line-height: 1.7; color: var(--text-primary); padding-left: 20px;">
+          <li><strong>1ère connexion</strong> : Autoriser l'accès micro/caméra dans le navigateur</li>
+          <li><strong>Bouton "📹 Visio activée"</strong> : En bas à gauche pour activer/désactiver</li>
+          <li><strong>Après un refresh</strong> : Retaper sur "Activer visio" puis valider</li>
+        </ul>
+      </div>
+      <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
+        <div style="font-size: 1.8rem; text-align: center; margin-bottom: 10px;">📱 👆</div>
+        <div style="text-align: center; color: var(--text-primary); font-size: 1rem; line-height: 1.6;">
+          <strong>Sur PC</strong> : La visio s'active automatiquement<br>
+          <strong>Sur Mobile</strong> : Utiliser le bouton en bas à gauche
+        </div>
+      </div>
+      <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
+        💡 <strong>Astuce :</strong> Si la vidéo ne s'affiche pas après refresh, vérifier que le bouton "Visio activée" est bien actif (vert).
+      </p>
+    </div>
+
+    <!-- Écran 6 -->
+    <div class="tutorial-screen" data-screen="6" style="display:none;">
+      <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
         <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
       </div>
@@ -2263,7 +2289,7 @@ function updateTutorialScreen() {
   }
   
   if (nextBtn) {
-    if (currentTutorialScreen === 5) {
+    if (currentTutorialScreen === 6) {
       nextBtn.textContent = "Commencer ! 🚀";
     } else {
       nextBtn.textContent = "Suivant →";
@@ -2283,7 +2309,7 @@ $("tutorialPrev")?.addEventListener("click", () => {
 });
 
 $("tutorialNext")?.addEventListener("click", () => {
-  if (currentTutorialScreen < 5) {
+  if (currentTutorialScreen < 6) {
     currentTutorialScreen++;
     updateTutorialScreen();
   } else {

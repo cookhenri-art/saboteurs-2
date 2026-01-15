@@ -219,7 +219,10 @@
   height: 100%;
   object-fit: contain; /* D5 v3.1: contain pour éviter le zoom excessif */
   display: block;
-  background: rgba(0, 0, 0, 0.3); /* Fond léger pour les bandes noires */
+  /* D5 v3.4: Background PNG par thème avec fallback dégradé */
+  background: var(--video-bg-main), var(--video-bg-fallback);
+  background-size: cover;
+  background-position: center;
   
   /* D5: Transition douce pour le changement de source video */
   transition: opacity 0.25s ease;
@@ -376,7 +379,10 @@
   height: 100%;
   object-fit: contain; /* D5 v3.1: contain pour montrer tout le visage */
   display: block;
-  background: rgba(0, 0, 0, 0.4); /* Fond pour les bandes noires */
+  /* D5 v3.4: Background PNG par thème */
+  background: var(--video-bg-main), var(--video-bg-fallback);
+  background-size: cover;
+  background-position: center;
 }
 
 /* Thumbnail name label */
@@ -813,7 +819,10 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  background: rgba(0, 0, 0, 0.3) !important; /* Fond pour bandes noires */
+  /* D5 v3.4: Background PNG par thème */
+  background: var(--video-bg-main), var(--video-bg-fallback) !important;
+  background-size: cover !important;
+  background-position: center !important;
 }
 
 /* Placeholder quand pas de vidéo */
