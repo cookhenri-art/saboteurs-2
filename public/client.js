@@ -163,11 +163,19 @@ socket.on("connect_error", () => {
   setError("Connexion au serveur impossible. Lance l'application via le serveur (npm install puis npm start) et ouvre l'URL affichée (ex: http://localhost:3000). Sur Render, attends que le service soit démarré.");
 });
 
-// D5 v3.4.3: Préserver la position de scroll entre les changements de phase
+// D5 v3.4.4: Préserver la position de scroll entre les changements de phase
 let savedScrollPosition = { x: 0, y: 0 };
 
+// D5 v3.4.4: Sauvegarder le scroll périodiquement (toutes les 500ms si en jeu)
+setInterval(() => {
+  if (document.querySelector("#gameScreen.active") !== null) {
+    savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
+    savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
+  }
+}, 500);
+
 function showScreen(screenId) {
-  // D5 v3.4.3: Sauvegarder la position de scroll actuelle
+  // D5 v3.4.4: Sauvegarder la position de scroll actuelle
   if (screenId === "gameScreen") {
     savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
     savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
@@ -176,18 +184,23 @@ function showScreen(screenId) {
   for (const el of document.querySelectorAll(".screen")) el.classList.remove("active");
   $(screenId).classList.add("active");
   
-  // D5 v3.4.3: Restaurer la position de scroll pour gameScreen
+  // D5 v3.4.4: Restaurer la position de scroll pour gameScreen
   if (screenId === "gameScreen" && (savedScrollPosition.x !== 0 || savedScrollPosition.y !== 0)) {
-    // Utiliser requestAnimationFrame pour s'assurer que le DOM est mis à jour
+    // Double restauration pour plus de fiabilité
+    window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
     requestAnimationFrame(() => {
       window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
     });
+    // Et encore une fois après un délai court
+    setTimeout(() => {
+      window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
+    }, 50);
   }
   
   // Reset lobby intro flag when returning to home
   if (screenId === "homeScreen") {
     lobbyIntroPlayed = false;
-    // D5 v3.4.3: Reset scroll position aussi
+    // D5 v3.4.4: Reset scroll position aussi
     savedScrollPosition = { x: 0, y: 0 };
   }
 }

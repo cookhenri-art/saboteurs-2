@@ -1911,17 +1911,17 @@ select:focus-visible {
 
 
 /* =====================================================
-   PHASE A – BANDEAU PC (ZOOM RÉDUIT + LARGEUR CALMÉE)
-   Mobile inchangé
+   PHASE A – BANDEAU (PC + MOBILE UNIFORMISÉ)
+   D5 v3.4.4: Compression verticale + position haute
    ===================================================== */
 @media (min-width: 768px) {
   #gameBackdrop,
   #endBackdrop {
     position: relative;
-    /* D5 v3.4.2: Dézoom pour montrer l'action complète */
-    background-size: 65% auto !important;
+    /* D5 v3.4.4: Compression verticale 85% pour voir haut+bas */
+    background-size: 65% 85% !important;
     background-repeat: no-repeat !important;
-    /* D5 v3.4.2: Remonter l'image pour montrer les têtes des personnages */
+    /* D5 v3.4.4: Position haute pour montrer les têtes */
     background-position: center 35% !important;
     min-height: 190px;
     max-width: 90%;
@@ -1949,6 +1949,16 @@ select:focus-visible {
   #endBackdrop > * {
     position: relative;
     z-index: 1;
+  }
+}
+
+/* D5 v3.4.4: MOBILE - Même compression et position que PC */
+@media (max-width: 767px) {
+  #gameBackdrop,
+  #endBackdrop {
+    /* Override inline styles */
+    background-size: 65% 85% !important;
+    background-position: center 35% !important;
   }
 }
 
