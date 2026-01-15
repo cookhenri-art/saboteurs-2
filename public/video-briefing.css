@@ -217,8 +217,9 @@
 .video-focus-main video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* D5 v3.1: contain pour éviter le zoom excessif */
   display: block;
+  background: rgba(0, 0, 0, 0.3); /* Fond léger pour les bandes noires */
   
   /* D5: Transition douce pour le changement de source video */
   transition: opacity 0.25s ease;
@@ -373,8 +374,9 @@
 .video-thumb video {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain; /* D5 v3.1: contain pour montrer tout le visage */
   display: block;
+  background: rgba(0, 0, 0, 0.4); /* Fond pour les bandes noires */
 }
 
 /* Thumbnail name label */
@@ -807,10 +809,11 @@
 .player-video-slot video {
   width: 100% !important;
   height: 100% !important;
-  object-fit: cover !important;
+  object-fit: contain !important; /* D5 v3.1: contain pour montrer tout le visage */
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.3) !important; /* Fond pour bandes noires */
 }
 
 /* Placeholder quand pas de vidéo */

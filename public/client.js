@@ -2162,6 +2162,39 @@ function generateTutorialContent() {
     <!-- Écran 4 -->
     <div class="tutorial-screen" data-screen="4" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
+        <div style="font-size: 4rem; margin-bottom: 10px;">🎥</div>
+        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Visioconférence</h2>
+      </div>
+      <div style="margin-bottom: 20px;">
+        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">📹 Contrôles Vidéo</h3>
+        <ul style="font-size: 1rem; line-height: 1.7; color: var(--text-primary); padding-left: 20px;">
+          <li><strong>🎤 Micro</strong> : Cliquez pour activer/désactiver votre micro</li>
+          <li><strong>📷 Caméra</strong> : Cliquez pour activer/désactiver votre caméra</li>
+          <li><strong>⬆ Max</strong> : Mode plein écran (briefing étendu)</li>
+          <li><strong>⬕ Split</strong> : Mode 50/50 (jeu + vidéo)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.2rem; margin-bottom: 10px;">🔊 Activation Automatique</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.95rem;">
+          <div style="padding: 10px; background: rgba(0,255,0,0.1); border-left: 3px solid var(--neon-green); border-radius: 6px;">
+            <div style="color: var(--neon-green); font-weight: 700; margin-bottom: 5px;">✅ Micro + Caméra ON</div>
+            <div style="color: var(--text-secondary);">• Jour (débat/vote)<br>• Fin de partie<br>• Révélation des rôles</div>
+          </div>
+          <div style="padding: 10px; background: rgba(128,0,128,0.1); border-left: 3px solid var(--neon-purple, var(--neon-cyan)); border-radius: 6px;">
+            <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 Certains Rôles</div>
+            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange Agent IA<br>• Actions spéciales</div>
+          </div>
+        </div>
+        <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
+          💡 <strong>Astuce :</strong> Vous pouvez désactiver votre micro/caméra manuellement à tout moment.
+        </p>
+      </div>
+    </div>
+
+    <!-- Écran 5 -->
+    <div class="tutorial-screen" data-screen="5" style="display:none;">
+      <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
         <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
       </div>
@@ -2230,7 +2263,7 @@ function updateTutorialScreen() {
   }
   
   if (nextBtn) {
-    if (currentTutorialScreen === 4) {
+    if (currentTutorialScreen === 5) {
       nextBtn.textContent = "Commencer ! 🚀";
     } else {
       nextBtn.textContent = "Suivant →";
@@ -2250,7 +2283,7 @@ $("tutorialPrev")?.addEventListener("click", () => {
 });
 
 $("tutorialNext")?.addEventListener("click", () => {
-  if (currentTutorialScreen < 4) {
+  if (currentTutorialScreen < 5) {
     currentTutorialScreen++;
     updateTutorialScreen();
   } else {
