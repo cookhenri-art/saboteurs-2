@@ -1649,6 +1649,18 @@ socket.on("roomState", (s) => {
 
   // If we are ended, show end.
   render();
+  
+  // D5 V3.5: Scroll intelligent après render
+  // On laisse le navigateur faire son scroll automatique,
+  // puis on repositionne à un endroit optimal (200px du haut)
+  // Cela permet de voir le contenu important et les boutons sans scroller
+  setTimeout(() => {
+    window.scrollTo({
+      top: 200,
+      behavior: 'smooth'
+    });
+    console.log('[Smart Scroll] Position ajustée à 200px');
+  }, 150);
 });
 
 socket.on("serverHello", () => {
