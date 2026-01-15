@@ -257,11 +257,31 @@ function initVideoForGame(state) {
     });
 }
 
+let lastPermissionsHash = null;
+
+function getPermissionsHash(permissions) {
+  if (!permissions) return null;
+  return JSON.stringify({
+    canSendVideo: permissions.canSendVideo,
+    canSendAudio: permissions.canSendAudio
+  });
+}
+
 /**
  * Met à jour les permissions vidéo selon la phase
  * D4 v5.4: Respecte le choix manuel de l'utilisateur
  * D4 v5.8: Force démute aux phases clés (GAME_OVER, NIGHT_RESULTS, DAY_WAKE, ROLE_REVEAL)
  */
+  // V3.25: Vérifier si les permissions ont réellement changé
+  const newHash = getPermissionsHash(permissions);
+  const permissionsChanged = (newHash !== lastPermissionsHash);
+  
+  if (!permissionsChanged) {
+    console.log('[Video] ⏩ Permissions unchanged, skipping refresh');
+    return;
+  }
+  
+  lastPermissionsHash = newHash;
 function updateVideoPermissions(state) {
   if (!videoRoomJoined || !window.dailyVideo.callFrame) {
     return;
@@ -292,11 +312,11 @@ function updateVideoPermissions(state) {
       
       // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
       setTimeout(() => {
-        const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
-        if (callFrame) {
-          if (userMutedAudio) {
-            callFrame.setLocalAudio(false);
-            console.log('[Video] 🔇 Re-applied user audio mute');
+  // V3.25: Refresh immédiat sans setTimeout inutile
+  if (window.VideoTracksRefresh) {
+    window.VideoTracksRefresh();
+    console.log('[Video] 🔄 Tracks refreshed for new permissions');
+  }
           }
           if (userMutedVideo) {
             callFrame.setLocalVideo(false);
