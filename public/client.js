@@ -1656,23 +1656,14 @@ socket.on("roomState", (s) => {
   // audio per phase
   audioManager.play(state.audio);
 
-  // D5 V3.11: Sauvegarder la position AVANT le render
-  const scrollBeforeRender = window.pageYOffset || document.documentElement.scrollTop;
-
   // If we are ended, show end.
   render();
   
-  // D5 V3.11: Restaurer la position APRÈS le render
-  requestAnimationFrame(() => {
-    window.scrollTo(0, scrollBeforeRender);
-    console.log('[Scroll Restore] Position restaurée:', scrollBeforeRender);
-  });
-  
-  // Log pour debug
+  // D5 V3.10: Pas de scroll automatique - l'utilisateur garde le contrôle
   const currentPhase = state.phase;
   if (currentPhase && currentPhase !== lastScrolledPhase) {
     lastScrolledPhase = currentPhase;
-    console.log('[No Auto Scroll] Phase:', currentPhase, '- Position:', scrollBeforeRender);
+    console.log('[No Auto Scroll] Phase:', currentPhase, '- Position maintenue');
   }
 });
 
