@@ -255,22 +255,17 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
-      // D5 V3.16: Sauvegarder scroll AVANT show() (même système que client.js)
-      const scrollBeforeShow = window.pageYOffset || document.documentElement.scrollTop;
-      
       show();
       updateExpandButton(false);
       
-      // D5 V3.16: Restaurer scroll APRÈS show() (cohérent avec client.js)
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollBeforeShow);
-        log(`[Scroll V3.16] Position restaurée après show() ${mode}: ${scrollBeforeShow}`);
-      });
+      // D5 V3.9: Mémoriser et restaurer la position au lieu de forcer à 0
+      // Laisse le scroll intelligent de client.js gérer la position
+      setTimeout(() => {
+        // Ne rien faire - le scroll intelligent de client.js prendra le relais
+        log('Scroll handled by smart scroll system');
+      }, 100);
       
     } else {
-      // D5 V3.16: Sauvegarder scroll AVANT hide()
-      const scrollBeforeHide = window.pageYOffset || document.documentElement.scrollTop;
-      
       hide();
       // Show expand button if conditions allow advanced mode
       const ctrl = window.videoModeCtrl;
@@ -280,11 +275,9 @@
         updateExpandButton(false);
       }
       
-      // D5 V3.16: Restaurer scroll APRÈS hide()
-      requestAnimationFrame(() => {
-        window.scrollTo(0, scrollBeforeHide);
-        log(`[Scroll V3.16] Position restaurée après hide() ${mode}: ${scrollBeforeHide}`);
-      });
+      // D5 V3.9: Laisser le scroll intelligent gérer la position
+      setTimeout(() => {
+        // Position gérée par client.js smart scroll
       }, 50);
     }
   }
