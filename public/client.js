@@ -1651,10 +1651,10 @@ function smartScrollToOptimalPosition() {
     let targetY;
     
     if (videoMode === 'SPLIT') {
-      targetY = 350;
+      targetY = 400;
       console.log('[Smart Scroll] Mode SPLIT détecté → position 300px');
     } else {
-      targetY = 250;
+      targetY = 300;
       console.log('[Smart Scroll] Mode INLINE/OFF détecté → position 200px');
     }
     
