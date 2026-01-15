@@ -255,17 +255,35 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
+      // V3.18: Capturer position AVANT show() pour empêcher auto-scroll
+      const scrollBeforeShow = window.pageYOffset || document.documentElement.scrollTop;
+      
       show();
       updateExpandButton(false);
       
-      // D5 V3.9: Mémoriser et restaurer la position au lieu de forcer à 0
-      // Laisse le scroll intelligent de client.js gérer la position
-      setTimeout(() => {
-        // Ne rien faire - le scroll intelligent de client.js prendra le relais
-        log('Scroll handled by smart scroll system');
-      }, 100);
+      // V3.18: Restauration forcée progressive (le navigateur peut re-scroller plusieurs fois)
+      const forceScroll = () => {
+        const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+        if (currentScroll !== scrollBeforeShow) {
+          window.scrollTo(0, scrollBeforeShow);
+        }
+      };
+      
+      // Tentatives multiples car le navigateur peut auto-scroller après le reflow
+      requestAnimationFrame(() => {
+        forceScroll();
+        requestAnimationFrame(() => {
+          forceScroll();
+          setTimeout(() => {
+            forceScroll();
+          }, 50);
+        });
+      });
       
     } else {
+      // V3.18: Même chose pour hide()
+      const scrollBeforeHide = window.pageYOffset || document.documentElement.scrollTop;
+      
       hide();
       // Show expand button if conditions allow advanced mode
       const ctrl = window.videoModeCtrl;
@@ -275,10 +293,10 @@
         updateExpandButton(false);
       }
       
-      // D5 V3.9: Laisser le scroll intelligent gérer la position
-      setTimeout(() => {
-        // Position gérée par client.js smart scroll
-      }, 50);
+      // V3.18: Restauration après hide
+      requestAnimationFrame(() => {
+        window.scrollTo(0, scrollBeforeHide);
+      });
     }
   }
   
