@@ -163,13 +163,32 @@ socket.on("connect_error", () => {
   setError("Connexion au serveur impossible. Lance l'application via le serveur (npm install puis npm start) et ouvre l'URL affichée (ex: http://localhost:3000). Sur Render, attends que le service soit démarré.");
 });
 
+// D5 v3.4.3: Préserver la position de scroll entre les changements de phase
+let savedScrollPosition = { x: 0, y: 0 };
+
 function showScreen(screenId) {
+  // D5 v3.4.3: Sauvegarder la position de scroll actuelle
+  if (screenId === "gameScreen") {
+    savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
+    savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
+  }
+  
   for (const el of document.querySelectorAll(".screen")) el.classList.remove("active");
   $(screenId).classList.add("active");
+  
+  // D5 v3.4.3: Restaurer la position de scroll pour gameScreen
+  if (screenId === "gameScreen" && (savedScrollPosition.x !== 0 || savedScrollPosition.y !== 0)) {
+    // Utiliser requestAnimationFrame pour s'assurer que le DOM est mis à jour
+    requestAnimationFrame(() => {
+      window.scrollTo(savedScrollPosition.x, savedScrollPosition.y);
+    });
+  }
   
   // Reset lobby intro flag when returning to home
   if (screenId === "homeScreen") {
     lobbyIntroPlayed = false;
+    // D5 v3.4.3: Reset scroll position aussi
+    savedScrollPosition = { x: 0, y: 0 };
   }
 }
 
@@ -370,6 +389,13 @@ function setBackdrop() {
 
 function render() {
   if (!state) return;
+  
+  // D5 v3.4.3: Sauvegarder le scroll avant de re-render
+  const wasInGame = document.querySelector("#gameScreen.active") !== null;
+  if (wasInGame) {
+    savedScrollPosition.x = window.scrollX || window.pageXOffset || 0;
+    savedScrollPosition.y = window.scrollY || window.pageYOffset || 0;
+  }
   
   // Vérifier et appliquer le thème actif
   checkAndApplyTheme();
