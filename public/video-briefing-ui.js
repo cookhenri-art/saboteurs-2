@@ -1,9 +1,9 @@
 /**
- * VIDEO BRIEFING UI - D5 V3.21 COORDINATION
- * ===========================================
+ * VIDEO BRIEFING UI - D5 V3.22 ABSOLUTE
+ * =======================================
  * 
- * VERSION: 3.21 COORDINATION
- * BUILD: 2026-01-15 22:00 UTC
+ * VERSION: 3.22 ABSOLUTE
+ * BUILD: 2026-01-15 22:30 UTC
  * 
  * Gère le DOM et le rendu du mode "Salle de Briefing".
  * Écoute les événements du VideoModeController et met à jour l'interface.
@@ -13,16 +13,17 @@
  * - Attacher les flux vidéo aux éléments
  * - Gérer les interactions utilisateur (clic thumbnail, boutons)
  * - Synchroniser avec video-tracks.js
- * - [V3.21] COORDINATION avec client.js via flag global (un seul système de scroll à la fois)
+ * - [V3.21] COORDINATION avec client.js via flag global
+ * - [V3.22] ABSOLUTE - Container vidéo ne POUSSE PAS le contenu (padding-top supprimé)
  */
 
 (function() {
   'use strict';
 
-  // 🔥🔥🔥 V3.21 COORDINATION VERSION 🔥🔥🔥
-  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.21 COORDINATION LOADED 🔥🔥🔥', 
-    'background: #00ff00; color: #000000; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-15 22:00 UTC | Scroll Fix: COORDINATION with client.js', 
+  // 🔥🔥🔥 V3.22 ABSOLUTE VERSION 🔥🔥🔥
+  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.22 ABSOLUTE LOADED 🔥🔥🔥', 
+    'background: #ff6600; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
+  console.log('%cBuild: 2026-01-15 22:30 UTC | Fix: Container ne pousse plus le contenu', 
     'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
