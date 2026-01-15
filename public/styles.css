@@ -1918,10 +1918,11 @@ select:focus-visible {
   #gameBackdrop,
   #endBackdrop {
     position: relative;
-    background-size: 80% auto !important;
+    /* D5 v3.4.1: Dézoom pour montrer l'action complète */
+    background-size: 65% auto !important;
     background-repeat: no-repeat !important;
-    /* D5 v3.3: Déplacer vers le bas pour centrer le vaisseau */
-    background-position: center 60% !important;
+    /* D5 v3.4.1: Recentrage pour composition optimale */
+    background-position: center 50% !important;
     min-height: 190px;
     max-width: 90%;
     margin-left: auto;
