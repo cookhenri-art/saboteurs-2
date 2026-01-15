@@ -1637,56 +1637,13 @@ $("joinRoomBtn").onclick = () => {
 
 
 // receive state
-// D5 V3.9: Scroll intelligent avec mémorisation de position
+// D5 V3.10: AUCUN SCROLL AUTOMATIQUE - Position maintenue naturellement
+// On laisse le navigateur et l'utilisateur gérer le scroll
 let lastScrolledPhase = null;
-let scrollTimeout = null;
-let savedScrollPosition = null;
-let videoModeChangeTimeout = null;
 
-// Sauvegarder la position actuelle
-function saveScrollPosition() {
-  savedScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-  console.log('[Scroll Memory] Position sauvegardée:', savedScrollPosition);
-}
-
-// Restaurer la position sauvegardée
-function restoreScrollPosition() {
-  if (savedScrollPosition !== null) {
-    console.log('[Scroll Memory] Restauration position:', savedScrollPosition);
-    window.scrollTo({
-      top: savedScrollPosition,
-      behavior: 'smooth'
-    });
-  }
-}
-
-function smartScrollToOptimalPosition() {
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout);
-  }
-  
-  scrollTimeout = setTimeout(() => {
-    const videoMode = window.videoModeCtrl?.getCurrentMode?.() || 'OFF';
-    let targetY;
-    
-    if (videoMode === 'SPLIT') {
-      targetY = 300;
-      console.log('[Smart Scroll] Mode SPLIT détecté → position 300px');
-    } else {
-      targetY = 200;
-      console.log('[Smart Scroll] Mode INLINE/OFF détecté → position 200px');
-    }
-    
-    window.scrollTo({
-      top: targetY,
-      behavior: 'smooth'
-    });
-    
-    // Sauvegarder cette nouvelle position
-    savedScrollPosition = targetY;
-    
-    console.log('[Smart Scroll] Phase:', state.phase, 'Mode vidéo:', videoMode, 'Position:', targetY);
-  }, 200);
+function noAutoScroll() {
+  // Ne rien faire - pas de scroll automatique
+  console.log('[No Auto Scroll] Position maintenue par l'utilisateur');
 }
 
 socket.on("roomState", (s) => {
@@ -1702,11 +1659,11 @@ socket.on("roomState", (s) => {
   // If we are ended, show end.
   render();
   
-  // D5 V3.6: Scroll intelligent uniquement au changement de phase
+  // D5 V3.10: Pas de scroll automatique - l'utilisateur garde le contrôle
   const currentPhase = state.phase;
   if (currentPhase && currentPhase !== lastScrolledPhase) {
     lastScrolledPhase = currentPhase;
-    smartScrollToOptimalPosition();
+    console.log('[No Auto Scroll] Phase:', currentPhase, '- Position maintenue');
   }
 });
 
