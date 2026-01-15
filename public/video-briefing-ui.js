@@ -260,19 +260,19 @@
       
       // D4 FINAL: Reset scroll position quand on entre en mode SPLIT/ADVANCED
       // Pour s'assurer que tout est visible sans scroll
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        // Reset aussi le scroll du gameScreen si présent
-        const gameScreen = document.getElementById('gameScreen');
-        if (gameScreen) {
-          gameScreen.scrollTop = 0;
-        }
-        const container = document.querySelector('.container');
-        if (container) {
-          container.scrollTop = 0;
-        }
-        log('Scroll reset to top');
-      }, 100);
+      // V3.28 V3: SUPPRIMÉ -       setTimeout(() => {
+      // V3.28 V3: SUPPRIMÉ -         window.scrollTo({ top: 0, behavior: 'smooth' });
+      // V3.28 V3: SUPPRIMÉ -         // Reset aussi le scroll du gameScreen si présent
+      // V3.28 V3: SUPPRIMÉ -         const gameScreen = document.getElementById('gameScreen');
+      // V3.28 V3: SUPPRIMÉ -         if (gameScreen) {
+      // V3.28 V3: SUPPRIMÉ -           gameScreen.scrollTop = 0;
+      // V3.28 V3: SUPPRIMÉ -         }
+      // V3.28 V3: SUPPRIMÉ -         const container = document.querySelector('.container');
+      // V3.28 V3: SUPPRIMÉ -         if (container) {
+      // V3.28 V3: SUPPRIMÉ -           container.scrollTop = 0;
+      // V3.28 V3: SUPPRIMÉ -         }
+      // V3.28 V3: SUPPRIMÉ -         log('Scroll reset to top');
+      // V3.28 V3: SUPPRIMÉ -       }, 100);
       
     } else {
       hide();
