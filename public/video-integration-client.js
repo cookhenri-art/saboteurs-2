@@ -257,10 +257,22 @@ function initVideoForGame(state) {
     });
 }
 
+// V3.25: Cache pour éviter les refreshes inutiles
+let lastPermissionsHash = null;
+
+function getPermissionsHash(permissions) {
+  if (!permissions) return null;
+  return JSON.stringify({
+    canSendVideo: permissions.canSendVideo,
+    canSendAudio: permissions.canSendAudio
+  });
+}
+
 /**
  * Met à jour les permissions vidéo selon la phase
  * D4 v5.4: Respecte le choix manuel de l'utilisateur
  * D4 v5.8: Force démute aux phases clés (GAME_OVER, NIGHT_RESULTS, DAY_WAKE, ROLE_REVEAL)
+ * V3.25: Évite les refreshes inutiles avec cache
  */
 function updateVideoPermissions(state) {
   if (!videoRoomJoined || !window.dailyVideo.callFrame) {
@@ -270,6 +282,16 @@ function updateVideoPermissions(state) {
   const permissions = state.videoPermissions;
   if (!permissions) return;
 
+  // V3.25: Vérifier si les permissions ont réellement changé
+  const newHash = getPermissionsHash(permissions);
+  const permissionsChanged = (newHash !== lastPermissionsHash);
+  
+  if (!permissionsChanged) {
+    console.log('[Video] ⏩ Permissions unchanged, skipping refresh');
+    return;
+  }
+  
+  lastPermissionsHash = newHash;
   console.log('[Video] Updating permissions:', permissions);
   
   const registry = window.VideoTracksRegistry;
@@ -310,12 +332,10 @@ function updateVideoPermissions(state) {
   // Appliquer les permissions de base
   window.dailyVideo.updatePermissions(permissions);
   
-  // D4 v5.5: Rafraîchir le filtrage des tracks selon les nouvelles permissions
+  // V3.25: Refresh immédiat sans setTimeout inutile
   if (window.VideoTracksRefresh) {
-    setTimeout(() => {
-      window.VideoTracksRefresh();
-      console.log('[Video] 🔄 Tracks refreshed for new permissions');
-    }, 200);
+    window.VideoTracksRefresh();
+    console.log('[Video] 🔄 Tracks refreshed for new permissions');
   }
 
   // Afficher le message de phase
