@@ -267,11 +267,12 @@
         if (gameScreen) {
           gameScreen.scrollTop = 0;
         }
-        const container = document.querySelector('.container');
-        if (container) {
-          container.scrollTop = 0;
-        }
-        log('Scroll reset to top');
+        // D5 v3.5: Désactivé - on préserve la position de scroll de l'utilisateur
+        // const container = document.querySelector('.container');
+        // if (container) {
+        //   container.scrollTop = 0;
+        // }
+        // log('Scroll reset to top');
       }, 100);
       
     } else {
