@@ -28,6 +28,40 @@
 
   function log(...args) { if (DEBUG) console.log("[VideoTracks]", ...args); }
 
+  // D6: Définir showMuteToast ici car video-tracks.js est chargé avant video-briefing-ui.js
+  function showMuteToast(isMuted) {
+    // Supprimer toast existant
+    const existing = document.querySelector('.mute-toast');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'mute-toast';
+    toast.textContent = isMuted ? '🔇 Micro coupé' : '🎤 Micro activé';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${isMuted ? '#ff4444' : '#00cc88'};
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: bold;
+      z-index: 10000;
+      animation: toastSlide 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }
+  // D6: Exposer globalement
+  window.showMuteToast = showMuteToast;
+
   // D4 v5.4: Exposer les fonctions de contrôle manuel
   window.VideoTracksRegistry = {
     getAll: () => new Map(videoTracks),
@@ -240,6 +274,24 @@
       `;
       micBtn.onclick = () => toggleInlineMic(micBtn);
       
+      // D6: Synchroniser l'état initial du bouton avec l'état réel du micro
+      (async () => {
+        const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+        if (callObj) {
+          try {
+            const isAudioOn = await callObj.localAudio();
+            const isMuted = !isAudioOn;
+            if (isMuted) {
+              micBtn.textContent = '🔇';
+              micBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+              micBtn.title = 'Activer le micro';
+            }
+          } catch (e) {
+            log('Error syncing mic state:', e);
+          }
+        }
+      })();
+      
       // Bouton caméra
       const camBtn = document.createElement('button');
       camBtn.id = 'inlineCamBtn';
@@ -257,6 +309,24 @@
         transition: all 0.2s;
       `;
       camBtn.onclick = () => toggleInlineCam(camBtn);
+      
+      // D6: Synchroniser l'état initial du bouton caméra
+      (async () => {
+        const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+        if (callObj) {
+          try {
+            const isVideoOn = await callObj.localVideo();
+            const isCamOff = !isVideoOn;
+            if (isCamOff) {
+              camBtn.textContent = '🚫';
+              camBtn.style.background = 'rgba(180, 50, 50, 0.7)';
+              camBtn.title = 'Activer la caméra';
+            }
+          } catch (e) {
+            log('Error syncing cam state:', e);
+          }
+        }
+      })();
       
       controlsDiv.appendChild(micBtn);
       controlsDiv.appendChild(camBtn);
@@ -1052,6 +1122,11 @@
       // Synchroniser avec le bouton du briefing UI si présent
       syncBriefingMicButton(userMutedAudio);
       
+      // D6: Afficher le toast de confirmation
+      if (typeof window.showMuteToast === 'function') {
+        window.showMuteToast(userMutedAudio);
+      }
+      
       log('Inline Microphone:', newState ? 'ON' : 'OFF');
     } catch (e) {
       log('Error toggling inline mic:', e);
@@ -1150,6 +1225,35 @@
       }
     }
   }
+
+  // D6: Fonction globale pour synchroniser le grayscale des joueurs éliminés
+  // Appelée après chaque roomState pour s'assurer que l'affichage est correct
+  window.syncEliminatedPlayersGrayscale = function() {
+    const state = window.lastKnownState;
+    if (!state?.players) return;
+    
+    // Parcourir tous les joueurs et appliquer/retirer le grayscale
+    state.players.forEach(player => {
+      const isEliminated = player.status === 'dead' || player.status === 'left';
+      const slots = document.querySelectorAll(`[data-player-id="${player.playerId}"]`);
+      
+      slots.forEach(slot => {
+        const video = slot.querySelector('video');
+        if (!video) return;
+        
+        const grayFilter = isEliminated ? 'filter:grayscale(100%) brightness(0.5)!important;opacity:0.6!important;' : '';
+        const borderColor = isEliminated ? '#666' : '#00ffff';
+        
+        // Appliquer les styles au slot
+        slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid " + borderColor + "!important;border-radius:8px!important;overflow:hidden!important;" + grayFilter;
+        
+        // Appliquer les styles à la vidéo
+        video.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;" + grayFilter;
+      });
+    });
+    
+    log('🎬 Grayscale sync completed for', state.players.filter(p => p.status === 'dead' || p.status === 'left').length, 'eliminated players');
+  };
 
   // Boot
   if (document.readyState === "loading") {

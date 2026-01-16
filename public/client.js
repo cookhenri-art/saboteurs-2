@@ -1652,6 +1652,9 @@ socket.on("roomState", (s) => {
   const previousAliveCount = (state?.players || []).filter(p => p.status === 'alive').length;
   
   state = s;
+  // D6: Stocker aussi dans window.lastKnownState pour video-tracks.js
+  window.lastKnownState = s;
+  
   refreshBuildBadge();
 
   // If we are in lobby/game and the server thinks we have no room (rare), reset
@@ -1697,6 +1700,13 @@ socket.on("roomState", (s) => {
   requestAnimationFrame(() => {
     if (typeof window.reapplySpeakerHighlight === 'function') {
       window.reapplySpeakerHighlight();
+    }
+  });
+  
+  // D6: Synchroniser le grayscale des joueurs morts
+  requestAnimationFrame(() => {
+    if (typeof window.syncEliminatedPlayersGrayscale === 'function') {
+      window.syncEliminatedPlayersGrayscale();
     }
   });
   
