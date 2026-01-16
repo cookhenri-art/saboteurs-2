@@ -745,15 +745,29 @@ if (actorOnly.has(state.phase) && !isActorNow) {
   const ackButton = () => {
     const b = document.createElement("button");
     b.className = "btn btn-primary btn-validate";
-    b.innerHTML = "☐ VALIDER";  // D6: Case non cochée avant validation
-    b.onclick = () => {
-      // D6: Feedback visuel amélioré - case cochée
-      b.classList.add('validated');
+    
+    // D6: Vérifier si le joueur a déjà validé (pas dans la liste pending)
+    const myId = state.you?.playerId;
+    const pending = state.ack?.pending || [];
+    const alreadyValidated = myId && !pending.includes(myId);
+    
+    if (alreadyValidated) {
+      // Déjà validé - afficher l'état coché
       b.innerHTML = "☑ VALIDÉ";
+      b.classList.add('validated');
       b.disabled = true;
-      lockControlsNow($('controls'));
-      socket.emit("phaseAck");
-    };
+    } else {
+      // Pas encore validé
+      b.innerHTML = "☐ VALIDER";
+      b.onclick = () => {
+        // D6: Feedback visuel amélioré - case cochée
+        b.classList.add('validated');
+        b.innerHTML = "☑ VALIDÉ";
+        b.disabled = true;
+        lockControlsNow($('controls'));
+        socket.emit("phaseAck");
+      };
+    }
     return b;
   };
 
