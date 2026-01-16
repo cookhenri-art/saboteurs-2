@@ -893,19 +893,29 @@
 
 /* D5: Badge "parle" sur le joueur actif en mode inline */
 .player-item.is-speaking::after {
-  content: "🎙️";
+  content: "🎙️ PARLE";
   position: absolute;
-  top: -8px;
-  right: -8px;
-  font-size: 1.2rem;
-  z-index: 10;
-  filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.8));
-  animation: speaking-badge-pulse 1s ease-in-out infinite;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  font-size: 0.8rem;
+  font-weight: bold;
+  z-index: 100;
+  background: var(--speaker-ring, #00ff88);
+  color: #000;
+  padding: 4px 8px;
+  border-radius: 12px;
+  box-shadow: 0 0 10px var(--speaker-ring, #00ff88), 0 0 20px rgba(0, 255, 136, 0.5);
+  animation: speaking-badge-glow 1s ease-in-out infinite;
 }
 
-@keyframes speaking-badge-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.15); }
+@keyframes speaking-badge-glow {
+  0%, 100% { 
+    box-shadow: 0 0 10px var(--speaker-ring, #00ff88), 0 0 20px rgba(0, 255, 136, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 15px var(--speaker-ring, #00ff88), 0 0 30px rgba(0, 255, 136, 0.8);
+  }
 }
 
 /* D5: Highlight plus visible sur le nom du joueur */

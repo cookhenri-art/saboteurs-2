@@ -22,10 +22,10 @@
 (function() {
   'use strict';
 
-  // 🚀🚀🚀 D6 V1.1 QUICK WINS VERSION 🚀🚀🚀
-  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.1 QUICK WINS LOADED 🚀🚀🚀', 
+  // 🚀🚀🚀 D6 V1.2 QUICK WINS VERSION 🚀🚀🚀
+  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.2 QUICK WINS LOADED 🚀🚀🚀', 
     'background: #00cc88; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-16 10:00 UTC | Fixes: Toast mute briefing UI, Badge PARLE améliore', 
+  console.log('%cBuild: 2026-01-16 12:00 UTC | Fixes: Badge PARLE visible, Grayscale inline direct', 
     'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;

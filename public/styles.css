@@ -576,6 +576,7 @@ input:focus {
 }
 
 .player-item {
+    position: relative; /* D6: Nécessaire pour le badge PARLE ::after */
     background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
     border-left: 4px solid var(--neon-main);
     padding: 12px 20px;
@@ -1889,7 +1890,7 @@ select:focus-visible {
     position: relative;
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: center 60%;
+    background-position: center 50%;
     min-height: 250px;
     overflow: hidden;
   }
@@ -2042,6 +2043,7 @@ select:focus-visible {
    ======================================== */
 
 /* D6 Quick Win #1: Griser vidéo des joueurs éliminés */
+/* Sélecteurs multiples pour couvrir tous les cas */
 .player-item.eliminated .player-video-slot,
 .player-item.eliminated video,
 .video-thumb.eliminated,
@@ -2049,9 +2051,14 @@ select:focus-visible {
 .player-video-slot.eliminated,
 .player-video-slot.eliminated video,
 [data-player-status="dead"] video,
-[data-player-status="dead"] .player-video-slot {
-  filter: grayscale(100%) brightness(0.5);
-  opacity: 0.5;
+[data-player-status="dead"] .player-video-slot,
+/* D6 V1.2: Sélecteurs plus directs pour les slots avec status dead */
+.player-video-slot[data-player-status="dead"],
+.player-video-slot[data-player-status="dead"] video,
+.player-video-slot[data-player-status="left"],
+.player-video-slot[data-player-status="left"] video {
+  filter: grayscale(100%) brightness(0.5) !important;
+  opacity: 0.5 !important;
   transition: filter 0.5s ease, opacity 0.5s ease;
 }
 

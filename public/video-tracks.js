@@ -615,9 +615,19 @@
       slot.appendChild(v);
     }
     
+    // D6 V1.2: Vérifier si le joueur est éliminé pour appliquer le grayscale
+    const playerStatus = slot.getAttribute('data-player-status');
+    const isEliminated = playerStatus === 'dead' || playerStatus === 'left';
+    
     // D4: Forcer les styles inline pour s'assurer de la visibilité
-    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid #00ffff!important;border-radius:8px!important;overflow:hidden!important;";
-    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;";
+    // D6 V1.2: Ajouter grayscale si joueur éliminé
+    const grayFilter = isEliminated ? 'filter:grayscale(100%) brightness(0.5)!important;opacity:0.5!important;' : '';
+    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid " + (isEliminated ? '#666' : '#00ffff') + "!important;border-radius:8px!important;overflow:hidden!important;" + grayFilter;
+    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;" + grayFilter;
+    
+    if (isEliminated) {
+      log("💀 Applied grayscale to eliminated player:", playerId);
+    }
     
     // D4: Debug - vérifier les dimensions du slot
     const rect = slot.getBoundingClientRect();
