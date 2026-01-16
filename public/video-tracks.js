@@ -579,13 +579,21 @@
       slot.appendChild(v);
     }
     
+    // D6: Vérifier si le joueur est mort via lastKnownState
+    const state = window.lastKnownState;
+    const player = state?.players?.find(p => p.playerId === playerId);
+    const isEliminated = player?.status === 'dead' || player?.status === 'left';
+    
     // D4: Forcer les styles inline pour s'assurer de la visibilité
-    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid #00ffff!important;border-radius:8px!important;overflow:hidden!important;";
-    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;";
+    // D6: Ajouter grayscale SEULEMENT si joueur mort
+    const grayFilter = isEliminated ? 'filter:grayscale(100%) brightness(0.5)!important;opacity:0.6!important;' : '';
+    const borderColor = isEliminated ? '#666' : '#00ffff';
+    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid " + borderColor + "!important;border-radius:8px!important;overflow:hidden!important;" + grayFilter;
+    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;" + grayFilter;
     
     // D4: Debug - vérifier les dimensions du slot
     const rect = slot.getBoundingClientRect();
-    log("Video attached to slot for:", playerId, "slot size:", rect.width + "x" + rect.height);
+    log("Video attached to slot for:", playerId, "slot size:", rect.width + "x" + rect.height, isEliminated ? "(ELIMINATED)" : "");
     
     // D4: Forcer le play
     v.play().catch(e => log("Video play error:", e));

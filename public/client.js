@@ -1647,11 +1647,42 @@ function noAutoScroll() {
 }
 
 socket.on("roomState", (s) => {
+  // D6: Stocker phase précédente et joueurs vivants pour vibration
+  const previousPhase = state?.phase;
+  const previousAliveCount = (state?.players || []).filter(p => p.status === 'alive').length;
+  
   state = s;
   refreshBuildBadge();
 
   // If we are in lobby/game and the server thinks we have no room (rare), reset
   if (!state?.roomCode) return;
+
+  // D6: Vibration mobile sur changements importants
+  const currentPhaseNow = state.phase || '';
+  const currentAliveCount = (state.players || []).filter(p => p.status === 'alive').length;
+  
+  function vibratePattern(pattern) {
+    if (navigator.vibrate) {
+      navigator.vibrate(pattern);
+    }
+  }
+  
+  // Vibration si changement de phase
+  if (previousPhase && currentPhaseNow !== previousPhase) {
+    if (currentPhaseNow.includes('NIGHT')) {
+      vibratePattern([100, 50, 100, 50, 100]); // Pattern nuit
+    } else if (currentPhaseNow.includes('VOTE')) {
+      vibratePattern([100, 50, 100]); // Pattern vote
+    } else if (currentPhaseNow.includes('DAY')) {
+      vibratePattern([50, 30, 50]); // Pattern jour
+    }
+  }
+  
+  // Vibration si quelqu'un a été éliminé
+  if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
+    vibratePattern([150, 50, 150]); // Pattern élimination
+    console.log('[D6] Player eliminated! Alive:', previousAliveCount, '->', currentAliveCount);
+  }
 
   // audio per phase
   audioManager.play(state.audio);
@@ -1661,6 +1692,13 @@ socket.on("roomState", (s) => {
 
   // If we are ended, show end.
   render();
+  
+  // D6: Réappliquer le badge PARLE après le re-render
+  requestAnimationFrame(() => {
+    if (typeof window.reapplySpeakerHighlight === 'function') {
+      window.reapplySpeakerHighlight();
+    }
+  });
   
   // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
   requestAnimationFrame(() => {

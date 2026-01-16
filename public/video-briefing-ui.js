@@ -440,8 +440,17 @@
 
   function handleActiveSpeakerChange(data) {
     log('Active speaker:', data);
+    // D6: Stocker le speaker actuel pour réapplication après re-render
+    window.__currentActiveSpeaker = data.playerId;
     updateSpeakerHighlights(data.playerId);
   }
+  
+  // D6: Fonction globale pour réappliquer le highlight après un re-render
+  window.reapplySpeakerHighlight = function() {
+    if (window.__currentActiveSpeaker) {
+      updateInlineModeSpeakerHighlights(window.__currentActiveSpeaker);
+    }
+  };
 
   // ============================================
   // VISIBILITY
@@ -828,6 +837,40 @@
   let isMicMuted = false;
   let isCamOff = false;
   
+  // D6: Toast notification pour mute/unmute
+  function showMuteToast(isMuted) {
+    // Supprimer toast existant
+    const existing = document.querySelector('.mute-toast');
+    if (existing) existing.remove();
+    
+    const toast = document.createElement('div');
+    toast.className = 'mute-toast';
+    toast.textContent = isMuted ? '🔇 Micro coupé' : '🎤 Micro activé';
+    toast.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: ${isMuted ? '#ff4444' : '#00cc88'};
+      color: white;
+      padding: 12px 24px;
+      border-radius: 25px;
+      font-weight: bold;
+      z-index: 10000;
+      animation: toastSlide 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    `;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }
+  // D6: Exposer globalement pour le bouton inline
+  window.showMuteToast = showMuteToast;
+
   async function toggleMicrophone() {
     const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
     if (!callObj) {
@@ -859,6 +902,9 @@
           inlineMicBtn.style.background = 'rgba(0, 100, 100, 0.5)';
         }
       }
+      
+      // D6: Afficher le toast de confirmation
+      showMuteToast(isMicMuted);
       
       log('Microphone:', newState ? 'ON' : 'OFF', '(manual mute saved)');
     } catch (e) {

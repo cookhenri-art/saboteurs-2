@@ -17,7 +17,7 @@
   --speaker-bg: rgba(0, 255, 255, 0.10);
 
   /* D5 v3.4: Video backgrounds par thème */
-  --video-bg-main: url('/images/default/video-bg.webp');
+  --video-bg-main: url('/images/default/video-bg.jpg');
   --video-bg-fallback: linear-gradient(135deg, #0a1530 0%, #050a15 100%);
 
     /* Couleurs de fond */
@@ -56,7 +56,7 @@
 /* THÈME 2 : LA CHASSE AU LOUP (Werewolf) */
 :root[data-theme="werewolf"] {
     /* D5 v3.4: Video backgrounds par thème */
-    --video-bg-main: url('/images/werewolf/video-bg.webp');
+    --video-bg-main: url('/images/werewolf/video-bg.jpg');
     --video-bg-fallback: linear-gradient(135deg, #1a2832 0%, #0f1419 100%);
 
     /* Couleurs de fond */
@@ -95,7 +95,7 @@
 /* THÈME 3 : L'ACADÉMIE DES SORCIERS (Wizard Academy) */
 :root[data-theme="wizard-academy"] {
     /* D5 v3.4: Video backgrounds par thème */
-    --video-bg-main: url('/images/wizard-academy/video-bg.webp');
+    --video-bg-main: url('/images/wizard-academy/video-bg.jpg');
     --video-bg-fallback: linear-gradient(135deg, #2d1b4e 0%, #1a0f2e 100%);
 
     /* Couleurs de fond */
@@ -136,7 +136,7 @@
 /* THÈME 4 : LA CONFRÉRIE FANTASTIQUE (Mythic Realms) */
 :root[data-theme="mythic-realms"] {
     /* D5 v3.4: Video backgrounds par thème */
-    --video-bg-main: url('/images/mythic-realms/video-bg.webp');
+    --video-bg-main: url('/images/mythic-realms/video-bg.jpg');
     --video-bg-fallback: linear-gradient(135deg, #1b263b 0%, #0d1b2a 100%);
 
     /* Couleurs de fond */
@@ -569,6 +569,7 @@ input:focus {
 }
 
 .player-item {
+    position: relative; /* D6: Nécessaire pour le badge PARLE ::after */
     background: linear-gradient(90deg, rgba(0, 255, 255, 0.1), transparent);
     border-left: 4px solid var(--neon-main);
     padding: 12px 20px;
