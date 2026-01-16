@@ -478,14 +478,18 @@ function renderLobby() {
         item.dataset.playerId = p.playerId;
 const left = document.createElement("div");
     left.className = "player-left";
+    // D6: Styles inline pour garantir l'affichage
+    left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto;";
     left.innerHTML = `
       <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
-      <div class="player-info">
-        <div class="player-name">${escapeHtml(p.name)}</div>
-        ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+      <div class="player-info" style="display:flex !important; flex-direction:column; gap:4px; flex:1 1 auto;">
+        <div class="player-name" style="font-weight:700; font-size:1rem; color:white;">${escapeHtml(p.name)}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+          ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+          ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+          ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+          ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+        </div>
       </div>
 `;
     const right = document.createElement("div");
