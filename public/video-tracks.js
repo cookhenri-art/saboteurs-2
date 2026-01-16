@@ -182,33 +182,47 @@
   function getSlot(playerId) {
     if (!playerId) return null;
     
-    // Vérifier si on est dans le gameScreen (pas le lobby)
+    // D6 V2.1: Vérifier si le lobby est ACTIF
     const lobbyScreen = document.getElementById('lobbyScreen');
     const gameScreen = document.getElementById('gameScreen');
-    const isInGame = gameScreen && gameScreen.style.display !== 'none';
-    const isInLobby = lobbyScreen && lobbyScreen.style.display !== 'none';
+    const isLobbyActive = lobbyScreen && lobbyScreen.classList.contains('active');
+    const isGameActive = gameScreen && gameScreen.classList.contains('active');
     
-    log("getSlot check:", playerId.slice(0,8), "isInGame:", isInGame, "isInLobby:", isInLobby);
+    log("getSlot check:", playerId.slice(0,8), "isLobbyActive:", isLobbyActive, "isGameActive:", isGameActive);
+    
+    // Si le lobby est actif, TOUJOURS utiliser les slots du lobby
+    if (isLobbyActive) {
+      // D6 V2.1: Supprimer inlineVideoBar quand on est dans le lobby
+      const inlineBar = document.getElementById('inlineVideoBar');
+      if (inlineBar) {
+        log("Removing inlineVideoBar (we're in lobby)");
+        inlineBar.remove();
+      }
+      
+      // D6 V2.1: Chercher SEULEMENT dans le playersList du lobby
+      const playersList = document.getElementById('playersList');
+      if (playersList) {
+        let slot = playersList.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+        if (slot) {
+          log("Using lobby slot for:", playerId.slice(0,8));
+          return slot;
+        }
+      }
+      // Pas de slot trouvé - le joueur n'est peut-être pas encore dans la liste
+      log("No lobby slot found for:", playerId.slice(0,8));
+      return null;
+    }
     
     // Si on est dans le gameScreen, utiliser les slots du gameScreen
-    if (isInGame && !isInLobby) {
+    if (isGameActive) {
       return ensureGameScreenSlot(playerId);
     }
     
-    // Sinon chercher dans la players-list (lobby)
+    // Fallback: chercher n'importe quel slot
     let slot = document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
-    if (slot) {
-      const rect = slot.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        return slot;
-      }
-      // Slot existe mais invisible - utiliser gameScreen
-      log("Lobby slot invisible, using game slot");
-      return ensureGameScreenSlot(playerId);
-    }
+    if (slot) return slot;
     
-    // Fallback: créer dans gameScreen
-    return ensureGameScreenSlot(playerId);
+    return null;
   }
   
   // D4: Créer les slots vidéo dans le gameScreen quand le lobby est caché
@@ -1029,7 +1043,11 @@
     // Observe rerenders of players list
     const list = document.querySelector("#playersList") || document.querySelector(".players-list") || null;
     if (list && window.MutationObserver) {
-      const obs = new MutationObserver(() => reattachAll());
+      const obs = new MutationObserver(() => {
+        // D6 V2.0: Ajouter un délai pour que le layout soit fait
+        setTimeout(reattachAll, 100);
+        setTimeout(reattachAll, 500);
+      });
       obs.observe(list, { childList: true, subtree: true });
     }
 
