@@ -352,17 +352,17 @@ function setBackdrop() {
 
   // cockpit during lobby + role validation + captain election
   if (p === "LOBBY" || p === "MANUAL_ROLE_PICK" || p === "ROLE_REVEAL" || p === "CAPTAIN_CANDIDACY" || p === "CAPTAIN_VOTE") {
-    img = getThemeImagePath("cockpit.png");
+    img = getThemeImagePath("cockpit.webp");
   }
   // results: use ejection banner if there were ejections
   else if ((p === "NIGHT_RESULTS" || p === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText)) {
-    img = getThemeImagePath("out.png");
+    img = getThemeImagePath("out.webp");
   }
   // revenge banner
-  else if (p === "REVENGE") img = getThemeImagePath("vengeance.png");
+  else if (p === "REVENGE") img = getThemeImagePath("vengeance.webp");
   // day / night banners
-  else if (p.startsWith("DAY")) img = getThemeImagePath("vote-jour.png");
-  else if (p.startsWith("NIGHT")) img = getThemeImagePath("vote-nuit.png");
+  else if (p.startsWith("DAY")) img = getThemeImagePath("vote-jour.webp");
+  else if (p.startsWith("NIGHT")) img = getThemeImagePath("vote-nuit.webp");
 
   if (img) el.style.backgroundImage = `url('${img}')`;
   else el.style.backgroundImage = "none";
@@ -596,7 +596,7 @@ function renderGame() {
   const ov = $("ejectionOverlay");
   if (ov) {
     // Keep the overlay image synced with the active theme
-    ov.src = getThemeImagePath("out.png");
+    ov.src = getThemeImagePath("out.webp");
     const show = (state.phase === "NIGHT_RESULTS" || state.phase === "DAY_RESULTS") && (state.phaseData?.anyDeaths || state.phaseData?.deathsText);
     ov.style.display = show ? "block" : "none";
   }
@@ -617,7 +617,7 @@ function renderGame() {
   const roleIconFilename = state.you?.roleIcon || "";
   const roleIconSrc = getRoleImagePath(roleIconFilename);
   const isCaptain = !!state.you?.isCaptain;
-  const captainIconSrc = isCaptain ? getRoleImagePath("capitaine.png") : "";
+  const captainIconSrc = isCaptain ? getRoleImagePath("capitaine.webp") : "";
 
   // hide legacy small icons container (kept for compatibility)
   const icons = $("roleIcons");
@@ -1034,10 +1034,10 @@ function renderEnd() {
   const endBg = $("endBackdrop");
   if (endBg) {
     let img = null;
-    if (state.phase === "GAME_ABORTED") img = getThemeImagePath("cockpit.png");
-    else if (winner === "SABOTEURS") img = getThemeImagePath("image-fin-stats-explosion2.png");
-    else if (winner === "ASTRONAUTES") img = getThemeImagePath("image-fin-stats-station2.png");
-    else if (winner === "AMOUREUX") img = getThemeImagePath("image-fin-stats-station2.png");
+    if (state.phase === "GAME_ABORTED") img = getThemeImagePath("cockpit.webp");
+    else if (winner === "SABOTEURS") img = getThemeImagePath("image-fin-stats-explosion2.webp");
+    else if (winner === "ASTRONAUTES") img = getThemeImagePath("image-fin-stats-station2.webp");
+    else if (winner === "AMOUREUX") img = getThemeImagePath("image-fin-stats-station2.webp");
     endBg.style.backgroundImage = img ? `url('${img}')` : "none";
   }
   const title = $("winnerTitle");
