@@ -78,18 +78,39 @@
   gap: 4px;
   flex: 1 1 auto;
   min-width: 100px;
+  overflow: visible !important;
 }
 
 .player-item .player-info .player-name {
   font-weight: 700;
   font-size: 1rem;
   color: white;
+  white-space: nowrap;
 }
 
-/* Mobile */
+/* D6: Forcer player-left à ne pas wrapper sur PC, garder les éléments en ligne */
+.player-item .player-left {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 10px;
+  overflow: visible;
+  flex: 1 1 auto;
+}
+
+/* D6: Le slot vidéo ne doit pas cacher le texte */
+.player-item .player-video-slot {
+  flex-shrink: 0;
+}
+
+/* Mobile: autoriser le wrap sur petits écrans */
 @media (max-width: 520px) {
   :root {
     --vtile-w: 84px;
     --vtile-h: 62px;
+  }
+  
+  .player-item .player-left {
+    flex-wrap: wrap !important;
   }
 }

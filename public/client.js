@@ -833,7 +833,18 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
   if (state.phase === "CAPTAIN_VOTE") {
     const cands = state.phaseData?.candidates || [];
-    controls.appendChild(makeChoiceGrid(cands, "Voter", (id) => socket.emit("phaseAction", { vote: id })));
+    const grid = makeChoiceGrid(cands, "Voter", (id) => socket.emit("phaseAction", { vote: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection si le joueur a déjà voté
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
   }
 
   if (state.phase === "NIGHT_CHAMELEON") {
@@ -910,13 +921,26 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     
     if (isParticipant) {
       const btn = document.createElement("button");
-      btn.className = "btn btn-primary";
-      btn.textContent = "✅ Valider l'échange 🤖";
-      btn.onclick = () => {
-        btn.classList.add('selected');
-        lockControlsNow($('controls'));
-        socket.emit("phaseAck");
-      };
+      btn.className = "btn btn-primary btn-validate";
+      
+      // D6: Vérifier si déjà validé
+      const pending = state.ack?.pending || [];
+      const alreadyValidated = meId && !pending.includes(meId);
+      
+      if (alreadyValidated) {
+        btn.innerHTML = "☑ Validé 🤖";
+        btn.classList.add('validated');
+        btn.disabled = true;
+      } else {
+        btn.innerHTML = "☐ Valider l'échange 🤖";
+        btn.onclick = () => {
+          btn.classList.add('validated');
+          btn.innerHTML = "☑ Validé 🤖";
+          btn.disabled = true;
+          lockControlsNow($('controls'));
+          socket.emit("phaseAck");
+        };
+      }
       controls.appendChild(btn);
       controls.appendChild(makeHint("Échange privé entre l'Agent IA et son partenaire lié. Les deux doivent valider pour continuer."));
     } else {
@@ -1054,18 +1078,51 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
 
   if (state.phase === "DAY_VOTE") {
     const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Voter", (id) => socket.emit("phaseAction", { vote: id })));
+    const grid = makeChoiceGrid(alive.map(p => p.playerId), "Voter", (id) => socket.emit("phaseAction", { vote: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection si le joueur a déjà voté
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
   }
 
   if (state.phase === "DAY_TIEBREAK") {
     const opts = state.phaseData?.options || [];
-    controls.appendChild(makeChoiceGrid(opts, "Départager", (id) => socket.emit("phaseAction", { pick: id })));
+    const grid = makeChoiceGrid(opts, "Départager", (id) => socket.emit("phaseAction", { pick: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
     controls.appendChild(makeHint("En cas d'égalité, le capitaine tranche avant toute conséquence."));
   }
 
   if (state.phase === "REVENGE") {
     const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Tirer", (id) => socket.emit("phaseAction", { targetId: id })));
+    const grid = makeChoiceGrid(alive.map(p => p.playerId), "Tirer", (id) => socket.emit("phaseAction", { targetId: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
   }
 }
 
