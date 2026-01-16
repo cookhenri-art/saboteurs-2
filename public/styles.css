@@ -277,11 +277,6 @@
    STYLES DE BASE (utilisant les variables)
    ======================================== */
 
-html {
-    /* D6: Désactive pull-to-refresh mobile (Quick Win #5) */
-    overscroll-behavior: contain;
-}
-
 body {
     font-family: var(--font-body);
     background: var(--deep-space);
@@ -293,8 +288,6 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     touch-action: manipulation; /* Désactive le double-tap zoom */
-    /* D6: Désactive pull-to-refresh mobile (Quick Win #5) */
-    overscroll-behavior-y: contain;
 }
 
 body::before {
@@ -2035,92 +2028,5 @@ select:focus-visible {
 
 .daily-video-container.docked-temp .daily-header {
   padding: 6px 10px !important;
-}
-
-/* ========================================
-   D6 QUICK WINS - NOUVELLES FONCTIONNALITÉS
-   ======================================== */
-
-/* D6 Quick Win #1: Griser vidéo des joueurs éliminés */
-.player-item.eliminated .player-video-slot,
-.player-item.eliminated video,
-.video-thumb.eliminated,
-.video-thumb.eliminated video,
-.player-video-slot.eliminated,
-.player-video-slot.eliminated video,
-[data-player-status="dead"] video,
-[data-player-status="dead"] .player-video-slot {
-  filter: grayscale(100%) brightness(0.5);
-  opacity: 0.5;
-  transition: filter 0.5s ease, opacity 0.5s ease;
-}
-
-.player-item.eliminated::after {
-  content: "☠️";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 2rem;
-  opacity: 0.8;
-  pointer-events: none;
-  z-index: 10;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
-}
-
-.player-item.eliminated .player-name {
-  text-decoration: line-through;
-  opacity: 0.6;
-}
-
-/* D6 Quick Win #3: Toast notification mute/unmute */
-.mute-toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--neon-cyan, #00ffff);
-  color: var(--primary-bg, #0a0e1a);
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-family: var(--font-body);
-  z-index: 100000;
-  box-shadow: 0 4px 20px rgba(0, 255, 255, 0.4);
-  animation: toastSlideDown 0.3s ease;
-}
-
-.mute-toast.muted {
-  background: var(--neon-red, #ff0055);
-  color: white;
-  box-shadow: 0 4px 20px rgba(255, 0, 85, 0.4);
-}
-
-.mute-toast.unmuted {
-  background: var(--neon-green, #00ff88);
-  color: var(--primary-bg, #0a0e1a);
-  box-shadow: 0 4px 20px rgba(0, 255, 136, 0.4);
-}
-
-@keyframes toastSlideDown {
-  from {
-    transform: translateX(-50%) translateY(-100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
-}
-
-@keyframes toastSlideUp {
-  from {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateX(-50%) translateY(-100%);
-    opacity: 0;
-  }
 }
 

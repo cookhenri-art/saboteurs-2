@@ -149,17 +149,15 @@
       
       // Compter les joueurs vivants avec vidéo potentiellement active
       const players = state.players || [];
-      // D6 FIX: Utiliser status au lieu de alive (status peut être 'alive', 'dead', 'left')
-      const alivePlayers = players.filter(p => p.status === 'alive' || (p.status !== 'dead' && p.status !== 'left' && p.alive !== false));
+      const alivePlayers = players.filter(p => p.alive !== false);
       this.activePlayerCount = alivePlayers.length;
       
-      // Update participants map - inclure TOUS les joueurs pour pouvoir les afficher grisés
+      // Update participants map
       this.participants.clear();
-      players.forEach(p => {
+      alivePlayers.forEach(p => {
         this.participants.set(p.playerId, {
           name: p.name,
-          // D6 FIX: Utiliser status pour déterminer si le joueur est vivant
-          alive: p.status === 'alive' || (p.status !== 'dead' && p.status !== 'left' && p.alive !== false),
+          alive: p.alive !== false,
           hasVideo: true, // Will be updated by track events
           hasAudio: true
         });

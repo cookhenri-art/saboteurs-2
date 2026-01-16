@@ -290,8 +290,8 @@ function updateVideoPermissions(state) {
     if (userMutedAudio || userMutedVideo) {
       console.log('[Video] ⚠️ User has manual mute - preserving user choice:', { userMutedAudio, userMutedVideo });
       
-      // V3.26 OPTIMIZED: requestAnimationFrame au lieu de setTimeout 100ms
-      requestAnimationFrame(() => {
+      // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
+      setTimeout(() => {
         const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
         if (callFrame) {
           if (userMutedAudio) {
@@ -303,7 +303,7 @@ function updateVideoPermissions(state) {
             console.log('[Video] 📷 Re-applied user video mute');
           }
         }
-      });
+      }, 100);
     }
   }
   
@@ -311,12 +311,11 @@ function updateVideoPermissions(state) {
   window.dailyVideo.updatePermissions(permissions);
   
   // D4 v5.5: Rafraîchir le filtrage des tracks selon les nouvelles permissions
-  // V3.26 OPTIMIZED: requestAnimationFrame au lieu de setTimeout 200ms
   if (window.VideoTracksRefresh) {
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       window.VideoTracksRefresh();
       console.log('[Video] 🔄 Tracks refreshed for new permissions');
-    });
+    }, 200);
   }
 
   // Afficher le message de phase
@@ -363,20 +362,20 @@ function forceUnmuteWithNotification(phase, registry) {
         showUnmuteNotification(phase);
       }
       
-      // V3.26 OPTIMIZED: Retry après 500ms au lieu de 1500ms
+      // Retry après 1.5 secondes pour la première tentative
       if (attempt === 1) {
-        setTimeout(() => forceEnableTracks(2), 500);
+        setTimeout(() => forceEnableTracks(2), 1500);
       }
     } catch (err) {
       console.warn('[Video] ⚠️ Could not force enable tracks (attempt ' + attempt + '):', err);
       if (attempt === 1) {
-        setTimeout(() => forceEnableTracks(2), 500);
+        setTimeout(() => forceEnableTracks(2), 1500);
       }
     }
   };
   
-  // V3.26 OPTIMIZED: Premier passage après 100ms au lieu de 300ms
-  setTimeout(() => forceEnableTracks(1), 100);
+  // Premier passage après 300ms
+  setTimeout(() => forceEnableTracks(1), 300);
 }
 
 /**
@@ -561,14 +560,14 @@ function cleanupVideo() {
   // Vérifier que Socket.IO est disponible
   if (typeof io === 'undefined') {
     console.warn('[Video] Socket.IO not loaded yet, retrying...');
-    setTimeout(autoActivateVideo, 100); // V3.26 OPTIMIZED: 500ms -> 100ms
+    setTimeout(autoActivateVideo, 500);
     return;
   }
 
   // Vérifier qu'une socket existe
   if (typeof socket === 'undefined') {
     console.warn('[Video] Socket not initialized yet, retrying...');
-    setTimeout(autoActivateVideo, 100); // V3.26 OPTIMIZED: 500ms -> 100ms
+    setTimeout(autoActivateVideo, 500);
     return;
   }
 
