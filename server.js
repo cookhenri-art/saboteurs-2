@@ -2,7 +2,6 @@ const path = require("path");
 const fs = require("fs");
 const http = require("http");
 const express = require("express");
-const compression = require("compression");  // PERF: Compression GZIP
 const { Server } = require("socket.io");
 const logger = require("./logger");
 const RateLimiter = require("./rate-limiter");
@@ -284,16 +283,16 @@ const AUDIO = {
 // ----------------- roles -----------------
 
 const ROLES = {
-  astronaut: { label: "Astronaute", icon: "astronaute.png", team: "astronauts" },
-  saboteur: { label: "Saboteur", icon: "saboteur.png", team: "saboteurs" },
-  doctor: { label: "Docteur bio", icon: "docteur.png", team: "astronauts" },
-  security: { label: "Chef de sécurité", icon: "chef-securite.png", team: "astronauts" },
-  ai_agent: { label: "Agent IA", icon: "liaison-ia.png", team: "astronauts" },
-  radar: { label: "Officier radar", icon: "radar.png", team: "astronauts" },
-  engineer: { label: "Ingénieur", icon: "ingenieur.png", team: "astronauts" },
-  chameleon: { label: "Caméléon", icon: "cameleon.png", team: "astronauts" }
+  astronaut: { label: "Astronaute", icon: "astronaute.webp", team: "astronauts" },
+  saboteur: { label: "Saboteur", icon: "saboteur.webp", team: "saboteurs" },
+  doctor: { label: "Docteur bio", icon: "docteur.webp", team: "astronauts" },
+  security: { label: "Chef de sécurité", icon: "chef-securite.webp", team: "astronauts" },
+  ai_agent: { label: "Agent IA", icon: "liaison-ia.webp", team: "astronauts" },
+  radar: { label: "Officier radar", icon: "radar.webp", team: "astronauts" },
+  engineer: { label: "Ingénieur", icon: "ingenieur.webp", team: "astronauts" },
+  chameleon: { label: "Caméléon", icon: "cameleon.webp", team: "astronauts" }
 };
-const CAPTAIN_ICON = "capitaine.png";
+const CAPTAIN_ICON = "capitaine.webp";
 
 /**
  * Obtient le nom traduit d'un rôle selon le thème de la room
@@ -1525,70 +1524,26 @@ function publicRoomStateFor(room, viewerId) {
 // ----------------- socket server -----------------
 const app = express();
 
-// =================== PERFORMANCE OPTIMIZATIONS ===================
-
-// 1. Compression GZIP pour tous les fichiers texte
-app.use(compression({
-  filter: (req, res) => {
-    // Ne pas compresser si le client demande pas de compression
-    if (req.headers['x-no-compression']) return false;
-    const type = res.getHeader('Content-Type') || '';
-    // Compresser JS, CSS, HTML, JSON, SVG
-    return /javascript|css|html|json|svg|text/.test(type);
-  },
-  level: 6,  // Niveau de compression (1-9, 6 = bon équilibre vitesse/taille)
-  threshold: 1024  // Ne compresser que les fichiers > 1KB
-}));
-
-// 2. Servir les fichiers statiques avec cache HTTP optimisé
-app.use(express.static(path.join(__dirname, "public"), {
-  // Cache différencié par type de fichier
-  setHeaders: (res, filePath) => {
-    const ext = path.extname(filePath).toLowerCase();
-    
-    // Images et polices: cache long (30 jours) - immutable car versionné
-    if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.woff', '.woff2', '.ttf'].includes(ext)) {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    }
-    // Audio: cache long (30 jours)
-    else if (['.mp3', '.wav', '.ogg', '.m4a'].includes(ext)) {
-      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
-    }
-    // CSS et JS: cache moyen (7 jours) avec revalidation
-    else if (['.css', '.js'].includes(ext)) {
-      res.setHeader('Cache-Control', 'public, max-age=604800, must-revalidate');
-    }
-    // HTML: pas de cache (toujours frais pour éviter les bugs de version)
-    else if (['.html', '.htm'].includes(ext)) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    }
-    // Défaut: cache court (1 heure)
-    else {
-      res.setHeader('Cache-Control', 'public, max-age=3600');
-    }
-    
-    // Headers de sécurité et performance
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('Vary', 'Accept-Encoding');
-  },
-  etag: true,
-  lastModified: true
-}));
-
-// 3. Monitoring des requêtes statiques lentes (pour debug)
-app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    // Log uniquement les requêtes lentes (>500ms) sur les assets
-    if (duration > 500 && req.path.match(/\.(png|jpg|jpeg|webp|mp3|wav)$/i)) {
-      console.log(`[PERF-SLOW] ${req.method} ${req.path} - ${duration}ms`);
-    }
-  });
+// D6: Configuration de cache pour les assets statiques
+// Fonction middleware pour définir les headers de cache selon le type de fichier
+const cacheMiddleware = (req, res, next) => {
+  // Images et sons: cache longue durée (1 an)
+  if (req.url.startsWith('/images/') || req.url.startsWith('/sounds/')) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } 
+  // JS/CSS: cache courte durée (1 heure)
+  else if (req.url.endsWith('.js') || req.url.endsWith('.css')) {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+  // HTML: pas de cache (toujours frais)
+  else if (req.url.endsWith('.html') || req.url === '/') {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
   next();
-});
+};
 
-// =================== END PERFORMANCE OPTIMIZATIONS ===================
+app.use(cacheMiddleware);
+app.use(express.static(path.join(__dirname, "public")));
 
 // Initialiser les systèmes
 const rateLimiter = new RateLimiter();
