@@ -64,53 +64,49 @@
 }
 
 /* Small layout helpers: if your player row is flex, keep space sane */
-.player-item .player-left,
+.player-item .player-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto; /* D6: Prendre l'espace disponible */
+  min-width: 0; /* D6: Permettre le shrink */
+}
+
 .player-item .player-right {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 /* D6: Garantir l'affichage du nom à côté de la vignette vidéo */
 .player-item .player-info {
   display: flex !important;
-  flex-direction: column;
+  flex-direction: column !important;
   gap: 4px;
   flex: 1 1 auto;
-  min-width: 100px;
-  overflow: visible !important;
+  min-width: 0; /* Permettre le shrink du texte */
 }
 
 .player-item .player-info .player-name {
   font-weight: 700;
   font-size: 1rem;
   color: white;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* D6: Forcer player-left à ne pas wrapper sur PC, garder les éléments en ligne */
-.player-item .player-left {
-  display: flex !important;
-  flex-wrap: nowrap !important;
-  align-items: center;
-  gap: 10px;
-  overflow: visible;
-  flex: 1 1 auto;
+/* D6: S'assurer que les pills s'affichent en ligne */
+.player-item .player-info .pill {
+  display: inline-block;
+  margin-right: 4px;
 }
 
-/* D6: Le slot vidéo ne doit pas cacher le texte */
-.player-item .player-video-slot {
-  flex-shrink: 0;
-}
-
-/* Mobile: autoriser le wrap sur petits écrans */
+/* Mobile */
 @media (max-width: 520px) {
   :root {
     --vtile-w: 84px;
     --vtile-h: 62px;
-  }
-  
-  .player-item .player-left {
-    flex-wrap: wrap !important;
   }
 }

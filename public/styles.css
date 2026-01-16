@@ -1353,7 +1353,31 @@ textarea {
   background: rgba(0,0,0,0.45);
   border:1px solid rgba(0,255,255,0.25);
 }
-.player-left { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.player-left { 
+  display:flex; 
+  gap:10px; 
+  align-items:center; 
+  flex-wrap:wrap;
+  flex: 1 1 auto; /* D6: Prendre l'espace disponible */
+  min-width: 0;
+}
+/* D6: Style pour player-info - affichage du nom et des badges */
+.player-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.player-info .player-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: white;
+}
+.player-info .pill {
+  display: inline-block;
+  margin-right: 4px;
+}
 .player-right { 
   display: flex; 
   align-items: center; 
