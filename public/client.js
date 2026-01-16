@@ -1494,24 +1494,19 @@ if (audioUnlockBtn) {
   };
 }
 
-// Home screen: start the lobby intro as soon as the user begins typing their name.
-// This also serves as a user-gesture "unlock" for autoplay restrictions.
+// Home screen: user gesture "unlock" for autoplay restrictions.
+// D6: Audio INTRO_LOBBY est lancé uniquement au moment de rejoindre le lobby (ligne 422)
+// pour éviter double chargement et bande passante gaspillée.
 (() => {
   const nameInput = $("playerName");
   if (!nameInput) return;
-  const cue = { file: "/sounds/INTRO_LOBBY.mp3", queueLoopFile: null, tts: null, ttsAfterSequence: null };
-  let started = false;
-  const maybeStart = () => {
-    if (state?.roomCode) return;
-    const v = (nameInput.value || "").trim();
-    if (!v) return;
-    if (!started) {
-      started = true;
-      audioManager.play(cue, false);
+  const maybeUnlock = () => {
+    if (!audioManager.userUnlocked) {
+      audioManager.unlock();
     }
   };
-  nameInput.addEventListener("input", maybeStart);
-  nameInput.addEventListener("keydown", maybeStart);
+  nameInput.addEventListener("input", maybeUnlock);
+  nameInput.addEventListener("keydown", maybeUnlock);
 })();
 
 // ---------- Rules modal ----------
