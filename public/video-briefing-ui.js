@@ -22,10 +22,10 @@
 (function() {
   'use strict';
 
-  // 🚀🚀🚀 D6 V1.2 QUICK WINS VERSION 🚀🚀🚀
-  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.2 QUICK WINS LOADED 🚀🚀🚀', 
+  // 🚀🚀🚀 D6 V1.3 QUICK WINS VERSION 🚀🚀🚀
+  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.3 QUICK WINS LOADED 🚀🚀🚀', 
     'background: #00cc88; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-16 12:00 UTC | Fixes: Badge PARLE visible, Grayscale inline direct', 
+  console.log('%cBuild: 2026-01-16 12:30 UTC | Fix: Grayscale + Badge PARLE persistent', 
     'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
@@ -441,8 +441,17 @@
 
   function handleActiveSpeakerChange(data) {
     log('Active speaker:', data);
+    // D6 V1.3: Stocker le speaker actuel pour pouvoir le réappliquer après un re-render
+    window.__currentActiveSpeaker = data.playerId;
     updateSpeakerHighlights(data.playerId);
   }
+  
+  // D6 V1.3: Fonction globale pour réappliquer le highlight après un re-render de la liste des joueurs
+  window.reapplySpeakerHighlight = function() {
+    if (window.__currentActiveSpeaker) {
+      updateInlineModeSpeakerHighlights(window.__currentActiveSpeaker);
+    }
+  };
 
   // ============================================
   // VISIBILITY

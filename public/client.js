@@ -1714,6 +1714,11 @@ socket.on("roomState", (s) => {
         });
       }
     });
+    
+    // D6 V1.3: Réappliquer le highlight du speaker actif après le re-render de la liste
+    if (typeof window.reapplySpeakerHighlight === 'function') {
+      window.reapplySpeakerHighlight();
+    }
   });
   
   // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
