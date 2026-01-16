@@ -1489,6 +1489,16 @@ function publicRoomStateFor(room, viewerId) {
     }
   }
 
+  // D6: Ajouter yourVoteId pour les autres phases de vote
+  if (["DAY_VOTE", "CAPTAIN_VOTE", "DAY_TIEBREAK", "REVENGE"].includes(room.phase)) {
+    const votes = room.phaseData?.votes || {};
+    if (viewer) {
+      phaseData.yourVoteId = votes[viewer.playerId] || null;
+    }
+    // Ne pas exposer les votes des autres joueurs
+    delete phaseData.votes;
+  }
+
   return {
     roomCode: room.code,
     phase: room.phase,
