@@ -1636,22 +1636,52 @@ $("joinRoomBtn").onclick = () => {
 };
 
 
-// V3.29 FINAL: Debounced scroll restoration
+// V3.31 FINAL: Protection scroll COMPLÈTE avec MutationObserver
 let scrollRestoreTimeout = null;
 let lastScrollPosition = 0;
+let isRestoringScroll = false;
 
-
-// V3.30 ULTRA: Sauvegarder position sur TOUTE interaction utilisateur
-document.addEventListener('click', (e) => {
-  // Sauvegarder avant modification du DOM
-  if (!scrollRestoreTimeout) {
+// Fonction pour sauvegarder la position
+function saveScrollPosition(source) {
+  if (!scrollRestoreTimeout && !isRestoringScroll) {
     const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
     if (currentScroll > 0) {
       lastScrollPosition = currentScroll;
-      console.log("[V3.30 Click] Position saved:", lastScrollPosition);
+      console.log(`[V3.31] Position saved (${source}):`, lastScrollPosition);
     }
   }
-}, true); // useCapture = true pour capturer AVANT le handler du bouton
+}
+
+// V3.31: Observer TOUTES les modifications DOM qui pourraient causer un scroll
+const domObserver = new MutationObserver((mutations) => {
+  // Sauvegarder avant que le navigateur ne réorganise
+  saveScrollPosition('DOM mutation');
+});
+
+// Observer le body et gameScreen
+domObserver.observe(document.body, {
+  childList: true,
+  subtree: true,
+  attributes: true,
+  attributeFilter: ['class', 'style']
+});
+
+// Observer aussi le gameScreen spécifiquement
+setTimeout(() => {
+  const gameScreen = document.getElementById('gameScreen');
+  if (gameScreen) {
+    domObserver.observe(gameScreen, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+  }
+}, 100);
+
+// Sauvegarder sur TOUTES les interactions
+document.addEventListener('click', () => saveScrollPosition('click'), true);
+document.addEventListener('change', () => saveScrollPosition('change'), true);
 
 // receive state
 socket.on("roomState", (s) => {
@@ -1664,27 +1694,30 @@ socket.on("roomState", (s) => {
   // audio per phase
   audioManager.play(state.audio);
 
-  // V3.29 FINAL: Sauvegarder SEULEMENT si pas de restore en cours
+  // V3.31 FINAL: Sauvegarder SEULEMENT si pas de restore en cours
   if (!scrollRestoreTimeout) {
     lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    console.log("[V3.30 Scroll] Position saved:", lastScrollPosition);
+    console.log("[V3.31 roomState] Position saved:", lastScrollPosition);
   }
 
   // If we are ended, show end.
   render();
   
-  // V3.29 FINAL: Debounced restoration (évite les conflits de multiples roomState)
+  // V3.31 FINAL: Debounced restoration (évite les conflits de multiples roomState)
   if (scrollRestoreTimeout) {
     clearTimeout(scrollRestoreTimeout);
   }
   
   scrollRestoreTimeout = setTimeout(() => {
+    isRestoringScroll = true;
     requestAnimationFrame(() => {
       window.scrollTo(0, lastScrollPosition);
-      console.log("[V3.30 Scroll Restore] Position restaurée:", lastScrollPosition);
+      console.log("[V3.31 Scroll Restore] Position restaurée:", lastScrollPosition);
       scrollRestoreTimeout = null;
+      setTimeout(() => { isRestoringScroll = false; }, 100);
     });
   }, 50); // 50ms debounce
+});
 });
 
 socket.on("serverHello", () => {
