@@ -60,9 +60,6 @@
     
     log('D6 Toast:', type, isMuted ? 'muted' : 'unmuted');
   }
-  
-  // D6: Exposer showMuteToast globalement pour que briefing-ui puisse l'utiliser
-  window.showMuteToast = showMuteToast;
 
   // D4 v5.4: Exposer les fonctions de contrôle manuel
   window.VideoTracksRegistry = {
@@ -615,23 +612,9 @@
       slot.appendChild(v);
     }
     
-    // D6 V1.3: Vérifier si le joueur est éliminé depuis lastKnownState (plus fiable que le DOM)
-    const state = window.lastKnownState;
-    const player = state?.players?.find(p => p.playerId === playerId);
-    const playerStatus = player?.status || 'alive';
-    const isEliminated = playerStatus === 'dead' || playerStatus === 'left';
-    
-    log("Video status check:", playerId, "status:", playerStatus, "eliminated:", isEliminated);
-    
     // D4: Forcer les styles inline pour s'assurer de la visibilité
-    // D6 V1.3: Ajouter grayscale SEULEMENT si joueur éliminé (status === 'dead' ou 'left')
-    const grayFilter = isEliminated ? 'filter:grayscale(100%) brightness(0.5)!important;opacity:0.5!important;' : '';
-    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid " + (isEliminated ? '#666' : '#00ffff') + "!important;border-radius:8px!important;overflow:hidden!important;" + grayFilter;
-    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;" + grayFilter;
-    
-    if (isEliminated) {
-      log("💀 Applied grayscale to eliminated player:", playerId, "status:", playerStatus);
-    }
+    slot.style.cssText = "width:64px!important;height:48px!important;min-width:64px!important;min-height:48px!important;display:block!important;background:#001830!important;border:2px solid #00ffff!important;border-radius:8px!important;overflow:hidden!important;";
+    v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;";
     
     // D4: Debug - vérifier les dimensions du slot
     const rect = slot.getBoundingClientRect();

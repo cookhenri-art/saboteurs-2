@@ -1699,28 +1699,6 @@ socket.on("roomState", (s) => {
   // If we are ended, show end.
   render();
   
-  // D6 V1.2: Synchroniser les status des joueurs éliminés sur tous les slots vidéo
-  requestAnimationFrame(() => {
-    (state.players || []).forEach(p => {
-      if (p.status === 'dead' || p.status === 'left') {
-        // Mettre à jour tous les slots vidéo pour ce joueur
-        document.querySelectorAll(`[data-player-id="${p.playerId}"]`).forEach(slot => {
-          slot.setAttribute('data-player-status', p.status);
-          // Ajouter aussi la classe eliminated pour plus de robustesse
-          const playerItem = slot.closest('.player-item');
-          if (playerItem && !playerItem.classList.contains('eliminated')) {
-            playerItem.classList.add('eliminated');
-          }
-        });
-      }
-    });
-    
-    // D6 V1.3: Réappliquer le highlight du speaker actif après le re-render de la liste
-    if (typeof window.reapplySpeakerHighlight === 'function') {
-      window.reapplySpeakerHighlight();
-    }
-  });
-  
   // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
   requestAnimationFrame(() => {
     // V3.21 COORDINATION: Si BriefingUI gère le scroll, on ne touche pas

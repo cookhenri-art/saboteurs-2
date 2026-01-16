@@ -22,10 +22,10 @@
 (function() {
   'use strict';
 
-  // 🚀🚀🚀 D6 V1.3 QUICK WINS VERSION 🚀🚀🚀
-  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.3 QUICK WINS LOADED 🚀🚀🚀', 
+  // 🚀🚀🚀 D6 V1.0 QUICK WINS VERSION 🚀🚀🚀
+  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.0 QUICK WINS LOADED 🚀🚀🚀', 
     'background: #00cc88; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-16 12:30 UTC | Fix: Grayscale + Badge PARLE persistent', 
+  console.log('%cBuild: 2026-01-16 09:00 UTC | Features: Eliminated grayscale, Speaker badge++, Toast mute, Vibration mobile, Pull-to-refresh off', 
     'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
@@ -441,17 +441,8 @@
 
   function handleActiveSpeakerChange(data) {
     log('Active speaker:', data);
-    // D6 V1.3: Stocker le speaker actuel pour pouvoir le réappliquer après un re-render
-    window.__currentActiveSpeaker = data.playerId;
     updateSpeakerHighlights(data.playerId);
   }
-  
-  // D6 V1.3: Fonction globale pour réappliquer le highlight après un re-render de la liste des joueurs
-  window.reapplySpeakerHighlight = function() {
-    if (window.__currentActiveSpeaker) {
-      updateInlineModeSpeakerHighlights(window.__currentActiveSpeaker);
-    }
-  };
 
   // ============================================
   // VISIBILITY
@@ -870,11 +861,6 @@
         }
       }
       
-      // D6 Quick Win #3: Toast notification
-      if (window.showMuteToast) {
-        window.showMuteToast('audio', isMicMuted);
-      }
-      
       log('Microphone:', newState ? 'ON' : 'OFF', '(manual mute saved)');
     } catch (e) {
       log('Error toggling mic:', e);
@@ -911,11 +897,6 @@
           inlineCamBtn.textContent = '📹';
           inlineCamBtn.style.background = 'rgba(0, 100, 100, 0.5)';
         }
-      }
-      
-      // D6 Quick Win #3: Toast notification
-      if (window.showMuteToast) {
-        window.showMuteToast('video', isCamOff);
       }
       
       log('Camera:', newState ? 'ON' : 'OFF', '(manual mute saved)');
