@@ -478,11 +478,11 @@ function renderLobby() {
         item.dataset.playerId = p.playerId;
 const left = document.createElement("div");
     left.className = "player-left";
-    // D6: Styles inline pour garantir l'affichage
-    left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto;";
+    // D6 V2.0: Styles inline avec flex-wrap pour mobile
+    left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto; flex-wrap:wrap;";
     left.innerHTML = `
-      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
-      <div class="player-info" style="display:flex !important; flex-direction:column; gap:4px; flex:1 1 auto;">
+      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}" style="flex-shrink:0;"></div>
+      <div class="player-info" style="display:flex !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:120px;">
         <div class="player-name" style="font-weight:700; font-size:1rem; color:white;">${escapeHtml(p.name)}</div>
         <div style="display:flex; flex-wrap:wrap; gap:4px;">
           ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
