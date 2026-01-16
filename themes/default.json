@@ -100,8 +100,8 @@
   },
   
   "images": {
-    "logo": "logo-spatial.png",
-    "background": "bg-space.jpg"
+    "logo": "logo-spatial.webp",
+    "background": "bg-space.webp"
   },
   
   "cssVars": {

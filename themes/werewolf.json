@@ -101,8 +101,8 @@
   },
   
   "images": {
-    "logo": "logo-werewolf.png",
-    "background": "bg-village.jpg"
+    "logo": "logo-werewolf.webp",
+    "background": "bg-village.webp"
   },
   
   "cssVars": {

@@ -2,6 +2,7 @@ const path = require("path");
 const fs = require("fs");
 const http = require("http");
 const express = require("express");
+const compression = require("compression");  // PERF: Compression GZIP
 const { Server } = require("socket.io");
 const logger = require("./logger");
 const RateLimiter = require("./rate-limiter");
@@ -1523,7 +1524,71 @@ function publicRoomStateFor(room, viewerId) {
 
 // ----------------- socket server -----------------
 const app = express();
-app.use(express.static(path.join(__dirname, "public")));
+
+// =================== PERFORMANCE OPTIMIZATIONS ===================
+
+// 1. Compression GZIP pour tous les fichiers texte
+app.use(compression({
+  filter: (req, res) => {
+    // Ne pas compresser si le client demande pas de compression
+    if (req.headers['x-no-compression']) return false;
+    const type = res.getHeader('Content-Type') || '';
+    // Compresser JS, CSS, HTML, JSON, SVG
+    return /javascript|css|html|json|svg|text/.test(type);
+  },
+  level: 6,  // Niveau de compression (1-9, 6 = bon équilibre vitesse/taille)
+  threshold: 1024  // Ne compresser que les fichiers > 1KB
+}));
+
+// 2. Servir les fichiers statiques avec cache HTTP optimisé
+app.use(express.static(path.join(__dirname, "public"), {
+  // Cache différencié par type de fichier
+  setHeaders: (res, filePath) => {
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // Images et polices: cache long (30 jours) - immutable car versionné
+    if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.woff', '.woff2', '.ttf'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    }
+    // Audio: cache long (30 jours)
+    else if (['.mp3', '.wav', '.ogg', '.m4a'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    }
+    // CSS et JS: cache moyen (7 jours) avec revalidation
+    else if (['.css', '.js'].includes(ext)) {
+      res.setHeader('Cache-Control', 'public, max-age=604800, must-revalidate');
+    }
+    // HTML: pas de cache (toujours frais pour éviter les bugs de version)
+    else if (['.html', '.htm'].includes(ext)) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+    // Défaut: cache court (1 heure)
+    else {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+    
+    // Headers de sécurité et performance
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Vary', 'Accept-Encoding');
+  },
+  etag: true,
+  lastModified: true
+}));
+
+// 3. Monitoring des requêtes statiques lentes (pour debug)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    // Log uniquement les requêtes lentes (>500ms) sur les assets
+    if (duration > 500 && req.path.match(/\.(png|jpg|jpeg|webp|mp3|wav)$/i)) {
+      console.log(`[PERF-SLOW] ${req.method} ${req.path} - ${duration}ms`);
+    }
+  });
+  next();
+});
+
+// =================== END PERFORMANCE OPTIMIZATIONS ===================
 
 // Initialiser les systèmes
 const rateLimiter = new RateLimiter();

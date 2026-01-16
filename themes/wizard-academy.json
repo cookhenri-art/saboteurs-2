@@ -100,8 +100,8 @@
   },
   
   "images": {
-    "logo": "logo-wizard.png",
-    "background": "bg-academy.jpg"
+    "logo": "logo-wizard.webp",
+    "background": "bg-academy.webp"
   },
   
   "cssVars": {

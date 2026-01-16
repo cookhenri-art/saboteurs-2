@@ -100,8 +100,8 @@
   },
   
   "images": {
-    "logo": "logo-realm.png",
-    "background": "bg-realm.jpg"
+    "logo": "logo-realm.webp",
+    "background": "bg-realm.webp"
   },
   
   "cssVars": {
