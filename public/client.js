@@ -489,6 +489,7 @@ const left = document.createElement("div");
       </div>
 `;
     const right = document.createElement("div");
+    right.className = "player-right";  // D6: Ajout classe pour affichage correct PC
     right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
     item.appendChild(left);
     item.appendChild(right);
@@ -498,7 +499,7 @@ const left = document.createElement("div");
   // ready button
   const me = state.players.find(p => p.playerId === state.you?.playerId);
   const ready = !!me?.ready;
-  $("readyBtn").textContent = ready ? "✅ PRÊT (annuler)" : "✅ PRÊT";
+  $("readyBtn").textContent = ready ? "☑ PRÊT (annuler)" : "☐ PRÊT";
   $("readyBtn").onclick = () => socket.emit("setReady", { ready: !ready });
 
   // host controls
@@ -744,11 +745,11 @@ if (actorOnly.has(state.phase) && !isActorNow) {
   const ackButton = () => {
     const b = document.createElement("button");
     b.className = "btn btn-primary btn-validate";
-    b.innerHTML = "✅ VALIDER";
+    b.innerHTML = "☐ VALIDER";  // D6: Case non cochée avant validation
     b.onclick = () => {
-      // D6: Feedback visuel amélioré
+      // D6: Feedback visuel amélioré - case cochée
       b.classList.add('validated');
-      b.innerHTML = "✓ VALIDÉ";
+      b.innerHTML = "☑ VALIDÉ";
       b.disabled = true;
       lockControlsNow($('controls'));
       socket.emit("phaseAck");

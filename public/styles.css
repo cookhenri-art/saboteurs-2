@@ -1354,6 +1354,12 @@ textarea {
   border:1px solid rgba(0,255,255,0.25);
 }
 .player-left { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.player-right { 
+  display: flex; 
+  align-items: center; 
+  flex-shrink: 0;  /* D6: Empêche la compression sur PC */
+  margin-left: 10px;
+}
 .pill {
   padding:4px 8px; border-radius:999px; font-weight:800; font-size:.9rem;
   border:1px solid rgba(255,255,255,0.2);
