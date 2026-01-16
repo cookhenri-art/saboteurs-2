@@ -1372,10 +1372,134 @@ textarea {
 }
 
 .btn { cursor:pointer; user-select:none; }
-.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn:disabled { opacity:.6; cursor:not-allowed; }
 .btn:disabled:hover { transform: none !important; box-shadow: none !important; }
-.btn.selected { outline: 2px solid rgba(0,255,136,0.9); box-shadow: 0 0 22px rgba(0,255,136,0.35); }
+
+/* Bouton sélectionné - style amélioré D6 */
+.btn.selected { 
+  background: linear-gradient(135deg, #00cc66 0%, #00aa55 100%) !important;
+  border-color: #00ff88 !important;
+  color: white !important;
+  outline: none;
+  box-shadow: 0 0 20px rgba(0,255,136,0.4), inset 0 0 15px rgba(255,255,255,0.1) !important;
+  animation: btnSelectedPulse 0.4s ease;
+}
 .btn.selected:hover { transform: none !important; }
+
+@keyframes btnSelectedPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* =====================================================
+   D6: FEEDBACK VISUEL AMÉLIORÉ - Boutons & Validations
+   ===================================================== */
+
+/* Bouton VALIDER avec état validé */
+.btn-validate {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.btn-validate.validated {
+  background: linear-gradient(135deg, #00cc66 0%, #00aa55 100%) !important;
+  border-color: #00ff88 !important;
+  color: white !important;
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), inset 0 0 20px rgba(255,255,255,0.1) !important;
+  animation: validatePulse 0.5s ease;
+  cursor: default !important;
+  transform: scale(1.02);
+}
+
+.btn-validate.validated::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(0,255,136,0.3), transparent);
+  z-index: -1;
+  animation: glowPulse 1.5s ease infinite;
+}
+
+/* Animation de validation */
+@keyframes validatePulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+  100% { transform: scale(1.02); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Barre de progression des validations */
+@keyframes progressPulse {
+  0% { transform: scaleX(0.95); opacity: 0.7; }
+  50% { transform: scaleX(1.02); opacity: 1; box-shadow: 0 0 10px currentColor; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+.validation-counter.pulse {
+  animation: counterPulse 0.4s ease;
+}
+
+@keyframes counterPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Cartes de choix (vote, liaison, etc.) - amélioration */
+.choice-card.selected {
+  position: relative;
+  border-color: var(--neon-green, #00ff88) !important;
+  box-shadow: 0 0 25px rgba(0,255,136,0.35), inset 0 0 15px rgba(0,255,136,0.1) !important;
+  animation: cardSelected 0.3s ease;
+}
+
+.choice-card.selected::before {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 1.2rem;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0,255,136,0.8);
+  animation: checkAppear 0.3s ease;
+}
+
+@keyframes cardSelected {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+@keyframes checkAppear {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* Player item sélectionné (vote) */
+.player-vote-item.selected,
+.player-item.selected {
+  border-color: #00ff88 !important;
+  box-shadow: 0 0 20px rgba(0,255,136,0.3) !important;
+  background: rgba(0,255,136,0.1) !important;
+}
+
+.player-vote-item.selected::after,
+.player-item.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  font-size: 1.3rem;
+  color: #00ff88;
+  text-shadow: 0 0 10px rgba(0,255,136,0.8);
+}
 
 /* =====================================================
    PATCH UI/UX V0-0 -> mobile comfort (safe, minimal)

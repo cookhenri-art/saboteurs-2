@@ -655,8 +655,30 @@ function renderGame() {
 // VIDEO DOCK (prototype)
   updateVideoDockSlot(state);
 
+  // D6: Compteur de validations amélioré avec barre de progression
   const ack = state.ack || { done:0, total:0 };
-  $("ackLine").textContent = ack.total ? `✅ Validations : ${ack.done}/${ack.total}` : "";
+  const ackLine = $("ackLine");
+  if (ack.total) {
+    const percent = Math.round((ack.done / ack.total) * 100);
+    const isComplete = ack.done === ack.total;
+    const progressColor = isComplete ? '#00ff88' : (percent > 50 ? '#ffaa00' : '#ff6b6b');
+    
+    // Détecter si le compteur a changé pour animer
+    const prevDone = parseInt(ackLine.dataset.prevDone || '0');
+    const shouldAnimate = prevDone !== ack.done && ack.done > 0;
+    ackLine.dataset.prevDone = ack.done;
+    
+    ackLine.innerHTML = `
+      <div class="validation-counter ${shouldAnimate ? 'pulse' : ''}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-weight:600;">✅ Validations : ${ack.done}/${ack.total}</span>
+        <div class="validation-progress" style="flex:1;min-width:100px;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;">
+          <div class="validation-progress-bar" style="width:${percent}%;height:100%;background:${progressColor};border-radius:4px;transition:width 0.4s ease, background 0.4s ease;${shouldAnimate ? 'animation:progressPulse 0.5s ease;' : ''}"></div>
+        </div>
+      </div>
+    `;
+  } else {
+    ackLine.textContent = "";
+  }
 
 // logs (+ panel éjectés)
 const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.isHost;
@@ -721,10 +743,13 @@ if (actorOnly.has(state.phase) && !isActorNow) {
   // default: show ACK button for phases that use it
   const ackButton = () => {
     const b = document.createElement("button");
-    b.className = "btn btn-primary";
-    b.textContent = "✅ VALIDER";
+    b.className = "btn btn-primary btn-validate";
+    b.innerHTML = "✅ VALIDER";
     b.onclick = () => {
-      b.classList.add('selected');
+      // D6: Feedback visuel amélioré
+      b.classList.add('validated');
+      b.innerHTML = "✓ VALIDÉ";
+      b.disabled = true;
       lockControlsNow($('controls'));
       socket.emit("phaseAck");
     };
