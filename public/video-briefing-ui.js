@@ -22,10 +22,10 @@
 (function() {
   'use strict';
 
-  // 🚀🚀🚀 D6 V1.0 QUICK WINS VERSION 🚀🚀🚀
-  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.0 QUICK WINS LOADED 🚀🚀🚀', 
+  // 🚀🚀🚀 D6 V1.1 QUICK WINS VERSION 🚀🚀🚀
+  console.log('%c🚀🚀🚀 VIDEO BRIEFING UI D6 V1.1 QUICK WINS LOADED 🚀🚀🚀', 
     'background: #00cc88; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-16 09:00 UTC | Features: Eliminated grayscale, Speaker badge++, Toast mute, Vibration mobile, Pull-to-refresh off', 
+  console.log('%cBuild: 2026-01-16 10:00 UTC | Fixes: Toast mute briefing UI, Badge PARLE améliore', 
     'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
@@ -861,6 +861,11 @@
         }
       }
       
+      // D6 Quick Win #3: Toast notification
+      if (window.showMuteToast) {
+        window.showMuteToast('audio', isMicMuted);
+      }
+      
       log('Microphone:', newState ? 'ON' : 'OFF', '(manual mute saved)');
     } catch (e) {
       log('Error toggling mic:', e);
@@ -897,6 +902,11 @@
           inlineCamBtn.textContent = '📹';
           inlineCamBtn.style.background = 'rgba(0, 100, 100, 0.5)';
         }
+      }
+      
+      // D6 Quick Win #3: Toast notification
+      if (window.showMuteToast) {
+        window.showMuteToast('video', isCamOff);
       }
       
       log('Camera:', newState ? 'ON' : 'OFF', '(manual mute saved)');

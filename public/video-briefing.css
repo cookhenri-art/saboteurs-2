@@ -433,6 +433,33 @@
   box-shadow: 
     0 0 0 2px var(--speaker-pulse),
     0 0 15px var(--speaker-pulse);
+  /* D6: Animation plus visible */
+  animation: thumb-speaking-pulse 1s ease-in-out infinite;
+}
+
+/* D6: Badge PARLE sur les thumbnails qui parlent */
+.video-thumb.is-speaking::after {
+  content: "🎤";
+  position: absolute;
+  bottom: 2px;
+  left: 2px;
+  background: var(--speaker-ring);
+  color: #000;
+  font-size: 0.6rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: bold;
+  z-index: 10;
+  animation: pulse-badge-d6 1.5s ease-in-out infinite;
+}
+
+@keyframes thumb-speaking-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 2px var(--speaker-pulse), 0 0 15px var(--speaker-pulse);
+  }
+  50% { 
+    box-shadow: 0 0 0 4px var(--speaker-pulse), 0 0 25px var(--speaker-pulse);
+  }
 }
 
 /* Focused (selected) thumbnail */

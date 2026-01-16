@@ -60,6 +60,9 @@
     
     log('D6 Toast:', type, isMuted ? 'muted' : 'unmuted');
   }
+  
+  // D6: Exposer showMuteToast globalement pour que briefing-ui puisse l'utiliser
+  window.showMuteToast = showMuteToast;
 
   // D4 v5.4: Exposer les fonctions de contrôle manuel
   window.VideoTracksRegistry = {
