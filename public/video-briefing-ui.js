@@ -1,6 +1,9 @@
 /**
- * VIDEO BRIEFING UI - D4
- * ======================
+ * VIDEO BRIEFING UI - D5 V3.23 ULTIMATE FIX
+ * ===========================================
+ * 
+ * VERSION: 3.23 ULTIMATE FIX
+ * BUILD: 2026-01-15 23:00 UTC
  * 
  * Gère le DOM et le rendu du mode "Salle de Briefing".
  * Écoute les événements du VideoModeController et met à jour l'interface.
@@ -10,10 +13,19 @@
  * - Attacher les flux vidéo aux éléments
  * - Gérer les interactions utilisateur (clic thumbnail, boutons)
  * - Synchroniser avec video-tracks.js
+ * - [V3.21] COORDINATION avec client.js via flag global
+ * - [V3.22] ABSOLUTE - Container vidéo ne POUSSE PAS le contenu
+ * - [V3.23] ULTIMATE - TOUS les padding-top supprimés (desktop + mobile + tablette)
  */
 
 (function() {
   'use strict';
+
+  // 🔥🔥🔥 V3.23 ULTIMATE FIX VERSION 🔥🔥🔥
+  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.23 ULTIMATE FIX LOADED 🔥🔥🔥', 
+    'background: #ff00ff; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
+  console.log('%cBuild: 2026-01-15 23:00 UTC | Fix: TOUS padding-top supprimés (5 occurrences)', 
+    'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
   
@@ -255,27 +267,133 @@
     
     // Show/hide based on mode
     if (mode === 'ADVANCED_FOCUS' || mode === 'SPLIT') {
+      // ============================================
+      // V3.21 COORDINATION: SCROLL FIX AVEC FLAG
+      // ============================================
+      
+      console.log('%c🎯 V3.21: MODE SPLIT ACTIVÉ - COORDINATION SCROLL', 
+        'background: #00ff00; color: #000000; font-size: 16px; font-weight: bold; padding: 5px;');
+      
+      // ÉTAPE 1: ACTIVER LE FLAG pour bloquer client.js
+      window.__briefingUIScrollLock = true;
+      console.log('[V3.21] 🔒 Flag de coordination activé - client.js est bloqué');
+      
+      // ÉTAPE 2: Capturer position initiale
+      const scrollStart = window.pageYOffset || document.documentElement.scrollTop;
+      console.log('[V3.21] 📍 Position de départ:', scrollStart);
+      
+      // ÉTAPE 3: Désactiver smooth scroll temporairement
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.scrollBehavior = 'auto';
+      
+      // ÉTAPE 4: Monitorer le scroll en temps réel
+      let scrollChanges = [];
+      const scrollMonitor = setInterval(() => {
+        const current = window.pageYOffset || document.documentElement.scrollTop;
+        if (current !== scrollStart) {
+          scrollChanges.push({ time: Date.now(), position: current, delta: current - scrollStart });
+          console.warn('[V3.21] ⚠️ SCROLL DÉTECTÉ:', current, 'delta:', current - scrollStart);
+        }
+      }, 10); // Check toutes les 10ms
+      
+      // ÉTAPE 5: Fonction de restauration agressive
+      const forceScrollRestore = (reason) => {
+        const current = window.pageYOffset || document.documentElement.scrollTop;
+        if (current !== scrollStart) {
+          window.scrollTo({ top: scrollStart, behavior: 'auto' });
+          console.log(`[V3.21] ✅ Scroll restauré (${reason}):`, scrollStart, 'was:', current);
+          return true;
+        }
+        return false;
+      };
+      
+      // ÉTAPE 6: show() avec surveillance
+      console.log('[V3.21] 🎬 Appel show()...');
       show();
+      console.log('[V3.21] ✓ show() terminé');
+      
       updateExpandButton(false);
       
-      // D4 FINAL: Reset scroll position quand on entre en mode SPLIT/ADVANCED
-      // Pour s'assurer que tout est visible sans scroll
-      // V3.28 V3: SUPPRIMÉ -       setTimeout(() => {
-      // V3.28 V3: SUPPRIMÉ -         window.scrollTo({ top: 0, behavior: 'smooth' });
-      // V3.28 V3: SUPPRIMÉ -         // Reset aussi le scroll du gameScreen si présent
-      // V3.28 V3: SUPPRIMÉ -         const gameScreen = document.getElementById('gameScreen');
-      // V3.28 V3: SUPPRIMÉ -         if (gameScreen) {
-      // V3.28 V3: SUPPRIMÉ -           gameScreen.scrollTop = 0;
-      // V3.28 V3: SUPPRIMÉ -         }
-      // V3.28 V3: SUPPRIMÉ -         const container = document.querySelector('.container');
-      // V3.28 V3: SUPPRIMÉ -         if (container) {
-      // V3.28 V3: SUPPRIMÉ -           container.scrollTop = 0;
-      // V3.28 V3: SUPPRIMÉ -         }
-      // V3.28 V3: SUPPRIMÉ -         log('Scroll reset to top');
-      // V3.28 V3: SUPPRIMÉ -       }, 100);
+      // ÉTAPE 7: Restauration multi-tentatives + libération du flag
+      
+      // Tentative immédiate
+      requestAnimationFrame(() => {
+        forceScrollRestore('RAF-1');
+        
+        // Tentative après 1 frame
+        requestAnimationFrame(() => {
+          forceScrollRestore('RAF-2');
+          
+          // Tentative après 2 frames
+          requestAnimationFrame(() => {
+            forceScrollRestore('RAF-3');
+            
+            // Tentatives avec délais
+            setTimeout(() => {
+              forceScrollRestore('Timeout-10ms');
+            }, 10);
+            
+            setTimeout(() => {
+              forceScrollRestore('Timeout-50ms');
+            }, 50);
+            
+            setTimeout(() => {
+              forceScrollRestore('Timeout-100ms');
+            }, 100);
+            
+            // ÉTAPE 8: Attendre 200ms PUIS libérer le flag (permet à client.js d'agir si nécessaire)
+            setTimeout(() => {
+              forceScrollRestore('Timeout-200ms-final');
+              
+              // LIBÉRER LE FLAG
+              window.__briefingUIScrollLock = false;
+              console.log('[V3.21] 🔓 Flag de coordination libéré - client.js peut agir');
+              
+              // Arrêter le monitoring
+              clearInterval(scrollMonitor);
+              
+              const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
+              console.log('%c📊 V3.21: RAPPORT FINAL COORDINATION', 
+                'background: #0088ff; color: #ffffff; font-size: 14px; font-weight: bold; padding: 5px;');
+              console.log('[V3.21] Position finale:', scrollEnd);
+              console.log('[V3.21] Delta total:', scrollEnd - scrollStart);
+              console.log('[V3.21] Changements détectés:', scrollChanges.length);
+              if (scrollChanges.length > 0) {
+                console.table(scrollChanges);
+              }
+              
+              // Restaurer smooth scroll
+              document.documentElement.style.scrollBehavior = originalScrollBehavior;
+              document.body.style.scrollBehavior = originalScrollBehavior;
+              
+              if (scrollEnd === scrollStart) {
+                console.log('%c✅ V3.21: SUCCÈS - SCROLL STABLE (COORDINATION)', 
+                  'background: #00ff00; color: #000000; font-size: 16px; font-weight: bold; padding: 5px;');
+              } else {
+                console.error('%c❌ V3.21: ÉCHEC - SCROLL A BOUGÉ', 
+                  'background: #ff0000; color: #ffffff; font-size: 16px; font-weight: bold; padding: 5px;');
+              }
+            }, 200);
+          });
+        });
+      });
       
     } else {
+      // ============================================
+      // V3.21 COORDINATION: SCROLL FIX POUR HIDE
+      // ============================================
+      
+      console.log('[V3.21] 🔽 MODE HIDE - Début fix scroll');
+      
+      // ACTIVER LE FLAG
+      window.__briefingUIScrollLock = true;
+      console.log('[V3.21] 🔒 Flag activé pour HIDE');
+      
+      const scrollStart = window.pageYOffset || document.documentElement.scrollTop;
+      
       hide();
+      
       // Show expand button if conditions allow advanced mode
       const ctrl = window.videoModeCtrl;
       if (ctrl && ctrl.canActivateAdvanced() && ctrl.isVideoJoined) {
@@ -284,10 +402,20 @@
         updateExpandButton(false);
       }
       
-      // D4 FINAL: Reset scroll aussi quand on quitte le mode SPLIT
-      setTimeout(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 100);
+      // Restauration pour hide + libération du flag
+      requestAnimationFrame(() => {
+        const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollEnd !== scrollStart) {
+          window.scrollTo(0, scrollStart);
+          console.log('[V3.21] ✅ Scroll restauré après hide:', scrollStart);
+        }
+        
+        // Libérer le flag après hide
+        setTimeout(() => {
+          window.__briefingUIScrollLock = false;
+          console.log('[V3.21] 🔓 Flag libéré après HIDE');
+        }, 100);
+      });
     }
   }
   

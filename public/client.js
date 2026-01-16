@@ -1636,54 +1636,16 @@ $("joinRoomBtn").onclick = () => {
 };
 
 
-// V3.31 FINAL: Protection scroll COMPLÈTE avec MutationObserver
-let scrollRestoreTimeout = null;
-let lastScrollPosition = 0;
-let isRestoringScroll = false;
+// receive state
+// D5 V3.10: AUCUN SCROLL AUTOMATIQUE - Position maintenue naturellement
+// On laisse le navigateur et l'utilisateur gérer le scroll
+let lastScrolledPhase = null;
 
-// Fonction pour sauvegarder la position
-function saveScrollPosition(source) {
-  if (!scrollRestoreTimeout && !isRestoringScroll) {
-    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
-    if (currentScroll > 0) {
-      lastScrollPosition = currentScroll;
-      console.log(`[V3.31] Position saved (${source}):`, lastScrollPosition);
-    }
-  }
+function noAutoScroll() {
+  // Ne rien faire - pas de scroll automatique
+  console.log('[No Auto Scroll] Position maintenue par l\'utilisateur');
 }
 
-// V3.31: Observer TOUTES les modifications DOM qui pourraient causer un scroll
-const domObserver = new MutationObserver((mutations) => {
-  // Sauvegarder avant que le navigateur ne réorganise
-  saveScrollPosition('DOM mutation');
-});
-
-// Observer le body et gameScreen
-domObserver.observe(document.body, {
-  childList: true,
-  subtree: true,
-  attributes: true,
-  attributeFilter: ['class', 'style']
-});
-
-// Observer aussi le gameScreen spécifiquement
-setTimeout(() => {
-  const gameScreen = document.getElementById('gameScreen');
-  if (gameScreen) {
-    domObserver.observe(gameScreen, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    });
-  }
-}, 100);
-
-// Sauvegarder sur TOUTES les interactions
-document.addEventListener('click', () => saveScrollPosition('click'), true);
-document.addEventListener('change', () => saveScrollPosition('change'), true);
-
-// receive state
 socket.on("roomState", (s) => {
   state = s;
   refreshBuildBadge();
@@ -1694,30 +1656,31 @@ socket.on("roomState", (s) => {
   // audio per phase
   audioManager.play(state.audio);
 
-  // V3.31 FINAL: Sauvegarder SEULEMENT si pas de restore en cours
-  if (!scrollRestoreTimeout) {
-    lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    console.log("[V3.31 roomState] Position saved:", lastScrollPosition);
-  }
+  // D5 V3.11: Sauvegarder la position AVANT le render
+  const scrollBeforeRender = window.pageYOffset || document.documentElement.scrollTop;
 
   // If we are ended, show end.
   render();
   
-  // V3.31 FINAL: Debounced restoration (évite les conflits de multiples roomState)
-  if (scrollRestoreTimeout) {
-    clearTimeout(scrollRestoreTimeout);
-  }
+  // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
+  requestAnimationFrame(() => {
+    // V3.21 COORDINATION: Si BriefingUI gère le scroll, on ne touche pas
+    if (window.__briefingUIScrollLock) {
+      console.log('[Scroll Restore] ⏸️ SKIP - BriefingUI gère le scroll (flag actif)');
+      return;
+    }
+    
+    // Sinon, restaurer normalement
+    window.scrollTo(0, scrollBeforeRender);
+    console.log('[Scroll Restore] Position restaurée:', scrollBeforeRender);
+  });
   
-  scrollRestoreTimeout = setTimeout(() => {
-    isRestoringScroll = true;
-    requestAnimationFrame(() => {
-      window.scrollTo(0, lastScrollPosition);
-      console.log("[V3.31 Scroll Restore] Position restaurée:", lastScrollPosition);
-      scrollRestoreTimeout = null;
-      setTimeout(() => { isRestoringScroll = false; }, 100);
-    });
-  }, 50); // 50ms debounce
-});
+  // Log pour debug
+  const currentPhase = state.phase;
+  if (currentPhase && currentPhase !== lastScrolledPhase) {
+    lastScrolledPhase = currentPhase;
+    console.log('[No Auto Scroll] Phase:', currentPhase, '- Position:', scrollBeforeRender);
+  }
 });
 
 socket.on("serverHello", () => {
