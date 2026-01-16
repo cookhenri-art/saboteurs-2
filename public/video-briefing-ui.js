@@ -1,9 +1,9 @@
 /**
- * VIDEO BRIEFING UI - D5 V3.23 ULTIMATE FIX
+ * VIDEO BRIEFING UI - D5 V3.26 OPTIMIZED
  * ===========================================
  * 
- * VERSION: 3.23 ULTIMATE FIX
- * BUILD: 2026-01-15 23:00 UTC
+ * VERSION: 3.26 OPTIMIZED
+ * BUILD: 2026-01-16 01:10 UTC
  * 
  * Gère le DOM et le rendu du mode "Salle de Briefing".
  * Écoute les événements du VideoModeController et met à jour l'interface.
@@ -21,11 +21,11 @@
 (function() {
   'use strict';
 
-  // 🔥🔥🔥 V3.23 ULTIMATE FIX VERSION 🔥🔥🔥
-  console.log('%c🔥🔥🔥 VIDEO BRIEFING UI V3.23 ULTIMATE FIX LOADED 🔥🔥🔥', 
-    'background: #ff00ff; color: #ffffff; font-size: 20px; font-weight: bold; padding: 10px;');
-  console.log('%cBuild: 2026-01-15 23:00 UTC | Fix: TOUS padding-top supprimés (5 occurrences)', 
-    'background: #0088ff; color: #ffffff; font-size: 14px; padding: 5px;');
+  // ⚡ V3.26 OPTIMIZED VERSION ⚡
+  console.log('%c⚡ VIDEO BRIEFING UI V3.26 OPTIMIZED LOADED ⚡',
+    'background: #00ff88; color: #000000; font-size: 20px; font-weight: bold; padding: 10px;');
+  console.log('%cBuild: 2026-01-16 01:10 UTC | Optimisation: setTimeout agressivement réduits',
+    'background: #00cc44; color: #ffffff; font-size: 14px; padding: 5px;');
 
   const DEBUG = true;
   
@@ -315,53 +315,19 @@
       
       updateExpandButton(false);
       
-      // ÉTAPE 7: Restauration multi-tentatives + libération du flag
-      
-      // Tentative immédiate
+      // V3.26 OPTIMIZED: Une seule tentative de scroll restore au lieu de 7
       requestAnimationFrame(() => {
-        forceScrollRestore('RAF-1');
+        forceScrollRestore('V3.26-optimized');
         
-        // Tentative après 1 frame
-        requestAnimationFrame(() => {
-          forceScrollRestore('RAF-2');
-          
-          // Tentative après 2 frames
-          requestAnimationFrame(() => {
-            forceScrollRestore('RAF-3');
-            
-            // Tentatives avec délais
-            setTimeout(() => {
-              forceScrollRestore('Timeout-10ms');
-            }, 10);
-            
-            setTimeout(() => {
-              forceScrollRestore('Timeout-50ms');
-            }, 50);
-            
-            setTimeout(() => {
-              forceScrollRestore('Timeout-100ms');
-            }, 100);
-            
-            // ÉTAPE 8: Attendre 200ms PUIS libérer le flag (permet à client.js d'agir si nécessaire)
-            setTimeout(() => {
-              forceScrollRestore('Timeout-200ms-final');
-              
-              // LIBÉRER LE FLAG
-              window.__briefingUIScrollLock = false;
-              console.log('[V3.21] 🔓 Flag de coordination libéré - client.js peut agir');
-              
-              // Arrêter le monitoring
-              clearInterval(scrollMonitor);
-              
-              const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
-              console.log('%c📊 V3.21: RAPPORT FINAL COORDINATION', 
-                'background: #0088ff; color: #ffffff; font-size: 14px; font-weight: bold; padding: 5px;');
-              console.log('[V3.21] Position finale:', scrollEnd);
-              console.log('[V3.21] Delta total:', scrollEnd - scrollStart);
-              console.log('[V3.21] Changements détectés:', scrollChanges.length);
-              if (scrollChanges.length > 0) {
-                console.table(scrollChanges);
-              }
+        // Libérer le flag immédiatement
+        window.__briefingUIScrollLock = false;
+        console.log('[V3.26] 🔓 Flag libéré');
+        
+        // Arrêter le monitoring
+        clearInterval(scrollMonitor);
+        
+        const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
+        console.log('[V3.26] Position finale:', scrollEnd, '| Delta:', scrollEnd - scrollStart);
               
               // Restaurer smooth scroll
               document.documentElement.style.scrollBehavior = originalScrollBehavior;
@@ -407,14 +373,12 @@
         const scrollEnd = window.pageYOffset || document.documentElement.scrollTop;
         if (scrollEnd !== scrollStart) {
           window.scrollTo(0, scrollStart);
-          console.log('[V3.21] ✅ Scroll restauré après hide:', scrollStart);
+          console.log('[V3.26] ✅ Scroll restauré après hide:', scrollStart);
         }
         
-        // Libérer le flag après hide
-        setTimeout(() => {
-          window.__briefingUIScrollLock = false;
-          console.log('[V3.21] 🔓 Flag libéré après HIDE');
-        }, 100);
+        // V3.26 OPTIMIZED: Libérer le flag immédiatement
+        window.__briefingUIScrollLock = false;
+        console.log('[V3.26] 🔓 Flag libéré après HIDE');
       });
     }
   }

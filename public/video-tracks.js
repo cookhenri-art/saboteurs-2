@@ -955,10 +955,10 @@
       obs.observe(list, { childList: true, subtree: true });
     }
 
-    // Initial reattach after a short delay (slots may appear after bind)
-    setTimeout(reattachAll, 600);
-    setTimeout(reattachAll, 1500);
-    setTimeout(reattachAll, 3000);
+    // V3.26 OPTIMIZED: Reattach delays optimisés (600/1500/3000 -> 200/500/1000)
+    setTimeout(reattachAll, 200);
+    setTimeout(reattachAll, 500);
+    setTimeout(reattachAll, 1000);
   }
 
   function waitForCallObject() {
@@ -970,7 +970,7 @@
       return;
     }
     log("Waiting for callObject...");
-    setTimeout(waitForCallObject, 500);
+    setTimeout(waitForCallObject, 100); // V3.26 OPTIMIZED: 500ms -> 100ms
   }
 
   function mountButton() {
@@ -1002,7 +1002,7 @@
       if (window.VideoIntegration && typeof window.VideoIntegration.requestVideoStart === "function") {
         window.VideoIntegration.requestVideoStart();
         btn.textContent = "🎥 Visio demandée…";
-        setTimeout(() => { btn.textContent = "🎥 Visio activée"; }, 1200);
+        setTimeout(() => { btn.textContent = "🎥 Visio activée"; }, 800); // V3.26 OPTIMIZED: 1200ms -> 800ms
       } else {
         console.warn("[VideoTracks] VideoIntegration API not ready yet");
       }
