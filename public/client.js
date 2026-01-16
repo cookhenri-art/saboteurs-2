@@ -1640,6 +1640,19 @@ $("joinRoomBtn").onclick = () => {
 let scrollRestoreTimeout = null;
 let lastScrollPosition = 0;
 
+
+// V3.30 ULTRA: Sauvegarder position sur TOUTE interaction utilisateur
+document.addEventListener('click', (e) => {
+  // Sauvegarder avant modification du DOM
+  if (!scrollRestoreTimeout) {
+    const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+    if (currentScroll > 0) {
+      lastScrollPosition = currentScroll;
+      console.log("[V3.30 Click] Position saved:", lastScrollPosition);
+    }
+  }
+}, true); // useCapture = true pour capturer AVANT le handler du bouton
+
 // receive state
 socket.on("roomState", (s) => {
   state = s;
@@ -1654,7 +1667,7 @@ socket.on("roomState", (s) => {
   // V3.29 FINAL: Sauvegarder SEULEMENT si pas de restore en cours
   if (!scrollRestoreTimeout) {
     lastScrollPosition = window.pageYOffset || document.documentElement.scrollTop;
-    console.log("[V3.29 Scroll] Position saved:", lastScrollPosition);
+    console.log("[V3.30 Scroll] Position saved:", lastScrollPosition);
   }
 
   // If we are ended, show end.
@@ -1668,7 +1681,7 @@ socket.on("roomState", (s) => {
   scrollRestoreTimeout = setTimeout(() => {
     requestAnimationFrame(() => {
       window.scrollTo(0, lastScrollPosition);
-      console.log("[V3.29 Scroll Restore] Position restaurée:", lastScrollPosition);
+      console.log("[V3.30 Scroll Restore] Position restaurée:", lastScrollPosition);
       scrollRestoreTimeout = null;
     });
   }, 50); // 50ms debounce
