@@ -263,12 +263,23 @@
   border-radius: 20px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  animation: pulse-badge 2s infinite;
+  /* D6 Quick Win #2: Animation badge speaker plus visible */
+  animation: pulse-badge-d6 1.5s ease-in-out infinite;
+  box-shadow: 0 0 10px var(--speaker-ring), 0 0 20px var(--speaker-pulse);
 }
 
-@keyframes pulse-badge {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.05); }
+/* D6: Animation badge speaker améliorée */
+@keyframes pulse-badge-d6 {
+  0%, 100% { 
+    opacity: 1; 
+    transform: scale(1);
+    box-shadow: 0 0 10px var(--speaker-ring), 0 0 20px var(--speaker-pulse);
+  }
+  50% { 
+    opacity: 0.9; 
+    transform: scale(1.15);
+    box-shadow: 0 0 20px var(--speaker-ring), 0 0 40px var(--speaker-pulse), 0 0 60px var(--speaker-pulse);
+  }
 }
 
 /* Empty state */

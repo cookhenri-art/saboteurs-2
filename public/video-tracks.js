@@ -28,6 +28,39 @@
 
   function log(...args) { if (DEBUG) console.log("[VideoTracks]", ...args); }
 
+  // D6 Quick Win #3: Toast notification pour mute/unmute
+  function showMuteToast(type, isMuted) {
+    // Supprimer les anciens toasts
+    const existingToast = document.querySelector('.mute-toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = 'mute-toast ' + (isMuted ? 'muted' : 'unmuted');
+    
+    if (type === 'audio') {
+      toast.textContent = isMuted ? '🔇 Micro coupé' : '🎤 Micro activé';
+    } else {
+      toast.textContent = isMuted ? '📷 Caméra coupée' : '📹 Caméra activée';
+    }
+    
+    document.body.appendChild(toast);
+    
+    // D6 Quick Win #4: Vibration mobile
+    if (navigator.vibrate && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+      navigator.vibrate(isMuted ? [50, 30, 50] : [50]);
+    }
+    
+    // Retirer après 2 secondes
+    setTimeout(() => {
+      toast.style.animation = 'toastSlideUp 0.3s ease forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+    
+    log('D6 Toast:', type, isMuted ? 'muted' : 'unmuted');
+  }
+
   // D4 v5.4: Exposer les fonctions de contrôle manuel
   window.VideoTracksRegistry = {
     getAll: () => new Map(videoTracks),
@@ -955,10 +988,10 @@
       obs.observe(list, { childList: true, subtree: true });
     }
 
-    // V3.26 OPTIMIZED: Reattach delays optimisés (600/1500/3000 -> 200/500/1000)
-    setTimeout(reattachAll, 200);
-    setTimeout(reattachAll, 500);
-    setTimeout(reattachAll, 1000);
+    // Initial reattach after a short delay (slots may appear after bind)
+    setTimeout(reattachAll, 600);
+    setTimeout(reattachAll, 1500);
+    setTimeout(reattachAll, 3000);
   }
 
   function waitForCallObject() {
@@ -970,7 +1003,7 @@
       return;
     }
     log("Waiting for callObject...");
-    setTimeout(waitForCallObject, 100); // V3.26 OPTIMIZED: 500ms -> 100ms
+    setTimeout(waitForCallObject, 500);
   }
 
   function mountButton() {
@@ -1002,7 +1035,7 @@
       if (window.VideoIntegration && typeof window.VideoIntegration.requestVideoStart === "function") {
         window.VideoIntegration.requestVideoStart();
         btn.textContent = "🎥 Visio demandée…";
-        setTimeout(() => { btn.textContent = "🎥 Visio activée"; }, 800); // V3.26 OPTIMIZED: 1200ms -> 800ms
+        setTimeout(() => { btn.textContent = "🎥 Visio activée"; }, 1200);
       } else {
         console.warn("[VideoTracks] VideoIntegration API not ready yet");
       }
@@ -1044,6 +1077,9 @@
       // Synchroniser avec le bouton du briefing UI si présent
       syncBriefingMicButton(userMutedAudio);
       
+      // D6 Quick Win #3: Toast notification
+      showMuteToast('audio', userMutedAudio);
+      
       log('Inline Microphone:', newState ? 'ON' : 'OFF');
     } catch (e) {
       log('Error toggling inline mic:', e);
@@ -1083,6 +1119,9 @@
       
       // Synchroniser avec le bouton du briefing UI si présent
       syncBriefingCamButton(userMutedVideo);
+      
+      // D6 Quick Win #3: Toast notification
+      showMuteToast('video', userMutedVideo);
       
       log('Inline Camera:', newState ? 'ON' : 'OFF');
     } catch (e) {

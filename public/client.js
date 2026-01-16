@@ -474,12 +474,14 @@ function renderLobby() {
   const playersSorted = [...state.players].sort((a,b) => (b.isHost?1:0) - (a.isHost?1:0) || a.name.localeCompare(b.name));
   for (const p of playersSorted) {
     const item = document.createElement("div");
-    item.className = "player-item";
+    // D6 Quick Win #1: Ajouter classe 'eliminated' pour joueurs morts
+    item.className = "player-item" + (p.status === "dead" || p.status === "left" ? " eliminated" : "");
         item.dataset.playerId = p.playerId;
+        item.dataset.playerStatus = p.status || "alive"; // D6: Data attribute pour CSS
 const left = document.createElement("div");
     left.className = "player-left";
     left.innerHTML = `
-      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
+      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" data-player-status="${p.status || 'alive'}" aria-label="Video ${escapeHtml(p.name)}"></div>
       <div class="player-info">
         <div class="player-name">${escapeHtml(p.name)}</div>
         ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
@@ -1640,6 +1642,15 @@ $("joinRoomBtn").onclick = () => {
 // D5 V3.10: AUCUN SCROLL AUTOMATIQUE - Position maintenue naturellement
 // On laisse le navigateur et l'utilisateur gérer le scroll
 let lastScrolledPhase = null;
+let lastAliveCount = null; // D6: Pour détecter les éliminations
+
+// D6 Quick Win #4: Fonction de vibration mobile
+function vibratePattern(pattern) {
+  if (navigator.vibrate && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    navigator.vibrate(pattern);
+    console.log('[D6 Vibration] Pattern:', pattern);
+  }
+}
 
 function noAutoScroll() {
   // Ne rien faire - pas de scroll automatique
@@ -1647,11 +1658,37 @@ function noAutoScroll() {
 }
 
 socket.on("roomState", (s) => {
+  const previousPhase = state?.phase;
+  const previousAliveCount = state?.players?.filter(p => p.status === 'alive').length || 0;
+  
   state = s;
   refreshBuildBadge();
 
   // If we are in lobby/game and the server thinks we have no room (rare), reset
   if (!state?.roomCode) return;
+
+  // D6 Quick Win #4: Vibrations mobiles
+  const currentPhaseNow = state.phase;
+  const currentAliveCount = state.players?.filter(p => p.status === 'alive').length || 0;
+  
+  // Vibration sur changement de phase
+  if (previousPhase && currentPhaseNow && previousPhase !== currentPhaseNow) {
+    if (currentPhaseNow === 'GAME_OVER') {
+      vibratePattern([100, 50, 100, 50, 200]); // Pattern victoire/défaite
+    } else if (currentPhaseNow.includes('NIGHT')) {
+      vibratePattern([200, 100, 200]); // Pattern nuit dramatique
+    } else if (currentPhaseNow.includes('VOTE')) {
+      vibratePattern([100, 50, 100]); // Pattern vote
+    } else {
+      vibratePattern([30]); // Vibration légère pour autres phases
+    }
+  }
+  
+  // Vibration si quelqu'un a été éliminé
+  if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
+    vibratePattern([150, 50, 150]); // Pattern élimination
+    console.log('[D6] Player eliminated! Alive:', previousAliveCount, '->', currentAliveCount);
+  }
 
   // audio per phase
   audioManager.play(state.audio);
