@@ -1754,10 +1754,20 @@ $("rulesModal").addEventListener("click", (e) => {
     e.stopPropagation();
     console.log('[APP] Clic sur bouton installation');
     
+    // Réinitialiser les flags qui pourraient bloquer
+    localStorage.removeItem('pwa_prompt_dismissed');
+    
     // Essayer D10PWA d'abord
     if (window.D10PWA && D10PWA.canInstall) {
-      console.log('[APP] Utilisation D10PWA');
+      console.log('[APP] Utilisation D10PWA - installation directe');
       D10PWA.triggerInstall();
+      return false;
+    }
+    
+    // Si D10PWA a capturé le prompt mais canInstall est false, forcer l'affichage
+    if (window.D10PWA && typeof D10PWA.forceShowInstallPrompt === 'function') {
+      console.log('[APP] Affichage prompt D10PWA forcé');
+      D10PWA.forceShowInstallPrompt();
       return false;
     }
     
@@ -1786,7 +1796,7 @@ $("rulesModal").addEventListener("click", (e) => {
     } else {
       title = 'Installer sur PC';
       steps = `
-        <li>Cliquez sur l'icône <b>⊕</b> dans la barre d'adresse</li>
+        <li>Cliquez sur l'icône 📥 (carré avec flèche) à droite de la barre d'adresse</li>
         <li>Ou menu <b>⋮</b> → <b>"Installer Saboteur"</b></li>
         <li>Confirmez l'installation</li>
       `;

@@ -163,7 +163,7 @@
       if (!isInstalled && !isStandalone) {
         setTimeout(() => {
           showInstallPrompt();
-        }, 30000); // Attendre 30 secondes avant de proposer
+        }, 5000); // Attendre 5 secondes avant de proposer
       }
     });
     
@@ -198,27 +198,88 @@
       }
     }
     
+    createInstallPromptUI();
+  }
+  
+  /**
+   * Force l'affichage du prompt (ignore les conditions)
+   */
+  function forceShowInstallPrompt() {
+    // Supprimer le prompt existant s'il y en a un
+    const existing = document.getElementById('pwaInstallPrompt');
+    if (existing) existing.remove();
+    
+    // Réinitialiser le flag dismissed
+    localStorage.removeItem('pwa_prompt_dismissed');
+    
+    createInstallPromptUI();
+  }
+  
+  /**
+   * Crée l'UI du prompt d'installation
+   */
+  function createInstallPromptUI() {
     const prompt = document.createElement('div');
     prompt.id = 'pwaInstallPrompt';
     prompt.className = 'pwa-install-prompt';
     
-    prompt.innerHTML = `
-      <div class="pwa-icon">🚀</div>
-      <div class="pwa-text">
-        <div class="pwa-title">Installer Saboteur</div>
-        <div class="pwa-desc">Jouez même hors ligne !</div>
-      </div>
-      <div class="pwa-buttons">
-        <button class="btn-install" id="pwaInstallBtn">Installer</button>
-        <button class="btn-dismiss" id="pwaDismissBtn">Plus tard</button>
-      </div>
-    `;
-    
-    document.body.appendChild(prompt);
-    
-    document.getElementById('pwaInstallBtn').addEventListener('click', () => {
-      triggerInstall();
-    });
+    // Si on peut installer automatiquement
+    if (deferredPrompt) {
+      prompt.innerHTML = `
+        <div class="pwa-icon">🚀</div>
+        <div class="pwa-text">
+          <div class="pwa-title">Installer Saboteur</div>
+          <div class="pwa-desc">Jouez même hors ligne !</div>
+        </div>
+        <div class="pwa-buttons">
+          <button class="btn-install" id="pwaInstallBtn">Installer</button>
+          <button class="btn-dismiss" id="pwaDismissBtn">Plus tard</button>
+        </div>
+      `;
+      
+      document.body.appendChild(prompt);
+      
+      document.getElementById('pwaInstallBtn').addEventListener('click', () => {
+        triggerInstall();
+      });
+    } else {
+      // Instructions manuelles car pas de deferredPrompt
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      let instructions = '';
+      if (isIOS) {
+        instructions = `
+          <li>Appuyez sur <b>Partager</b> ⬆️ en bas</li>
+          <li>Puis <b>"Sur l'écran d'accueil"</b></li>
+        `;
+      } else if (isAndroid) {
+        instructions = `
+          <li>Menu <b>⋮</b> en haut à droite</li>
+          <li>Puis <b>"Installer l'application"</b></li>
+        `;
+      } else {
+        instructions = `
+          <li>Cliquez sur 📥 dans la barre d'adresse</li>
+          <li>Ou menu <b>⋮</b> → <b>"Installer"</b></li>
+        `;
+      }
+      
+      prompt.innerHTML = `
+        <div class="pwa-icon">📲</div>
+        <div class="pwa-text">
+          <div class="pwa-title">Installer Saboteur</div>
+          <ol style="text-align:left; font-size:0.85rem; margin:10px 0; padding-left:20px; line-height:1.6;">
+            ${instructions}
+          </ol>
+        </div>
+        <div class="pwa-buttons">
+          <button class="btn-dismiss" id="pwaDismissBtn">OK, compris</button>
+        </div>
+      `;
+      
+      document.body.appendChild(prompt);
+    }
     
     document.getElementById('pwaDismissBtn').addEventListener('click', () => {
       hideInstallPrompt();
@@ -482,6 +543,7 @@
     
     // Installation
     showInstallPrompt,
+    forceShowInstallPrompt,
     hideInstallPrompt,
     triggerInstall,
     
