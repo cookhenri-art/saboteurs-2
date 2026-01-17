@@ -40,14 +40,14 @@
       "short_name": "Créer",
       "description": "Créer une nouvelle partie de Saboteur",
       "url": "/?action=create",
-      "icons": [{ "src": "/images/default/roles/astronaute.webp", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-192x192.webp", "sizes": "96x96" }]
     },
     {
       "name": "Rejoindre une partie",
       "short_name": "Rejoindre",
       "description": "Rejoindre une partie existante",
       "url": "/?action=join",
-      "icons": [{ "src": "/images/default/roles/saboteur.webp", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-192x192.webp", "sizes": "96x96" }]
     }
   ],
   "related_applications": [],
@@ -55,6 +55,7 @@
   "share_target": {
     "action": "/share",
     "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
     "params": {
       "title": "title",
       "text": "text",
