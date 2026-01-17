@@ -1723,7 +1723,7 @@ $("rulesModal").addEventListener("click", (e) => {
 // =========================================================
 // BOUTON INSTALLATION APP (PWA)
 // =========================================================
-document.addEventListener('DOMContentLoaded', function() {
+(function initInstallButton() {
   const installBtn = document.getElementById("installAppBtn");
   const installContainer = document.getElementById("installAppContainer");
   
@@ -1748,8 +1748,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Afficher le bouton
   installContainer.style.display = 'block';
   
-  // Fonction pour afficher les instructions
-  function showInstallInstructions() {
+  // Attacher le handler de clic DIRECTEMENT
+  installBtn.onclick = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[APP] Clic sur bouton installation');
+    
+    // Essayer D10PWA d'abord
+    if (window.D10PWA && D10PWA.canInstall) {
+      console.log('[APP] Utilisation D10PWA');
+      D10PWA.triggerInstall();
+      return false;
+    }
+    
     console.log('[APP] Affichage instructions installation');
     
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -1791,27 +1802,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById("rulesContent").innerHTML = html;
     document.getElementById("rulesModal").style.display = "block";
-  }
-  
-  // Attacher le handler de clic
-  installBtn.onclick = function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    console.log('[APP] Clic sur bouton installation');
-    
-    // Essayer D10PWA d'abord
-    if (window.D10PWA && D10PWA.canInstall) {
-      console.log('[APP] Utilisation D10PWA');
-      D10PWA.triggerInstall();
-    } else {
-      showInstallInstructions();
-    }
     
     return false;
   };
   
   console.log('[APP] Handler attaché avec succès');
-});
+})();
 
 // quit
 
