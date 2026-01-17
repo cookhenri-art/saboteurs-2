@@ -1,10 +1,10 @@
 /* =========================================================
    D10 - SERVICE WORKER PWA
    Cache strategy: Network First with Cache Fallback
-   Version: 1.0
+   Version: 1.1 - Nouveau logo + corrections D7-D10
 ========================================================= */
 
-const CACHE_NAME = 'saboteur-v1.0';
+const CACHE_NAME = 'saboteur-v1.1';
 const OFFLINE_URL = '/offline.html';
 
 // Ressources à mettre en cache immédiatement
@@ -21,7 +21,10 @@ const PRECACHE_URLS = [
   '/video-briefing-ui.js',
   '/video-briefing.css',
   '/audio-mixer.js',
-  '/offline.html'
+  '/offline.html',
+  '/manifest.json',
+  '/icons/icon-192x192.webp',
+  '/icons/icon-512x512.webp'
 ];
 
 // Extensions de fichiers à mettre en cache
