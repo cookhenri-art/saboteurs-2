@@ -30,25 +30,33 @@
 </head>
 
 <body>
-  <!-- Bouton RÈGLES à gauche + Bouton APP -->
+  <!-- Bouton RÈGLES en haut à gauche -->
   <div id="topLeftButtons" style="
-    position: fixed; left: 20px; top: 20px; z-index: 9999;
-    display: flex; flex-direction: column; gap: 10px;
+    position: fixed; left: 10px; top: 10px; z-index: 9999;
   ">
     <button id="rulesBtn" class="btn btn-secondary" style="
       padding: 10px 16px; border-radius: 10px; font-weight: 800;
     ">📜 <span class="rulesBtnText">RÈGLES</span></button>
-    
-    <!-- Bouton Installation APP (PWA) -->
-    <button id="installAppBtn" class="btn btn-secondary" style="
-      padding: 8px 12px; border-radius: 10px; font-weight: 800;
+  </div>
+  
+  <!-- Bouton APP en bas à gauche (séparé pour éviter conflits tactiles) -->
+  <div id="installAppContainer" style="
+    position: fixed; left: 10px; bottom: 80px; z-index: 9998;
+  ">
+    <button id="installAppBtn" type="button" style="
+      padding: 10px 14px; border-radius: 12px; font-weight: 800;
       display: flex; align-items: center; gap: 8px;
-      background: linear-gradient(135deg, var(--secondary-bg) 0%, rgba(0,255,255,0.1) 100%);
+      background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(0,255,255,0.15) 100%);
       border: 2px solid var(--neon-cyan, #00ffff);
+      color: var(--neon-cyan, #00ffff);
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      font-family: inherit;
+      font-size: 0.9rem;
     ">
-      <img src="/icons/icon-192x192.webp" alt="App" style="width: 24px; height: 24px; border-radius: 6px;">
+      <img src="/icons/icon-192x192.webp" alt="App" style="width: 28px; height: 28px; border-radius: 6px;">
       <span>APP</span>
-      <span style="font-size: 1.1rem;">⬇️</span>
+      <span style="font-size: 1.2rem;">⬇️</span>
     </button>
   </div>
   
