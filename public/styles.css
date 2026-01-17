@@ -541,6 +541,25 @@ input:focus {
     box-shadow: 0 0 40px var(--neon-red);
 }
 
+/* Bouton Installation APP (PWA) */
+#installAppBtn {
+    background: linear-gradient(135deg, var(--secondary-bg) 0%, rgba(0,255,255,0.15) 100%);
+    border: 2px solid var(--neon-cyan);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+#installAppBtn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.6);
+    background: linear-gradient(135deg, var(--secondary-bg) 0%, rgba(0,255,255,0.25) 100%);
+}
+
+#installAppBtn img {
+    border-radius: 6px;
+    box-shadow: 0 0 5px rgba(0, 255, 255, 0.4);
+}
+
 .btn-danger {
     background: var(--neon-red);
     color: white;
@@ -1798,6 +1817,18 @@ select:focus-visible {
     padding: 6px 8px !important;
     border-radius: 6px !important;
     min-width: auto !important;
+  }
+  
+  /* Bouton APP - Installation PWA */
+  #installAppBtn {
+    font-size: 0.75rem !important;
+    padding: 4px 8px !important;
+    border-radius: 6px !important;
+  }
+  
+  #installAppBtn img {
+    width: 18px !important;
+    height: 18px !important;
   }
   
   /* Container principal plus étroit */

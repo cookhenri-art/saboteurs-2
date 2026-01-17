@@ -1720,6 +1720,81 @@ $("rulesModal").addEventListener("click", (e) => {
   if (e.target === $("rulesModal")) $("rulesModal").style.display = "none";
 });
 
+// =========================================================
+// BOUTON INSTALLATION APP (PWA)
+// =========================================================
+const installAppBtn = $("installAppBtn");
+if (installAppBtn) {
+  // Vérifier si déjà installé ou en mode standalone
+  function updateInstallButton() {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
+    const isInstalled = localStorage.getItem('pwa_installed') === 'true';
+    
+    if (isStandalone || isInstalled) {
+      installAppBtn.style.display = 'none';
+    } else {
+      installAppBtn.style.display = 'flex';
+    }
+  }
+  
+  updateInstallButton();
+  
+  installAppBtn.onclick = async () => {
+    // Essayer d'utiliser D10PWA si disponible
+    if (window.D10PWA && D10PWA.canInstall) {
+      D10PWA.triggerInstall();
+    } else {
+      // Afficher les instructions manuelles
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      
+      let instructions = '';
+      if (isIOS) {
+        instructions = `
+          <div style="text-align:center; padding:20px;">
+            <div style="font-size:3rem; margin-bottom:15px;">📲</div>
+            <h3 style="color:var(--neon-cyan); margin-bottom:15px;">Installer sur iPhone/iPad</h3>
+            <ol style="text-align:left; line-height:1.8;">
+              <li>Appuyez sur le bouton <b>Partager</b> <span style="font-size:1.3rem;">⬆️</span> en bas de Safari</li>
+              <li>Faites défiler et appuyez sur <b>"Sur l'écran d'accueil"</b></li>
+              <li>Appuyez sur <b>Ajouter</b></li>
+            </ol>
+          </div>
+        `;
+      } else if (isAndroid) {
+        instructions = `
+          <div style="text-align:center; padding:20px;">
+            <div style="font-size:3rem; margin-bottom:15px;">📲</div>
+            <h3 style="color:var(--neon-cyan); margin-bottom:15px;">Installer sur Android</h3>
+            <ol style="text-align:left; line-height:1.8;">
+              <li>Appuyez sur le menu <b>⋮</b> en haut à droite de Chrome</li>
+              <li>Appuyez sur <b>"Installer l'application"</b> ou <b>"Ajouter à l'écran d'accueil"</b></li>
+              <li>Confirmez l'installation</li>
+            </ol>
+          </div>
+        `;
+      } else {
+        instructions = `
+          <div style="text-align:center; padding:20px;">
+            <div style="font-size:3rem; margin-bottom:15px;">💻</div>
+            <h3 style="color:var(--neon-cyan); margin-bottom:15px;">Installer sur PC</h3>
+            <ol style="text-align:left; line-height:1.8;">
+              <li>Cliquez sur l'icône <b>⊕</b> dans la barre d'adresse (à droite)</li>
+              <li>Ou menu <b>⋮</b> → <b>"Installer Saboteur"</b></li>
+              <li>Confirmez l'installation</li>
+            </ol>
+          </div>
+        `;
+      }
+      
+      // Afficher dans le modal des règles
+      $("rulesContent").innerHTML = instructions;
+      $("rulesModal").style.display = "block";
+    }
+  };
+}
+
 // quit
 
 // navigation
