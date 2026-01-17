@@ -459,29 +459,52 @@
     
     const btn = document.createElement('button');
     btn.id = 'customizationBtn';
-    btn.className = 'btn';
-    btn.innerHTML = '🎨 Personnaliser';
+    btn.className = 'btn customization-btn';
+    btn.innerHTML = '🎨';
+    btn.title = 'Personnaliser mon avatar';
     btn.style.cssText = `
       position: fixed;
-      bottom: 15px;
-      right: 15px;
+      bottom: 10px;
+      right: 10px;
       z-index: 1000;
-      padding: 8px 12px;
-      font-size: 0.85rem;
-      background: var(--secondary-bg, rgba(0,0,0,0.8));
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      font-size: 1.2rem;
+      background: var(--secondary-bg, rgba(0,0,0,0.85));
       border: 2px solid var(--neon-cyan, #00ffff);
-      border-radius: 20px;
+      border-radius: 50%;
       color: var(--neon-cyan, #00ffff);
-      font-weight: 600;
-      text-shadow: 0 0 5px var(--neon-cyan, #00ffff);
-      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 10px var(--neon-cyan, rgba(0, 255, 255, 0.4));
       cursor: pointer;
       transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     `;
     btn.addEventListener('click', openCustomizationModal);
+    btn.addEventListener('mouseenter', () => {
+      btn.style.transform = 'scale(1.1)';
+      btn.style.boxShadow = '0 0 15px var(--neon-cyan, rgba(0, 255, 255, 0.6))';
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = 'scale(1)';
+      btn.style.boxShadow = '0 0 10px var(--neon-cyan, rgba(0, 255, 255, 0.4))';
+    });
     
     document.body.appendChild(btn);
     log('Customization button injected');
+  }
+  
+  /**
+   * Supprime le bouton de personnalisation (appelé quand on quitte le lobby)
+   */
+  function removeCustomizationButton() {
+    const btn = document.getElementById('customizationBtn');
+    if (btn) {
+      btn.remove();
+      log('Customization button removed');
+    }
   }
 
   /**
@@ -559,6 +582,7 @@
     applyCustomization,
     openCustomizationModal,
     injectCustomizationButton,
+    removeCustomizationButton,
     
     // Server
     getCustomizationForServer

@@ -398,11 +398,19 @@ function render() {
   }
 
   if (state.phase === "GAME_OVER" || state.phase === "GAME_ABORTED") {
+    // D9: Supprimer le bouton personnaliser (on n'est plus dans le lobby)
+    if (window.D9Avatars && typeof D9Avatars.removeCustomizationButton === 'function') {
+      D9Avatars.removeCustomizationButton();
+    }
     showScreen("endScreen");
     renderEnd();
     return;
   }
 
+  // D9: Supprimer le bouton personnaliser (on n'est plus dans le lobby)
+  if (window.D9Avatars && typeof D9Avatars.removeCustomizationButton === 'function') {
+    D9Avatars.removeCustomizationButton();
+  }
   showScreen("gameScreen");
   renderGame();
 }
@@ -482,7 +490,7 @@ function renderLobby() {
   for (const p of playersSorted) {
     const item = document.createElement("div");
     item.className = "player-item";
-        item.dataset.playerId = p.playerId;
+    item.dataset.playerId = p.playerId;
     
     // D9: Appliquer la couleur de bordure personnalisée
     if (p.colorHex) {
@@ -490,21 +498,21 @@ function renderLobby() {
       item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
     }
     
-const left = document.createElement("div");
+    const left = document.createElement("div");
     left.className = "player-left";
     // D6 V2.0: Styles inline avec flex-wrap pour mobile
     left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto; flex-wrap:wrap;";
     
-    // D9: Préparer l'avatar emoji
+    // D9: Préparer l'avatar emoji et le badge
     const avatarEmoji = p.avatarEmoji || '👤';
-    const avatarDisplay = `<span class="player-avatar" style="font-size:1.5rem; margin-right:4px;">${avatarEmoji}</span>`;
+    const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
     
     left.innerHTML = `
       <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}" style="flex-shrink:0;"></div>
       <div class="player-info" style="display:flex !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:120px;">
         <div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">
-          ${avatarDisplay}${escapeHtml(p.name)}
-          ${p.badgeEmoji ? `<span style="margin-left:4px;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : ''}
+          <span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>
+          ${escapeHtml(p.name)}${badgeDisplay}
         </div>
         <div style="display:flex; flex-wrap:wrap; gap:4px;">
           ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
@@ -1181,9 +1189,17 @@ function renderEnd() {
     }).join("<br>");
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
-      return `<div class="player-item" style="margin:8px 0;">
+      // D9: Trouver le joueur pour récupérer son avatar
+      const player = state.players.find(p => p.name === name);
+      const avatarEmoji = player?.avatarEmoji || '👤';
+      const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
+      
+      return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
-          <div style="font-weight:900;">${escapeHtml(name)}</div>
+          <div style="font-weight:900; display:flex; align-items:center;">
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+            ${escapeHtml(name)}
+          </div>
           <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
         </div>
       </div>`;
@@ -1192,14 +1208,22 @@ function renderEnd() {
 
 const detailed = rep.detailedStatsByName || {};
 const detailedHtml = Object.entries(detailed).map(([name, s]) => {
+  // D9: Trouver le joueur pour récupérer son avatar
+  const player = state.players.find(p => p.name === name);
+  const avatarEmoji = player?.avatarEmoji || '👤';
+  const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
+  
   const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
     // Traduire la clé de rôle en nom localisé
     const roleName = tRole(rk) || rk;
     return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
   }).join("");
-  return `<div class="player-item" style="margin:8px 0;">
+  return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
     <div class="player-left">
-      <div style="font-weight:900;">${escapeHtml(name)}</div>
+      <div style="font-weight:900; display:flex; align-items:center;">
+        <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+        ${escapeHtml(name)}
+      </div>
       <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
       <div style="margin-top:6px; opacity:.95;">
         <div style="font-weight:900; margin-bottom:4px;">Stats par rôle</div>
@@ -1864,11 +1888,11 @@ socket.on("roomState", (s) => {
   // D7: ANIMATIONS UX
   // =========================================================
   
-  // D7: Animation de révélation de rôle
-  if (previousPhase !== 'ROLE_REVEAL' && currentPhaseNow === 'ROLE_REVEAL') {
+  // D7: Animation de révélation de rôle (flip 3D)
+  if (previousPhase && previousPhase !== 'ROLE_REVEAL' && currentPhaseNow === 'ROLE_REVEAL') {
     requestAnimationFrame(() => {
       if (window.D7Animations) {
-        console.log('[D7] Triggering role reveal animation');
+        console.log('[D7] 🎭 Triggering role reveal animation');
         D7Animations.animateRoleReveal();
       }
     });
@@ -1876,45 +1900,48 @@ socket.on("roomState", (s) => {
   
   // D7: Animation d'éjection (quand un joueur est éliminé)
   if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
-    // Trouver le joueur qui vient d'être éliminé
-    const prevPlayers = (state?.players || []);
-    const currentPlayers = (s?.players || []);
-    const newlyDead = currentPlayers.filter(p => 
-      p.status === 'dead' && 
-      prevPlayers.find(prev => prev.id === p.id && prev.status === 'alive')
-    );
+    // Trouver les joueurs qui viennent d'être éliminés
+    const previousPlayers = (state?.players || []);
+    const newlyDead = s.players.filter(p => {
+      if (p.status !== 'dead') return false;
+      const prev = previousPlayers.find(pp => pp.playerId === p.playerId);
+      return prev && prev.status === 'alive';
+    });
     
     newlyDead.forEach(deadPlayer => {
       if (window.D7Animations) {
-        console.log('[D7] Triggering ejection animation for:', deadPlayer.name);
-        D7Animations.animateEjection(deadPlayer.id);
-        D7Animations.animateDeath(deadPlayer.id);
+        console.log('[D7] 💀 Triggering ejection animation for:', deadPlayer.name);
+        setTimeout(() => {
+          D7Animations.animateEjection(deadPlayer.playerId);
+          D7Animations.animateDeath(deadPlayer.playerId);
+        }, 100);
       }
     });
   }
   
-  // D7: Animation de victoire/défaite
-  if (previousPhase !== 'GAME_OVER' && currentPhaseNow === 'GAME_OVER') {
+  // D7: Animation de victoire/défaite + D9: Enregistrement partie
+  if (previousPhase && previousPhase !== 'GAME_OVER' && currentPhaseNow === 'GAME_OVER') {
     const winner = state.phaseData?.winner;
-    const myPlayer = state.players?.find(p => p.id === sessionStorage.getItem('is_playerId'));
+    const myPlayerId = sessionStorage.getItem('is_playerId');
+    const myPlayer = state.players?.find(p => p.playerId === myPlayerId);
     
     if (winner && myPlayer) {
-      const myTeam = myPlayer.role?.team;
+      const myTeam = myPlayer.role?.team || (myPlayer.role === 'saboteur' ? 'SABOTEURS' : 'ASTRONAUTES');
       const isWinner = (winner === 'SABOTEURS' && myTeam === 'SABOTEURS') ||
                        (winner === 'ASTRONAUTES' && myTeam === 'ASTRONAUTES') ||
                        (winner === 'AMOUREUX');
       
-      requestAnimationFrame(() => {
+      setTimeout(() => {
         if (window.D7Animations) {
-          console.log('[D7] Triggering victory animation, isWinner:', isWinner);
+          console.log('[D7] 🏆 Triggering victory animation, isWinner:', isWinner);
           D7Animations.animateVictory(isWinner);
         }
         // D9: Enregistrer la partie jouée
         if (window.D9Avatars) {
-          console.log('[D9] Recording game played, won:', isWinner);
+          console.log('[D9] 📊 Recording game played, won:', isWinner);
           D9Avatars.recordGamePlayed(isWinner);
         }
-      });
+      }, 500);
     }
   }
   
