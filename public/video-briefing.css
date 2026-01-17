@@ -1217,6 +1217,7 @@ body.video-split-active .role-card img {
    uniquement quand la visio conférence est active
    ============================================ */
 
+/* DÉSACTIVÉ D6 V2.3 - Plus de décalage des banners en mode visio split
 body.video-split-active #gameBackdrop,
 body.video-split-active #endBackdrop,
 body.video-split-active .banner,
@@ -1232,3 +1233,4 @@ body.video-split-active .phase-banner::before,
 body.video-split-active .header-banner::before {
   background-position: center bottom !important;
 }
+*/
