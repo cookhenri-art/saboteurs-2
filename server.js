@@ -1925,7 +1925,7 @@ io.on("connection", (socket) => {
       rooms.set(code, room);
       logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId });
       
-      // D9: Passer les données de personnalisation
+      // D9: Préparer les données de personnalisation
       const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
       joinRoomCommon(socket, room, playerId, name, playerToken, customization);
       cb && cb({ ok: true, roomCode: code, host: true });
