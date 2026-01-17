@@ -408,6 +408,13 @@ function render() {
 }
 
 function renderLobby() {
+  // D9: Injecter le bouton de personnalisation
+  requestAnimationFrame(() => {
+    if (window.D9Avatars && typeof D9Avatars.injectCustomizationButton === 'function') {
+      D9Avatars.injectCustomizationButton();
+    }
+  });
+  
   // Play lobby intro on first entry (adapté au thème)
   if (!lobbyIntroPlayed) {
     lobbyIntroPlayed = true;
@@ -476,14 +483,29 @@ function renderLobby() {
     const item = document.createElement("div");
     item.className = "player-item";
         item.dataset.playerId = p.playerId;
+    
+    // D9: Appliquer la couleur de bordure personnalisée
+    if (p.colorHex) {
+      item.style.borderColor = p.colorHex;
+      item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+    }
+    
 const left = document.createElement("div");
     left.className = "player-left";
     // D6 V2.0: Styles inline avec flex-wrap pour mobile
     left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto; flex-wrap:wrap;";
+    
+    // D9: Préparer l'avatar emoji
+    const avatarEmoji = p.avatarEmoji || '👤';
+    const avatarDisplay = `<span class="player-avatar" style="font-size:1.5rem; margin-right:4px;">${avatarEmoji}</span>`;
+    
     left.innerHTML = `
       <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}" style="flex-shrink:0;"></div>
       <div class="player-info" style="display:flex !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:120px;">
-        <div class="player-name" style="font-weight:700; font-size:1rem; color:white;">${escapeHtml(p.name)}</div>
+        <div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">
+          ${avatarDisplay}${escapeHtml(p.name)}
+          ${p.badgeEmoji ? `<span style="margin-left:4px;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : ''}
+        </div>
         <div style="display:flex; flex-wrap:wrap; gap:4px;">
           ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
           ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
@@ -1691,7 +1713,23 @@ function createRoomFlow() {
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
 
-  socket.emit("createRoom", { playerId, name, playerToken, themeId: homeSelectedTheme }, (res) => {
+  // D9: Récupérer les données de personnalisation
+  const customization = window.D9Avatars?.getCustomizationForServer() || {};
+  
+  socket.emit("createRoom", { 
+    playerId, 
+    name, 
+    playerToken, 
+    themeId: homeSelectedTheme,
+    // D9: Données de personnalisation
+    avatarId: customization.avatarId,
+    avatarEmoji: customization.avatarEmoji,
+    colorId: customization.colorId,
+    colorHex: customization.colorHex,
+    badgeId: customization.badgeId,
+    badgeEmoji: customization.badgeEmoji,
+    badgeName: customization.badgeName
+  }, (res) => {
     if (!res?.ok) return setError(res?.error || "Erreur création");
     sessionStorage.setItem(STORAGE.room, res.roomCode);
     startHeartbeat();
@@ -1713,7 +1751,23 @@ $("joinRoomBtn").onclick = () => {
   sessionStorage.setItem(STORAGE.name, name);
   sessionStorage.setItem(STORAGE.room, roomCode);
 
-  socket.emit("joinRoom", { playerId, name, roomCode, playerToken }, (res) => {
+  // D9: Récupérer les données de personnalisation
+  const customization = window.D9Avatars?.getCustomizationForServer() || {};
+  
+  socket.emit("joinRoom", { 
+    playerId, 
+    name, 
+    roomCode, 
+    playerToken,
+    // D9: Données de personnalisation
+    avatarId: customization.avatarId,
+    avatarEmoji: customization.avatarEmoji,
+    colorId: customization.colorId,
+    colorHex: customization.colorHex,
+    badgeId: customization.badgeId,
+    badgeEmoji: customization.badgeEmoji,
+    badgeName: customization.badgeName
+  }, (res) => {
     if (!res?.ok) {
       const error = res?.error || "Erreur connexion";
       setError(error);
@@ -1805,6 +1859,64 @@ socket.on("roomState", (s) => {
       window.syncEliminatedPlayersGrayscale();
     }
   });
+  
+  // =========================================================
+  // D7: ANIMATIONS UX
+  // =========================================================
+  
+  // D7: Animation de révélation de rôle
+  if (previousPhase !== 'ROLE_REVEAL' && currentPhaseNow === 'ROLE_REVEAL') {
+    requestAnimationFrame(() => {
+      if (window.D7Animations) {
+        console.log('[D7] Triggering role reveal animation');
+        D7Animations.animateRoleReveal();
+      }
+    });
+  }
+  
+  // D7: Animation d'éjection (quand un joueur est éliminé)
+  if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
+    // Trouver le joueur qui vient d'être éliminé
+    const prevPlayers = (state?.players || []);
+    const currentPlayers = (s?.players || []);
+    const newlyDead = currentPlayers.filter(p => 
+      p.status === 'dead' && 
+      prevPlayers.find(prev => prev.id === p.id && prev.status === 'alive')
+    );
+    
+    newlyDead.forEach(deadPlayer => {
+      if (window.D7Animations) {
+        console.log('[D7] Triggering ejection animation for:', deadPlayer.name);
+        D7Animations.animateEjection(deadPlayer.id);
+        D7Animations.animateDeath(deadPlayer.id);
+      }
+    });
+  }
+  
+  // D7: Animation de victoire/défaite
+  if (previousPhase !== 'GAME_OVER' && currentPhaseNow === 'GAME_OVER') {
+    const winner = state.phaseData?.winner;
+    const myPlayer = state.players?.find(p => p.id === sessionStorage.getItem('is_playerId'));
+    
+    if (winner && myPlayer) {
+      const myTeam = myPlayer.role?.team;
+      const isWinner = (winner === 'SABOTEURS' && myTeam === 'SABOTEURS') ||
+                       (winner === 'ASTRONAUTES' && myTeam === 'ASTRONAUTES') ||
+                       (winner === 'AMOUREUX');
+      
+      requestAnimationFrame(() => {
+        if (window.D7Animations) {
+          console.log('[D7] Triggering victory animation, isWinner:', isWinner);
+          D7Animations.animateVictory(isWinner);
+        }
+        // D9: Enregistrer la partie jouée
+        if (window.D9Avatars) {
+          console.log('[D9] Recording game played, won:', isWinner);
+          D9Avatars.recordGamePlayed(isWinner);
+        }
+      });
+    }
+  }
   
   // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
   requestAnimationFrame(() => {

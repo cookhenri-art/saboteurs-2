@@ -463,13 +463,20 @@
     btn.innerHTML = '🎨 Personnaliser';
     btn.style.cssText = `
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 15px;
+      right: 15px;
       z-index: 1000;
-      padding: 10px 16px;
-      background: var(--secondary-bg);
-      border: 1px solid var(--neon-cyan);
-      border-radius: 25px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      background: var(--secondary-bg, rgba(0,0,0,0.8));
+      border: 2px solid var(--neon-cyan, #00ffff);
+      border-radius: 20px;
+      color: var(--neon-cyan, #00ffff);
+      font-weight: 600;
+      text-shadow: 0 0 5px var(--neon-cyan, #00ffff);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
     `;
     btn.addEventListener('click', openCustomizationModal);
     

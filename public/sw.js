@@ -132,8 +132,9 @@ async function networkFirstWithCache(request) {
     // Essayer le réseau d'abord
     const networkResponse = await fetch(request);
     
-    // Si succès, mettre en cache et retourner
-    if (networkResponse.ok) {
+    // Si succès (200 uniquement, pas 206 Partial Content), mettre en cache et retourner
+    // Les réponses 206 sont pour le streaming audio/vidéo et ne doivent pas être cachées
+    if (networkResponse.ok && networkResponse.status === 200) {
       const cache = await caches.open(CACHE_NAME);
       
       // Ne mettre en cache que les ressources appropriées
@@ -141,6 +142,11 @@ async function networkFirstWithCache(request) {
         cache.put(request, networkResponse.clone());
       }
       
+      return networkResponse;
+    }
+    
+    // Retourner directement les réponses 206 (streaming) sans cacher
+    if (networkResponse.status === 206) {
       return networkResponse;
     }
     
