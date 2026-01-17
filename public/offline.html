@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saboteur - Hors ligne</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary-bg: #0a0e1a;
+      --secondary-bg: #1a1f35;
+      --neon-cyan: #00ffff;
+      --neon-red: #ff0055;
+      --text-primary: #e0f4ff;
+      --text-secondary: #8ab4d5;
+      --font-title: 'Orbitron', sans-serif;
+      --font-body: 'Rajdhani', sans-serif;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      background: var(--primary-bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        radial-gradient(2px 2px at 20% 30%, white, transparent),
+        radial-gradient(2px 2px at 60% 70%, white, transparent),
+        radial-gradient(1px 1px at 50% 50%, white, transparent);
+      background-size: 200% 200%;
+      animation: twinkle 8s ease-in-out infinite;
+      opacity: 0.3;
+      z-index: -1;
+    }
+    
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.6; }
+    }
+    
+    .offline-container {
+      max-width: 500px;
+      padding: 40px;
+      background: var(--secondary-bg);
+      border-radius: 20px;
+      border: 2px solid var(--neon-red);
+      box-shadow: 0 0 40px rgba(255, 0, 85, 0.3);
+    }
+    
+    .offline-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    
+    h1 {
+      font-family: var(--font-title);
+      font-size: 2rem;
+      color: var(--neon-red);
+      margin-bottom: 15px;
+      text-shadow: 0 0 20px rgba(255, 0, 85, 0.5);
+    }
+    
+    p {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      line-height: 1.6;
+    }
+    
+    .signal-bars {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 5px;
+      margin: 30px 0;
+      height: 40px;
+    }
+    
+    .signal-bar {
+      width: 12px;
+      background: var(--neon-red);
+      border-radius: 3px;
+      animation: signalPulse 1.5s ease-in-out infinite;
+    }
+    
+    .signal-bar:nth-child(1) { height: 10px; animation-delay: 0s; }
+    .signal-bar:nth-child(2) { height: 20px; animation-delay: 0.2s; }
+    .signal-bar:nth-child(3) { height: 30px; animation-delay: 0.4s; }
+    .signal-bar:nth-child(4) { height: 40px; animation-delay: 0.6s; }
+    
+    @keyframes signalPulse {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+    
+    .retry-btn {
+      background: transparent;
+      border: 2px solid var(--neon-cyan);
+      color: var(--neon-cyan);
+      font-family: var(--font-title);
+      font-size: 1rem;
+      padding: 15px 40px;
+      border-radius: 30px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+    
+    .retry-btn:hover {
+      background: var(--neon-cyan);
+      color: var(--primary-bg);
+      box-shadow: 0 0 20px var(--neon-cyan);
+    }
+    
+    .tips {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .tips h3 {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+    
+    .tips ul {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+    
+    .tips li {
+      margin: 5px 0;
+    }
+    
+    .tips li::before {
+      content: '• ';
+      color: var(--neon-cyan);
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">📡</div>
+    <h1>CONNEXION PERDUE</h1>
+    <p>La station spatiale ne répond plus.</p>
+    <p>Vérifiez votre connexion Internet et réessayez.</p>
+    
+    <div class="signal-bars">
+      <div class="signal-bar"></div>
+      <div class="signal-bar"></div>
+      <div class="signal-bar"></div>
+      <div class="signal-bar"></div>
+    </div>
+    
+    <button class="retry-btn" onclick="location.reload()">
+      🔄 RÉESSAYER
+    </button>
+    
+    <div class="tips">
+      <h3>Conseils de dépannage :</h3>
+      <ul>
+        <li>Vérifiez votre connexion Wi-Fi ou données mobiles</li>
+        <li>Essayez de vous rapprocher de votre routeur</li>
+        <li>Désactivez puis réactivez le mode avion</li>
+        <li>Redémarrez l'application</li>
+      </ul>
+    </div>
+  </div>
+  
+  <script>
+    // Vérifier périodiquement si la connexion est revenue
+    setInterval(() => {
+      if (navigator.onLine) {
+        fetch('/')
+          .then(response => {
+            if (response.ok) {
+              location.reload();
+            }
+          })
+          .catch(() => {});
+      }
+    }, 5000);
+    
+    // Écouter l'événement online
+    window.addEventListener('online', () => {
+      location.reload();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+{
+  "name": "Saboteur - Jeu de Déduction Sociale",
+  "short_name": "Saboteur",
+  "description": "Un jeu multijoueur de déduction sociale avec vidéo intégrée. Trouvez les saboteurs avant qu'il ne soit trop tard !",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0e1a",
+  "theme_color": "#00ffff",
+  "scope": "/",
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "categories": ["games", "social"],
+  "icons": [
+    {
+      "src": "/images/default/roles/astronaute.webp",
+      "sizes": "192x192",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/default/roles/astronaute.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/default/cockpit.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Écran de jeu"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Créer une partie",
+      "short_name": "Créer",
+      "description": "Créer une nouvelle partie de Saboteur",
+      "url": "/?action=create",
+      "icons": [{ "src": "/images/default/roles/astronaute.webp", "sizes": "96x96" }]
+    },
+    {
+      "name": "Rejoindre une partie",
+      "short_name": "Rejoindre",
+      "description": "Rejoindre une partie existante",
+      "url": "/?action=join",
+      "icons": [{ "src": "/images/default/roles/saboteur.webp", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+saboteur",
+      "url": "/join?code=%s"
+    }
+  ],
+  "display_override": ["window-controls-overlay", "standalone", "browser"],
+  "edge_side_panel": {
+    "preferred_width": 400
+  }
+}

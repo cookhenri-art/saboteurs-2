@@ -4,6 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🎭 LES SABOTEURS - D4 Briefing 🎭</title>
+  <!-- D10: PWA Meta Tags -->
+  <meta name="description" content="Saboteur - Un jeu multijoueur de déduction sociale avec vidéo intégrée.">
+  <meta name="theme-color" content="#00ffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Saboteur">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/images/default/roles/astronaute.webp">
+
   <!-- Polices pour thème Default (Spatial) -->
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
   
@@ -527,6 +536,14 @@
         loadClient();
         // Charger l'intégration vidéo (après le client)
         setTimeout(loadVideoIntegration, 1000);
+        
+        // D7-D10: Charger les nouveaux modules
+        setTimeout(function() {
+          loadScript('d7-animations.js');
+          loadScript('d8-performance.js');
+          loadScript('d9-avatars.js');
+          loadScript('d10-pwa.js');
+        }, 1500);
       });
     })();
   </script>

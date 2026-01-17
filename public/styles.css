@@ -2200,3 +2200,602 @@ select:focus-visible {
   padding: 6px 10px !important;
 }
 
+/* =====================================================
+   D7 - UX / VISUEL AMÉLIORATIONS
+   ===================================================== */
+
+/* D7.1 - Animation d'éjection de joueur */
+.player-card.ejecting,
+.choice-card.ejecting {
+  animation: ejectPlayer 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+@keyframes ejectPlayer {
+  0% { 
+    transform: scale(1) rotate(0deg); 
+    opacity: 1; 
+    filter: brightness(1);
+  }
+  25% { 
+    transform: scale(1.15) rotate(-3deg); 
+    filter: brightness(1.3);
+    box-shadow: 0 0 30px rgba(255, 0, 85, 0.8);
+  }
+  50% { 
+    transform: scale(1.1) rotate(5deg); 
+    filter: brightness(0.8) saturate(0.5);
+  }
+  75% { 
+    transform: scale(0.5) rotate(-10deg) translateY(-30px); 
+    opacity: 0.5;
+    filter: brightness(0.5) saturate(0);
+  }
+  100% { 
+    transform: scale(0) rotate(180deg) translateY(-100px); 
+    opacity: 0; 
+    filter: brightness(0) saturate(0);
+  }
+}
+
+/* D7.2 - Effet de vote (pulse quand quelqu'un vote) */
+.player-card.just-voted,
+.choice-card.just-voted {
+  animation: votePulse 0.6s ease-out;
+}
+
+@keyframes votePulse {
+  0% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 255, 255, 0.7);
+  }
+  50% { 
+    transform: scale(1.02);
+    box-shadow: 0 0 20px 10px rgba(0, 255, 255, 0.3);
+  }
+  100% { 
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(0, 255, 255, 0);
+  }
+}
+
+/* D7.3 - Speaking glow amélioré (indicateur qui parle) */
+.video-thumb.speaking,
+.player-video-slot.speaking,
+.player-item.is-speaking .player-video-slot {
+  box-shadow: 0 0 15px var(--neon-cyan),
+              0 0 30px var(--neon-cyan),
+              0 0 45px rgba(0, 255, 255, 0.3);
+  animation: speakingGlow 1.2s ease-in-out infinite;
+  border-color: var(--neon-cyan) !important;
+}
+
+@keyframes speakingGlow {
+  0%, 100% { 
+    box-shadow: 0 0 15px var(--neon-cyan),
+                0 0 30px var(--neon-cyan);
+  }
+  50% { 
+    box-shadow: 0 0 25px var(--neon-cyan),
+                0 0 50px var(--neon-cyan),
+                0 0 70px rgba(0, 255, 255, 0.4);
+  }
+}
+
+/* Badge speaker animé */
+.speaker-badge {
+  animation: speakerBadgePulse 1s ease-in-out infinite;
+}
+
+@keyframes speakerBadgePulse {
+  0%, 100% { 
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+}
+
+/* D7.4 - Animation de révélation de rôle */
+.role-display.revealing {
+  animation: roleReveal 1s ease-out;
+}
+
+@keyframes roleReveal {
+  0% {
+    transform: scale(0.8) rotateY(90deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  50% {
+    transform: scale(1.05) rotateY(-10deg);
+    opacity: 0.8;
+    filter: blur(2px);
+  }
+  100% {
+    transform: scale(1) rotateY(0deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* D7.5 - Animation de transition de phase */
+.phase-transition {
+  animation: phaseTransition 0.8s ease-out;
+}
+
+@keyframes phaseTransition {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* D7.6 - Animation de mort (joueur éliminé) */
+.player-card.dead-animation,
+.choice-card.dead-animation {
+  animation: playerDeath 1.5s ease-out forwards;
+}
+
+@keyframes playerDeath {
+  0% {
+    filter: grayscale(0) brightness(1);
+    transform: scale(1);
+  }
+  30% {
+    filter: grayscale(0) brightness(1.5);
+    transform: scale(1.05);
+    box-shadow: 0 0 40px rgba(255, 0, 0, 0.8);
+  }
+  60% {
+    filter: grayscale(0.5) brightness(0.8);
+    transform: scale(0.98);
+  }
+  100% {
+    filter: grayscale(1) brightness(0.6);
+    transform: scale(0.95);
+    opacity: 0.7;
+  }
+}
+
+/* D7.7 - Animation de victoire */
+.victory-animation {
+  animation: victoryBurst 2s ease-out;
+}
+
+@keyframes victoryBurst {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+    filter: brightness(2);
+  }
+  30% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  60% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* D7.8 - Compteur de votes animé */
+.vote-counter {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vote-counter.updated {
+  animation: voteCountUpdate 0.4s ease-out;
+}
+
+@keyframes voteCountUpdate {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); color: var(--neon-cyan); }
+  100% { transform: scale(1); }
+}
+
+/* =====================================================
+   D8 - OPTIMISATIONS PERFORMANCE
+   ===================================================== */
+
+/* D8.1 - GPU Acceleration pour éléments animés */
+.video-thumb,
+.player-card,
+.choice-card,
+.speaker-badge,
+.role-display,
+.btn,
+.player-item,
+.phase-banner,
+.daily-video-container {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* D8.2 - Désactiver will-change quand pas nécessaire */
+.video-thumb:not(.speaking),
+.player-card:not(.ejecting):not(.just-voted):not(.dead-animation),
+.choice-card:not(.ejecting):not(.just-voted):not(.selected) {
+  will-change: auto;
+}
+
+/* D8.3 - Optimisation des transitions */
+.player-card,
+.choice-card,
+.btn {
+  transition: transform 0.2s ease-out,
+              box-shadow 0.2s ease-out,
+              border-color 0.2s ease-out,
+              background-color 0.2s ease-out;
+}
+
+/* D8.4 - Contain pour limiter les repaints */
+.player-item,
+.choice-card,
+.video-thumb {
+  contain: layout style;
+}
+
+/* D8.5 - Lazy loading visual placeholder */
+.lazy-bg {
+  background-color: var(--secondary-bg);
+  background-image: none !important;
+  transition: background-image 0.3s ease-in;
+}
+
+.lazy-bg.loaded {
+  background-image: var(--lazy-bg-url);
+}
+
+/* D8.6 - Réduire la complexité du backdrop-filter sur mobile */
+@media (max-width: 768px) {
+  .control-panel,
+  .daily-video-container,
+  .briefing-panel {
+    backdrop-filter: blur(5px); /* Réduit de 10-15px */
+  }
+}
+
+/* =====================================================
+   D9 - SYSTÈME D'AVATARS (Préparation CSS)
+   ===================================================== */
+
+/* D9.1 - Grille de sélection d'avatars */
+.avatar-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 12px;
+  padding: 15px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.avatar-option {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-option:hover {
+  border-color: rgba(0, 255, 255, 0.5);
+  transform: scale(1.1);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.avatar-option.selected {
+  border-color: var(--neon-cyan);
+  box-shadow: 0 0 20px var(--neon-cyan);
+}
+
+.avatar-option.selected::after {
+  content: "✓";
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  background: var(--neon-cyan);
+  color: var(--primary-bg);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+/* D9.2 - Sélecteur de couleur */
+.color-selector {
+  display: flex;
+  gap: 10px;
+  padding: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.color-option {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.color-option:hover {
+  transform: scale(1.15);
+  box-shadow: 0 0 15px currentColor;
+}
+
+.color-option.selected {
+  border-color: white;
+  box-shadow: 0 0 20px currentColor;
+}
+
+/* Couleurs prédéfinies */
+.color-option[data-color="cyan"] { background: #00ffff; }
+.color-option[data-color="purple"] { background: #9d4edd; }
+.color-option[data-color="green"] { background: #00ff88; }
+.color-option[data-color="orange"] { background: #ff6b35; }
+.color-option[data-color="pink"] { background: #ff66cc; }
+.color-option[data-color="gold"] { background: #ffd700; }
+.color-option[data-color="red"] { background: #ff0055; }
+.color-option[data-color="blue"] { background: #4a90e2; }
+
+/* D9.3 - Badge vétéran/débutant */
+.player-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.player-badge.veteran {
+  background: linear-gradient(135deg, #ffd700, #ff8c42);
+  color: #000;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.player-badge.regular {
+  background: linear-gradient(135deg, #4a7c9b, #5a9bd4);
+  color: #fff;
+}
+
+.player-badge.newcomer {
+  background: linear-gradient(135deg, #00ff88, #00cc88);
+  color: #000;
+}
+
+.player-badge.legend {
+  background: linear-gradient(135deg, #c77dff, #ff66cc);
+  color: #fff;
+  animation: legendGlow 2s ease-in-out infinite;
+}
+
+@keyframes legendGlow {
+  0%, 100% { box-shadow: 0 0 10px rgba(199, 125, 255, 0.5); }
+  50% { box-shadow: 0 0 20px rgba(199, 125, 255, 0.8); }
+}
+
+/* D9.4 - Bordure joueur colorée custom */
+.player-item[data-player-color] {
+  border-left: 4px solid var(--player-color, var(--neon-cyan));
+}
+
+.player-card[data-player-color] {
+  border-color: var(--player-color, rgba(0, 255, 255, 0.3));
+}
+
+/* D9.5 - Avatar dans la liste des joueurs */
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  border: 2px solid var(--player-color, var(--neon-cyan));
+  flex-shrink: 0;
+}
+
+.player-avatar.default {
+  background: linear-gradient(135deg, var(--secondary-bg), var(--tertiary-bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* =====================================================
+   D10 - PWA & AMÉLIORATIONS LONG TERME
+   ===================================================== */
+
+/* D10.1 - Écran d'installation PWA */
+.pwa-install-prompt {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--secondary-bg);
+  border: 1px solid var(--neon-cyan);
+  border-radius: 16px;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
+              0 0 20px rgba(0, 255, 255, 0.2);
+  z-index: 10000;
+  animation: slideUp 0.5s ease-out;
+  max-width: 90vw;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateX(-50%) translateY(100px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+.pwa-install-prompt .pwa-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.pwa-install-prompt .pwa-text {
+  flex: 1;
+}
+
+.pwa-install-prompt .pwa-title {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.pwa-install-prompt .pwa-desc {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.pwa-install-prompt .pwa-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.pwa-install-prompt .btn-install {
+  background: var(--neon-cyan);
+  color: var(--primary-bg);
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pwa-install-prompt .btn-install:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 15px var(--neon-cyan);
+}
+
+.pwa-install-prompt .btn-dismiss {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--text-secondary);
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pwa-install-prompt .btn-dismiss:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+/* D10.2 - Indicateur offline */
+.offline-indicator {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(90deg, #ff4444, #cc0000);
+  color: white;
+  text-align: center;
+  padding: 8px;
+  font-weight: bold;
+  z-index: 10001;
+  animation: offlinePulse 2s ease-in-out infinite;
+}
+
+@keyframes offlinePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+/* D10.3 - Splash screen PWA */
+.pwa-splash {
+  position: fixed;
+  inset: 0;
+  background: var(--deep-space);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+  animation: splashFade 2s ease-out forwards;
+}
+
+@keyframes splashFade {
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+.pwa-splash .splash-logo {
+  width: 120px;
+  height: 120px;
+  animation: splashPulse 1s ease-in-out infinite;
+}
+
+@keyframes splashPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.pwa-splash .splash-title {
+  font-family: var(--font-title);
+  font-size: 2rem;
+  margin-top: 20px;
+  color: var(--neon-cyan);
+  text-shadow: 0 0 20px var(--neon-cyan);
+}
+
+.pwa-splash .splash-loader {
+  margin-top: 30px;
+  width: 50px;
+  height: 50px;
+  border: 3px solid var(--secondary-bg);
+  border-top-color: var(--neon-cyan);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
