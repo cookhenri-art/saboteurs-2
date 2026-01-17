@@ -1421,7 +1421,15 @@ function publicRoomStateFor(room, viewerId) {
       connected: !!p.connected,
       ready: !!p.ready,
       isHost: room.hostPlayerId === p.playerId,
-      isCaptain: !!p.isCaptain
+      isCaptain: !!p.isCaptain,
+      // D9: Données de personnalisation
+      avatarId: p.avatarId || null,
+      avatarEmoji: p.avatarEmoji || null,
+      colorId: p.colorId || null,
+      colorHex: p.colorHex || null,
+      badgeId: p.badgeId || null,
+      badgeEmoji: p.badgeEmoji || null,
+      badgeName: p.badgeName || null
     };
     if (!room.started) return base;
 
@@ -1699,7 +1707,7 @@ function isNameTaken(room, name, exceptPlayerId = null) {
   return false;
 }
 
-function joinRoomCommon(socket, room, playerId, name, playerToken = null) {
+function joinRoomCommon(socket, room, playerId, name, playerToken = null, customization = {}) {
   let p = getPlayer(room, playerId);
   const now = Date.now();
   
@@ -1717,7 +1725,15 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null) {
       linkedName: null,
       playerToken,           // Token pour reconnexion
       lastSeenAt: now,       // Dernière activité
-      joinedAt: now          // Date de première connexion
+      joinedAt: now,         // Date de première connexion
+      // D9: Données de personnalisation
+      avatarId: customization.avatarId || null,
+      avatarEmoji: customization.avatarEmoji || null,
+      colorId: customization.colorId || null,
+      colorHex: customization.colorHex || null,
+      badgeId: customization.badgeId || null,
+      badgeEmoji: customization.badgeEmoji || null,
+      badgeName: customization.badgeName || null
     };
     room.players.set(playerId, p);
     
@@ -1734,6 +1750,15 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null) {
     p.socketId = socket.id;
     p.connected = true;
     p.lastSeenAt = now;
+    
+    // D9: Mettre à jour les données de personnalisation si fournies
+    if (customization.avatarEmoji) p.avatarEmoji = customization.avatarEmoji;
+    if (customization.avatarId) p.avatarId = customization.avatarId;
+    if (customization.colorHex) p.colorHex = customization.colorHex;
+    if (customization.colorId) p.colorId = customization.colorId;
+    if (customization.badgeEmoji) p.badgeEmoji = customization.badgeEmoji;
+    if (customization.badgeId) p.badgeId = customization.badgeId;
+    if (customization.badgeName) p.badgeName = customization.badgeName;
     
     // Mettre à jour le token si fourni
     if (playerToken && playerToken !== p.playerToken) {
@@ -1881,7 +1906,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, themeId }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -1899,7 +1924,10 @@ io.on("connection", (socket) => {
       
       rooms.set(code, room);
       logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId });
-      joinRoomCommon(socket, room, playerId, name, playerToken);
+      
+      // D9: Passer les données de personnalisation
+      const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+      joinRoomCommon(socket, room, playerId, name, playerToken, customization);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
       logger.error("createRoom_failed", { error: e.message, playerId });
@@ -1907,11 +1935,14 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken }, cb) => {
+  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "joinRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
     }
+    
+    // D9: Préparer les données de personnalisation
+    const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
     
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
@@ -1932,7 +1963,7 @@ io.on("connection", (socket) => {
     if (playerByName) {
       // Reconnexion par nom : réutiliser l'ancien playerId
       logger.info("reconnect_by_name", { roomCode: code, oldPlayerId: playerByName.playerId, newPlayerId: playerId, name });
-      joinRoomCommon(socket, room, playerByName.playerId, name, playerToken);
+      joinRoomCommon(socket, room, playerByName.playerId, name, playerToken, customization);
       cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerByName.playerId });
       return;
     }
@@ -1953,7 +1984,7 @@ io.on("connection", (socket) => {
       return cb && cb({ ok: false, error: "Ce nom est déjà utilisé dans cette mission." });
     }
     
-    joinRoomCommon(socket, room, playerId, name, playerToken);
+    joinRoomCommon(socket, room, playerId, name, playerToken, customization);
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
 
