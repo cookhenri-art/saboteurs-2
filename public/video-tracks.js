@@ -798,6 +798,12 @@
   let reattachPending = false;
   
   function reattachAllDebounced() {
+    // D11 V10: Ne pas exécuter si renderLobby est en cours
+    if (window._renderingLobby) {
+      log("⏸️ Skipping reattach - renderLobby in progress");
+      return;
+    }
+    
     if (reattachTimeout) {
       reattachPending = true;
       return;
@@ -807,7 +813,7 @@
     
     reattachTimeout = setTimeout(() => {
       reattachTimeout = null;
-      if (reattachPending) {
+      if (reattachPending && !window._renderingLobby) {
         reattachPending = false;
         reattachAllImmediate();
       }
@@ -1163,21 +1169,12 @@
       }
     });
 
-    // Observe rerenders of players list
-    const list = document.querySelector("#playersList") || document.querySelector(".players-list") || null;
-    if (list && window.MutationObserver) {
-      const obs = new MutationObserver(() => {
-        // D6 V2.0: Ajouter un délai pour que le layout soit fait
-        setTimeout(reattachAll, 100);
-        setTimeout(reattachAll, 500);
-      });
-      obs.observe(list, { childList: true, subtree: true });
-    }
+    // D11 V10: MutationObserver SUPPRIMÉ - causait des appels en cascade
+    // Le reattach est maintenant géré proprement par client.js après renderLobby
 
     // Initial reattach after a short delay (slots may appear after bind)
-    setTimeout(reattachAll, 600);
-    setTimeout(reattachAll, 1500);
-    setTimeout(reattachAll, 3000);
+    // D11 V10: Réduit à un seul appel
+    setTimeout(reattachAll, 1000);
   }
 
   function waitForCallObject() {

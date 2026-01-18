@@ -428,6 +428,9 @@ function render() {
 }
 
 function renderLobby() {
+  // D11 V10: Lock pour empêcher video-tracks de modifier le DOM pendant le rendu
+  window._renderingLobby = true;
+  
   // D11: Détecter si on revient d'une partie (phase précédente n'était pas LOBBY)
   const wasInGame = window._lastRenderedPhase && window._lastRenderedPhase !== 'LOBBY';
   window._lastRenderedPhase = 'LOBBY';
@@ -770,6 +773,15 @@ function renderLobby() {
     if (window.VideoTracksRegistry?.repairLobbyDisplay) {
       setTimeout(() => window.VideoTracksRegistry.repairLobbyDisplay(), 100);
     }
+    
+    // D11 V10: Déverrouiller et forcer un seul reattach après le rendu complet
+    setTimeout(() => {
+      window._renderingLobby = false;
+      console.log('[D11] Lobby render complete - unlocking and triggering single reattach');
+      if (window.VideoTracksRefresh) {
+        window.VideoTracksRefresh();
+      }
+    }, 150);
   });
 
   // ready button
