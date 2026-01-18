@@ -416,6 +416,32 @@ function render() {
 }
 
 function renderLobby() {
+  // D11: Détecter si on revient d'une partie (phase précédente n'était pas LOBBY)
+  const wasInGame = window._lastRenderedPhase && window._lastRenderedPhase !== 'LOBBY';
+  window._lastRenderedPhase = 'LOBBY';
+  
+  // D11: Si on revient d'une partie, forcer la reconstruction complète
+  if (wasInGame) {
+    console.log('[D11] Returning to lobby from game - forcing full rebuild');
+    const list = $("playersList");
+    if (list) {
+      list.innerHTML = '';
+    }
+    // D11: Supprimer inlineVideoBar pour éviter les doubles slots
+    const inlineBar = document.getElementById('inlineVideoBar');
+    if (inlineBar) {
+      console.log('[D11] Removing inlineVideoBar on lobby return');
+      inlineBar.remove();
+    }
+  }
+  
+  // D11: Toujours vérifier et supprimer inlineVideoBar quand on est dans le lobby
+  const strayInlineBar = document.getElementById('inlineVideoBar');
+  if (strayInlineBar) {
+    console.log('[D11] Removing stray inlineVideoBar in lobby');
+    strayInlineBar.remove();
+  }
+  
   // D9: Injecter le bouton de personnalisation
   requestAnimationFrame(() => {
     if (window.D9Avatars && typeof D9Avatars.injectCustomizationButton === 'function') {
@@ -490,7 +516,17 @@ function renderLobby() {
   // D11: Garder une map des éléments existants
   const existingItems = new Map();
   list.querySelectorAll('.player-item').forEach(item => {
-    existingItems.set(item.dataset.playerId, item);
+    // D11: Vérifier si l'élément est corrompu (manque player-info)
+    const hasValidStructure = item.querySelector('.player-left') && 
+                               item.querySelector('.player-info') &&
+                               item.querySelector('.player-name');
+    if (hasValidStructure) {
+      existingItems.set(item.dataset.playerId, item);
+    } else {
+      // Élément corrompu, le supprimer pour le recréer
+      console.log('[D11] Removing corrupted player item:', item.dataset.playerId);
+      item.remove();
+    }
   });
   
   // D11: Créer les nouveaux IDs attendus
@@ -701,6 +737,9 @@ function renderLobby() {
 }
 
 function renderGame() {
+  // D11: Tracker la phase pour détecter le retour au lobby
+  window._lastRenderedPhase = state.phase;
+  
   // V9.3.5: Debug mode manuel
   if (state.phase === "MANUAL_ROLE_PICK") {
     console.log('[MANUAL_DEBUG] renderGame called, phase:', state.phase, 'phaseData:', state.phaseData);
@@ -1247,6 +1286,9 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
 }
 
 function renderEnd() {
+  // D11: Tracker la phase pour détecter le retour au lobby
+  window._lastRenderedPhase = state.phase;
+  
   const winner = state.phaseData?.winner;
   const endBg = $("endBackdrop");
   if (endBg) {
@@ -2271,6 +2313,10 @@ function tRoleHelp(roleKey) {
   };
   return helps[roleKey] || "";
 }
+
+// D11: Exposer les fonctions de traduction globalement pour les autres modules
+window.t = t;
+window.tRole = tRole;
 
 // Charger la liste des thèmes disponibles
 console.log("[themes] Fetching themes from server...");

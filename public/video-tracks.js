@@ -95,8 +95,26 @@
     // D11: Fonction de réparation de l'affichage du lobby
     repairLobbyDisplay: () => {
       log("D11: Repairing lobby display...");
+      
+      // D11: Supprimer inlineVideoBar qui ne devrait pas exister dans le lobby
+      const inlineBar = document.getElementById('inlineVideoBar');
+      if (inlineBar) {
+        log("D11: Removing inlineVideoBar during repair");
+        inlineBar.remove();
+      }
+      
       const playersList = document.getElementById('playersList');
       if (playersList) {
+        // D11: Supprimer les éléments orphelins (slots vidéo en dehors de player-left)
+        playersList.querySelectorAll('.player-video-slot').forEach(slot => {
+          const parent = slot.parentElement;
+          if (!parent || !parent.classList.contains('player-left')) {
+            log("D11: Removing orphan video slot");
+            slot.remove();
+          }
+        });
+        
+        // D11: Forcer l'affichage des player-info
         playersList.querySelectorAll('.player-info').forEach(info => {
           info.style.display = 'flex';
           info.style.visibility = 'visible';
@@ -108,6 +126,7 @@
           left.style.display = 'flex';
           left.style.gap = '10px';
           left.style.alignItems = 'center';
+          left.style.flexDirection = 'row';
           void left.offsetHeight;
         });
         playersList.querySelectorAll('.player-name').forEach(name => {
@@ -115,7 +134,13 @@
           name.style.visibility = 'visible';
           void name.offsetHeight;
         });
-        log("D11: Lobby display repaired");
+        
+        log("D11: Lobby display repaired, triggering video refresh");
+      }
+      
+      // D11: Forcer le réattachement des vidéos via l'API publique
+      if (window.VideoTracksRefresh) {
+        setTimeout(() => window.VideoTracksRefresh(), 100);
       }
     },
     // D5: Stats pour debug
@@ -585,7 +610,9 @@
     // NIGHT_AI_EXCHANGE : phase privée Agent IA + partenaire lié
     if (phase === 'NIGHT_AI_EXCHANGE') {
       result.isPrivate = true;
-      result.message = "🔒 Échange IA privé en cours...";
+      // D11: Utiliser la traduction dynamique du rôle
+      const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
+      result.message = `🔒 Échange ${aiAgentName} privé en cours...`;
       
       // D4 v5.7: Utiliser phaseData qui contient iaId et partnerId
       const phaseData = state.phaseData || {};
@@ -620,7 +647,9 @@
     // NIGHT_SABOTEURS : phase privée saboteurs entre eux
     if (phase === 'NIGHT_SABOTEURS') {
       result.isPrivate = true;
-      result.message = "🔒 Les saboteurs communiquent...";
+      // D11: Utiliser la traduction dynamique
+      const saboName = window.t ? window.t('saboteurs') : 'saboteurs';
+      result.message = `🔒 Les ${saboName.toLowerCase()} communiquent...`;
       
       // D4 v5.7: Utiliser phaseData.actorIds
       const phaseData = state.phaseData || {};
@@ -642,7 +671,9 @@
     // NIGHT_AI_AGENT : Agent IA choisit (pas de visio pour les autres)
     if (phase === 'NIGHT_AI_AGENT') {
       result.isPrivate = true;
-      result.message = "🔒 L'Agent IA choisit son partenaire...";
+      // D11: Utiliser la traduction dynamique du rôle
+      const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
+      result.message = `🔒 ${aiAgentName} choisit son partenaire...`;
       
       const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
       if (iaPlayer) {
