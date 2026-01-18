@@ -881,10 +881,14 @@
             const left = item.querySelector('.player-left');
             const info = left?.querySelector('.player-info');
             const slot = left?.querySelector('.player-video-slot');
+            const playerName = info?.querySelector('.player-name');
             
-            // Si la structure est corrompue, la reconstruire
-            if (!left || !info || !slot) {
-              log("D11 V11: Corrupted structure detected during reattach for:", playerId?.slice(0,8));
+            // D11 V12: Vérifier aussi si le contenu est présent (pas juste la structure)
+            const hasContent = playerName && playerName.textContent && playerName.textContent.trim().length > 0;
+            
+            // Si la structure est corrompue OU si le contenu est vide, reconstruire
+            if (!left || !info || !slot || !hasContent) {
+              log("D11 V12: Corrupted/empty structure detected for:", playerId?.slice(0,8), "hasLeft:", !!left, "hasInfo:", !!info, "hasSlot:", !!slot, "hasContent:", hasContent);
               
               // Sauvegarder la vidéo si elle existe
               const existingVideo = item.querySelector('video');
@@ -1177,6 +1181,25 @@
       log("track-stopped:", ev?.track?.kind, "from", p?.user_name, "pid:", pid);
       
       if (!pid) return;
+
+      // D11 V12: Ne pas supprimer immédiatement - Daily peut envoyer des track-stopped temporaires
+      // Vérifier si le participant est toujours dans l'appel avant de nettoyer
+      const participants = callObject.participants?.() || {};
+      const isStillInCall = Object.values(participants).some(part => {
+        const partPid = parsePlayerIdFromUserName(part?.user_name) || "";
+        return partPid === pid && !part.leftAt;
+      });
+      
+      if (isStillInCall) {
+        log("⏸️ track-stopped but participant still in call, not cleaning:", pid.slice(0,8));
+        // Juste supprimer la track de la Map, mais garder le slot intact
+        if (ev?.track?.kind === "video") {
+          videoTracks.delete(pid);
+        } else if (ev?.track?.kind === "audio") {
+          audioTracks.delete(pid);
+        }
+        return;
+      }
 
       if (ev?.track?.kind === "video") {
         videoTracks.delete(pid);
