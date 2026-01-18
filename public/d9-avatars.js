@@ -555,11 +555,12 @@
 
   /**
    * Obtient les données de customisation pour l'envoi au serveur
+   * @param {string} overrideTheme - Thème à utiliser (optionnel)
    * @returns {Object}
    */
-  function getCustomizationForServer() {
-    // D11 V4: Utiliser le thème actuel pour récupérer le bon avatar
-    const theme = document.documentElement.dataset.theme || 'default';
+  function getCustomizationForServer(overrideTheme = null) {
+    // D11 V20: Utiliser le thème passé en paramètre, sinon celui du document, sinon 'default'
+    const theme = overrideTheme || document.documentElement.dataset.theme || 'default';
     const avatar = getAvatar(theme);
     const color = getColor();
     const badge = getBadge();

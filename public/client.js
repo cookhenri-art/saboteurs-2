@@ -580,6 +580,7 @@ function renderLobby() {
       
       // Préparer l'avatar emoji et le badge
       const avatarEmoji = p.avatarEmoji || '👤';
+      console.log('[D9 V20] Player', p.name, 'avatarEmoji:', p.avatarEmoji, '-> displayed:', avatarEmoji);
       const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
       
       // Créer la structure gauche
@@ -2009,8 +2010,8 @@ function createRoomFlow() {
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
 
-  // D9: Récupérer les données de personnalisation
-  const customization = window.D9Avatars?.getCustomizationForServer() || {};
+  // D9 V20: Récupérer les données de personnalisation avec le bon thème
+  const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   
   socket.emit("createRoom", { 
     playerId, 
@@ -2047,8 +2048,9 @@ $("joinRoomBtn").onclick = () => {
   sessionStorage.setItem(STORAGE.name, name);
   sessionStorage.setItem(STORAGE.room, roomCode);
 
-  // D9: Récupérer les données de personnalisation
-  const customization = window.D9Avatars?.getCustomizationForServer() || {};
+  // D9 V20: Récupérer les données de personnalisation avec le thème sélectionné
+  const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
+  console.log('[D9 V20] joinRoom customization:', customization);
   
   socket.emit("joinRoom", { 
     playerId, 
