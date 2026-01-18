@@ -552,26 +552,28 @@ function renderLobby() {
     }
   });
   
-  // D11 V6: Mettre à jour ou créer chaque joueur
-  // D11 V15: TOUJOURS recréer les éléments pour éviter les corruptions
-  playersSorted.forEach((p, index) => {
-    let item = existingItems.get(p.playerId);
-    
-    // D11 V15: Sauvegarder la vidéo si elle existe avant de supprimer
-    let savedVideo = null;
-    if (item) {
-      const existingVideo = item.querySelector('.player-video-slot video');
-      if (existingVideo && existingVideo.srcObject) {
-        savedVideo = existingVideo;
-        console.log('[D11] Saving video for:', p.name);
-      }
-      item.remove();
-      item = null;
+  // D11 V16: TOUJOURS vider la liste et recréer tous les éléments
+  // Sauvegarder les vidéos existantes avant de vider
+  const savedVideos = new Map();
+  list.querySelectorAll('.player-video-slot video').forEach(video => {
+    const slot = video.closest('.player-video-slot');
+    const playerId = slot?.dataset?.playerId;
+    if (playerId && video.srcObject) {
+      savedVideos.set(playerId, video);
+      console.log('[D11] V16 Saving video for playerId:', playerId.slice(0,8));
     }
+  });
+  
+  // Vider complètement la liste
+  list.innerHTML = '';
+  console.log('[D11] V16 List cleared, recreating all players');
+  
+  // Recréer tous les joueurs
+  playersSorted.forEach((p, index) => {
+    const savedVideo = savedVideos.get(p.playerId);
     
-    // D11 V15: Toujours créer un nouvel élément
     console.log('[D11] Creating player item for:', p.name);
-    item = document.createElement("div");
+    let item = document.createElement("div");
     item.className = "player-item";
     item.dataset.playerId = p.playerId;
       
