@@ -1371,11 +1371,15 @@ function renderEnd() {
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       // D9: Trouver le joueur pour récupérer son avatar
       const player = state.players.find(p => p.name === name);
-      // D11 V5: Utiliser l'avatar basé sur l'ID et le thème actuel si disponible
-      let avatarEmoji = player?.avatarEmoji || '👤';
-      if (player?.avatarId && window.D9Avatars) {
-        const themeAvatar = window.D9Avatars.getAvatarById?.(player.avatarId, currentTheme);
-        if (themeAvatar?.emoji) avatarEmoji = themeAvatar.emoji;
+      // D11 V5: Utiliser le premier avatar du thème actuel si pas d'avatar spécifique
+      let avatarEmoji = '👤';
+      if (window.D9Avatars?.AVATARS) {
+        const themeAvatars = window.D9Avatars.AVATARS[currentTheme] || window.D9Avatars.AVATARS.default;
+        if (themeAvatars && themeAvatars.length > 0) {
+          // Utiliser un avatar basé sur l'index du joueur dans la liste
+          const playerIndex = state.players.findIndex(p => p.name === name);
+          avatarEmoji = themeAvatars[playerIndex % themeAvatars.length].emoji;
+        }
       }
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
@@ -1395,11 +1399,14 @@ const detailed = rep.detailedStatsByName || {};
 const detailedHtml = Object.entries(detailed).map(([name, s]) => {
   // D9: Trouver le joueur pour récupérer son avatar
   const player = state.players.find(p => p.name === name);
-  // D11 V5: Utiliser l'avatar basé sur l'ID et le thème actuel si disponible
-  let avatarEmoji = player?.avatarEmoji || '👤';
-  if (player?.avatarId && window.D9Avatars) {
-    const themeAvatar = window.D9Avatars.getAvatarById?.(player.avatarId, currentTheme);
-    if (themeAvatar?.emoji) avatarEmoji = themeAvatar.emoji;
+  // D11 V5: Utiliser le premier avatar du thème actuel
+  let avatarEmoji = '👤';
+  if (window.D9Avatars?.AVATARS) {
+    const themeAvatars = window.D9Avatars.AVATARS[currentTheme] || window.D9Avatars.AVATARS.default;
+    if (themeAvatars && themeAvatars.length > 0) {
+      const playerIndex = state.players.findIndex(p => p.name === name);
+      avatarEmoji = themeAvatars[playerIndex % themeAvatars.length].emoji;
+    }
   }
   const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
   
@@ -2207,13 +2214,17 @@ socket.on("roomState", (s) => {
   }
   
   // D7: Animation d'éjection (quand un joueur est éliminé)
+  console.log('[D7] Ejection check - previousAlive:', previousAliveCount, 'currentAlive:', currentAliveCount);
   if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
     // D11 V4: Trouver les joueurs qui viennent d'être éliminés en utilisant previousPlayerStatuses
     const newlyDead = s.players.filter(p => {
       if (p.status !== 'dead') return false;
       const prevStatus = previousPlayerStatuses.get(p.playerId);
+      console.log('[D7] Player', p.name, 'status:', p.status, 'prevStatus:', prevStatus);
       return prevStatus && prevStatus === 'alive';
     });
+    
+    console.log('[D7] Newly dead players:', newlyDead.map(p => p.name));
     
     newlyDead.forEach(deadPlayer => {
       if (window.D7Animations) {
