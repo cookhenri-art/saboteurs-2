@@ -342,6 +342,62 @@
   }
 
   // =========================================================
+  // D11 - ANIMATION ÉLECTION CAPITAINE
+  // =========================================================
+  
+  /**
+   * Anime l'élection du capitaine avec un effet de couronne/étoile
+   */
+  function animateCaptainElection() {
+    log('Animating captain election');
+    
+    // Chercher le conteneur de phase ou créer un overlay
+    const gameContent = document.querySelector('#gameContent') || document.querySelector('.game-content');
+    
+    // Créer un overlay d'animation
+    const overlay = document.createElement('div');
+    overlay.id = 'captainElectionOverlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 9999;
+      animation: fadeInCaptain 0.5s ease-out;
+      pointer-events: none;
+    `;
+    
+    // Emoji de capitaine selon le thème
+    const captainEmoji = '⭐';
+    
+    overlay.innerHTML = `
+      <div style="
+        font-size: 8rem;
+        animation: captainBounce 1s ease-out;
+        text-shadow: 0 0 30px gold, 0 0 60px gold;
+      ">${captainEmoji}</div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    // Vibration
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100, 50, 200]);
+    }
+    
+    // Supprimer après l'animation
+    setTimeout(() => {
+      overlay.style.animation = 'fadeOutCaptain 0.5s ease-out forwards';
+      setTimeout(() => overlay.remove(), 500);
+    }, 1500);
+  }
+
+  // =========================================================
   // EXPOSITION GLOBALE
   // =========================================================
   
@@ -354,6 +410,7 @@
     animatePhaseTransition,
     animateDeath,
     animateVictory,
+    animateCaptainElection,
     createConfetti,
     setupGameHooks
   };

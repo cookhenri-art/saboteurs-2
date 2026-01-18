@@ -171,6 +171,18 @@ function showScreen(screenId) {
   if (screenId === "homeScreen") {
     lobbyIntroPlayed = false;
   }
+  
+  // D11: Cacher le bouton d'installation quand la partie est lancée
+  const installBtn = document.getElementById("installAppBtn");
+  const pwaPrompt = document.getElementById("pwaInstallPrompt");
+  const hideInstall = (screenId === "gameScreen" || screenId === "endScreen");
+  
+  if (installBtn) {
+    installBtn.style.display = hideInstall ? "none" : "";
+  }
+  if (pwaPrompt) {
+    pwaPrompt.style.display = hideInstall ? "none" : "";
+  }
 }
 
 function setError(msg) {
@@ -564,59 +576,66 @@ function renderLobby() {
     const avatarEmoji = p.avatarEmoji || '👤';
     const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
     
-    // D11: Construire le HTML pour la partie gauche
-    const leftHtml = `
-      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}" style="flex-shrink:0;"></div>
-      <div class="player-info" style="display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;">
-        <div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">
-          <span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>
-          ${escapeHtml(p.name)}${badgeDisplay}
-        </div>
-        <div class="player-badges" style="display:flex; flex-wrap:wrap; gap:4px;">
-          ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-          ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-          ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-          ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-        </div>
-      </div>
-    `;
-    const rightHtml = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+    // D11 V4: Toujours reconstruire le contenu pour éviter les corruptions
+    // Mais préserver le slot vidéo existant si possible
+    let existingVideoSlot = item.querySelector('.player-video-slot');
+    let existingVideo = existingVideoSlot?.querySelector('video');
     
-    if (isNewItem) {
-      // Créer la structure complète pour un nouvel élément
-      const left = document.createElement("div");
-      left.className = "player-left";
-      left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto; flex-wrap:wrap;";
-      left.innerHTML = leftHtml;
-      
-      const right = document.createElement("div");
-      right.className = "player-right";
-      right.innerHTML = rightHtml;
-      
-      item.appendChild(left);
-      item.appendChild(right);
-    } else {
-      // D11: Mettre à jour seulement les parties qui changent (état prêt, badges)
-      const right = item.querySelector('.player-right');
-      if (right && right.innerHTML !== rightHtml) {
-        right.innerHTML = rightHtml;
-      }
-      
-      // D11: Mettre à jour les badges si nécessaire (connected, status)
-      const badgesDiv = item.querySelector('.player-badges');
-      if (badgesDiv) {
-        const newBadgesHtml = `
-          ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-          ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-          ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-          ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-        `.replace(/\s+/g, ' ').trim();
-        const currentBadgesHtml = badgesDiv.innerHTML.replace(/\s+/g, ' ').trim();
-        if (currentBadgesHtml !== newBadgesHtml) {
-          badgesDiv.innerHTML = newBadgesHtml;
-        }
-      }
+    // Vider l'élément
+    item.innerHTML = '';
+    
+    // Créer la structure gauche
+    const left = document.createElement("div");
+    left.className = "player-left";
+    left.style.cssText = "display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;";
+    
+    // Créer ou réutiliser le slot vidéo
+    const videoSlot = document.createElement("div");
+    videoSlot.className = "player-video-slot";
+    videoSlot.dataset.playerId = p.playerId;
+    videoSlot.setAttribute("aria-label", `Video ${p.name}`);
+    videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
+    
+    // Réattacher la vidéo existante si elle existe
+    if (existingVideo && existingVideo.srcObject) {
+      videoSlot.appendChild(existingVideo);
     }
+    
+    // Créer le conteneur d'info
+    const playerInfo = document.createElement("div");
+    playerInfo.className = "player-info";
+    playerInfo.style.cssText = "display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;";
+    
+    // Créer le nom
+    const playerName = document.createElement("div");
+    playerName.className = "player-name";
+    playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
+    playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
+    
+    // Créer les badges
+    const badges = document.createElement("div");
+    badges.className = "player-badges";
+    badges.style.cssText = "display:flex; flex-wrap:wrap; gap:4px;";
+    badges.innerHTML = `
+      ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+      ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+      ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+    `;
+    
+    playerInfo.appendChild(playerName);
+    playerInfo.appendChild(badges);
+    
+    left.appendChild(videoSlot);
+    left.appendChild(playerInfo);
+    
+    // Créer la partie droite (état prêt)
+    const right = document.createElement("div");
+    right.className = "player-right";
+    right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+    
+    item.appendChild(left);
+    item.appendChild(right);
     
     // D11: S'assurer que l'élément est dans la bonne position
     const currentAtIndex = list.children[index];
@@ -2121,6 +2140,16 @@ socket.on("roomState", (s) => {
       if (window.D7Animations) {
         console.log('[D7] 🎭 Triggering role reveal animation');
         D7Animations.animateRoleReveal();
+      }
+    });
+  }
+  
+  // D11: Animation élection capitaine
+  if (previousPhase && previousPhase !== 'CAPTAIN_CANDIDACY' && currentPhaseNow === 'CAPTAIN_CANDIDACY') {
+    requestAnimationFrame(() => {
+      if (window.D7Animations) {
+        console.log('[D7] ⭐ Triggering captain election animation');
+        D7Animations.animateCaptainElection();
       }
     });
   }
