@@ -92,57 +92,6 @@
     cleanupUnusedResources: () => {
       cleanupUnusedMediaElements();
     },
-    // D11: Fonction de réparation de l'affichage du lobby
-    repairLobbyDisplay: () => {
-      log("D11: Repairing lobby display...");
-      
-      // D11: Supprimer inlineVideoBar qui ne devrait pas exister dans le lobby
-      const inlineBar = document.getElementById('inlineVideoBar');
-      if (inlineBar) {
-        log("D11: Removing inlineVideoBar during repair");
-        inlineBar.remove();
-      }
-      
-      const playersList = document.getElementById('playersList');
-      if (playersList) {
-        // D11: Supprimer les éléments orphelins (slots vidéo en dehors de player-left)
-        playersList.querySelectorAll('.player-video-slot').forEach(slot => {
-          const parent = slot.parentElement;
-          if (!parent || !parent.classList.contains('player-left')) {
-            log("D11: Removing orphan video slot");
-            slot.remove();
-          }
-        });
-        
-        // D11: Forcer l'affichage des player-info
-        playersList.querySelectorAll('.player-info').forEach(info => {
-          info.style.display = 'flex';
-          info.style.visibility = 'visible';
-          info.style.opacity = '1';
-          info.style.flexDirection = 'column';
-          void info.offsetHeight;
-        });
-        playersList.querySelectorAll('.player-left').forEach(left => {
-          left.style.display = 'flex';
-          left.style.gap = '10px';
-          left.style.alignItems = 'center';
-          left.style.flexDirection = 'row';
-          void left.offsetHeight;
-        });
-        playersList.querySelectorAll('.player-name').forEach(name => {
-          name.style.display = 'flex';
-          name.style.visibility = 'visible';
-          void name.offsetHeight;
-        });
-        
-        log("D11: Lobby display repaired, triggering video refresh");
-      }
-      
-      // D11: Forcer le réattachement des vidéos via l'API publique
-      if (window.VideoTracksRefresh) {
-        setTimeout(() => window.VideoTracksRefresh(), 100);
-      }
-    },
     // D5: Stats pour debug
     getStats: () => ({
       videoTracks: videoTracks.size,
@@ -233,47 +182,33 @@
   function getSlot(playerId) {
     if (!playerId) return null;
     
-    // D6 V2.1: Vérifier si le lobby est ACTIF
+    // Vérifier si on est dans le gameScreen (pas le lobby)
     const lobbyScreen = document.getElementById('lobbyScreen');
     const gameScreen = document.getElementById('gameScreen');
-    const isLobbyActive = lobbyScreen && lobbyScreen.classList.contains('active');
-    const isGameActive = gameScreen && gameScreen.classList.contains('active');
+    const isInGame = gameScreen && gameScreen.style.display !== 'none';
+    const isInLobby = lobbyScreen && lobbyScreen.style.display !== 'none';
     
-    log("getSlot check:", playerId.slice(0,8), "isLobbyActive:", isLobbyActive, "isGameActive:", isGameActive);
-    
-    // Si le lobby est actif, TOUJOURS utiliser les slots du lobby
-    if (isLobbyActive) {
-      // D6 V2.1: Supprimer inlineVideoBar quand on est dans le lobby
-      const inlineBar = document.getElementById('inlineVideoBar');
-      if (inlineBar) {
-        log("Removing inlineVideoBar (we're in lobby)");
-        inlineBar.remove();
-      }
-      
-      // D6 V2.1: Chercher SEULEMENT dans le playersList du lobby
-      const playersList = document.getElementById('playersList');
-      if (playersList) {
-        let slot = playersList.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
-        if (slot) {
-          log("Using lobby slot for:", playerId.slice(0,8));
-          return slot;
-        }
-      }
-      // Pas de slot trouvé - le joueur n'est peut-être pas encore dans la liste
-      log("No lobby slot found for:", playerId.slice(0,8));
-      return null;
-    }
+    log("getSlot check:", playerId.slice(0,8), "isInGame:", isInGame, "isInLobby:", isInLobby);
     
     // Si on est dans le gameScreen, utiliser les slots du gameScreen
-    if (isGameActive) {
+    if (isInGame && !isInLobby) {
       return ensureGameScreenSlot(playerId);
     }
     
-    // Fallback: chercher n'importe quel slot
+    // Sinon chercher dans la players-list (lobby)
     let slot = document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
-    if (slot) return slot;
+    if (slot) {
+      const rect = slot.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        return slot;
+      }
+      // Slot existe mais invisible - utiliser gameScreen
+      log("Lobby slot invisible, using game slot");
+      return ensureGameScreenSlot(playerId);
+    }
     
-    return null;
+    // Fallback: créer dans gameScreen
+    return ensureGameScreenSlot(playerId);
   }
   
   // D4: Créer les slots vidéo dans le gameScreen quand le lobby est caché
@@ -610,9 +545,7 @@
     // NIGHT_AI_EXCHANGE : phase privée Agent IA + partenaire lié
     if (phase === 'NIGHT_AI_EXCHANGE') {
       result.isPrivate = true;
-      // D11: Utiliser la traduction dynamique du rôle
-      const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
-      result.message = `🔒 Échange ${aiAgentName} privé en cours...`;
+      result.message = "🔒 Échange IA privé en cours...";
       
       // D4 v5.7: Utiliser phaseData qui contient iaId et partnerId
       const phaseData = state.phaseData || {};
@@ -647,9 +580,7 @@
     // NIGHT_SABOTEURS : phase privée saboteurs entre eux
     if (phase === 'NIGHT_SABOTEURS') {
       result.isPrivate = true;
-      // D11: Utiliser la traduction dynamique
-      const saboName = window.t ? window.t('saboteurs') : 'saboteurs';
-      result.message = `🔒 Les ${saboName.toLowerCase()} communiquent...`;
+      result.message = "🔒 Les saboteurs communiquent...";
       
       // D4 v5.7: Utiliser phaseData.actorIds
       const phaseData = state.phaseData || {};
@@ -671,9 +602,7 @@
     // NIGHT_AI_AGENT : Agent IA choisit (pas de visio pour les autres)
     if (phase === 'NIGHT_AI_AGENT') {
       result.isPrivate = true;
-      // D11: Utiliser la traduction dynamique du rôle
-      const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
-      result.message = `🔒 ${aiAgentName} choisit son partenaire...`;
+      result.message = "🔒 L'Agent IA choisit son partenaire...";
       
       const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
       if (iaPlayer) {
@@ -710,12 +639,6 @@
       log("Available slots:", allSlots.length, Array.from(allSlots).map(s => s.dataset.playerId));
       return;
     }
-    
-    // D11: Vérifier que le slot est bien un conteneur dédié et pas le player-left
-    if (slot.classList.contains('player-left')) {
-      log("ERROR: slot is player-left, not video-slot!", playerId);
-      return;
-    }
 
     const v = ensureVideoEl(playerId, isLocal);
     const stream = new MediaStream([track]);
@@ -724,17 +647,6 @@
     if (!slot.contains(v)) {
       slot.innerHTML = "";
       slot.appendChild(v);
-    }
-    
-    // D11: Après attachement, s'assurer que le sibling player-info est visible
-    const playerLeft = slot.parentElement;
-    if (playerLeft && playerLeft.classList.contains('player-left')) {
-      const playerInfo = playerLeft.querySelector('.player-info');
-      if (playerInfo) {
-        playerInfo.style.display = 'flex';
-        playerInfo.style.visibility = 'visible';
-        playerInfo.style.opacity = '1';
-      }
     }
     
     // D6: Vérifier si le joueur est mort via lastKnownState
@@ -793,34 +705,7 @@
     }
   }
 
-  // D11 V9: Debounce pour éviter les appels en cascade
-  let reattachTimeout = null;
-  let reattachPending = false;
-  
-  function reattachAllDebounced() {
-    // D11 V10: Ne pas exécuter si renderLobby est en cours
-    if (window._renderingLobby) {
-      log("⏸️ Skipping reattach - renderLobby in progress");
-      return;
-    }
-    
-    if (reattachTimeout) {
-      reattachPending = true;
-      return;
-    }
-    
-    reattachAllImmediate();
-    
-    reattachTimeout = setTimeout(() => {
-      reattachTimeout = null;
-      if (reattachPending && !window._renderingLobby) {
-        reattachPending = false;
-        reattachAllImmediate();
-      }
-    }, 200); // 200ms debounce
-  }
-
-  function reattachAllImmediate() {
+  function reattachAll() {
     log("Reattaching all tracks...");
     const localId = getLocalPlayerId();
     const state = window.lastKnownState;
@@ -868,34 +753,6 @@
       const row = getPlayerRow(currentSpeaking);
       if (row) row.classList.add("is-speaking");
     }
-    
-    // D11: Forcer le repaint des éléments player-info dans le lobby après attachement des vidéos
-    const lobbyScreen = document.getElementById('lobbyScreen');
-    if (lobbyScreen && lobbyScreen.classList.contains('active')) {
-      requestAnimationFrame(() => {
-        const playersList = document.getElementById('playersList');
-        if (playersList) {
-          playersList.querySelectorAll('.player-info').forEach(info => {
-            // Forcer display flex
-            info.style.display = 'flex';
-            info.style.visibility = 'visible';
-            info.style.opacity = '1';
-            // Force reflow
-            void info.offsetHeight;
-          });
-          playersList.querySelectorAll('.player-left').forEach(left => {
-            left.style.display = 'flex';
-            void left.offsetHeight;
-          });
-          log("D11: Forced repaint of player-info elements in lobby");
-        }
-      });
-    }
-  }
-  
-  // D11 V9: Alias pour compatibilité - tous les appels passent par le debounce
-  function reattachAll() {
-    reattachAllDebounced();
   }
   
   // D4 v5.6: Cacher tous les slots vidéo
@@ -1169,12 +1026,17 @@
       }
     });
 
-    // D11 V10: MutationObserver SUPPRIMÉ - causait des appels en cascade
-    // Le reattach est maintenant géré proprement par client.js après renderLobby
+    // Observe rerenders of players list
+    const list = document.querySelector("#playersList") || document.querySelector(".players-list") || null;
+    if (list && window.MutationObserver) {
+      const obs = new MutationObserver(() => reattachAll());
+      obs.observe(list, { childList: true, subtree: true });
+    }
 
     // Initial reattach after a short delay (slots may appear after bind)
-    // D11 V10: Réduit à un seul appel
-    setTimeout(reattachAll, 1000);
+    setTimeout(reattachAll, 600);
+    setTimeout(reattachAll, 1500);
+    setTimeout(reattachAll, 3000);
   }
 
   function waitForCallObject() {
