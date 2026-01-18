@@ -171,6 +171,18 @@ function showScreen(screenId) {
   if (screenId === "homeScreen") {
     lobbyIntroPlayed = false;
   }
+  
+  // D11: Cacher le bouton d'installation quand la partie est lancée
+  const installBtn = document.getElementById("installAppBtn");
+  const pwaPrompt = document.getElementById("pwaInstallPrompt");
+  const hideInstall = (screenId === "gameScreen" || screenId === "endScreen");
+  
+  if (installBtn) {
+    installBtn.style.display = hideInstall ? "none" : "";
+  }
+  if (pwaPrompt) {
+    pwaPrompt.style.display = hideInstall ? "none" : "";
+  }
 }
 
 function setError(msg) {
@@ -227,7 +239,7 @@ function formatPhaseTitle(s) {
     NIGHT_START: `NUIT ${night} — DÉBUT`,
     NIGHT_CHAMELEON: `NUIT — ${tRole('chameleon').toUpperCase()}`,
     NIGHT_AI_AGENT: `NUIT — ${tRole('ai_agent').toUpperCase()} (LIAISON)`,
-    NIGHT_AI_EXCHANGE: `NUIT — ÉCHANGE IA (PRIVÉ)`,
+    NIGHT_AI_EXCHANGE: `NUIT — ÉCHANGE ${tRole('ai_agent').toUpperCase()} (PRIVÉ)`,
     NIGHT_RADAR: `NUIT — ${tRole('radar').toUpperCase()}`,
     NIGHT_SABOTEURS: `NUIT — ${t('saboteurs').toUpperCase()} (UNANIMITÉ)`,
     NIGHT_DOCTOR: `NUIT — ${tRole('doctor').toUpperCase()}`,
@@ -398,16 +410,57 @@ function render() {
   }
 
   if (state.phase === "GAME_OVER" || state.phase === "GAME_ABORTED") {
+    // D9: Supprimer le bouton personnaliser (on n'est plus dans le lobby)
+    if (window.D9Avatars && typeof D9Avatars.removeCustomizationButton === 'function') {
+      D9Avatars.removeCustomizationButton();
+    }
     showScreen("endScreen");
     renderEnd();
     return;
   }
 
+  // D9: Supprimer le bouton personnaliser (on n'est plus dans le lobby)
+  if (window.D9Avatars && typeof D9Avatars.removeCustomizationButton === 'function') {
+    D9Avatars.removeCustomizationButton();
+  }
   showScreen("gameScreen");
   renderGame();
 }
 
 function renderLobby() {
+  // D11: Détecter si on revient d'une partie (phase précédente n'était pas LOBBY)
+  const wasInGame = window._lastRenderedPhase && window._lastRenderedPhase !== 'LOBBY';
+  window._lastRenderedPhase = 'LOBBY';
+  
+  // D11: Si on revient d'une partie, forcer la reconstruction complète
+  if (wasInGame) {
+    console.log('[D11] Returning to lobby from game - forcing full rebuild');
+    const list = $("playersList");
+    if (list) {
+      list.innerHTML = '';
+    }
+    // D11: Supprimer inlineVideoBar pour éviter les doubles slots
+    const inlineBar = document.getElementById('inlineVideoBar');
+    if (inlineBar) {
+      console.log('[D11] Removing inlineVideoBar on lobby return');
+      inlineBar.remove();
+    }
+  }
+  
+  // D11: Toujours vérifier et supprimer inlineVideoBar quand on est dans le lobby
+  const strayInlineBar = document.getElementById('inlineVideoBar');
+  if (strayInlineBar) {
+    console.log('[D11] Removing stray inlineVideoBar in lobby');
+    strayInlineBar.remove();
+  }
+  
+  // D9: Injecter le bouton de personnalisation
+  requestAnimationFrame(() => {
+    if (window.D9Avatars && typeof D9Avatars.injectCustomizationButton === 'function') {
+      D9Avatars.injectCustomizationButton();
+    }
+  });
+  
   // Play lobby intro on first entry (adapté au thème)
   if (!lobbyIntroPlayed) {
     lobbyIntroPlayed = true;
@@ -468,37 +521,261 @@ function renderLobby() {
     $("balanceStatusCockpit").textContent = "";
   }
 
-  // players list
+  // players list - D11 V6: Mise à jour intelligente sans détruire les vidéos
   const list = $("playersList");
-  list.innerHTML = "";
   const playersSorted = [...state.players].sort((a,b) => (b.isHost?1:0) - (a.isHost?1:0) || a.name.localeCompare(b.name));
-  for (const p of playersSorted) {
-    const item = document.createElement("div");
-    item.className = "player-item";
-        item.dataset.playerId = p.playerId;
-const left = document.createElement("div");
-    left.className = "player-left";
-    left.innerHTML = `
-      <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}"></div>
-      <div class="player-info">
-        <div class="player-name">${escapeHtml(p.name)}</div>
+  
+  // D11 V6: Mapper les éléments existants par playerId
+  const existingItems = new Map();
+  Array.from(list.children).forEach(item => {
+    if (item.dataset?.playerId) {
+      existingItems.set(item.dataset.playerId, item);
+    }
+  });
+  
+  // D11 V6: Créer un Set des IDs attendus
+  const expectedIds = new Set(playersSorted.map(p => p.playerId));
+  
+  // D11 V6: Supprimer les joueurs qui ne sont plus dans la liste
+  existingItems.forEach((item, playerId) => {
+    if (!expectedIds.has(playerId)) {
+      console.log('[D11] Removing player no longer in list:', playerId);
+      item.remove();
+      existingItems.delete(playerId);
+    }
+  });
+  
+  // D11 V6: Mettre à jour ou créer chaque joueur
+  playersSorted.forEach((p, index) => {
+    let item = existingItems.get(p.playerId);
+    let needsFullRebuild = false;
+    
+    // D11 V8: Vérifier si la structure est corrompue
+    if (item) {
+      const playerInfo = item.querySelector('.player-info');
+      const playerName = playerInfo?.querySelector('.player-name');
+      const playerLeft = item.querySelector('.player-left');
+      if (!playerInfo || !playerName || !playerLeft) {
+        console.log('[D11] Corrupted structure detected for:', p.name, '- rebuilding');
+        needsFullRebuild = true;
+        // Sauvegarder la vidéo avant de reconstruire
+        const existingVideo = item.querySelector('.player-video-slot video');
+        if (existingVideo) {
+          window._tempSavedVideo = window._tempSavedVideo || new Map();
+          window._tempSavedVideo.set(p.playerId, existingVideo);
+        }
+        item.remove();
+        item = null;
+      }
+    }
+    
+    if (item && !needsFullRebuild) {
+      // D11 V7: Élément existe et structure OK - mettre à jour SANS toucher au slot vidéo
+      console.log('[D11] Updating existing player item for:', p.name);
+      
+      // Mettre à jour la couleur de bordure
+      if (p.colorHex) {
+        item.style.borderColor = p.colorHex;
+        item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+      } else {
+        item.style.borderColor = '';
+        item.style.boxShadow = '';
+      }
+      
+      // Mettre à jour le nom et badges (laisser le slot vidéo intact)
+      const playerInfo = item.querySelector('.player-info');
+      if (playerInfo) {
+        const avatarEmoji = p.avatarEmoji || '👤';
+        const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
+        
+        const playerName = playerInfo.querySelector('.player-name');
+        if (playerName) {
+          playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
+        }
+        
+        const badges = playerInfo.querySelector('.player-badges');
+        if (badges) {
+          badges.innerHTML = `
+            ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+            ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+            ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+            ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+          `;
+        }
+      }
+      
+      // Mettre à jour le statut prêt
+      const right = item.querySelector('.player-right');
+      if (right) {
+        right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+      }
+      
+    } else {
+      // D11 V7: Créer un nouvel élément
+      console.log('[D11] Creating new player item for:', p.name);
+      item = document.createElement("div");
+      item.className = "player-item";
+      item.dataset.playerId = p.playerId;
+      
+      // Appliquer la couleur de bordure
+      if (p.colorHex) {
+        item.style.borderColor = p.colorHex;
+        item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+      }
+      
+      // Préparer l'avatar emoji et le badge
+      const avatarEmoji = p.avatarEmoji || '👤';
+      const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
+      
+      // Créer la structure gauche
+      const left = document.createElement("div");
+      left.className = "player-left";
+      left.style.cssText = "display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;";
+      
+      // Créer le slot vidéo
+      const videoSlot = document.createElement("div");
+      videoSlot.className = "player-video-slot";
+      videoSlot.dataset.playerId = p.playerId;
+      videoSlot.setAttribute("aria-label", `Video ${p.name}`);
+      videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
+      
+      // D11 V8: Réattacher la vidéo sauvegardée si disponible
+      if (window._tempSavedVideo?.has(p.playerId)) {
+        const savedVideo = window._tempSavedVideo.get(p.playerId);
+        if (savedVideo && savedVideo.srcObject) {
+          videoSlot.appendChild(savedVideo);
+          console.log('[D11] Restored saved video for:', p.name);
+        }
+        window._tempSavedVideo.delete(p.playerId);
+      }
+      
+      // Créer le conteneur d'info
+      const playerInfo = document.createElement("div");
+      playerInfo.className = "player-info";
+      playerInfo.style.cssText = "display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;";
+      
+      // Créer le nom
+      const playerName = document.createElement("div");
+      playerName.className = "player-name";
+      playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
+      playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
+      
+      // Créer les badges
+      const badges = document.createElement("div");
+      badges.className = "player-badges";
+      badges.style.cssText = "display:flex; flex-wrap:wrap; gap:4px;";
+      badges.innerHTML = `
         ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
         ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
         ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
         ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-      </div>
-`;
-    const right = document.createElement("div");
-    right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
-    item.appendChild(left);
-    item.appendChild(right);
-    list.appendChild(item);
-  }
+      `;
+      
+      playerInfo.appendChild(playerName);
+      playerInfo.appendChild(badges);
+      
+      left.appendChild(videoSlot);
+      left.appendChild(playerInfo);
+      
+      // Créer la partie droite (état prêt)
+      const right = document.createElement("div");
+      right.className = "player-right";
+      right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+      
+      item.appendChild(left);
+      item.appendChild(right);
+      
+      // Ajouter à la liste
+      list.appendChild(item);
+    }
+    
+    // D11 V7: S'assurer que l'élément est dans le bon ordre
+    if (list.children[index] !== item) {
+      list.insertBefore(item, list.children[index] || null);
+    }
+  });
+  
+  // D11 V4: Forcer un repaint et vérifier la structure
+  requestAnimationFrame(() => {
+    list.querySelectorAll('.player-item').forEach(item => {
+      const left = item.querySelector('.player-left');
+      const info = left?.querySelector('.player-info');
+      
+      // D11 V4: Si la structure est corrompue, recréer l'élément complètement
+      if (!left || !info || !info.querySelector('.player-name')) {
+        const playerId = item.dataset.playerId;
+        const player = playersSorted.find(p => p.playerId === playerId);
+        if (player) {
+          console.log('[D11] Rebuilding corrupted player item for:', player.name);
+          // Sauvegarder la vidéo si elle existe
+          const existingVideo = item.querySelector('video');
+          
+          // Recréer complètement l'élément
+          item.innerHTML = '';
+          
+          const newLeft = document.createElement('div');
+          newLeft.className = 'player-left';
+          newLeft.style.cssText = 'display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;';
+          
+          const videoSlot = document.createElement('div');
+          videoSlot.className = 'player-video-slot';
+          videoSlot.dataset.playerId = playerId;
+          videoSlot.style.cssText = 'flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;';
+          if (existingVideo) videoSlot.appendChild(existingVideo);
+          
+          const playerInfo = document.createElement('div');
+          playerInfo.className = 'player-info';
+          playerInfo.style.cssText = 'display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;';
+          
+          const avatarEmoji = player.avatarEmoji || '👤';
+          const badgeDisplay = player.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;">${player.badgeEmoji}</span>` : '';
+          
+          const playerName = document.createElement('div');
+          playerName.className = 'player-name';
+          playerName.style.cssText = 'font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;';
+          playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(player.name)}${badgeDisplay}`;
+          
+          const badges = document.createElement('div');
+          badges.className = 'player-badges';
+          badges.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px;';
+          badges.innerHTML = `
+            ${player.isHost ? '<span class="pill ok">HÔTE</span>' : ''}
+            ${player.isCaptain ? '<span class="pill ok">CAPITAINE</span>' : ''}
+            ${player.connected ? '<span class="pill ok">EN LIGNE</span>' : '<span class="pill warn">RECONNEXION…</span>'}
+            ${player.status === 'left' ? '<span class="pill bad">SORTI</span>' : (player.status === 'dead' ? '<span class="pill bad">ÉJECTÉ</span>' : '')}
+          `;
+          
+          playerInfo.appendChild(playerName);
+          playerInfo.appendChild(badges);
+          newLeft.appendChild(videoSlot);
+          newLeft.appendChild(playerInfo);
+          
+          const newRight = document.createElement('div');
+          newRight.className = 'player-right';
+          newRight.innerHTML = player.ready ? '<span class="pill ok">PRÊT</span>' : '<span class="pill warn">PAS PRÊT</span>';
+          
+          item.appendChild(newLeft);
+          item.appendChild(newRight);
+        }
+      } else {
+        // Structure OK, juste s'assurer de l'affichage
+        info.style.display = 'flex';
+        info.style.visibility = 'visible';
+        info.style.opacity = '1';
+        left.style.display = 'flex';
+      }
+    });
+    
+    // D11: Appeler la fonction de réparation de video-tracks si disponible
+    if (window.VideoTracksRegistry?.repairLobbyDisplay) {
+      setTimeout(() => window.VideoTracksRegistry.repairLobbyDisplay(), 100);
+    }
+  });
 
   // ready button
   const me = state.players.find(p => p.playerId === state.you?.playerId);
   const ready = !!me?.ready;
-  $("readyBtn").textContent = ready ? "✅ PRÊT (annuler)" : "✅ PRÊT";
+  $("readyBtn").textContent = ready ? "☑ PRÊT (annuler)" : "☐ PRÊT";
   $("readyBtn").onclick = () => socket.emit("setReady", { ready: !ready });
 
   // host controls
@@ -584,6 +861,9 @@ const left = document.createElement("div");
 }
 
 function renderGame() {
+  // D11: Tracker la phase pour détecter le retour au lobby
+  window._lastRenderedPhase = state.phase;
+  
   // V9.3.5: Debug mode manuel
   if (state.phase === "MANUAL_ROLE_PICK") {
     console.log('[MANUAL_DEBUG] renderGame called, phase:', state.phase, 'phaseData:', state.phaseData);
@@ -655,8 +935,30 @@ function renderGame() {
 // VIDEO DOCK (prototype)
   updateVideoDockSlot(state);
 
+  // D6: Compteur de validations amélioré avec barre de progression
   const ack = state.ack || { done:0, total:0 };
-  $("ackLine").textContent = ack.total ? `✅ Validations : ${ack.done}/${ack.total}` : "";
+  const ackLine = $("ackLine");
+  if (ack.total) {
+    const percent = Math.round((ack.done / ack.total) * 100);
+    const isComplete = ack.done === ack.total;
+    const progressColor = isComplete ? '#00ff88' : (percent > 50 ? '#ffaa00' : '#ff6b6b');
+    
+    // Détecter si le compteur a changé pour animer
+    const prevDone = parseInt(ackLine.dataset.prevDone || '0');
+    const shouldAnimate = prevDone !== ack.done && ack.done > 0;
+    ackLine.dataset.prevDone = ack.done;
+    
+    ackLine.innerHTML = `
+      <div class="validation-counter ${shouldAnimate ? 'pulse' : ''}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <span style="font-weight:600;">✅ Validations : ${ack.done}/${ack.total}</span>
+        <div class="validation-progress" style="flex:1;min-width:100px;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;">
+          <div class="validation-progress-bar" style="width:${percent}%;height:100%;background:${progressColor};border-radius:4px;transition:width 0.4s ease, background 0.4s ease;${shouldAnimate ? 'animation:progressPulse 0.5s ease;' : ''}"></div>
+        </div>
+      </div>
+    `;
+  } else {
+    ackLine.textContent = "";
+  }
 
 // logs (+ panel éjectés)
 const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.isHost;
@@ -696,16 +998,20 @@ if (logEl) {
 
 // actor-only phases: only the actor sees the action UI
 const actorOnly = new Set(["NIGHT_CHAMELEON","NIGHT_AI_AGENT","NIGHT_RADAR","NIGHT_DOCTOR","NIGHT_SABOTEURS","DAY_TIEBREAK","DAY_CAPTAIN_TRANSFER","REVENGE"]);
-const waitTextByPhase = {
-  NIGHT_CHAMELEON: "🦎 Le caméléon agit…",
-  NIGHT_AI_AGENT: "🤖 L’Agent IA agit…",
-  NIGHT_RADAR: "🔍 Le radar agit…",
-  NIGHT_DOCTOR: "🧪 Le docteur agit…",
-  NIGHT_SABOTEURS: "🗡️ Les saboteurs agissent…",
-  DAY_TIEBREAK: "⭐ Le capitaine tranche…",
-  DAY_CAPTAIN_TRANSFER: "⭐ Transmission du capitaine…",
-  REVENGE: "🔫 Le chef de sécurité se venge…"
-};
+// Fonction dynamique pour récupérer le texte d'attente traduit selon le thème
+function getWaitText(phase) {
+  const waitTexts = {
+    NIGHT_CHAMELEON: `🦎 ${tRole('chameleon')} agit…`,
+    NIGHT_AI_AGENT: `🤖 ${tRole('ai_agent')} agit…`,
+    NIGHT_RADAR: `🔍 ${tRole('radar')} agit…`,
+    NIGHT_DOCTOR: `🧪 ${tRole('doctor')} agit…`,
+    NIGHT_SABOTEURS: `🗡️ Les ${t('saboteurs').toLowerCase()} agissent…`,
+    DAY_TIEBREAK: `⭐ ${t('captain')} tranche…`,
+    DAY_CAPTAIN_TRANSFER: `⭐ Transmission du ${t('captain').toLowerCase()}…`,
+    REVENGE: `🔫 ${tRole('security')} se venge…`
+  };
+  return waitTexts[phase] || "⏳ Action en cours…";
+}
 
 // dead players have no controls (including ACK), except if they are the actor in REVENGE / captain transfer
 if (meDead && !deadCanAct) {
@@ -714,20 +1020,37 @@ if (meDead && !deadCanAct) {
 }
 
 if (actorOnly.has(state.phase) && !isActorNow) {
-  controls.appendChild(makeHint(waitTextByPhase[state.phase] || "⏳ Action en cours…"));
+  controls.appendChild(makeHint(getWaitText(state.phase)));
   return;
 }
 
   // default: show ACK button for phases that use it
   const ackButton = () => {
     const b = document.createElement("button");
-    b.className = "btn btn-primary";
-    b.textContent = "✅ VALIDER";
-    b.onclick = () => {
-      b.classList.add('selected');
-      lockControlsNow($('controls'));
-      socket.emit("phaseAck");
-    };
+    b.className = "btn btn-primary btn-validate";
+    
+    // D6: Vérifier si le joueur a déjà validé (pas dans la liste pending)
+    const myId = state.you?.playerId;
+    const pending = state.ack?.pending || [];
+    const alreadyValidated = myId && !pending.includes(myId);
+    
+    if (alreadyValidated) {
+      // Déjà validé - afficher l'état coché
+      b.innerHTML = "☑ VALIDÉ";
+      b.classList.add('validated');
+      b.disabled = true;
+    } else {
+      // Pas encore validé
+      b.innerHTML = "☐ VALIDER";
+      b.onclick = () => {
+        // D6: Feedback visuel amélioré - case cochée
+        b.classList.add('validated');
+        b.innerHTML = "☑ VALIDÉ";
+        b.disabled = true;
+        lockControlsNow($('controls'));
+        socket.emit("phaseAck");
+      };
+    }
     return b;
   };
 
@@ -793,7 +1116,18 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
   if (state.phase === "CAPTAIN_VOTE") {
     const cands = state.phaseData?.candidates || [];
-    controls.appendChild(makeChoiceGrid(cands, "Voter", (id) => socket.emit("phaseAction", { vote: id })));
+    const grid = makeChoiceGrid(cands, "Voter", (id) => socket.emit("phaseAction", { vote: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection si le joueur a déjà voté
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
   }
 
   if (state.phase === "NIGHT_CHAMELEON") {
@@ -859,7 +1193,7 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     controls.appendChild(sel);
     controls.appendChild(btnLink);
     controls.appendChild(btnSkip);
-    controls.appendChild(makeHint("Nuit 1 uniquement. La liaison est entre toi (Agent IA) et le joueur choisi."));
+    controls.appendChild(makeHint(`Nuit 1 uniquement. La liaison est entre toi (${tRole('ai_agent')}) et le joueur choisi.`));
   }
 
   // NIGHT_AI_EXCHANGE: Phase privée où l'Agent IA et son partenaire lié doivent valider
@@ -870,17 +1204,30 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     
     if (isParticipant) {
       const btn = document.createElement("button");
-      btn.className = "btn btn-primary";
-      btn.textContent = "✅ Valider l'échange 🤖";
-      btn.onclick = () => {
-        btn.classList.add('selected');
-        lockControlsNow($('controls'));
-        socket.emit("phaseAck");
-      };
+      btn.className = "btn btn-primary btn-validate";
+      
+      // D6: Vérifier si déjà validé
+      const pending = state.ack?.pending || [];
+      const alreadyValidated = meId && !pending.includes(meId);
+      
+      if (alreadyValidated) {
+        btn.innerHTML = "☑ Validé 🤖";
+        btn.classList.add('validated');
+        btn.disabled = true;
+      } else {
+        btn.innerHTML = "☐ Valider l'échange 🤖";
+        btn.onclick = () => {
+          btn.classList.add('validated');
+          btn.innerHTML = "☑ Validé 🤖";
+          btn.disabled = true;
+          lockControlsNow($('controls'));
+          socket.emit("phaseAck");
+        };
+      }
       controls.appendChild(btn);
-      controls.appendChild(makeHint("Échange privé entre l'Agent IA et son partenaire lié. Les deux doivent valider pour continuer."));
+      controls.appendChild(makeHint(`Échange privé entre ${tRole('ai_agent')} et son partenaire lié. Les deux doivent valider pour continuer.`));
     } else {
-      controls.appendChild(makeHint("🤖 Échange IA en cours…"));
+      controls.appendChild(makeHint(`🤖 Échange ${tRole('ai_agent')} en cours…`));
     }
   }
 
@@ -917,7 +1264,7 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
       box.style.borderRadius = "12px";
       box.style.border = "1px solid rgba(0,255,255,0.25)";
       box.style.background = "rgba(0,0,0,0.25)";
-      box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗳️ Votes des saboteurs</div>` +
+      box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗳️ Votes des ${t('saboteurs').toLowerCase()}</div>` +
         teamVotes.map(v => `<div style="opacity:.95;">${escapeHtml(v.saboteurName)} → <b>${escapeHtml(v.targetName)}</b></div>`).join("");
       controls.appendChild(box);
     }
@@ -938,7 +1285,7 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
       }
     }
     controls.appendChild(grid);
-    controls.appendChild(makeHint("Vote UNANIME entre saboteurs. Impossible de viser un saboteur (ni toi-même)."));
+    controls.appendChild(makeHint(`Vote UNANIME entre ${t('saboteurs').toLowerCase()}. Impossible de viser un ${tRole('saboteur').toLowerCase()} (ni toi-même).`));
   }
 
   if (state.phase === "NIGHT_DOCTOR") {
@@ -1003,33 +1350,69 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
     section.appendChild(btnNone);
 
     controls.appendChild(section);
-    controls.appendChild(makeHint("La potion de vie protège automatiquement la cible des saboteurs (s’il y en a une)."));
+    controls.appendChild(makeHint(`La potion de vie protège automatiquement la cible des ${t('saboteurs').toLowerCase()} (s’il y en a une).`));
   }
 
   if (state.phase === "DAY_CAPTAIN_TRANSFER") {
     const alive = state.players.filter(p => p.status === "alive");
     controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Transmettre", (id) => socket.emit("phaseAction", { chosenId: id })));
-    controls.appendChild(makeHint("Le capitaine mort choisit sans connaître le rôle du joueur choisi."));
+    controls.appendChild(makeHint(`Le ${t('captain').toLowerCase()} mort choisit sans connaître le rôle du joueur choisi.`));
   }
 
   if (state.phase === "DAY_VOTE") {
     const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Voter", (id) => socket.emit("phaseAction", { vote: id })));
+    const grid = makeChoiceGrid(alive.map(p => p.playerId), "Voter", (id) => socket.emit("phaseAction", { vote: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection si le joueur a déjà voté
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
   }
 
   if (state.phase === "DAY_TIEBREAK") {
     const opts = state.phaseData?.options || [];
-    controls.appendChild(makeChoiceGrid(opts, "Départager", (id) => socket.emit("phaseAction", { pick: id })));
-    controls.appendChild(makeHint("En cas d'égalité, le capitaine tranche avant toute conséquence."));
+    const grid = makeChoiceGrid(opts, "Départager", (id) => socket.emit("phaseAction", { pick: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
+    controls.appendChild(makeHint(`En cas d'égalité, le ${t('captain').toLowerCase()} tranche avant toute conséquence.`));
   }
 
   if (state.phase === "REVENGE") {
     const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Tirer", (id) => socket.emit("phaseAction", { targetId: id })));
+    const grid = makeChoiceGrid(alive.map(p => p.playerId), "Tirer", (id) => socket.emit("phaseAction", { targetId: id }), { lockOnPick: false });
+    // D6: Réappliquer la sélection
+    const cur = state.phaseData?.yourVoteId || null;
+    if (cur) {
+      for (const card of grid.querySelectorAll('.choice-card')) {
+        if (card.dataset.playerId === cur) {
+          card.classList.add('selected');
+          card.classList.add('locked');
+        }
+      }
+    }
+    controls.appendChild(grid);
   }
 }
 
 function renderEnd() {
+  // D11: Tracker la phase pour détecter le retour au lobby
+  window._lastRenderedPhase = state.phase;
+  
   const winner = state.phaseData?.winner;
   const endBg = $("endBackdrop");
   if (endBg) {
@@ -1057,10 +1440,31 @@ function renderEnd() {
       return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
     }).join("<br>");
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
+    
+    // D11 V5: Obtenir le thème actuel pour afficher les bons avatars
+    const currentTheme = document.documentElement.dataset.theme || 'default';
+    
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
-      return `<div class="player-item" style="margin:8px 0;">
+      // D9: Trouver le joueur pour récupérer son avatar
+      const player = state.players.find(p => p.name === name);
+      // D11 V5: Utiliser le premier avatar du thème actuel si pas d'avatar spécifique
+      let avatarEmoji = '👤';
+      if (window.D9Avatars?.AVATARS) {
+        const themeAvatars = window.D9Avatars.AVATARS[currentTheme] || window.D9Avatars.AVATARS.default;
+        if (themeAvatars && themeAvatars.length > 0) {
+          // Utiliser un avatar basé sur l'index du joueur dans la liste
+          const playerIndex = state.players.findIndex(p => p.name === name);
+          avatarEmoji = themeAvatars[playerIndex % themeAvatars.length].emoji;
+        }
+      }
+      const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
+      
+      return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
-          <div style="font-weight:900;">${escapeHtml(name)}</div>
+          <div style="font-weight:900; display:flex; align-items:center;">
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+            ${escapeHtml(name)}
+          </div>
           <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
         </div>
       </div>`;
@@ -1069,14 +1473,30 @@ function renderEnd() {
 
 const detailed = rep.detailedStatsByName || {};
 const detailedHtml = Object.entries(detailed).map(([name, s]) => {
+  // D9: Trouver le joueur pour récupérer son avatar
+  const player = state.players.find(p => p.name === name);
+  // D11 V5: Utiliser le premier avatar du thème actuel
+  let avatarEmoji = '👤';
+  if (window.D9Avatars?.AVATARS) {
+    const themeAvatars = window.D9Avatars.AVATARS[currentTheme] || window.D9Avatars.AVATARS.default;
+    if (themeAvatars && themeAvatars.length > 0) {
+      const playerIndex = state.players.findIndex(p => p.name === name);
+      avatarEmoji = themeAvatars[playerIndex % themeAvatars.length].emoji;
+    }
+  }
+  const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
+  
   const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
     // Traduire la clé de rôle en nom localisé
     const roleName = tRole(rk) || rk;
     return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
   }).join("");
-  return `<div class="player-item" style="margin:8px 0;">
+  return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
     <div class="player-left">
-      <div style="font-weight:900;">${escapeHtml(name)}</div>
+      <div style="font-weight:900; display:flex; align-items:center;">
+        <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+        ${escapeHtml(name)}
+      </div>
       <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
       <div style="margin-top:6px; opacity:.95;">
         <div style="font-weight:900; margin-bottom:4px;">Stats par rôle</div>
@@ -1155,15 +1575,15 @@ function buildPhaseText(s) {
   if (p === "NIGHT_AI_EXCHANGE") return `Échange privé entre ${tRole("ai_agent")} et son partenaire lié. Les deux doivent valider pour continuer.`;
   if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
   if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
-  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.`;
+  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion de mort (tue une cible) OU rien.`;
 
   if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Annonce des effets de la nuit, puis passage au jour.";
   if (p === "DAY_WAKE") return `Réveil de la ${t('station')}. Validez pour passer à la suite.`;
-  if (p === "DAY_CAPTAIN_TRANSFER") return "Le capitaine est mort : il transmet le capitaine à un joueur vivant.";
+  if (p === "DAY_CAPTAIN_TRANSFER") return `Le ${t('captain').toLowerCase()} est mort : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`;
   if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
-  if (p === "DAY_TIEBREAK") return "Égalité : le capitaine choisit l'éjecté.";
+  if (p === "DAY_TIEBREAK") return `Égalité : le ${t('captain').toLowerCase()} choisit l'éjecté.`;
   if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Résultats du jour, puis passage à la nuit.";
-  if (p === "REVENGE") return "Chef de sécurité : tu as été éjecté, tu peux tirer sur quelqu'un.";
+  if (p === "REVENGE") return `${tRole('security')} : tu as été éjecté, tu peux tirer sur quelqu'un.`;
   if (p === "MANUAL_ROLE_PICK") return "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.";
   if (p === "GAME_ABORTED") return "Partie interrompue.";
   return "";
@@ -1518,7 +1938,7 @@ function buildRulesHtml(cfg) {
   roleLines.push(`<li><b>${tRole('astronaut')}</b> — aucun pouvoir.</li>`);
   roleLines.push(`<li><b>${tRole('saboteur')}</b> — vote unanimement une cible la nuit.</li>`);
   if (on("radar")) roleLines.push(`<li><b>${tRole('radar')}</b> — inspecte un joueur et découvre son rôle.</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des ${t('saboteurs').toLowerCase()}) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
   if (on("chameleon")) roleLines.push(`<li><b>${tRole('chameleon')}</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
   if (on("security")) roleLines.push(`<li><b>${tRole('security')}</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
   if (on("ai_agent")) roleLines.push(`<li><b>${tRole('ai_agent')}</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
@@ -1573,6 +1993,105 @@ $("rulesModal").addEventListener("click", (e) => {
   if (e.target === $("rulesModal")) $("rulesModal").style.display = "none";
 });
 
+// =========================================================
+// BOUTON INSTALLATION APP (PWA)
+// =========================================================
+(function initInstallButton() {
+  const installBtn = document.getElementById("installAppBtn");
+  const installContainer = document.getElementById("installAppContainer");
+  
+  if (!installBtn || !installContainer) {
+    console.log('[APP] Bouton installation non trouvé');
+    return;
+  }
+  
+  console.log('[APP] Initialisation du bouton installation');
+  
+  // Vérifier si déjà installé ou en mode standalone
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                       window.navigator.standalone === true;
+  const isInstalled = localStorage.getItem('pwa_installed') === 'true';
+  
+  if (isStandalone || isInstalled) {
+    installContainer.style.display = 'none';
+    console.log('[APP] Masqué (déjà installé ou standalone)');
+    return;
+  }
+  
+  // Afficher le bouton
+  installContainer.style.display = 'block';
+  
+  // Attacher le handler de clic DIRECTEMENT
+  installBtn.onclick = function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[APP] Clic sur bouton installation');
+    
+    // Réinitialiser les flags qui pourraient bloquer
+    localStorage.removeItem('pwa_prompt_dismissed');
+    
+    // Essayer D10PWA d'abord
+    if (window.D10PWA && D10PWA.canInstall) {
+      console.log('[APP] Utilisation D10PWA - installation directe');
+      D10PWA.triggerInstall();
+      return false;
+    }
+    
+    // Si D10PWA a capturé le prompt mais canInstall est false, forcer l'affichage
+    if (window.D10PWA && typeof D10PWA.forceShowInstallPrompt === 'function') {
+      console.log('[APP] Affichage prompt D10PWA forcé');
+      D10PWA.forceShowInstallPrompt();
+      return false;
+    }
+    
+    console.log('[APP] Affichage instructions installation');
+    
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isAndroid = /Android/.test(navigator.userAgent);
+    
+    let title = 'Installer l\'application';
+    let steps = '';
+    
+    if (isIOS) {
+      title = 'Installer sur iPhone/iPad';
+      steps = `
+        <li>Appuyez sur <b>Partager</b> ⬆️ en bas de Safari</li>
+        <li>Faites défiler et appuyez sur <b>"Sur l'écran d'accueil"</b></li>
+        <li>Appuyez sur <b>Ajouter</b></li>
+      `;
+    } else if (isAndroid) {
+      title = 'Installer sur Android';
+      steps = `
+        <li>Appuyez sur le menu <b>⋮</b> en haut à droite</li>
+        <li>Appuyez sur <b>"Installer l'application"</b></li>
+        <li>Confirmez l'installation</li>
+      `;
+    } else {
+      title = 'Installer sur PC';
+      steps = `
+        <li>Cliquez sur l'icône 📥 (carré avec flèche) à droite de la barre d'adresse</li>
+        <li>Ou menu <b>⋮</b> → <b>"Installer Saboteur"</b></li>
+        <li>Confirmez l'installation</li>
+      `;
+    }
+    
+    const html = `
+      <div style="text-align:center; padding:20px;">
+        <div style="font-size:3rem; margin-bottom:15px;">📲</div>
+        <h3 style="color:var(--neon-cyan); margin-bottom:15px;">${title}</h3>
+        <ol style="text-align:left; line-height:2; font-size:1.1rem;">${steps}</ol>
+      </div>
+    `;
+    
+    document.getElementById("rulesContent").innerHTML = html;
+    document.getElementById("rulesModal").style.display = "block";
+    
+    return false;
+  };
+  
+  console.log('[APP] Handler attaché avec succès');
+})();
+
 // quit
 
 // navigation
@@ -1590,7 +2109,23 @@ function createRoomFlow() {
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
 
-  socket.emit("createRoom", { playerId, name, playerToken, themeId: homeSelectedTheme }, (res) => {
+  // D9: Récupérer les données de personnalisation
+  const customization = window.D9Avatars?.getCustomizationForServer() || {};
+  
+  socket.emit("createRoom", { 
+    playerId, 
+    name, 
+    playerToken, 
+    themeId: homeSelectedTheme,
+    // D9: Données de personnalisation
+    avatarId: customization.avatarId,
+    avatarEmoji: customization.avatarEmoji,
+    colorId: customization.colorId,
+    colorHex: customization.colorHex,
+    badgeId: customization.badgeId,
+    badgeEmoji: customization.badgeEmoji,
+    badgeName: customization.badgeName
+  }, (res) => {
     if (!res?.ok) return setError(res?.error || "Erreur création");
     sessionStorage.setItem(STORAGE.room, res.roomCode);
     startHeartbeat();
@@ -1612,7 +2147,23 @@ $("joinRoomBtn").onclick = () => {
   sessionStorage.setItem(STORAGE.name, name);
   sessionStorage.setItem(STORAGE.room, roomCode);
 
-  socket.emit("joinRoom", { playerId, name, roomCode, playerToken }, (res) => {
+  // D9: Récupérer les données de personnalisation
+  const customization = window.D9Avatars?.getCustomizationForServer() || {};
+  
+  socket.emit("joinRoom", { 
+    playerId, 
+    name, 
+    roomCode, 
+    playerToken,
+    // D9: Données de personnalisation
+    avatarId: customization.avatarId,
+    avatarEmoji: customization.avatarEmoji,
+    colorId: customization.colorId,
+    colorHex: customization.colorHex,
+    badgeId: customization.badgeId,
+    badgeEmoji: customization.badgeEmoji,
+    badgeName: customization.badgeName
+  }, (res) => {
     if (!res?.ok) {
       const error = res?.error || "Erreur connexion";
       setError(error);
@@ -1645,6 +2196,10 @@ socket.on("roomState", (s) => {
   // D6: Stocker phase précédente et joueurs vivants pour vibration
   const previousPhase = state?.phase;
   const previousAliveCount = (state?.players || []).filter(p => p.status === 'alive').length;
+  // D11 V4: Sauvegarder l'ancien capitaine AVANT mise à jour
+  const previousCaptainId = state?.players?.find(p => p.isCaptain)?.playerId;
+  // D11 V4: Sauvegarder l'ancien statut des joueurs pour détecter les éjections
+  const previousPlayerStatuses = new Map((state?.players || []).map(p => [p.playerId, p.status]));
   
   state = s;
   // D6: Stocker aussi dans window.lastKnownState pour video-tracks.js
@@ -1704,6 +2259,88 @@ socket.on("roomState", (s) => {
       window.syncEliminatedPlayersGrayscale();
     }
   });
+  
+  // =========================================================
+  // D7: ANIMATIONS UX
+  // =========================================================
+  
+  // D7: Animation de révélation de rôle (flip 3D)
+  if (previousPhase && previousPhase !== 'ROLE_REVEAL' && currentPhaseNow === 'ROLE_REVEAL') {
+    requestAnimationFrame(() => {
+      if (window.D7Animations) {
+        console.log('[D7] 🎭 Triggering role reveal animation');
+        D7Animations.animateRoleReveal();
+      }
+    });
+  }
+  
+  // D11 V4: Animation élection capitaine - quand un joueur DEVIENT capitaine
+  const newCaptain = s.players?.find(p => p.isCaptain);
+  const myPlayerId = sessionStorage.getItem('is_playerId');
+  
+  // Si un nouveau capitaine est élu (pas de capitaine avant, ou changement de capitaine)
+  // ET que c'est MOI qui suis élu
+  if (newCaptain && newCaptain.playerId !== previousCaptainId && newCaptain.playerId === myPlayerId) {
+    console.log('[D7] ⭐ I am the new captain!');
+    // Délai pour laisser le temps au rendu de se faire
+    setTimeout(() => {
+      if (window.D7Animations) {
+        console.log('[D7] ⭐ Triggering captain election animation for ME:', newCaptain.name);
+        D7Animations.animateCaptainElection();
+      }
+    }, 500);
+  }
+  
+  // D7: Animation d'éjection (quand un joueur est éliminé)
+  console.log('[D7] Ejection check - previousAlive:', previousAliveCount, 'currentAlive:', currentAliveCount);
+  if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
+    // D11 V4: Trouver les joueurs qui viennent d'être éliminés en utilisant previousPlayerStatuses
+    const newlyDead = s.players.filter(p => {
+      if (p.status !== 'dead') return false;
+      const prevStatus = previousPlayerStatuses.get(p.playerId);
+      console.log('[D7] Player', p.name, 'status:', p.status, 'prevStatus:', prevStatus);
+      return prevStatus && prevStatus === 'alive';
+    });
+    
+    console.log('[D7] Newly dead players:', newlyDead.map(p => p.name));
+    
+    newlyDead.forEach(deadPlayer => {
+      if (window.D7Animations) {
+        console.log('[D7] 💀 Triggering ejection animation for:', deadPlayer.name);
+        // D11 V4: Délai plus long pour que l'animation soit visible
+        setTimeout(() => {
+          D7Animations.animateEjection(deadPlayer.playerId);
+          D7Animations.animateDeath(deadPlayer.playerId);
+        }, 500);
+      }
+    });
+  }
+  
+  // D7: Animation de victoire/défaite + D9: Enregistrement partie
+  if (previousPhase && previousPhase !== 'GAME_OVER' && currentPhaseNow === 'GAME_OVER') {
+    const winner = state.phaseData?.winner;
+    const myPlayerId = sessionStorage.getItem('is_playerId');
+    const myPlayer = state.players?.find(p => p.playerId === myPlayerId);
+    
+    if (winner && myPlayer) {
+      const myTeam = myPlayer.role?.team || (myPlayer.role === 'saboteur' ? 'SABOTEURS' : 'ASTRONAUTES');
+      const isWinner = (winner === 'SABOTEURS' && myTeam === 'SABOTEURS') ||
+                       (winner === 'ASTRONAUTES' && myTeam === 'ASTRONAUTES') ||
+                       (winner === 'AMOUREUX');
+      
+      setTimeout(() => {
+        if (window.D7Animations) {
+          console.log('[D7] 🏆 Triggering victory animation, isWinner:', isWinner);
+          D7Animations.animateVictory(isWinner);
+        }
+        // D9: Enregistrer la partie jouée
+        if (window.D9Avatars) {
+          console.log('[D9] 📊 Recording game played, won:', isWinner);
+          D9Avatars.recordGamePlayed(isWinner);
+        }
+      }, 500);
+    }
+  }
   
   // D5 V3.21: Vérifier le flag de coordination AVANT de restaurer
   requestAnimationFrame(() => {
@@ -1847,6 +2484,10 @@ function tRoleHelp(roleKey) {
   return helps[roleKey] || "";
 }
 
+// D11: Exposer les fonctions de traduction globalement pour les autres modules
+window.t = t;
+window.tRole = tRole;
+
 // Charger la liste des thèmes disponibles
 console.log("[themes] Fetching themes from server...");
 fetch("/api/themes")
@@ -1933,6 +2574,9 @@ function renderHomeThemeSelector() {
         applyThemeStyles(themeId);
         applyThemeTranslations();
       }
+      
+      // D6: Précharger les assets du thème sélectionné
+      preloadThemeAssets(themeId);
       
       // Re-render pour mettre à jour les boutons
       renderHomeThemeSelector();
@@ -2258,7 +2902,7 @@ function generateTutorialContent() {
           </div>
           <div style="padding: 10px; background: rgba(128,0,128,0.1); border-left: 3px solid var(--neon-purple, var(--neon-cyan)); border-radius: 6px;">
             <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 Certains Rôles</div>
-            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange Agent IA<br>• Actions spéciales</div>
+            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange ${tRole('ai_agent')}<br>• Actions spéciales</div>
           </div>
         </div>
         <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
@@ -2731,5 +3375,132 @@ window.addEventListener("scroll", () => {
   }
 }, { passive: true });
 
+// ============================================================
+// D6: SYSTÈME DE PRÉCHARGEMENT DES ASSETS (CACHE)
+// ============================================================
 
+// Liste des assets à précharger par thème
+const THEME_ASSETS = {
+  images: [
+    'cockpit.webp',
+    'out.webp',
+    'vengeance.webp',
+    'vote-jour.webp',
+    'vote-nuit.webp',
+    'image-fin-stats-astronautes.webp',
+    'image-fin-stats-saboteurs.webp',
+    'ejection-overlay.webp'
+  ],
+  roles: [
+    'astronaute.webp',
+    'saboteur.webp',
+    'docteur.webp',
+    'chef-securite.webp',
+    'liaison-ia.webp',
+    'radar.webp',
+    'ingenieur.webp',
+    'cameleon.webp',
+    'capitaine.webp'
+  ],
+  sounds: [
+    'INTRO_LOBBY.mp3'
+  ]
+};
+
+// Cache des assets préchargés
+const preloadedAssets = new Set();
+
+/**
+ * Précharge tous les assets d'un thème en arrière-plan
+ * @param {string} themeId - L'identifiant du thème
+ */
+function preloadThemeAssets(themeId) {
+  if (!themeId) return;
+  
+  const cacheKey = `theme_${themeId}`;
+  if (preloadedAssets.has(cacheKey)) {
+    console.log(`[preload] Theme ${themeId} already preloaded, skipping`);
+    return;
+  }
+  
+  console.log(`[preload] 🔄 Starting preload for theme: ${themeId}`);
+  
+  let loadedCount = 0;
+  const totalAssets = THEME_ASSETS.images.length + THEME_ASSETS.roles.length + THEME_ASSETS.sounds.length;
+  
+  // Précharger les images principales
+  THEME_ASSETS.images.forEach(filename => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === totalAssets) {
+        console.log(`[preload] ✅ Theme ${themeId} fully preloaded (${totalAssets} assets)`);
+        preloadedAssets.add(cacheKey);
+      }
+    };
+    img.onerror = () => {
+      loadedCount++;
+      // Pas d'erreur bloquante, certains thèmes n'ont pas tous les assets
+    };
+    img.src = `/images/${themeId}/${filename}`;
+  });
+  
+  // Précharger les icônes de rôles
+  THEME_ASSETS.roles.forEach(filename => {
+    const img = new Image();
+    img.onload = () => {
+      loadedCount++;
+      if (loadedCount === totalAssets) {
+        console.log(`[preload] ✅ Theme ${themeId} fully preloaded (${totalAssets} assets)`);
+        preloadedAssets.add(cacheKey);
+      }
+    };
+    img.onerror = () => loadedCount++;
+    img.src = `/images/${themeId}/roles/${filename}`;
+  });
+  
+  // Précharger les sons (en background, sans lecture)
+  THEME_ASSETS.sounds.forEach(filename => {
+    const audio = new Audio();
+    audio.preload = 'auto';
+    audio.oncanplaythrough = () => {
+      loadedCount++;
+      if (loadedCount === totalAssets) {
+        console.log(`[preload] ✅ Theme ${themeId} fully preloaded (${totalAssets} assets)`);
+        preloadedAssets.add(cacheKey);
+      }
+    };
+    audio.onerror = () => loadedCount++;
+    audio.src = `/sounds/${themeId}/${filename}`;
+  });
+}
+
+// Précharger le thème par défaut au chargement de la page
+document.addEventListener('DOMContentLoaded', () => {
+  // Petit délai pour ne pas bloquer le rendu initial
+  setTimeout(() => {
+    preloadThemeAssets('default');
+  }, 1000);
+  
+  // D11: Listener de visibilité pour rafraîchir le lobby quand la page redevient visible
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state?.phase === 'LOBBY') {
+      console.log('[D11] Page visible again, refreshing lobby display');
+      requestAnimationFrame(() => {
+        const list = document.getElementById('playersList');
+        if (list) {
+          // Forcer un repaint de tous les éléments player-info
+          list.querySelectorAll('.player-info').forEach(info => {
+            info.style.display = 'flex';
+            void info.offsetHeight; // Force reflow
+          });
+          list.querySelectorAll('.player-left').forEach(left => {
+            left.style.display = 'flex';
+            void left.offsetHeight;
+          });
+        }
+      });
+    }
+  });
+});
 
