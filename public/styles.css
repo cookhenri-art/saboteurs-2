@@ -1378,25 +1378,33 @@ textarea {
   border:1px solid rgba(0,255,255,0.25);
 }
 .player-left { 
-  display:flex; 
+  display:flex !important; 
   gap:10px; 
   align-items:center; 
   flex-wrap:wrap;
-  flex: 1 1 auto; /* D6: Prendre l'espace disponible */
+  flex: 1 1 auto;
   min-width: 0;
 }
 /* D6: Style pour player-info - affichage du nom et des badges */
 .player-info {
-  display: flex;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
   flex-direction: column;
   gap: 4px;
   flex: 1 1 auto;
-  min-width: 0;
+  min-width: 80px; /* Réduit de 120px pour mieux s'adapter */
+  overflow: visible;
 }
 .player-info .player-name {
   font-weight: 700;
   font-size: 1rem;
   color: white;
+  display: flex !important;
+  align-items: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .player-info .pill {
   display: inline-block;

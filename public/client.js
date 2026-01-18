@@ -227,7 +227,7 @@ function formatPhaseTitle(s) {
     NIGHT_START: `NUIT ${night} — DÉBUT`,
     NIGHT_CHAMELEON: `NUIT — ${tRole('chameleon').toUpperCase()}`,
     NIGHT_AI_AGENT: `NUIT — ${tRole('ai_agent').toUpperCase()} (LIAISON)`,
-    NIGHT_AI_EXCHANGE: `NUIT — ÉCHANGE IA (PRIVÉ)`,
+    NIGHT_AI_EXCHANGE: `NUIT — ÉCHANGE ${tRole('ai_agent').toUpperCase()} (PRIVÉ)`,
     NIGHT_RADAR: `NUIT — ${tRole('radar').toUpperCase()}`,
     NIGHT_SABOTEURS: `NUIT — ${t('saboteurs').toUpperCase()} (UNANIMITÉ)`,
     NIGHT_DOCTOR: `NUIT — ${tRole('doctor').toUpperCase()}`,
@@ -509,7 +509,7 @@ function renderLobby() {
     
     left.innerHTML = `
       <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}" style="flex-shrink:0;"></div>
-      <div class="player-info" style="display:flex !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:120px;">
+      <div class="player-info" style="display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;">
         <div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">
           <span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>
           ${escapeHtml(p.name)}${badgeDisplay}
@@ -753,16 +753,20 @@ if (logEl) {
 
 // actor-only phases: only the actor sees the action UI
 const actorOnly = new Set(["NIGHT_CHAMELEON","NIGHT_AI_AGENT","NIGHT_RADAR","NIGHT_DOCTOR","NIGHT_SABOTEURS","DAY_TIEBREAK","DAY_CAPTAIN_TRANSFER","REVENGE"]);
-const waitTextByPhase = {
-  NIGHT_CHAMELEON: "🦎 Le caméléon agit…",
-  NIGHT_AI_AGENT: "🤖 L’Agent IA agit…",
-  NIGHT_RADAR: "🔍 Le radar agit…",
-  NIGHT_DOCTOR: "🧪 Le docteur agit…",
-  NIGHT_SABOTEURS: "🗡️ Les saboteurs agissent…",
-  DAY_TIEBREAK: "⭐ Le capitaine tranche…",
-  DAY_CAPTAIN_TRANSFER: "⭐ Transmission du capitaine…",
-  REVENGE: "🔫 Le chef de sécurité se venge…"
-};
+// Fonction dynamique pour récupérer le texte d'attente traduit selon le thème
+function getWaitText(phase) {
+  const waitTexts = {
+    NIGHT_CHAMELEON: `🦎 ${tRole('chameleon')} agit…`,
+    NIGHT_AI_AGENT: `🤖 ${tRole('ai_agent')} agit…`,
+    NIGHT_RADAR: `🔍 ${tRole('radar')} agit…`,
+    NIGHT_DOCTOR: `🧪 ${tRole('doctor')} agit…`,
+    NIGHT_SABOTEURS: `🗡️ Les ${t('saboteurs').toLowerCase()} agissent…`,
+    DAY_TIEBREAK: `⭐ ${t('captain')} tranche…`,
+    DAY_CAPTAIN_TRANSFER: `⭐ Transmission du ${t('captain').toLowerCase()}…`,
+    REVENGE: `🔫 ${tRole('security')} se venge…`
+  };
+  return waitTexts[phase] || "⏳ Action en cours…";
+}
 
 // dead players have no controls (including ACK), except if they are the actor in REVENGE / captain transfer
 if (meDead && !deadCanAct) {
@@ -771,7 +775,7 @@ if (meDead && !deadCanAct) {
 }
 
 if (actorOnly.has(state.phase) && !isActorNow) {
-  controls.appendChild(makeHint(waitTextByPhase[state.phase] || "⏳ Action en cours…"));
+  controls.appendChild(makeHint(getWaitText(state.phase)));
   return;
 }
 
@@ -944,7 +948,7 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     controls.appendChild(sel);
     controls.appendChild(btnLink);
     controls.appendChild(btnSkip);
-    controls.appendChild(makeHint("Nuit 1 uniquement. La liaison est entre toi (Agent IA) et le joueur choisi."));
+    controls.appendChild(makeHint(`Nuit 1 uniquement. La liaison est entre toi (${tRole('ai_agent')}) et le joueur choisi.`));
   }
 
   // NIGHT_AI_EXCHANGE: Phase privée où l'Agent IA et son partenaire lié doivent valider
@@ -976,9 +980,9 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
         };
       }
       controls.appendChild(btn);
-      controls.appendChild(makeHint("Échange privé entre l'Agent IA et son partenaire lié. Les deux doivent valider pour continuer."));
+      controls.appendChild(makeHint(`Échange privé entre ${tRole('ai_agent')} et son partenaire lié. Les deux doivent valider pour continuer.`));
     } else {
-      controls.appendChild(makeHint("🤖 Échange IA en cours…"));
+      controls.appendChild(makeHint(`🤖 Échange ${tRole('ai_agent')} en cours…`));
     }
   }
 
@@ -1015,7 +1019,7 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
       box.style.borderRadius = "12px";
       box.style.border = "1px solid rgba(0,255,255,0.25)";
       box.style.background = "rgba(0,0,0,0.25)";
-      box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗳️ Votes des saboteurs</div>` +
+      box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🗳️ Votes des ${t('saboteurs').toLowerCase()}</div>` +
         teamVotes.map(v => `<div style="opacity:.95;">${escapeHtml(v.saboteurName)} → <b>${escapeHtml(v.targetName)}</b></div>`).join("");
       controls.appendChild(box);
     }
@@ -1036,7 +1040,7 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
       }
     }
     controls.appendChild(grid);
-    controls.appendChild(makeHint("Vote UNANIME entre saboteurs. Impossible de viser un saboteur (ni toi-même)."));
+    controls.appendChild(makeHint(`Vote UNANIME entre ${t('saboteurs').toLowerCase()}. Impossible de viser un ${tRole('saboteur').toLowerCase()} (ni toi-même).`));
   }
 
   if (state.phase === "NIGHT_DOCTOR") {
@@ -1101,13 +1105,13 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
     section.appendChild(btnNone);
 
     controls.appendChild(section);
-    controls.appendChild(makeHint("La potion de vie protège automatiquement la cible des saboteurs (s’il y en a une)."));
+    controls.appendChild(makeHint(`La potion de vie protège automatiquement la cible des ${t('saboteurs').toLowerCase()} (s’il y en a une).`));
   }
 
   if (state.phase === "DAY_CAPTAIN_TRANSFER") {
     const alive = state.players.filter(p => p.status === "alive");
     controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Transmettre", (id) => socket.emit("phaseAction", { chosenId: id })));
-    controls.appendChild(makeHint("Le capitaine mort choisit sans connaître le rôle du joueur choisi."));
+    controls.appendChild(makeHint(`Le ${t('captain').toLowerCase()} mort choisit sans connaître le rôle du joueur choisi.`));
   }
 
   if (state.phase === "DAY_VOTE") {
@@ -1140,7 +1144,7 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
       }
     }
     controls.appendChild(grid);
-    controls.appendChild(makeHint("En cas d'égalité, le capitaine tranche avant toute conséquence."));
+    controls.appendChild(makeHint(`En cas d'égalité, le ${t('captain').toLowerCase()} tranche avant toute conséquence.`));
   }
 
   if (state.phase === "REVENGE") {
@@ -1302,15 +1306,15 @@ function buildPhaseText(s) {
   if (p === "NIGHT_AI_EXCHANGE") return `Échange privé entre ${tRole("ai_agent")} et son partenaire lié. Les deux doivent valider pour continuer.`;
   if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
   if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
-  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des saboteurs) OU potion de mort (tue une cible) OU rien.`;
+  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion de mort (tue une cible) OU rien.`;
 
   if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Annonce des effets de la nuit, puis passage au jour.";
   if (p === "DAY_WAKE") return `Réveil de la ${t('station')}. Validez pour passer à la suite.`;
-  if (p === "DAY_CAPTAIN_TRANSFER") return "Le capitaine est mort : il transmet le capitaine à un joueur vivant.";
+  if (p === "DAY_CAPTAIN_TRANSFER") return `Le ${t('captain').toLowerCase()} est mort : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`;
   if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
-  if (p === "DAY_TIEBREAK") return "Égalité : le capitaine choisit l'éjecté.";
+  if (p === "DAY_TIEBREAK") return `Égalité : le ${t('captain').toLowerCase()} choisit l'éjecté.`;
   if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Résultats du jour, puis passage à la nuit.";
-  if (p === "REVENGE") return "Chef de sécurité : tu as été éjecté, tu peux tirer sur quelqu'un.";
+  if (p === "REVENGE") return `${tRole('security')} : tu as été éjecté, tu peux tirer sur quelqu'un.`;
   if (p === "MANUAL_ROLE_PICK") return "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.";
   if (p === "GAME_ABORTED") return "Partie interrompue.";
   return "";
@@ -1665,7 +1669,7 @@ function buildRulesHtml(cfg) {
   roleLines.push(`<li><b>${tRole('astronaut')}</b> — aucun pouvoir.</li>`);
   roleLines.push(`<li><b>${tRole('saboteur')}</b> — vote unanimement une cible la nuit.</li>`);
   if (on("radar")) roleLines.push(`<li><b>${tRole('radar')}</b> — inspecte un joueur et découvre son rôle.</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des ${t('saboteurs').toLowerCase()}) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
   if (on("chameleon")) roleLines.push(`<li><b>${tRole('chameleon')}</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
   if (on("security")) roleLines.push(`<li><b>${tRole('security')}</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
   if (on("ai_agent")) roleLines.push(`<li><b>${tRole('ai_agent')}</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
@@ -2600,7 +2604,7 @@ function generateTutorialContent() {
           </div>
           <div style="padding: 10px; background: rgba(128,0,128,0.1); border-left: 3px solid var(--neon-purple, var(--neon-cyan)); border-radius: 6px;">
             <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 Certains Rôles</div>
-            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange Agent IA<br>• Actions spéciales</div>
+            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange ${tRole('ai_agent')}<br>• Actions spéciales</div>
           </div>
         </div>
         <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
