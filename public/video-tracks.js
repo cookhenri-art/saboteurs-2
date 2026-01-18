@@ -1182,17 +1182,20 @@
       
       if (!pid) return;
 
-      // D11 V12: Ne pas supprimer immédiatement - Daily peut envoyer des track-stopped temporaires
-      // Vérifier si le participant est toujours dans l'appel avant de nettoyer
-      const participants = callObject.participants?.() || {};
-      const isStillInCall = Object.values(participants).some(part => {
-        const partPid = parsePlayerIdFromUserName(part?.user_name) || "";
-        return partPid === pid && !part.leftAt;
-      });
+      // D11 V13: Vérifier si le joueur est toujours dans la partie via lastKnownState
+      // C'est plus fiable que callObject.participants() qui peut être désynchronisé
+      const gameState = window.lastKnownState;
+      const isStillInGame = gameState?.players?.some(player => 
+        player.playerId === pid && player.connected !== false && player.status !== 'left'
+      );
       
-      if (isStillInCall) {
-        log("⏸️ track-stopped but participant still in call, not cleaning:", pid.slice(0,8));
-        // Juste supprimer la track de la Map, mais garder le slot intact
+      // D11 V13: Dans le lobby, ne jamais supprimer les vidéos si le joueur est toujours dans la partie
+      const lobbyScreen = document.getElementById('lobbyScreen');
+      const isInLobby = lobbyScreen && lobbyScreen.classList.contains('active');
+      
+      if (isStillInGame && isInLobby) {
+        log("⏸️ track-stopped in lobby but player still in game, not cleaning:", pid.slice(0,8));
+        // Juste supprimer la track de la Map, mais garder le slot et l'élément vidéo intacts
         if (ev?.track?.kind === "video") {
           videoTracks.delete(pid);
         } else if (ev?.track?.kind === "audio") {
