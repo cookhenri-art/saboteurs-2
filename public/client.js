@@ -431,6 +431,10 @@ function renderLobby() {
   // D11 V10: Lock pour empêcher video-tracks de modifier le DOM pendant le rendu
   window._renderingLobby = true;
   
+  // D11 V12: Compteur de rendu pour éviter les race conditions
+  window._lobbyRenderCount = (window._lobbyRenderCount || 0) + 1;
+  const currentRenderCount = window._lobbyRenderCount;
+  
   // D11: Détecter si on revient d'une partie (phase précédente n'était pas LOBBY)
   const wasInGame = window._lastRenderedPhase && window._lastRenderedPhase !== 'LOBBY';
   window._lastRenderedPhase = 'LOBBY';
@@ -775,7 +779,12 @@ function renderLobby() {
     }
     
     // D11 V10: Déverrouiller et forcer un seul reattach après le rendu complet
+    // D11 V12: Vérifier que c'est bien le dernier rendu qui déverrouille
     setTimeout(() => {
+      if (window._lobbyRenderCount !== currentRenderCount) {
+        console.log('[D11] Skipping unlock - newer render in progress:', currentRenderCount, 'vs', window._lobbyRenderCount);
+        return;
+      }
       window._renderingLobby = false;
       console.log('[D11] Lobby render complete - unlocking and triggering single reattach');
       if (window.VideoTracksRefresh) {
