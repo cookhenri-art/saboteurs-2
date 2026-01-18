@@ -1386,6 +1386,7 @@ textarea {
   min-width: 0;
 }
 /* D6: Style pour player-info - affichage du nom et des badges */
+/* D11: Renforcé pour éviter la disparition lors des mises à jour vidéo */
 .player-info {
   display: flex !important;
   visibility: visible !important;
@@ -1395,12 +1396,27 @@ textarea {
   flex: 1 1 auto;
   min-width: 80px; /* Réduit de 120px pour mieux s'adapter */
   overflow: visible;
+  position: relative; /* D11: Assurer le contexte de positionnement */
+}
+/* D11: Garantir l'affichage même après manipulation du DOM */
+#playersList .player-info,
+#lobbyScreen .player-info {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+#playersList .player-left,
+#lobbyScreen .player-left {
+  display: flex !important;
+  gap: 10px !important;
+  align-items: center !important;
 }
 .player-info .player-name {
   font-weight: 700;
   font-size: 1rem;
   color: white;
   display: flex !important;
+  visibility: visible !important;
   align-items: center;
   white-space: nowrap;
   overflow: hidden;

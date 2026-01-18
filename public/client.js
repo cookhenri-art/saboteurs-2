@@ -483,52 +483,134 @@ function renderLobby() {
     $("balanceStatusCockpit").textContent = "";
   }
 
-  // players list
+  // players list - D11: Mise à jour incrémentale au lieu de tout recréer
   const list = $("playersList");
-  list.innerHTML = "";
   const playersSorted = [...state.players].sort((a,b) => (b.isHost?1:0) - (a.isHost?1:0) || a.name.localeCompare(b.name));
-  for (const p of playersSorted) {
-    const item = document.createElement("div");
-    item.className = "player-item";
-    item.dataset.playerId = p.playerId;
+  
+  // D11: Garder une map des éléments existants
+  const existingItems = new Map();
+  list.querySelectorAll('.player-item').forEach(item => {
+    existingItems.set(item.dataset.playerId, item);
+  });
+  
+  // D11: Créer les nouveaux IDs attendus
+  const expectedIds = new Set(playersSorted.map(p => p.playerId));
+  
+  // D11: Supprimer les joueurs qui ne sont plus dans la liste
+  existingItems.forEach((item, playerId) => {
+    if (!expectedIds.has(playerId)) {
+      item.remove();
+    }
+  });
+  
+  // D11: Mettre à jour ou créer chaque joueur
+  playersSorted.forEach((p, index) => {
+    let item = existingItems.get(p.playerId);
+    const isNewItem = !item;
+    
+    if (isNewItem) {
+      // Créer un nouvel élément
+      item = document.createElement("div");
+      item.className = "player-item";
+      item.dataset.playerId = p.playerId;
+    }
     
     // D9: Appliquer la couleur de bordure personnalisée
     if (p.colorHex) {
       item.style.borderColor = p.colorHex;
       item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+    } else {
+      item.style.borderColor = '';
+      item.style.boxShadow = '';
     }
-    
-    const left = document.createElement("div");
-    left.className = "player-left";
-    // D6 V2.0: Styles inline avec flex-wrap pour mobile
-    left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto; flex-wrap:wrap;";
     
     // D9: Préparer l'avatar emoji et le badge
     const avatarEmoji = p.avatarEmoji || '👤';
     const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
     
-    left.innerHTML = `
+    // D11: Construire le HTML pour la partie gauche
+    const leftHtml = `
       <div class="player-video-slot" data-player-id="${escapeHtml(p.playerId)}" aria-label="Video ${escapeHtml(p.name)}" style="flex-shrink:0;"></div>
       <div class="player-info" style="display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;">
         <div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">
           <span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>
           ${escapeHtml(p.name)}${badgeDisplay}
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:4px;">
+        <div class="player-badges" style="display:flex; flex-wrap:wrap; gap:4px;">
           ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
           ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
           ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
           ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
         </div>
       </div>
-`;
-    const right = document.createElement("div");
-    right.className = "player-right";  // D6: Ajout classe pour affichage correct PC
-    right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
-    item.appendChild(left);
-    item.appendChild(right);
-    list.appendChild(item);
-  }
+    `;
+    const rightHtml = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+    
+    if (isNewItem) {
+      // Créer la structure complète pour un nouvel élément
+      const left = document.createElement("div");
+      left.className = "player-left";
+      left.style.cssText = "display:flex !important; gap:10px; align-items:center; flex:1 1 auto; flex-wrap:wrap;";
+      left.innerHTML = leftHtml;
+      
+      const right = document.createElement("div");
+      right.className = "player-right";
+      right.innerHTML = rightHtml;
+      
+      item.appendChild(left);
+      item.appendChild(right);
+    } else {
+      // D11: Mettre à jour seulement les parties qui changent (état prêt, badges)
+      const right = item.querySelector('.player-right');
+      if (right && right.innerHTML !== rightHtml) {
+        right.innerHTML = rightHtml;
+      }
+      
+      // D11: Mettre à jour les badges si nécessaire (connected, status)
+      const badgesDiv = item.querySelector('.player-badges');
+      if (badgesDiv) {
+        const newBadgesHtml = `
+          ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+          ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+          ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+          ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+        `.replace(/\s+/g, ' ').trim();
+        const currentBadgesHtml = badgesDiv.innerHTML.replace(/\s+/g, ' ').trim();
+        if (currentBadgesHtml !== newBadgesHtml) {
+          badgesDiv.innerHTML = newBadgesHtml;
+        }
+      }
+    }
+    
+    // D11: S'assurer que l'élément est dans la bonne position
+    const currentAtIndex = list.children[index];
+    if (currentAtIndex !== item) {
+      if (currentAtIndex) {
+        list.insertBefore(item, currentAtIndex);
+      } else {
+        list.appendChild(item);
+      }
+    }
+  });
+  
+  // D11: Forcer un repaint pour s'assurer que les éléments sont visibles (fix bug fenêtre inactive)
+  requestAnimationFrame(() => {
+    list.querySelectorAll('.player-info').forEach(info => {
+      info.style.display = 'flex';
+      info.style.visibility = 'visible';
+      info.style.opacity = '1';
+      // Force reflow
+      void info.offsetHeight;
+    });
+    list.querySelectorAll('.player-left').forEach(left => {
+      left.style.display = 'flex';
+      void left.offsetHeight;
+    });
+    // D11: Appeler la fonction de réparation de video-tracks si disponible
+    if (window.VideoTracksRegistry?.repairLobbyDisplay) {
+      setTimeout(() => window.VideoTracksRegistry.repairLobbyDisplay(), 100);
+    }
+  });
 
   // ready button
   const me = state.players.find(p => p.playerId === state.you?.playerId);
@@ -3183,5 +3265,26 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     preloadThemeAssets('default');
   }, 1000);
+  
+  // D11: Listener de visibilité pour rafraîchir le lobby quand la page redevient visible
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && state?.phase === 'LOBBY') {
+      console.log('[D11] Page visible again, refreshing lobby display');
+      requestAnimationFrame(() => {
+        const list = document.getElementById('playersList');
+        if (list) {
+          // Forcer un repaint de tous les éléments player-info
+          list.querySelectorAll('.player-info').forEach(info => {
+            info.style.display = 'flex';
+            void info.offsetHeight; // Force reflow
+          });
+          list.querySelectorAll('.player-left').forEach(left => {
+            left.style.display = 'flex';
+            void left.offsetHeight;
+          });
+        }
+      });
+    }
+  });
 });
 

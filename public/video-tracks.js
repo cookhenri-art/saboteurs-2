@@ -92,6 +92,32 @@
     cleanupUnusedResources: () => {
       cleanupUnusedMediaElements();
     },
+    // D11: Fonction de réparation de l'affichage du lobby
+    repairLobbyDisplay: () => {
+      log("D11: Repairing lobby display...");
+      const playersList = document.getElementById('playersList');
+      if (playersList) {
+        playersList.querySelectorAll('.player-info').forEach(info => {
+          info.style.display = 'flex';
+          info.style.visibility = 'visible';
+          info.style.opacity = '1';
+          info.style.flexDirection = 'column';
+          void info.offsetHeight;
+        });
+        playersList.querySelectorAll('.player-left').forEach(left => {
+          left.style.display = 'flex';
+          left.style.gap = '10px';
+          left.style.alignItems = 'center';
+          void left.offsetHeight;
+        });
+        playersList.querySelectorAll('.player-name').forEach(name => {
+          name.style.display = 'flex';
+          name.style.visibility = 'visible';
+          void name.offsetHeight;
+        });
+        log("D11: Lobby display repaired");
+      }
+    },
     // D5: Stats pour debug
     getStats: () => ({
       videoTracks: videoTracks.size,
@@ -653,6 +679,12 @@
       log("Available slots:", allSlots.length, Array.from(allSlots).map(s => s.dataset.playerId));
       return;
     }
+    
+    // D11: Vérifier que le slot est bien un conteneur dédié et pas le player-left
+    if (slot.classList.contains('player-left')) {
+      log("ERROR: slot is player-left, not video-slot!", playerId);
+      return;
+    }
 
     const v = ensureVideoEl(playerId, isLocal);
     const stream = new MediaStream([track]);
@@ -661,6 +693,17 @@
     if (!slot.contains(v)) {
       slot.innerHTML = "";
       slot.appendChild(v);
+    }
+    
+    // D11: Après attachement, s'assurer que le sibling player-info est visible
+    const playerLeft = slot.parentElement;
+    if (playerLeft && playerLeft.classList.contains('player-left')) {
+      const playerInfo = playerLeft.querySelector('.player-info');
+      if (playerInfo) {
+        playerInfo.style.display = 'flex';
+        playerInfo.style.visibility = 'visible';
+        playerInfo.style.opacity = '1';
+      }
     }
     
     // D6: Vérifier si le joueur est mort via lastKnownState
@@ -766,6 +809,29 @@
     if (currentSpeaking) {
       const row = getPlayerRow(currentSpeaking);
       if (row) row.classList.add("is-speaking");
+    }
+    
+    // D11: Forcer le repaint des éléments player-info dans le lobby après attachement des vidéos
+    const lobbyScreen = document.getElementById('lobbyScreen');
+    if (lobbyScreen && lobbyScreen.classList.contains('active')) {
+      requestAnimationFrame(() => {
+        const playersList = document.getElementById('playersList');
+        if (playersList) {
+          playersList.querySelectorAll('.player-info').forEach(info => {
+            // Forcer display flex
+            info.style.display = 'flex';
+            info.style.visibility = 'visible';
+            info.style.opacity = '1';
+            // Force reflow
+            void info.offsetHeight;
+          });
+          playersList.querySelectorAll('.player-left').forEach(left => {
+            left.style.display = 'flex';
+            void left.offsetHeight;
+          });
+          log("D11: Forced repaint of player-info elements in lobby");
+        }
+      });
     }
   }
   
