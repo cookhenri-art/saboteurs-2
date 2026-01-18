@@ -21,38 +21,96 @@
   function animateEjection(playerId, callback) {
     log('Animating ejection for player:', playerId);
     
-    // Trouver toutes les cartes du joueur
+    // D11 V7: Créer un overlay d'éjection visible (ne dépend pas des éléments DOM)
+    const playerName = window.lastKnownState?.players?.find(p => p.playerId === playerId)?.name || 'Joueur';
+    
+    const overlay = document.createElement('div');
+    overlay.id = 'ejectionOverlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 9999;
+      animation: fadeInEjection 0.3s ease-out;
+      pointer-events: none;
+    `;
+    
+    overlay.innerHTML = `
+      <div style="
+        font-size: 6rem;
+        animation: ejectionBounce 0.8s ease-out;
+        text-shadow: 0 0 30px rgba(255, 0, 85, 0.8), 0 0 60px rgba(255, 0, 85, 0.5);
+      ">💀</div>
+      <div style="
+        font-size: 1.5rem;
+        color: #ff0055;
+        font-weight: bold;
+        margin-top: 20px;
+        text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+        animation: fadeInText 0.5s ease-out 0.3s both;
+      ">${playerName} a été éjecté !</div>
+    `;
+    
+    // Ajouter les styles d'animation si pas déjà présents
+    if (!document.getElementById('ejectionAnimStyles')) {
+      const style = document.createElement('style');
+      style.id = 'ejectionAnimStyles';
+      style.textContent = `
+        @keyframes fadeInEjection {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes fadeOutEjection {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+        @keyframes ejectionBounce {
+          0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+          50% { transform: scale(1.3) rotate(10deg); }
+          70% { transform: scale(0.9) rotate(-5deg); }
+          100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes fadeInText {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+    
+    document.body.appendChild(overlay);
+    
+    // Vibration mobile
+    if (navigator.vibrate) {
+      navigator.vibrate([100, 50, 100, 50, 200]);
+    }
+    
+    // Supprimer après l'animation
+    setTimeout(() => {
+      overlay.style.animation = 'fadeOutEjection 0.5s ease-out forwards';
+      setTimeout(() => overlay.remove(), 500);
+      if (callback) callback();
+    }, 2000);
+    
+    // Aussi appliquer l'animation aux éléments existants (si présents)
     const selectors = [
       `.choice-card[data-player-id="${playerId}"]`,
       `.player-card[data-player-id="${playerId}"]`,
       `.player-item[data-player-id="${playerId}"]`
     ];
     
-    const elements = [];
     selectors.forEach(selector => {
-      document.querySelectorAll(selector).forEach(el => elements.push(el));
+      document.querySelectorAll(selector).forEach(el => {
+        el.classList.add('ejecting');
+      });
     });
-    
-    if (elements.length === 0) {
-      log('No elements found for player:', playerId);
-      if (callback) callback();
-      return;
-    }
-    
-    // Appliquer l'animation
-    elements.forEach(el => {
-      el.classList.add('ejecting');
-    });
-    
-    // Vibration mobile si disponible
-    if (navigator.vibrate) {
-      navigator.vibrate([100, 50, 100, 50, 200]);
-    }
-    
-    // Callback après l'animation (1.2s)
-    setTimeout(() => {
-      if (callback) callback();
-    }, 1200);
   }
 
   // =========================================================

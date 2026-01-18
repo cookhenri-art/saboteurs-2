@@ -521,102 +521,148 @@ function renderLobby() {
     $("balanceStatusCockpit").textContent = "";
   }
 
-  // players list - D11 V4: TOUJOURS reconstruire pour éviter les corruptions
+  // players list - D11 V6: Mise à jour intelligente sans détruire les vidéos
   const list = $("playersList");
   const playersSorted = [...state.players].sort((a,b) => (b.isHost?1:0) - (a.isHost?1:0) || a.name.localeCompare(b.name));
   
-  // D11 V4: Sauvegarder les vidéos existantes AVANT de vider
-  const savedVideos = new Map();
-  list.querySelectorAll('.player-video-slot video').forEach(video => {
-    if (video.srcObject) {
-      const playerId = video.closest('.player-video-slot')?.dataset?.playerId;
-      if (playerId) {
-        savedVideos.set(playerId, video);
-        console.log('[D11] Saving video for:', playerId);
-      }
+  // D11 V6: Mapper les éléments existants par playerId
+  const existingItems = new Map();
+  Array.from(list.children).forEach(item => {
+    if (item.dataset?.playerId) {
+      existingItems.set(item.dataset.playerId, item);
     }
   });
   
-  // D11 V4: Vider complètement la liste
-  list.innerHTML = '';
+  // D11 V6: Créer un Set des IDs attendus
+  const expectedIds = new Set(playersSorted.map(p => p.playerId));
   
-  // D11 V4: Recréer chaque joueur
+  // D11 V6: Supprimer les joueurs qui ne sont plus dans la liste
+  existingItems.forEach((item, playerId) => {
+    if (!expectedIds.has(playerId)) {
+      console.log('[D11] Removing player no longer in list:', playerId);
+      item.remove();
+      existingItems.delete(playerId);
+    }
+  });
+  
+  // D11 V6: Mettre à jour ou créer chaque joueur
   playersSorted.forEach((p, index) => {
-    // D11 V4: Toujours créer un nouvel élément
-    const item = document.createElement("div");
-    item.className = "player-item";
-    item.dataset.playerId = p.playerId;
+    let item = existingItems.get(p.playerId);
     
-    // D9: Appliquer la couleur de bordure personnalisée
-    if (p.colorHex) {
-      item.style.borderColor = p.colorHex;
-      item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+    if (item) {
+      // D11 V7: Élément existe - mettre à jour SANS toucher au slot vidéo
+      console.log('[D11] Updating existing player item for:', p.name);
+      
+      // Mettre à jour la couleur de bordure
+      if (p.colorHex) {
+        item.style.borderColor = p.colorHex;
+        item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+      } else {
+        item.style.borderColor = '';
+        item.style.boxShadow = '';
+      }
+      
+      // Mettre à jour le nom et badges (laisser le slot vidéo intact)
+      const playerInfo = item.querySelector('.player-info');
+      if (playerInfo) {
+        const avatarEmoji = p.avatarEmoji || '👤';
+        const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
+        
+        const playerName = playerInfo.querySelector('.player-name');
+        if (playerName) {
+          playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
+        }
+        
+        const badges = playerInfo.querySelector('.player-badges');
+        if (badges) {
+          badges.innerHTML = `
+            ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+            ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+            ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+            ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+          `;
+        }
+      }
+      
+      // Mettre à jour le statut prêt
+      const right = item.querySelector('.player-right');
+      if (right) {
+        right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+      }
+      
     } else {
-      item.style.borderColor = '';
-      item.style.boxShadow = '';
+      // D11 V7: Créer un nouvel élément
+      console.log('[D11] Creating new player item for:', p.name);
+      item = document.createElement("div");
+      item.className = "player-item";
+      item.dataset.playerId = p.playerId;
+      
+      // Appliquer la couleur de bordure
+      if (p.colorHex) {
+        item.style.borderColor = p.colorHex;
+        item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
+      }
+      
+      // Préparer l'avatar emoji et le badge
+      const avatarEmoji = p.avatarEmoji || '👤';
+      const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
+      
+      // Créer la structure gauche
+      const left = document.createElement("div");
+      left.className = "player-left";
+      left.style.cssText = "display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;";
+      
+      // Créer le slot vidéo
+      const videoSlot = document.createElement("div");
+      videoSlot.className = "player-video-slot";
+      videoSlot.dataset.playerId = p.playerId;
+      videoSlot.setAttribute("aria-label", `Video ${p.name}`);
+      videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
+      
+      // Créer le conteneur d'info
+      const playerInfo = document.createElement("div");
+      playerInfo.className = "player-info";
+      playerInfo.style.cssText = "display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;";
+      
+      // Créer le nom
+      const playerName = document.createElement("div");
+      playerName.className = "player-name";
+      playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
+      playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
+      
+      // Créer les badges
+      const badges = document.createElement("div");
+      badges.className = "player-badges";
+      badges.style.cssText = "display:flex; flex-wrap:wrap; gap:4px;";
+      badges.innerHTML = `
+        ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
+        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
+        ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
+        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+      `;
+      
+      playerInfo.appendChild(playerName);
+      playerInfo.appendChild(badges);
+      
+      left.appendChild(videoSlot);
+      left.appendChild(playerInfo);
+      
+      // Créer la partie droite (état prêt)
+      const right = document.createElement("div");
+      right.className = "player-right";
+      right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+      
+      item.appendChild(left);
+      item.appendChild(right);
+      
+      // Ajouter à la liste
+      list.appendChild(item);
     }
     
-    // D9: Préparer l'avatar emoji et le badge
-    const avatarEmoji = p.avatarEmoji || '👤';
-    const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
-    
-    // Créer la structure gauche
-    const left = document.createElement("div");
-    left.className = "player-left";
-    left.style.cssText = "display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;";
-    
-    // Créer le slot vidéo
-    const videoSlot = document.createElement("div");
-    videoSlot.className = "player-video-slot";
-    videoSlot.dataset.playerId = p.playerId;
-    videoSlot.setAttribute("aria-label", `Video ${p.name}`);
-    videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
-    
-    // D11 V4: Réattacher la vidéo sauvegardée si elle existe
-    const savedVideo = savedVideos.get(p.playerId);
-    if (savedVideo && savedVideo.srcObject) {
-      videoSlot.appendChild(savedVideo);
-      console.log('[D11] Restored video for:', p.playerId);
+    // D11 V7: S'assurer que l'élément est dans le bon ordre
+    if (list.children[index] !== item) {
+      list.insertBefore(item, list.children[index] || null);
     }
-    
-    // Créer le conteneur d'info
-    const playerInfo = document.createElement("div");
-    playerInfo.className = "player-info";
-    playerInfo.style.cssText = "display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;";
-    
-    // Créer le nom
-    const playerName = document.createElement("div");
-    playerName.className = "player-name";
-    playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
-    playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
-    
-    // Créer les badges
-    const badges = document.createElement("div");
-    badges.className = "player-badges";
-    badges.style.cssText = "display:flex; flex-wrap:wrap; gap:4px;";
-    badges.innerHTML = `
-      ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-      ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-      ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-      ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-    `;
-    
-    playerInfo.appendChild(playerName);
-    playerInfo.appendChild(badges);
-    
-    left.appendChild(videoSlot);
-    left.appendChild(playerInfo);
-    
-    // Créer la partie droite (état prêt)
-    const right = document.createElement("div");
-    right.className = "player-right";
-    right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
-    
-    item.appendChild(left);
-    item.appendChild(right);
-    
-    // D11 V4: Simplement ajouter à la liste (elle est vide au début)
-    list.appendChild(item);
   });
   
   // D11 V4: Forcer un repaint et vérifier la structure
@@ -2200,14 +2246,16 @@ socket.on("roomState", (s) => {
   
   // D11 V4: Animation élection capitaine - quand un joueur DEVIENT capitaine
   const newCaptain = s.players?.find(p => p.isCaptain);
+  const myPlayerId = sessionStorage.getItem('is_playerId');
   
   // Si un nouveau capitaine est élu (pas de capitaine avant, ou changement de capitaine)
-  if (newCaptain && newCaptain.playerId !== previousCaptainId) {
-    console.log('[D7] ⭐ Captain changed! Previous:', previousCaptainId, 'New:', newCaptain.playerId);
+  // ET que c'est MOI qui suis élu
+  if (newCaptain && newCaptain.playerId !== previousCaptainId && newCaptain.playerId === myPlayerId) {
+    console.log('[D7] ⭐ I am the new captain!');
     // Délai pour laisser le temps au rendu de se faire
     setTimeout(() => {
       if (window.D7Animations) {
-        console.log('[D7] ⭐ Triggering captain election animation for:', newCaptain.name);
+        console.log('[D7] ⭐ Triggering captain election animation for ME:', newCaptain.name);
         D7Animations.animateCaptainElection();
       }
     }, 500);
