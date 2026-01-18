@@ -825,6 +825,41 @@
     const localId = getLocalPlayerId();
     const state = window.lastKnownState;
     
+    // D11 V14: Récupérer les tracks directement depuis Daily.co (plus fiable que notre Map)
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (callObj && typeof callObj.participants === 'function') {
+      const participants = callObj.participants();
+      for (const [sessionId, participant] of Object.entries(participants)) {
+        if (participant.local) continue; // Skip local
+        
+        const pid = parsePlayerIdFromUserName(participant.user_name) || "";
+        if (!pid) continue;
+        
+        // Récupérer la video track si disponible
+        const videoTrack = participant.tracks?.video?.track;
+        if (videoTrack && videoTrack.readyState === 'live') {
+          if (!videoTracks.has(pid)) {
+            log("D11 V14: Recovered video track from Daily for:", pid.slice(0,8));
+          }
+          videoTracks.set(pid, videoTrack);
+        }
+        
+        // Récupérer la audio track si disponible
+        const audioTrack = participant.tracks?.audio?.track;
+        if (audioTrack && audioTrack.readyState === 'live') {
+          if (!audioTracks.has(pid)) {
+            log("D11 V14: Recovered audio track from Daily for:", pid.slice(0,8));
+          }
+          audioTracks.set(pid, audioTrack);
+        }
+        
+        // Stocker le mapping peer -> playerId
+        if (participant.session_id) {
+          peerToPlayerId.set(participant.session_id, pid);
+        }
+      }
+    }
+    
     // D4 v5.6: Vérifier si on est en phase privée
     const privateStatus = getPrivatePhaseStatus(state, localId);
     updatePrivatePhaseOverlay(privateStatus);
