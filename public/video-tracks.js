@@ -105,6 +105,25 @@
       
       const playersList = document.getElementById('playersList');
       if (playersList) {
+        const state = window.lastKnownState;
+        
+        // D11 V17: D'abord, supprimer tous les éléments fantômes (sans playerId valide)
+        playersList.querySelectorAll('.player-item').forEach(item => {
+          const playerId = item.dataset?.playerId;
+          if (!playerId) {
+            log("D11 V17 repair: Removing phantom player-item (no playerId)");
+            item.remove();
+            return;
+          }
+          
+          // D11 V17: Vérifier que ce playerId existe toujours dans la liste des joueurs
+          const playerExists = state?.players?.some(p => p.playerId === playerId);
+          if (!playerExists) {
+            log("D11 V17 repair: Removing orphan player-item:", playerId.slice(0,8));
+            item.remove();
+          }
+        });
+        
         // D11: Supprimer les éléments orphelins (slots vidéo en dehors de player-left)
         playersList.querySelectorAll('.player-video-slot').forEach(slot => {
           const parent = slot.parentElement;
@@ -910,6 +929,26 @@
       requestAnimationFrame(() => {
         const playersList = document.getElementById('playersList');
         if (playersList) {
+          const state = window.lastKnownState;
+          
+          // D11 V17: D'abord, supprimer tous les éléments fantômes (sans playerId valide)
+          playersList.querySelectorAll('.player-item').forEach(item => {
+            const playerId = item.dataset?.playerId;
+            if (!playerId) {
+              log("D11 V17: Removing phantom player-item (no playerId)");
+              item.remove();
+              return;
+            }
+            
+            // D11 V17: Vérifier que ce playerId existe toujours dans la liste des joueurs
+            const playerExists = state?.players?.some(p => p.playerId === playerId);
+            if (!playerExists) {
+              log("D11 V17: Removing orphan player-item (player left):", playerId.slice(0,8));
+              item.remove();
+              return;
+            }
+          });
+          
           // D11 V11: Vérifier et reconstruire les structures corrompues
           playersList.querySelectorAll('.player-item').forEach(item => {
             const playerId = item.dataset?.playerId;
@@ -929,7 +968,6 @@
               const existingVideo = item.querySelector('video');
               
               // Récupérer les données du joueur
-              const state = window.lastKnownState;
               const player = state?.players?.find(p => p.playerId === playerId);
               
               if (player) {
@@ -977,6 +1015,10 @@
                 item.appendChild(newRight);
                 
                 log("D11 V11: Structure rebuilt for:", player.name);
+              } else {
+                // D11 V17: Pas de player trouvé = élément orphelin à supprimer
+                log("D11 V17: Removing corrupted item without player data:", playerId?.slice(0,8));
+                item.remove();
               }
             } else {
               // Structure OK, juste forcer l'affichage

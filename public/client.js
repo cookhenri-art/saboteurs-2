@@ -570,6 +570,12 @@ function renderLobby() {
   
   // Recréer tous les joueurs
   playersSorted.forEach((p, index) => {
+    // D11 V17: Ne jamais créer un élément sans playerId valide
+    if (!p.playerId) {
+      console.warn('[D11 V17] Skipping player without playerId:', p.name);
+      return;
+    }
+    
     const savedVideo = savedVideos.get(p.playerId);
     
     console.log('[D11] Creating player item for:', p.name);
@@ -650,8 +656,27 @@ function renderLobby() {
     }
   });
   
-  // D11 V4: Forcer un repaint et vérifier la structure
+  // D11 V17: Forcer un repaint et vérifier la structure - AVEC nettoyage des éléments fantômes
   requestAnimationFrame(() => {
+    // D11 V17: D'abord, supprimer tous les éléments fantômes (sans playerId valide)
+    list.querySelectorAll('.player-item').forEach(item => {
+      const playerId = item.dataset?.playerId;
+      if (!playerId) {
+        console.log('[D11 V17] Removing phantom player-item (no playerId)');
+        item.remove();
+        return;
+      }
+      
+      // D11 V17: Vérifier que ce playerId existe toujours dans la liste des joueurs
+      const playerExists = playersSorted.some(p => p.playerId === playerId);
+      if (!playerExists) {
+        console.log('[D11 V17] Removing orphan player-item (player left):', playerId.slice(0,8));
+        item.remove();
+        return;
+      }
+    });
+    
+    // Maintenant vérifier et réparer la structure des éléments restants
     list.querySelectorAll('.player-item').forEach(item => {
       const left = item.querySelector('.player-left');
       const info = left?.querySelector('.player-info');
@@ -711,6 +736,10 @@ function renderLobby() {
           
           item.appendChild(newLeft);
           item.appendChild(newRight);
+        } else {
+          // D11 V17: Pas de player trouvé = élément orphelin à supprimer
+          console.log('[D11 V17] Removing corrupted item without player data');
+          item.remove();
         }
       } else {
         // Structure OK, juste s'assurer de l'affichage
