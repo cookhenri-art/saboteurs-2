@@ -92,6 +92,57 @@
     cleanupUnusedResources: () => {
       cleanupUnusedMediaElements();
     },
+    // D11: Fonction de réparation de l'affichage du lobby
+    repairLobbyDisplay: () => {
+      log("D11: Repairing lobby display...");
+      
+      // D11: Supprimer inlineVideoBar qui ne devrait pas exister dans le lobby
+      const inlineBar = document.getElementById('inlineVideoBar');
+      if (inlineBar) {
+        log("D11: Removing inlineVideoBar during repair");
+        inlineBar.remove();
+      }
+      
+      const playersList = document.getElementById('playersList');
+      if (playersList) {
+        // D11: Supprimer les éléments orphelins (slots vidéo en dehors de player-left)
+        playersList.querySelectorAll('.player-video-slot').forEach(slot => {
+          const parent = slot.parentElement;
+          if (!parent || !parent.classList.contains('player-left')) {
+            log("D11: Removing orphan video slot");
+            slot.remove();
+          }
+        });
+        
+        // D11: Forcer l'affichage des player-info
+        playersList.querySelectorAll('.player-info').forEach(info => {
+          info.style.display = 'flex';
+          info.style.visibility = 'visible';
+          info.style.opacity = '1';
+          info.style.flexDirection = 'column';
+          void info.offsetHeight;
+        });
+        playersList.querySelectorAll('.player-left').forEach(left => {
+          left.style.display = 'flex';
+          left.style.gap = '10px';
+          left.style.alignItems = 'center';
+          left.style.flexDirection = 'row';
+          void left.offsetHeight;
+        });
+        playersList.querySelectorAll('.player-name').forEach(name => {
+          name.style.display = 'flex';
+          name.style.visibility = 'visible';
+          void name.offsetHeight;
+        });
+        
+        log("D11: Lobby display repaired, triggering video refresh");
+      }
+      
+      // D11: Forcer le réattachement des vidéos via l'API publique
+      if (window.VideoTracksRefresh) {
+        setTimeout(() => window.VideoTracksRefresh(), 100);
+      }
+    },
     // D5: Stats pour debug
     getStats: () => ({
       videoTracks: videoTracks.size,
@@ -182,33 +233,47 @@
   function getSlot(playerId) {
     if (!playerId) return null;
     
-    // Vérifier si on est dans le gameScreen (pas le lobby)
+    // D6 V2.1: Vérifier si le lobby est ACTIF
     const lobbyScreen = document.getElementById('lobbyScreen');
     const gameScreen = document.getElementById('gameScreen');
-    const isInGame = gameScreen && gameScreen.style.display !== 'none';
-    const isInLobby = lobbyScreen && lobbyScreen.style.display !== 'none';
+    const isLobbyActive = lobbyScreen && lobbyScreen.classList.contains('active');
+    const isGameActive = gameScreen && gameScreen.classList.contains('active');
     
-    log("getSlot check:", playerId.slice(0,8), "isInGame:", isInGame, "isInLobby:", isInLobby);
+    log("getSlot check:", playerId.slice(0,8), "isLobbyActive:", isLobbyActive, "isGameActive:", isGameActive);
+    
+    // Si le lobby est actif, TOUJOURS utiliser les slots du lobby
+    if (isLobbyActive) {
+      // D6 V2.1: Supprimer inlineVideoBar quand on est dans le lobby
+      const inlineBar = document.getElementById('inlineVideoBar');
+      if (inlineBar) {
+        log("Removing inlineVideoBar (we're in lobby)");
+        inlineBar.remove();
+      }
+      
+      // D6 V2.1: Chercher SEULEMENT dans le playersList du lobby
+      const playersList = document.getElementById('playersList');
+      if (playersList) {
+        let slot = playersList.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
+        if (slot) {
+          log("Using lobby slot for:", playerId.slice(0,8));
+          return slot;
+        }
+      }
+      // Pas de slot trouvé - le joueur n'est peut-être pas encore dans la liste
+      log("No lobby slot found for:", playerId.slice(0,8));
+      return null;
+    }
     
     // Si on est dans le gameScreen, utiliser les slots du gameScreen
-    if (isInGame && !isInLobby) {
+    if (isGameActive) {
       return ensureGameScreenSlot(playerId);
     }
     
-    // Sinon chercher dans la players-list (lobby)
+    // Fallback: chercher n'importe quel slot
     let slot = document.querySelector(`.player-video-slot[data-player-id="${CSS.escape(playerId)}"]`);
-    if (slot) {
-      const rect = slot.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        return slot;
-      }
-      // Slot existe mais invisible - utiliser gameScreen
-      log("Lobby slot invisible, using game slot");
-      return ensureGameScreenSlot(playerId);
-    }
+    if (slot) return slot;
     
-    // Fallback: créer dans gameScreen
-    return ensureGameScreenSlot(playerId);
+    return null;
   }
   
   // D4: Créer les slots vidéo dans le gameScreen quand le lobby est caché
@@ -545,7 +610,9 @@
     // NIGHT_AI_EXCHANGE : phase privée Agent IA + partenaire lié
     if (phase === 'NIGHT_AI_EXCHANGE') {
       result.isPrivate = true;
-      result.message = "🔒 Échange IA privé en cours...";
+      // D11: Utiliser la traduction dynamique du rôle
+      const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
+      result.message = `🔒 Échange ${aiAgentName} privé en cours...`;
       
       // D4 v5.7: Utiliser phaseData qui contient iaId et partnerId
       const phaseData = state.phaseData || {};
@@ -580,7 +647,9 @@
     // NIGHT_SABOTEURS : phase privée saboteurs entre eux
     if (phase === 'NIGHT_SABOTEURS') {
       result.isPrivate = true;
-      result.message = "🔒 Les saboteurs communiquent...";
+      // D11: Utiliser la traduction dynamique
+      const saboName = window.t ? window.t('saboteurs') : 'saboteurs';
+      result.message = `🔒 Les ${saboName.toLowerCase()} communiquent...`;
       
       // D4 v5.7: Utiliser phaseData.actorIds
       const phaseData = state.phaseData || {};
@@ -602,7 +671,9 @@
     // NIGHT_AI_AGENT : Agent IA choisit (pas de visio pour les autres)
     if (phase === 'NIGHT_AI_AGENT') {
       result.isPrivate = true;
-      result.message = "🔒 L'Agent IA choisit son partenaire...";
+      // D11: Utiliser la traduction dynamique du rôle
+      const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
+      result.message = `🔒 ${aiAgentName} choisit son partenaire...`;
       
       const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
       if (iaPlayer) {
@@ -639,6 +710,12 @@
       log("Available slots:", allSlots.length, Array.from(allSlots).map(s => s.dataset.playerId));
       return;
     }
+    
+    // D11: Vérifier que le slot est bien un conteneur dédié et pas le player-left
+    if (slot.classList.contains('player-left')) {
+      log("ERROR: slot is player-left, not video-slot!", playerId);
+      return;
+    }
 
     const v = ensureVideoEl(playerId, isLocal);
     const stream = new MediaStream([track]);
@@ -647,6 +724,17 @@
     if (!slot.contains(v)) {
       slot.innerHTML = "";
       slot.appendChild(v);
+    }
+    
+    // D11: Après attachement, s'assurer que le sibling player-info est visible
+    const playerLeft = slot.parentElement;
+    if (playerLeft && playerLeft.classList.contains('player-left')) {
+      const playerInfo = playerLeft.querySelector('.player-info');
+      if (playerInfo) {
+        playerInfo.style.display = 'flex';
+        playerInfo.style.visibility = 'visible';
+        playerInfo.style.opacity = '1';
+      }
     }
     
     // D6: Vérifier si le joueur est mort via lastKnownState
@@ -705,7 +793,34 @@
     }
   }
 
-  function reattachAll() {
+  // D11 V9: Debounce pour éviter les appels en cascade
+  let reattachTimeout = null;
+  let reattachPending = false;
+  
+  function reattachAllDebounced() {
+    // D11 V10: Ne pas exécuter si renderLobby est en cours
+    if (window._renderingLobby) {
+      log("⏸️ Skipping reattach - renderLobby in progress");
+      return;
+    }
+    
+    if (reattachTimeout) {
+      reattachPending = true;
+      return;
+    }
+    
+    reattachAllImmediate();
+    
+    reattachTimeout = setTimeout(() => {
+      reattachTimeout = null;
+      if (reattachPending && !window._renderingLobby) {
+        reattachPending = false;
+        reattachAllImmediate();
+      }
+    }, 200); // 200ms debounce
+  }
+
+  function reattachAllImmediate() {
     log("Reattaching all tracks...");
     const localId = getLocalPlayerId();
     const state = window.lastKnownState;
@@ -753,6 +868,95 @@
       const row = getPlayerRow(currentSpeaking);
       if (row) row.classList.add("is-speaking");
     }
+    
+    // D11: Forcer le repaint des éléments player-info dans le lobby après attachement des vidéos
+    const lobbyScreen = document.getElementById('lobbyScreen');
+    if (lobbyScreen && lobbyScreen.classList.contains('active')) {
+      requestAnimationFrame(() => {
+        const playersList = document.getElementById('playersList');
+        if (playersList) {
+          // D11 V11: Vérifier et reconstruire les structures corrompues
+          playersList.querySelectorAll('.player-item').forEach(item => {
+            const playerId = item.dataset?.playerId;
+            const left = item.querySelector('.player-left');
+            const info = left?.querySelector('.player-info');
+            const slot = left?.querySelector('.player-video-slot');
+            
+            // Si la structure est corrompue, la reconstruire
+            if (!left || !info || !slot) {
+              log("D11 V11: Corrupted structure detected during reattach for:", playerId?.slice(0,8));
+              
+              // Sauvegarder la vidéo si elle existe
+              const existingVideo = item.querySelector('video');
+              
+              // Récupérer les données du joueur
+              const state = window.lastKnownState;
+              const player = state?.players?.find(p => p.playerId === playerId);
+              
+              if (player) {
+                // Reconstruire la structure
+                item.innerHTML = '';
+                
+                const newLeft = document.createElement('div');
+                newLeft.className = 'player-left';
+                newLeft.style.cssText = 'display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;';
+                
+                const newSlot = document.createElement('div');
+                newSlot.className = 'player-video-slot';
+                newSlot.dataset.playerId = playerId;
+                newSlot.style.cssText = 'flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;';
+                
+                // Restaurer la vidéo
+                if (existingVideo) {
+                  newSlot.appendChild(existingVideo);
+                }
+                
+                const newInfo = document.createElement('div');
+                newInfo.className = 'player-info';
+                newInfo.style.cssText = 'display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;';
+                
+                const avatarEmoji = player.avatarEmoji || '👤';
+                const badgeDisplay = player.badgeEmoji ? '<span style="margin-left:4px; font-size:0.9rem;">' + player.badgeEmoji + '</span>' : '';
+                
+                newInfo.innerHTML = 
+                  '<div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">' +
+                  '<span style="font-size:1.3rem; margin-right:6px;">' + avatarEmoji + '</span>' + 
+                  (player.name || 'Joueur') + badgeDisplay + '</div>' +
+                  '<div class="player-badges" style="display:flex; flex-wrap:wrap; gap:4px;">' +
+                  (player.isHost ? '<span class="pill ok">HÔTE</span>' : '') +
+                  (player.connected ? '<span class="pill ok">EN LIGNE</span>' : '<span class="pill warn">RECONNEXION…</span>') +
+                  '</div>';
+                
+                newLeft.appendChild(newSlot);
+                newLeft.appendChild(newInfo);
+                
+                const newRight = document.createElement('div');
+                newRight.className = 'player-right';
+                newRight.innerHTML = player.ready ? '<span class="pill ok">PRÊT</span>' : '<span class="pill warn">PAS PRÊT</span>';
+                
+                item.appendChild(newLeft);
+                item.appendChild(newRight);
+                
+                log("D11 V11: Structure rebuilt for:", player.name);
+              }
+            } else {
+              // Structure OK, juste forcer l'affichage
+              info.style.display = 'flex';
+              info.style.visibility = 'visible';
+              info.style.opacity = '1';
+              left.style.display = 'flex';
+            }
+          });
+          
+          log("D11: Forced repaint of player-info elements in lobby");
+        }
+      });
+    }
+  }
+  
+  // D11 V9: Alias pour compatibilité - tous les appels passent par le debounce
+  function reattachAll() {
+    reattachAllDebounced();
   }
   
   // D4 v5.6: Cacher tous les slots vidéo
@@ -1026,17 +1230,12 @@
       }
     });
 
-    // Observe rerenders of players list
-    const list = document.querySelector("#playersList") || document.querySelector(".players-list") || null;
-    if (list && window.MutationObserver) {
-      const obs = new MutationObserver(() => reattachAll());
-      obs.observe(list, { childList: true, subtree: true });
-    }
+    // D11 V10: MutationObserver SUPPRIMÉ - causait des appels en cascade
+    // Le reattach est maintenant géré proprement par client.js après renderLobby
 
     // Initial reattach after a short delay (slots may appear after bind)
-    setTimeout(reattachAll, 600);
-    setTimeout(reattachAll, 1500);
-    setTimeout(reattachAll, 3000);
+    // D11 V10: Réduit à un seul appel
+    setTimeout(reattachAll, 1000);
   }
 
   function waitForCallObject() {
