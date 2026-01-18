@@ -521,47 +521,31 @@ function renderLobby() {
     $("balanceStatusCockpit").textContent = "";
   }
 
-  // players list - D11: Mise à jour incrémentale au lieu de tout recréer
+  // players list - D11 V4: TOUJOURS reconstruire pour éviter les corruptions
   const list = $("playersList");
   const playersSorted = [...state.players].sort((a,b) => (b.isHost?1:0) - (a.isHost?1:0) || a.name.localeCompare(b.name));
   
-  // D11: Garder une map des éléments existants
-  const existingItems = new Map();
-  list.querySelectorAll('.player-item').forEach(item => {
-    // D11: Vérifier si l'élément est corrompu (manque player-info)
-    const hasValidStructure = item.querySelector('.player-left') && 
-                               item.querySelector('.player-info') &&
-                               item.querySelector('.player-name');
-    if (hasValidStructure) {
-      existingItems.set(item.dataset.playerId, item);
-    } else {
-      // Élément corrompu, le supprimer pour le recréer
-      console.log('[D11] Removing corrupted player item:', item.dataset.playerId);
-      item.remove();
+  // D11 V4: Sauvegarder les vidéos existantes AVANT de vider
+  const savedVideos = new Map();
+  list.querySelectorAll('.player-video-slot video').forEach(video => {
+    if (video.srcObject) {
+      const playerId = video.closest('.player-video-slot')?.dataset?.playerId;
+      if (playerId) {
+        savedVideos.set(playerId, video);
+        console.log('[D11] Saving video for:', playerId);
+      }
     }
   });
   
-  // D11: Créer les nouveaux IDs attendus
-  const expectedIds = new Set(playersSorted.map(p => p.playerId));
+  // D11 V4: Vider complètement la liste
+  list.innerHTML = '';
   
-  // D11: Supprimer les joueurs qui ne sont plus dans la liste
-  existingItems.forEach((item, playerId) => {
-    if (!expectedIds.has(playerId)) {
-      item.remove();
-    }
-  });
-  
-  // D11: Mettre à jour ou créer chaque joueur
+  // D11 V4: Recréer chaque joueur
   playersSorted.forEach((p, index) => {
-    let item = existingItems.get(p.playerId);
-    const isNewItem = !item;
-    
-    if (isNewItem) {
-      // Créer un nouvel élément
-      item = document.createElement("div");
-      item.className = "player-item";
-      item.dataset.playerId = p.playerId;
-    }
+    // D11 V4: Toujours créer un nouvel élément
+    const item = document.createElement("div");
+    item.className = "player-item";
+    item.dataset.playerId = p.playerId;
     
     // D9: Appliquer la couleur de bordure personnalisée
     if (p.colorHex) {
@@ -576,29 +560,23 @@ function renderLobby() {
     const avatarEmoji = p.avatarEmoji || '👤';
     const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
     
-    // D11 V4: Toujours reconstruire le contenu pour éviter les corruptions
-    // Mais préserver le slot vidéo existant si possible
-    let existingVideoSlot = item.querySelector('.player-video-slot');
-    let existingVideo = existingVideoSlot?.querySelector('video');
-    
-    // Vider l'élément
-    item.innerHTML = '';
-    
     // Créer la structure gauche
     const left = document.createElement("div");
     left.className = "player-left";
     left.style.cssText = "display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;";
     
-    // Créer ou réutiliser le slot vidéo
+    // Créer le slot vidéo
     const videoSlot = document.createElement("div");
     videoSlot.className = "player-video-slot";
     videoSlot.dataset.playerId = p.playerId;
     videoSlot.setAttribute("aria-label", `Video ${p.name}`);
     videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
     
-    // Réattacher la vidéo existante si elle existe
-    if (existingVideo && existingVideo.srcObject) {
-      videoSlot.appendChild(existingVideo);
+    // D11 V4: Réattacher la vidéo sauvegardée si elle existe
+    const savedVideo = savedVideos.get(p.playerId);
+    if (savedVideo && savedVideo.srcObject) {
+      videoSlot.appendChild(savedVideo);
+      console.log('[D11] Restored video for:', p.playerId);
     }
     
     // Créer le conteneur d'info
@@ -637,15 +615,8 @@ function renderLobby() {
     item.appendChild(left);
     item.appendChild(right);
     
-    // D11: S'assurer que l'élément est dans la bonne position
-    const currentAtIndex = list.children[index];
-    if (currentAtIndex !== item) {
-      if (currentAtIndex) {
-        list.insertBefore(item, currentAtIndex);
-      } else {
-        list.appendChild(item);
-      }
-    }
+    // D11 V4: Simplement ajouter à la liste (elle est vide au début)
+    list.appendChild(item);
   });
   
   // D11 V4: Forcer un repaint et vérifier la structure
@@ -1393,10 +1364,19 @@ function renderEnd() {
       return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
     }).join("<br>");
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
+    
+    // D11 V5: Obtenir le thème actuel pour afficher les bons avatars
+    const currentTheme = document.documentElement.dataset.theme || 'default';
+    
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       // D9: Trouver le joueur pour récupérer son avatar
       const player = state.players.find(p => p.name === name);
-      const avatarEmoji = player?.avatarEmoji || '👤';
+      // D11 V5: Utiliser l'avatar basé sur l'ID et le thème actuel si disponible
+      let avatarEmoji = player?.avatarEmoji || '👤';
+      if (player?.avatarId && window.D9Avatars) {
+        const themeAvatar = window.D9Avatars.getAvatarById?.(player.avatarId, currentTheme);
+        if (themeAvatar?.emoji) avatarEmoji = themeAvatar.emoji;
+      }
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
@@ -1415,7 +1395,12 @@ const detailed = rep.detailedStatsByName || {};
 const detailedHtml = Object.entries(detailed).map(([name, s]) => {
   // D9: Trouver le joueur pour récupérer son avatar
   const player = state.players.find(p => p.name === name);
-  const avatarEmoji = player?.avatarEmoji || '👤';
+  // D11 V5: Utiliser l'avatar basé sur l'ID et le thème actuel si disponible
+  let avatarEmoji = player?.avatarEmoji || '👤';
+  if (player?.avatarId && window.D9Avatars) {
+    const themeAvatar = window.D9Avatars.getAvatarById?.(player.avatarId, currentTheme);
+    if (themeAvatar?.emoji) avatarEmoji = themeAvatar.emoji;
+  }
   const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
   
   const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
@@ -2128,6 +2113,10 @@ socket.on("roomState", (s) => {
   // D6: Stocker phase précédente et joueurs vivants pour vibration
   const previousPhase = state?.phase;
   const previousAliveCount = (state?.players || []).filter(p => p.status === 'alive').length;
+  // D11 V4: Sauvegarder l'ancien capitaine AVANT mise à jour
+  const previousCaptainId = state?.players?.find(p => p.isCaptain)?.playerId;
+  // D11 V4: Sauvegarder l'ancien statut des joueurs pour détecter les éjections
+  const previousPlayerStatuses = new Map((state?.players || []).map(p => [p.playerId, p.status]));
   
   state = s;
   // D6: Stocker aussi dans window.lastKnownState pour video-tracks.js
@@ -2203,36 +2192,37 @@ socket.on("roomState", (s) => {
   }
   
   // D11 V4: Animation élection capitaine - quand un joueur DEVIENT capitaine
-  const previousCaptain = state?.players?.find(p => p.isCaptain);
   const newCaptain = s.players?.find(p => p.isCaptain);
   
   // Si un nouveau capitaine est élu (pas de capitaine avant, ou changement de capitaine)
-  if (newCaptain && (!previousCaptain || previousCaptain.playerId !== newCaptain.playerId)) {
-    requestAnimationFrame(() => {
+  if (newCaptain && newCaptain.playerId !== previousCaptainId) {
+    console.log('[D7] ⭐ Captain changed! Previous:', previousCaptainId, 'New:', newCaptain.playerId);
+    // Délai pour laisser le temps au rendu de se faire
+    setTimeout(() => {
       if (window.D7Animations) {
         console.log('[D7] ⭐ Triggering captain election animation for:', newCaptain.name);
         D7Animations.animateCaptainElection();
       }
-    });
+    }, 500);
   }
   
   // D7: Animation d'éjection (quand un joueur est éliminé)
   if (previousAliveCount > 0 && currentAliveCount < previousAliveCount) {
-    // Trouver les joueurs qui viennent d'être éliminés
-    const previousPlayers = (state?.players || []);
+    // D11 V4: Trouver les joueurs qui viennent d'être éliminés en utilisant previousPlayerStatuses
     const newlyDead = s.players.filter(p => {
       if (p.status !== 'dead') return false;
-      const prev = previousPlayers.find(pp => pp.playerId === p.playerId);
-      return prev && prev.status === 'alive';
+      const prevStatus = previousPlayerStatuses.get(p.playerId);
+      return prevStatus && prevStatus === 'alive';
     });
     
     newlyDead.forEach(deadPlayer => {
       if (window.D7Animations) {
         console.log('[D7] 💀 Triggering ejection animation for:', deadPlayer.name);
+        // D11 V4: Délai plus long pour que l'animation soit visible
         setTimeout(() => {
           D7Animations.animateEjection(deadPlayer.playerId);
           D7Animations.animateDeath(deadPlayer.playerId);
-        }, 100);
+        }, 500);
       }
     });
   }

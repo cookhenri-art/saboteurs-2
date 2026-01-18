@@ -607,6 +607,18 @@
     log('D9 Avatars module initialized');
   }
 
+  /**
+   * Obtient un avatar par son ID et le thème
+   * @param {string} avatarId - ID de l'avatar
+   * @param {string} theme - Thème actuel
+   * @returns {Object|null}
+   */
+  function getAvatarById(avatarId, theme = 'default') {
+    if (!avatarId) return null;
+    const avatars = AVATARS[theme] || AVATARS.default;
+    return avatars.find(a => a.id === avatarId) || null;
+  }
+
   // =========================================================
   // EXPOSITION GLOBALE
   // =========================================================
@@ -620,6 +632,7 @@
     // Avatar
     setAvatar,
     getAvatar,
+    getAvatarById, // D11 V5: Nouvelle fonction pour récupérer avatar par ID
     createAvatarSelector,
     AVATARS,
     
