@@ -548,9 +548,29 @@ function renderLobby() {
   // D11 V6: Mettre à jour ou créer chaque joueur
   playersSorted.forEach((p, index) => {
     let item = existingItems.get(p.playerId);
+    let needsFullRebuild = false;
     
+    // D11 V8: Vérifier si la structure est corrompue
     if (item) {
-      // D11 V7: Élément existe - mettre à jour SANS toucher au slot vidéo
+      const playerInfo = item.querySelector('.player-info');
+      const playerName = playerInfo?.querySelector('.player-name');
+      const playerLeft = item.querySelector('.player-left');
+      if (!playerInfo || !playerName || !playerLeft) {
+        console.log('[D11] Corrupted structure detected for:', p.name, '- rebuilding');
+        needsFullRebuild = true;
+        // Sauvegarder la vidéo avant de reconstruire
+        const existingVideo = item.querySelector('.player-video-slot video');
+        if (existingVideo) {
+          window._tempSavedVideo = window._tempSavedVideo || new Map();
+          window._tempSavedVideo.set(p.playerId, existingVideo);
+        }
+        item.remove();
+        item = null;
+      }
+    }
+    
+    if (item && !needsFullRebuild) {
+      // D11 V7: Élément existe et structure OK - mettre à jour SANS toucher au slot vidéo
       console.log('[D11] Updating existing player item for:', p.name);
       
       // Mettre à jour la couleur de bordure
@@ -618,6 +638,16 @@ function renderLobby() {
       videoSlot.dataset.playerId = p.playerId;
       videoSlot.setAttribute("aria-label", `Video ${p.name}`);
       videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
+      
+      // D11 V8: Réattacher la vidéo sauvegardée si disponible
+      if (window._tempSavedVideo?.has(p.playerId)) {
+        const savedVideo = window._tempSavedVideo.get(p.playerId);
+        if (savedVideo && savedVideo.srcObject) {
+          videoSlot.appendChild(savedVideo);
+          console.log('[D11] Restored saved video for:', p.name);
+        }
+        window._tempSavedVideo.delete(p.playerId);
+      }
       
       // Créer le conteneur d'info
       const playerInfo = document.createElement("div");
