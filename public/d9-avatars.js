@@ -416,9 +416,9 @@
     `;
     modal.appendChild(statsSection);
     
-    // Bouton Fermer
+    // Bouton Valider et Fermer
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Fermer';
+    closeBtn.textContent = 'Valider';
     closeBtn.className = 'btn btn-primary';
     closeBtn.style.cssText = `
       margin-top: 20px;
@@ -426,6 +426,8 @@
       padding: 12px;
     `;
     closeBtn.addEventListener('click', () => {
+      // D11: Envoyer les changements au serveur
+      sendCustomizationToServer();
       overlay.remove();
     });
     modal.appendChild(closeBtn);
@@ -435,12 +437,33 @@
     // Fermer en cliquant à l'extérieur
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
+        // D11: Envoyer les changements au serveur
+        sendCustomizationToServer();
         overlay.remove();
       }
     });
     
     document.body.appendChild(overlay);
     log('Customization modal opened');
+  }
+  
+  // D11: Fonction pour envoyer la personnalisation au serveur
+  function sendCustomizationToServer() {
+    if (!window.socket) {
+      log('No socket available, cannot send customization');
+      return;
+    }
+    
+    const data = getCustomizationForServer();
+    log('Sending customization to server:', data);
+    
+    window.socket.emit('updateCustomization', data, (response) => {
+      if (response?.ok) {
+        log('Customization updated on server');
+      } else {
+        log('Failed to update customization:', response?.error);
+      }
+    });
   }
 
   // =========================================================
@@ -516,12 +539,19 @@
     const color = getColor();
     const badge = getBadge();
     
+    // D11 V4: Ajouter playerId et roomCode pour le serveur
+    const playerId = sessionStorage.getItem('is_playerId');
+    const roomCode = sessionStorage.getItem('is_roomCode');
+    
     return {
+      playerId,
+      roomCode,
       avatarId: avatar?.id,
       avatarEmoji: avatar?.emoji,
       colorId: color.id,
       colorHex: color.hex,
       badgeId: badge.id,
+      badgeEmoji: badge.icon, // D11 V4: Corrigé - c'est 'icon' pas 'emoji'
       badgeName: badge.name,
       gamesPlayed: currentCustomization.gamesPlayed,
       wins: currentCustomization.wins
