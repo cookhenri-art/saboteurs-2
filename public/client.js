@@ -553,76 +553,27 @@ function renderLobby() {
   });
   
   // D11 V6: Mettre à jour ou créer chaque joueur
+  // D11 V15: TOUJOURS recréer les éléments pour éviter les corruptions
   playersSorted.forEach((p, index) => {
     let item = existingItems.get(p.playerId);
-    let needsFullRebuild = false;
     
-    // D11 V8: Vérifier si la structure est corrompue
+    // D11 V15: Sauvegarder la vidéo si elle existe avant de supprimer
+    let savedVideo = null;
     if (item) {
-      const playerInfo = item.querySelector('.player-info');
-      const playerName = playerInfo?.querySelector('.player-name');
-      const playerLeft = item.querySelector('.player-left');
-      if (!playerInfo || !playerName || !playerLeft) {
-        console.log('[D11] Corrupted structure detected for:', p.name, '- rebuilding');
-        needsFullRebuild = true;
-        // Sauvegarder la vidéo avant de reconstruire
-        const existingVideo = item.querySelector('.player-video-slot video');
-        if (existingVideo) {
-          window._tempSavedVideo = window._tempSavedVideo || new Map();
-          window._tempSavedVideo.set(p.playerId, existingVideo);
-        }
-        item.remove();
-        item = null;
+      const existingVideo = item.querySelector('.player-video-slot video');
+      if (existingVideo && existingVideo.srcObject) {
+        savedVideo = existingVideo;
+        console.log('[D11] Saving video for:', p.name);
       }
+      item.remove();
+      item = null;
     }
     
-    if (item && !needsFullRebuild) {
-      // D11 V7: Élément existe et structure OK - mettre à jour SANS toucher au slot vidéo
-      console.log('[D11] Updating existing player item for:', p.name);
-      
-      // Mettre à jour la couleur de bordure
-      if (p.colorHex) {
-        item.style.borderColor = p.colorHex;
-        item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
-      } else {
-        item.style.borderColor = '';
-        item.style.boxShadow = '';
-      }
-      
-      // Mettre à jour le nom et badges (laisser le slot vidéo intact)
-      const playerInfo = item.querySelector('.player-info');
-      if (playerInfo) {
-        const avatarEmoji = p.avatarEmoji || '👤';
-        const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
-        
-        const playerName = playerInfo.querySelector('.player-name');
-        if (playerName) {
-          playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
-        }
-        
-        const badges = playerInfo.querySelector('.player-badges');
-        if (badges) {
-          badges.innerHTML = `
-            ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
-            ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-            ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-            ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
-          `;
-        }
-      }
-      
-      // Mettre à jour le statut prêt
-      const right = item.querySelector('.player-right');
-      if (right) {
-        right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
-      }
-      
-    } else {
-      // D11 V7: Créer un nouvel élément
-      console.log('[D11] Creating new player item for:', p.name);
-      item = document.createElement("div");
-      item.className = "player-item";
-      item.dataset.playerId = p.playerId;
+    // D11 V15: Toujours créer un nouvel élément
+    console.log('[D11] Creating player item for:', p.name);
+    item = document.createElement("div");
+    item.className = "player-item";
+    item.dataset.playerId = p.playerId;
       
       // Appliquer la couleur de bordure
       if (p.colorHex) {
@@ -646,14 +597,10 @@ function renderLobby() {
       videoSlot.setAttribute("aria-label", `Video ${p.name}`);
       videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
       
-      // D11 V8: Réattacher la vidéo sauvegardée si disponible
-      if (window._tempSavedVideo?.has(p.playerId)) {
-        const savedVideo = window._tempSavedVideo.get(p.playerId);
-        if (savedVideo && savedVideo.srcObject) {
-          videoSlot.appendChild(savedVideo);
-          console.log('[D11] Restored saved video for:', p.name);
-        }
-        window._tempSavedVideo.delete(p.playerId);
+      // D11 V15: Réattacher la vidéo sauvegardée si disponible
+      if (savedVideo) {
+        videoSlot.appendChild(savedVideo);
+        console.log('[D11] Restored saved video for:', p.name);
       }
       
       // Créer le conteneur d'info
@@ -694,7 +641,6 @@ function renderLobby() {
       
       // Ajouter à la liste
       list.appendChild(item);
-    }
     
     // D11 V7: S'assurer que l'élément est dans le bon ordre
     if (list.children[index] !== item) {
