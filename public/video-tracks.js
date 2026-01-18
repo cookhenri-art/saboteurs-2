@@ -793,7 +793,28 @@
     }
   }
 
-  function reattachAll() {
+  // D11 V9: Debounce pour éviter les appels en cascade
+  let reattachTimeout = null;
+  let reattachPending = false;
+  
+  function reattachAllDebounced() {
+    if (reattachTimeout) {
+      reattachPending = true;
+      return;
+    }
+    
+    reattachAllImmediate();
+    
+    reattachTimeout = setTimeout(() => {
+      reattachTimeout = null;
+      if (reattachPending) {
+        reattachPending = false;
+        reattachAllImmediate();
+      }
+    }, 200); // 200ms debounce
+  }
+
+  function reattachAllImmediate() {
     log("Reattaching all tracks...");
     const localId = getLocalPlayerId();
     const state = window.lastKnownState;
@@ -864,6 +885,11 @@
         }
       });
     }
+  }
+  
+  // D11 V9: Alias pour compatibilité - tous les appels passent par le debounce
+  function reattachAll() {
+    reattachAllDebounced();
   }
   
   // D4 v5.6: Cacher tous les slots vidéo
