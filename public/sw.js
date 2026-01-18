@@ -1,10 +1,10 @@
 /* =========================================================
    D10 - SERVICE WORKER PWA
    Cache strategy: Network First with Cache Fallback
-   Version: 1.2 - D11 V17 fix phantom elements
+   Version: 1.1 - Nouveau logo + corrections D7-D10
 ========================================================= */
 
-const CACHE_NAME = 'saboteur-v1.2';
+const CACHE_NAME = 'saboteur-v1.4-v19';
 const OFFLINE_URL = '/offline.html';
 
 // Ressources à mettre en cache immédiatement

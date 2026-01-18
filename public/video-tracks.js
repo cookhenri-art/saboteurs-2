@@ -105,25 +105,6 @@
       
       const playersList = document.getElementById('playersList');
       if (playersList) {
-        const state = window.lastKnownState;
-        
-        // D11 V17: D'abord, supprimer tous les éléments fantômes (sans playerId valide)
-        playersList.querySelectorAll('.player-item').forEach(item => {
-          const playerId = item.dataset?.playerId;
-          if (!playerId) {
-            log("D11 V17 repair: Removing phantom player-item (no playerId)");
-            item.remove();
-            return;
-          }
-          
-          // D11 V17: Vérifier que ce playerId existe toujours dans la liste des joueurs
-          const playerExists = state?.players?.some(p => p.playerId === playerId);
-          if (!playerExists) {
-            log("D11 V17 repair: Removing orphan player-item:", playerId.slice(0,8));
-            item.remove();
-          }
-        });
-        
         // D11: Supprimer les éléments orphelins (slots vidéo en dehors de player-left)
         playersList.querySelectorAll('.player-video-slot').forEach(slot => {
           const parent = slot.parentElement;
@@ -840,6 +821,12 @@
   }
 
   function reattachAllImmediate() {
+    // D11 V18: Ne rien faire si le lobby est en cours de reconstruction
+    if (window._lobbyRebuildInProgress) {
+      log("V18: ⏳ Skipping reattach - lobby rebuild in progress");
+      return;
+    }
+    
     log("Reattaching all tracks...");
     const localId = getLocalPlayerId();
     const state = window.lastKnownState;
@@ -923,113 +910,35 @@
       if (row) row.classList.add("is-speaking");
     }
     
-    // D11: Forcer le repaint des éléments player-info dans le lobby après attachement des vidéos
+    // D11 V18: Forcer UNIQUEMENT l'affichage des éléments existants
+    // NE JAMAIS reconstruire la structure HTML - c'est le rôle de client.js
     const lobbyScreen = document.getElementById('lobbyScreen');
     if (lobbyScreen && lobbyScreen.classList.contains('active')) {
       requestAnimationFrame(() => {
+        // V18: Vérifier à nouveau le verrou dans le callback
+        if (window._lobbyRebuildInProgress) {
+          log("V18: ⏳ Skipping repaint - lobby rebuild still in progress");
+          return;
+        }
+        
         const playersList = document.getElementById('playersList');
         if (playersList) {
-          const state = window.lastKnownState;
-          
-          // D11 V17: D'abord, supprimer tous les éléments fantômes (sans playerId valide)
+          // V18: Ne faire QUE forcer l'affichage, jamais de reconstruction
           playersList.querySelectorAll('.player-item').forEach(item => {
-            const playerId = item.dataset?.playerId;
-            if (!playerId) {
-              log("D11 V17: Removing phantom player-item (no playerId)");
-              item.remove();
-              return;
-            }
-            
-            // D11 V17: Vérifier que ce playerId existe toujours dans la liste des joueurs
-            const playerExists = state?.players?.some(p => p.playerId === playerId);
-            if (!playerExists) {
-              log("D11 V17: Removing orphan player-item (player left):", playerId.slice(0,8));
-              item.remove();
-              return;
-            }
-          });
-          
-          // D11 V11: Vérifier et reconstruire les structures corrompues
-          playersList.querySelectorAll('.player-item').forEach(item => {
-            const playerId = item.dataset?.playerId;
             const left = item.querySelector('.player-left');
             const info = left?.querySelector('.player-info');
-            const slot = left?.querySelector('.player-video-slot');
-            const playerName = info?.querySelector('.player-name');
             
-            // D11 V12: Vérifier aussi si le contenu est présent (pas juste la structure)
-            const hasContent = playerName && playerName.textContent && playerName.textContent.trim().length > 0;
-            
-            // Si la structure est corrompue OU si le contenu est vide, reconstruire
-            if (!left || !info || !slot || !hasContent) {
-              log("D11 V12: Corrupted/empty structure detected for:", playerId?.slice(0,8), "hasLeft:", !!left, "hasInfo:", !!info, "hasSlot:", !!slot, "hasContent:", hasContent);
-              
-              // Sauvegarder la vidéo si elle existe
-              const existingVideo = item.querySelector('video');
-              
-              // Récupérer les données du joueur
-              const player = state?.players?.find(p => p.playerId === playerId);
-              
-              if (player) {
-                // Reconstruire la structure
-                item.innerHTML = '';
-                
-                const newLeft = document.createElement('div');
-                newLeft.className = 'player-left';
-                newLeft.style.cssText = 'display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;';
-                
-                const newSlot = document.createElement('div');
-                newSlot.className = 'player-video-slot';
-                newSlot.dataset.playerId = playerId;
-                newSlot.style.cssText = 'flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;';
-                
-                // Restaurer la vidéo
-                if (existingVideo) {
-                  newSlot.appendChild(existingVideo);
-                }
-                
-                const newInfo = document.createElement('div');
-                newInfo.className = 'player-info';
-                newInfo.style.cssText = 'display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;';
-                
-                const avatarEmoji = player.avatarEmoji || '👤';
-                const badgeDisplay = player.badgeEmoji ? '<span style="margin-left:4px; font-size:0.9rem;">' + player.badgeEmoji + '</span>' : '';
-                
-                newInfo.innerHTML = 
-                  '<div class="player-name" style="font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;">' +
-                  '<span style="font-size:1.3rem; margin-right:6px;">' + avatarEmoji + '</span>' + 
-                  (player.name || 'Joueur') + badgeDisplay + '</div>' +
-                  '<div class="player-badges" style="display:flex; flex-wrap:wrap; gap:4px;">' +
-                  (player.isHost ? '<span class="pill ok">HÔTE</span>' : '') +
-                  (player.connected ? '<span class="pill ok">EN LIGNE</span>' : '<span class="pill warn">RECONNEXION…</span>') +
-                  '</div>';
-                
-                newLeft.appendChild(newSlot);
-                newLeft.appendChild(newInfo);
-                
-                const newRight = document.createElement('div');
-                newRight.className = 'player-right';
-                newRight.innerHTML = player.ready ? '<span class="pill ok">PRÊT</span>' : '<span class="pill warn">PAS PRÊT</span>';
-                
-                item.appendChild(newLeft);
-                item.appendChild(newRight);
-                
-                log("D11 V11: Structure rebuilt for:", player.name);
-              } else {
-                // D11 V17: Pas de player trouvé = élément orphelin à supprimer
-                log("D11 V17: Removing corrupted item without player data:", playerId?.slice(0,8));
-                item.remove();
-              }
-            } else {
-              // Structure OK, juste forcer l'affichage
+            if (left && info) {
+              // Structure OK, forcer l'affichage
               info.style.display = 'flex';
               info.style.visibility = 'visible';
               info.style.opacity = '1';
               left.style.display = 'flex';
             }
+            // V18: Si structure corrompue, on ne fait RIEN - client.js va la recréer
           });
           
-          log("D11: Forced repaint of player-info elements in lobby");
+          log("D11 V18: Forced visibility on existing player-info elements");
         }
       });
     }

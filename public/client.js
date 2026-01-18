@@ -552,33 +552,22 @@ function renderLobby() {
     }
   });
   
-  // D11 V16: TOUJOURS vider la liste et recréer tous les éléments
-  // Sauvegarder les vidéos existantes avant de vider
-  const savedVideos = new Map();
-  list.querySelectorAll('.player-video-slot video').forEach(video => {
-    const slot = video.closest('.player-video-slot');
-    const playerId = slot?.dataset?.playerId;
-    if (playerId && video.srcObject) {
-      savedVideos.set(playerId, video);
-      console.log('[D11] V16 Saving video for playerId:', playerId.slice(0,8));
-    }
-  });
+  // D11 V18: Bloquer video-tracks pendant toute la reconstruction
+  window._lobbyRebuildInProgress = true;
+  console.log('[D11] V19 🔒 Lobby rebuild LOCKED');
+  
+  // D11 V19: NE PAS sauvegarder les vidéos - laisser video-tracks.js les réattacher
+  // Cela évite les conflits de DOM entre client.js et video-tracks.js
   
   // Vider complètement la liste
   list.innerHTML = '';
-  console.log('[D11] V16 List cleared, recreating all players');
+  console.log('[D11] V19 List cleared, recreating all players (no video save)');
   
   // Recréer tous les joueurs
   playersSorted.forEach((p, index) => {
-    // D11 V17: Ne jamais créer un élément sans playerId valide
-    if (!p.playerId) {
-      console.warn('[D11 V17] Skipping player without playerId:', p.name);
-      return;
-    }
+    // D11 V19: Ne pas restaurer de vidéo - video-tracks.js le fera
     
-    const savedVideo = savedVideos.get(p.playerId);
-    
-    console.log('[D11] Creating player item for:', p.name);
+    console.log('[D11] V19 Creating player item for:', p.name);
     let item = document.createElement("div");
     item.className = "player-item";
     item.dataset.playerId = p.playerId;
@@ -605,11 +594,7 @@ function renderLobby() {
       videoSlot.setAttribute("aria-label", `Video ${p.name}`);
       videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
       
-      // D11 V15: Réattacher la vidéo sauvegardée si disponible
-      if (savedVideo) {
-        videoSlot.appendChild(savedVideo);
-        console.log('[D11] Restored saved video for:', p.name);
-      }
+      // D11 V19: Le slot est créé vide - video-tracks.js attachera la vidéo
       
       // Créer le conteneur d'info
       const playerInfo = document.createElement("div");
@@ -656,93 +641,15 @@ function renderLobby() {
     }
   });
   
-  // D11 V17: Forcer un repaint et vérifier la structure - AVEC nettoyage des éléments fantômes
+  // D11 V19: Simplification - on ne fait que vérifier l'affichage, pas de reconstruction
+  // La structure a été créée correctement juste au-dessus
   requestAnimationFrame(() => {
-    // D11 V17: D'abord, supprimer tous les éléments fantômes (sans playerId valide)
-    list.querySelectorAll('.player-item').forEach(item => {
-      const playerId = item.dataset?.playerId;
-      if (!playerId) {
-        console.log('[D11 V17] Removing phantom player-item (no playerId)');
-        item.remove();
-        return;
-      }
-      
-      // D11 V17: Vérifier que ce playerId existe toujours dans la liste des joueurs
-      const playerExists = playersSorted.some(p => p.playerId === playerId);
-      if (!playerExists) {
-        console.log('[D11 V17] Removing orphan player-item (player left):', playerId.slice(0,8));
-        item.remove();
-        return;
-      }
-    });
-    
-    // Maintenant vérifier et réparer la structure des éléments restants
     list.querySelectorAll('.player-item').forEach(item => {
       const left = item.querySelector('.player-left');
       const info = left?.querySelector('.player-info');
       
-      // D11 V4: Si la structure est corrompue, recréer l'élément complètement
-      if (!left || !info || !info.querySelector('.player-name')) {
-        const playerId = item.dataset.playerId;
-        const player = playersSorted.find(p => p.playerId === playerId);
-        if (player) {
-          console.log('[D11] Rebuilding corrupted player item for:', player.name);
-          // Sauvegarder la vidéo si elle existe
-          const existingVideo = item.querySelector('video');
-          
-          // Recréer complètement l'élément
-          item.innerHTML = '';
-          
-          const newLeft = document.createElement('div');
-          newLeft.className = 'player-left';
-          newLeft.style.cssText = 'display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;';
-          
-          const videoSlot = document.createElement('div');
-          videoSlot.className = 'player-video-slot';
-          videoSlot.dataset.playerId = playerId;
-          videoSlot.style.cssText = 'flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;';
-          if (existingVideo) videoSlot.appendChild(existingVideo);
-          
-          const playerInfo = document.createElement('div');
-          playerInfo.className = 'player-info';
-          playerInfo.style.cssText = 'display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;';
-          
-          const avatarEmoji = player.avatarEmoji || '👤';
-          const badgeDisplay = player.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;">${player.badgeEmoji}</span>` : '';
-          
-          const playerName = document.createElement('div');
-          playerName.className = 'player-name';
-          playerName.style.cssText = 'font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;';
-          playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(player.name)}${badgeDisplay}`;
-          
-          const badges = document.createElement('div');
-          badges.className = 'player-badges';
-          badges.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px;';
-          badges.innerHTML = `
-            ${player.isHost ? '<span class="pill ok">HÔTE</span>' : ''}
-            ${player.isCaptain ? '<span class="pill ok">CAPITAINE</span>' : ''}
-            ${player.connected ? '<span class="pill ok">EN LIGNE</span>' : '<span class="pill warn">RECONNEXION…</span>'}
-            ${player.status === 'left' ? '<span class="pill bad">SORTI</span>' : (player.status === 'dead' ? '<span class="pill bad">ÉJECTÉ</span>' : '')}
-          `;
-          
-          playerInfo.appendChild(playerName);
-          playerInfo.appendChild(badges);
-          newLeft.appendChild(videoSlot);
-          newLeft.appendChild(playerInfo);
-          
-          const newRight = document.createElement('div');
-          newRight.className = 'player-right';
-          newRight.innerHTML = player.ready ? '<span class="pill ok">PRÊT</span>' : '<span class="pill warn">PAS PRÊT</span>';
-          
-          item.appendChild(newLeft);
-          item.appendChild(newRight);
-        } else {
-          // D11 V17: Pas de player trouvé = élément orphelin à supprimer
-          console.log('[D11 V17] Removing corrupted item without player data');
-          item.remove();
-        }
-      } else {
-        // Structure OK, juste s'assurer de l'affichage
+      // V19: Juste forcer l'affichage, jamais reconstruire
+      if (left && info) {
         info.style.display = 'flex';
         info.style.visibility = 'visible';
         info.style.opacity = '1';
@@ -750,24 +657,19 @@ function renderLobby() {
       }
     });
     
-    // D11: Appeler la fonction de réparation de video-tracks si disponible
-    if (window.VideoTracksRegistry?.repairLobbyDisplay) {
-      setTimeout(() => window.VideoTracksRegistry.repairLobbyDisplay(), 100);
-    }
-    
-    // D11 V10: Déverrouiller et forcer un seul reattach après le rendu complet
-    // D11 V12: Vérifier que c'est bien le dernier rendu qui déverrouille
+    // D11 V19: Déverrouiller et forcer le reattach après un court délai
     setTimeout(() => {
       if (window._lobbyRenderCount !== currentRenderCount) {
-        console.log('[D11] Skipping unlock - newer render in progress:', currentRenderCount, 'vs', window._lobbyRenderCount);
+        console.log('[D11] V19 Skipping unlock - newer render in progress');
         return;
       }
       window._renderingLobby = false;
-      console.log('[D11] Lobby render complete - unlocking and triggering single reattach');
+      window._lobbyRebuildInProgress = false;
+      console.log('[D11] V19 🔓 Lobby rebuild UNLOCKED - triggering reattach');
       if (window.VideoTracksRefresh) {
         window.VideoTracksRefresh();
       }
-    }, 150);
+    }, 250); // V19: Délai augmenté pour laisser le DOM se stabiliser
   });
 
   // ready button
