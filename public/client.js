@@ -648,19 +648,77 @@ function renderLobby() {
     }
   });
   
-  // D11: Forcer un repaint pour s'assurer que les éléments sont visibles (fix bug fenêtre inactive)
+  // D11 V4: Forcer un repaint et vérifier la structure
   requestAnimationFrame(() => {
-    list.querySelectorAll('.player-info').forEach(info => {
-      info.style.display = 'flex';
-      info.style.visibility = 'visible';
-      info.style.opacity = '1';
-      // Force reflow
-      void info.offsetHeight;
+    list.querySelectorAll('.player-item').forEach(item => {
+      const left = item.querySelector('.player-left');
+      const info = left?.querySelector('.player-info');
+      
+      // D11 V4: Si la structure est corrompue, recréer l'élément complètement
+      if (!left || !info || !info.querySelector('.player-name')) {
+        const playerId = item.dataset.playerId;
+        const player = playersSorted.find(p => p.playerId === playerId);
+        if (player) {
+          console.log('[D11] Rebuilding corrupted player item for:', player.name);
+          // Sauvegarder la vidéo si elle existe
+          const existingVideo = item.querySelector('video');
+          
+          // Recréer complètement l'élément
+          item.innerHTML = '';
+          
+          const newLeft = document.createElement('div');
+          newLeft.className = 'player-left';
+          newLeft.style.cssText = 'display:flex !important; flex-direction:row !important; gap:10px; align-items:center; flex:1 1 auto;';
+          
+          const videoSlot = document.createElement('div');
+          videoSlot.className = 'player-video-slot';
+          videoSlot.dataset.playerId = playerId;
+          videoSlot.style.cssText = 'flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;';
+          if (existingVideo) videoSlot.appendChild(existingVideo);
+          
+          const playerInfo = document.createElement('div');
+          playerInfo.className = 'player-info';
+          playerInfo.style.cssText = 'display:flex !important; visibility:visible !important; flex-direction:column; gap:4px; flex:1 1 auto; min-width:80px;';
+          
+          const avatarEmoji = player.avatarEmoji || '👤';
+          const badgeDisplay = player.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;">${player.badgeEmoji}</span>` : '';
+          
+          const playerName = document.createElement('div');
+          playerName.className = 'player-name';
+          playerName.style.cssText = 'font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;';
+          playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(player.name)}${badgeDisplay}`;
+          
+          const badges = document.createElement('div');
+          badges.className = 'player-badges';
+          badges.style.cssText = 'display:flex; flex-wrap:wrap; gap:4px;';
+          badges.innerHTML = `
+            ${player.isHost ? '<span class="pill ok">HÔTE</span>' : ''}
+            ${player.isCaptain ? '<span class="pill ok">CAPITAINE</span>' : ''}
+            ${player.connected ? '<span class="pill ok">EN LIGNE</span>' : '<span class="pill warn">RECONNEXION…</span>'}
+            ${player.status === 'left' ? '<span class="pill bad">SORTI</span>' : (player.status === 'dead' ? '<span class="pill bad">ÉJECTÉ</span>' : '')}
+          `;
+          
+          playerInfo.appendChild(playerName);
+          playerInfo.appendChild(badges);
+          newLeft.appendChild(videoSlot);
+          newLeft.appendChild(playerInfo);
+          
+          const newRight = document.createElement('div');
+          newRight.className = 'player-right';
+          newRight.innerHTML = player.ready ? '<span class="pill ok">PRÊT</span>' : '<span class="pill warn">PAS PRÊT</span>';
+          
+          item.appendChild(newLeft);
+          item.appendChild(newRight);
+        }
+      } else {
+        // Structure OK, juste s'assurer de l'affichage
+        info.style.display = 'flex';
+        info.style.visibility = 'visible';
+        info.style.opacity = '1';
+        left.style.display = 'flex';
+      }
     });
-    list.querySelectorAll('.player-left').forEach(left => {
-      left.style.display = 'flex';
-      void left.offsetHeight;
-    });
+    
     // D11: Appeler la fonction de réparation de video-tracks si disponible
     if (window.VideoTracksRegistry?.repairLobbyDisplay) {
       setTimeout(() => window.VideoTracksRegistry.repairLobbyDisplay(), 100);
@@ -2144,11 +2202,15 @@ socket.on("roomState", (s) => {
     });
   }
   
-  // D11: Animation élection capitaine
-  if (previousPhase && previousPhase !== 'CAPTAIN_CANDIDACY' && currentPhaseNow === 'CAPTAIN_CANDIDACY') {
+  // D11 V4: Animation élection capitaine - quand un joueur DEVIENT capitaine
+  const previousCaptain = state?.players?.find(p => p.isCaptain);
+  const newCaptain = s.players?.find(p => p.isCaptain);
+  
+  // Si un nouveau capitaine est élu (pas de capitaine avant, ou changement de capitaine)
+  if (newCaptain && (!previousCaptain || previousCaptain.playerId !== newCaptain.playerId)) {
     requestAnimationFrame(() => {
       if (window.D7Animations) {
-        console.log('[D7] ⭐ Triggering captain election animation');
+        console.log('[D7] ⭐ Triggering captain election animation for:', newCaptain.name);
         D7Animations.animateCaptainElection();
       }
     });

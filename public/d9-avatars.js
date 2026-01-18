@@ -93,6 +93,7 @@
   
   let currentCustomization = {
     avatarId: null,
+    avatarEmoji: null, // D11 V4: Stocker aussi l'emoji
     colorId: 'cyan',
     gamesPlayed: 0,
     wins: 0,
@@ -144,12 +145,17 @@
   /**
    * Définit l'avatar du joueur
    * @param {string} avatarId - ID de l'avatar
+   * @param {string} avatarEmoji - Emoji de l'avatar (optionnel)
    */
-  function setAvatar(avatarId) {
+  function setAvatar(avatarId, avatarEmoji = null) {
     currentCustomization.avatarId = avatarId;
+    // D11 V4: Sauvegarder aussi l'emoji pour éviter de le recalculer
+    if (avatarEmoji) {
+      currentCustomization.avatarEmoji = avatarEmoji;
+    }
     saveCustomization();
     applyCustomization();
-    log('Avatar set to:', avatarId);
+    log('Avatar set to:', avatarId, avatarEmoji);
   }
 
   /**
@@ -160,7 +166,24 @@
   function getAvatar(theme = 'default') {
     const avatars = AVATARS[theme] || AVATARS.default;
     const avatar = avatars.find(a => a.id === currentCustomization.avatarId);
-    return avatar || avatars[0];
+    
+    // D11 V4: Si l'avatar est trouvé, le retourner
+    if (avatar) {
+      return avatar;
+    }
+    
+    // D11 V4: Si l'emoji est stocké mais l'avatar pas trouvé (changement de thème), 
+    // retourner un objet avec l'emoji stocké
+    if (currentCustomization.avatarEmoji) {
+      return { 
+        id: currentCustomization.avatarId || 'custom', 
+        emoji: currentCustomization.avatarEmoji,
+        name: 'Custom'
+      };
+    }
+    
+    // Sinon retourner le premier avatar du thème
+    return avatars[0];
   }
 
   /**
@@ -194,7 +217,7 @@
       option.addEventListener('click', () => {
         container.querySelectorAll('.avatar-option').forEach(o => o.classList.remove('selected'));
         option.classList.add('selected');
-        setAvatar(avatar.id);
+        setAvatar(avatar.id, avatar.emoji); // D11 V4: Passer aussi l'emoji
       });
       
       container.appendChild(option);
@@ -535,13 +558,17 @@
    * @returns {Object}
    */
   function getCustomizationForServer() {
-    const avatar = getAvatar();
+    // D11 V4: Utiliser le thème actuel pour récupérer le bon avatar
+    const theme = document.documentElement.dataset.theme || 'default';
+    const avatar = getAvatar(theme);
     const color = getColor();
     const badge = getBadge();
     
     // D11 V4: Ajouter playerId et roomCode pour le serveur
     const playerId = sessionStorage.getItem('is_playerId');
     const roomCode = sessionStorage.getItem('is_roomCode');
+    
+    log('getCustomizationForServer:', { theme, avatarId: avatar?.id, avatarEmoji: avatar?.emoji });
     
     return {
       playerId,
