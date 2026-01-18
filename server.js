@@ -1998,6 +1998,31 @@ io.on("connection", (socket) => {
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
   
+  // D11 V4: Mettre à jour la personnalisation d'un joueur (avatar, couleur, badge)
+  socket.on("updateCustomization", ({ playerId, roomCode, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+    const code = String(roomCode || "").trim();
+    const room = rooms.get(code);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    
+    const p = getPlayer(room, playerId);
+    if (!p) return cb && cb({ ok: false, error: "Joueur introuvable" });
+    
+    // Mettre à jour les champs de personnalisation
+    if (avatarId !== undefined) p.avatarId = avatarId;
+    if (avatarEmoji !== undefined) p.avatarEmoji = avatarEmoji;
+    if (colorId !== undefined) p.colorId = colorId;
+    if (colorHex !== undefined) p.colorHex = colorHex;
+    if (badgeId !== undefined) p.badgeId = badgeId;
+    if (badgeEmoji !== undefined) p.badgeEmoji = badgeEmoji;
+    if (badgeName !== undefined) p.badgeName = badgeName;
+    
+    logger.info("customization_updated", { roomCode: code, playerId, avatarEmoji, colorHex });
+    
+    // Diffuser le nouvel état à tous les joueurs
+    broadcastRoomState(room, "customizationUpdate");
+    cb && cb({ ok: true });
+  });
+  
   // Heartbeat pour maintenir la session vivante
   socket.on("heartbeat", ({ playerId, roomCode }, cb) => {
     if (!rateLimiter.check(socket.id, "heartbeat", playerId)) {
