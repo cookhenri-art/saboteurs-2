@@ -613,12 +613,27 @@
       const observer = new MutationObserver(() => {
         if (lobbyScreen.classList.contains('active')) {
           injectCustomizationButton();
-          // D11 V21: Synchroniser automatiquement l'avatar avec le serveur quand on entre dans le lobby
-          // Cela garantit que le serveur a toujours l'avatar correct
-          setTimeout(() => {
+          // D11 V22: Synchroniser automatiquement l'avatar avec le serveur quand on entre dans le lobby
+          // Avec retry si le socket ou les données ne sont pas encore disponibles
+          const trySync = (attempt = 1) => {
+            const playerId = sessionStorage.getItem('is_playerId');
+            const roomCode = sessionStorage.getItem('is_roomCode');
+            
+            if (!window.socket || !playerId || !roomCode) {
+              if (attempt < 5) {
+                log(`🔄 Auto-sync attempt ${attempt} - waiting for socket/session...`);
+                setTimeout(() => trySync(attempt + 1), 500);
+              } else {
+                log('⚠️ Auto-sync abandoned after 5 attempts');
+              }
+              return;
+            }
+            
             log('🔄 Auto-syncing customization on lobby entry');
             sendCustomizationToServer();
-          }, 500); // Délai pour laisser le temps au thème de s'appliquer
+          };
+          
+          setTimeout(() => trySync(), 300);
         }
       });
       observer.observe(lobbyScreen, { attributes: true, attributeFilter: ['class'] });

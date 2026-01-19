@@ -18,6 +18,9 @@ const socket = io({
   reconnectionDelayMax: 2500,
 });
 
+// D11 V22: Exposer socket globalement pour d9-avatars.js et autres modules
+window.socket = socket;
+
 const $ = (id) => document.getElementById(id);
 
 const STORAGE = {
