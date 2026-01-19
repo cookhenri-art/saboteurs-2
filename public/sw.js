@@ -4,7 +4,7 @@
    Version: 1.1 - Nouveau logo + corrections D7-D10
 ========================================================= */
 
-const CACHE_NAME = 'saboteur-v1.7-v22';
+const CACHE_NAME = 'saboteur-v1.8-v23';
 const OFFLINE_URL = '/offline.html';
 
 // Ressources à mettre en cache immédiatement

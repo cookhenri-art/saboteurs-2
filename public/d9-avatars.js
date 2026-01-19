@@ -609,12 +609,21 @@
     
     // Injecter le bouton quand le lobby est visible
     const lobbyScreen = document.getElementById('lobbyScreen');
+    let lastSyncTime = 0; // D11 V23: Anti-boucle infinie
+    
     if (lobbyScreen) {
       const observer = new MutationObserver(() => {
         if (lobbyScreen.classList.contains('active')) {
           injectCustomizationButton();
-          // D11 V22: Synchroniser automatiquement l'avatar avec le serveur quand on entre dans le lobby
-          // Avec retry si le socket ou les données ne sont pas encore disponibles
+          
+          // D11 V23: Anti-boucle - ne sync qu'une fois toutes les 5 secondes max
+          const now = Date.now();
+          if (now - lastSyncTime < 5000) {
+            return; // Skip si sync récent
+          }
+          lastSyncTime = now;
+          
+          // D11 V22: Synchroniser automatiquement l'avatar avec le serveur
           const trySync = (attempt = 1) => {
             const playerId = sessionStorage.getItem('is_playerId');
             const roomCode = sessionStorage.getItem('is_roomCode');
