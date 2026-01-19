@@ -72,7 +72,9 @@ function ensurePlayerStats(name) {
       ejectedByVote: 0,        // Éjecté par vote du jour
       captainElected: 0,       // Nombre de fois élu capitaine
       aiAgentLinks: 0,         // Nombre de liens créés
-      matchHistory: []         // Historique des dernières 20 parties
+      matchHistory: [],         // Historique des dernières 20 parties
+      shortestGame: null,      // V24: Partie la plus courte (ms)
+      longestGame: null        // V24: Partie la plus longue (ms)
     };
   }
   return statsDb[name];
@@ -938,6 +940,49 @@ function buildEndReport(room, winner) {
     return { title: "Saboteur Incognito", text: `0 vote contre lui : ${uniq.join(", ")}` };
   };
 
+  // V24: Award Meilleur Chef de station (départage pour éliminer saboteur)
+  const awardBestCaptain = () => {
+    const captainTerm = getTerm('captain', room);
+    const saboteurTerm = getTerm('saboteurs', room).toLowerCase().slice(0, -1);
+    
+    const goodTiebreaks = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "captain_tiebreak") continue;
+      if (e.targetTeam === "saboteurs") {
+        const captainName = room.players.get(e.captainId)?.name || "?";
+        const targetName = room.players.get(e.targetId)?.name || "?";
+        goodTiebreaks.push({ captain: captainName, target: targetName });
+      }
+    }
+    
+    if (!goodTiebreaks.length) return { title: `Meilleur ${captainTerm}`, text: `Aucun départage contre ${saboteurTerm}.` };
+    const captains = [...new Set(goodTiebreaks.map(t => t.captain))];
+    const targets = [...new Set(goodTiebreaks.map(t => t.target))];
+    return { title: `Meilleur ${captainTerm}`, text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` };
+  };
+
+  // V24: Award Pire Chef de station (départage pour éliminer astronaute)
+  const awardWorstCaptain = () => {
+    const captainTerm = getTerm('captain', room);
+    const astronautTerm = getTerm('astronauts', room).toLowerCase().slice(0, -1);
+    
+    const badTiebreaks = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "captain_tiebreak") continue;
+      if (e.targetTeam === "astronauts") {
+        const captainName = room.players.get(e.captainId)?.name || "?";
+        const targetName = room.players.get(e.targetId)?.name || "?";
+        badTiebreaks.push({ captain: captainName, target: targetName });
+      }
+    }
+    
+    if (!badTiebreaks.length) return { title: `Pire ${captainTerm}`, text: `Aucun départage contre ${astronautTerm}.` };
+    const captains = [...new Set(badTiebreaks.map(t => t.captain))];
+    const targets = [...new Set(badTiebreaks.map(t => t.target))];
+    return { title: `Pire ${captainTerm}`, text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` };
+  };
+
+
   const saboteursTerm = getTerm('saboteurs', room);
   const astronautsTerm = getTerm('astronauts', room);
   const stationTerm = getTerm('station', room);
@@ -950,7 +995,9 @@ function buildEndReport(room, winner) {
     awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
     awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`),
     awardAssociation(),
-    awardSaboteurIncognito()
+    awardSaboteurIncognito(),
+    awardBestCaptain(),
+    awardWorstCaptain()
   ];
 
   // snapshot of persistent stats for present players
@@ -971,7 +1018,9 @@ function buildEndReport(room, winner) {
       radarInspects: s.radarInspects,
       radarCorrect: s.radarCorrect,
       chameleonSwaps: s.chameleonSwaps,
-      securityRevengeShots: s.securityRevengeShots
+      securityRevengeShots: s.securityRevengeShots,
+      shortestGame: s.shortestGame,
+      longestGame: s.longestGame
     };
   }
 
@@ -991,11 +1040,40 @@ for (const [name, s] of Object.entries(statsByName)) {
   };
 }
 
-return { winner, players, deathOrder, awards, counters, statsByName, detailedStatsByName };
+
+// V24: Stats pour Pie Chart - répartition des morts par source
+const deathBySource = {
+  vote: 0,
+  saboteurs: 0,
+  doctor: 0,
+  security: 0,
+  other: 0
+};
+for (const e of room.matchLog) {
+  if (e.type !== "player_died") continue;
+  const src = e.source || "other";
+  if (src === "vote" || src === "tiebreak" || src === "tie_random" || src === "tiebreak_fallback") {
+    deathBySource.vote++;
+  } else if (src === "saboteurs") {
+    deathBySource.saboteurs++;
+  } else if (src === "doctor") {
+    deathBySource.doctor++;
+  } else if (src === "security" || src === "revenge") {
+    deathBySource.security++;
+  } else {
+    deathBySource.other++;
+  }
+}
+
+// V24: Durée de partie
+const gameDuration = (room.endTime && room.startTime) ? (room.endTime - room.startTime) : 0;
+
+return { winner, players, deathOrder, awards, counters, statsByName, detailedStatsByName, deathBySource, gameDuration };
 }
 
 function endGame(room, winner) {
   room.ended = true;
+  room.endTime = Date.now(); // V24: Pour calcul durée partie
 
   // persist stats per name FIRST (so the end report reflects the updated totals)
   for (const p of room.players.values()) {
@@ -1021,6 +1099,17 @@ function endGame(room, winner) {
     else st.losses += 1;
 
     if (win) st.winsByRole[role] = (st.winsByRole[role] || 0) + 1;
+    
+    // V24: Mettre à jour temps de partie le plus court/long
+    const gameDuration = (room.endTime && room.startTime) ? (room.endTime - room.startTime) : 0;
+    if (gameDuration > 0) {
+      if (st.shortestGame === null || gameDuration < st.shortestGame) {
+        st.shortestGame = gameDuration;
+      }
+      if (st.longestGame === null || gameDuration > st.longestGame) {
+        st.longestGame = gameDuration;
+      }
+    }
   }
   saveStats(statsDb);
   
@@ -2427,6 +2516,11 @@ io.on("connection", (socket) => {
       const pick = payload?.pick;
       const opts = room.phaseData.options || [];
       if (!opts.includes(pick)) return;
+      // V24: Log du tiebreak pour awards
+      const pickedPlayer = room.players.get(pick);
+      const pickedRole = pickedPlayer?.role || null;
+      const pickedTeam = ROLES[pickedRole]?.team || "astronauts";
+      logEvent(room, "captain_tiebreak", { captainId: room.phaseData.actorId, targetId: pick, targetRole: pickedRole, targetTeam: pickedTeam });
       executeEjection(room, pick, "tiebreak");
       emitRoom(room);
       return cb && cb({ ok:true });
