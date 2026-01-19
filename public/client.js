@@ -1339,16 +1339,100 @@ function renderEnd() {
 
   const rep = state.phaseData?.report;
   if (rep) {
+    // V25: Ordre des éjections
     const deaths = (rep.deathOrder || []).map((d, i) => {
       const rl = d.roleLabel ? ` (${d.roleLabel})` : "";
       return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
     }).join("<br>");
+    
+    // V25: Awards HTML
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
     
+    // V25: Durée de partie formatée
+    const formatDuration = (ms) => {
+      if (!ms || ms <= 0) return "—";
+      const totalSec = Math.floor(ms / 1000);
+      const min = Math.floor(totalSec / 60);
+      const sec = totalSec % 60;
+      return `${min}m ${sec}s`;
+    };
+    const gameDurationHtml = formatDuration(rep.gameDuration);
+    
+    // V25: Pie Chart data
+    const deathBySource = rep.deathBySource || { vote: 0, saboteurs: 0, doctor: 0, security: 0, other: 0 };
+    const totalDeaths = Object.values(deathBySource).reduce((a, b) => a + b, 0);
+    
+    // V25: Générer le Pie Chart SVG
+    const pieChartHtml = (() => {
+      if (totalDeaths === 0) return '<div style="opacity:0.7;">Aucune élimination</div>';
+      
+      const colors = {
+        vote: '#00ffff',
+        saboteurs: '#ff4444',
+        doctor: '#44ff44',
+        security: '#ffaa00',
+        other: '#888888'
+      };
+      
+      const labels = {
+        vote: 'Vote',
+        saboteurs: t('saboteurs'),
+        doctor: tRole('doctor') || 'Docteur',
+        security: tRole('security') || 'Sécurité',
+        other: 'Autre'
+      };
+      
+      let currentAngle = 0;
+      const paths = [];
+      const legend = [];
+      
+      for (const [source, count] of Object.entries(deathBySource)) {
+        if (count === 0) continue;
+        
+        const percentage = count / totalDeaths;
+        const angle = percentage * 360;
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + angle;
+        
+        const startRad = (startAngle - 90) * Math.PI / 180;
+        const endRad = (endAngle - 90) * Math.PI / 180;
+        const x1 = 50 + 40 * Math.cos(startRad);
+        const y1 = 50 + 40 * Math.sin(startRad);
+        const x2 = 50 + 40 * Math.cos(endRad);
+        const y2 = 50 + 40 * Math.sin(endRad);
+        const largeArc = angle > 180 ? 1 : 0;
+        
+        if (angle >= 360) {
+          paths.push(`<circle cx="50" cy="50" r="40" fill="${colors[source]}" opacity="0.8"/>`);
+        } else {
+          paths.push(`<path d="M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z" fill="${colors[source]}" opacity="0.8"/>`);
+        }
+        
+        legend.push(`<div style="display:flex; align-items:center; gap:6px; margin:4px 0;">
+          <div style="width:12px; height:12px; background:${colors[source]}; border-radius:2px;"></div>
+          <span>${labels[source]}: ${count} (${Math.round(percentage * 100)}%)</span>
+        </div>`);
+        
+        currentAngle = endAngle;
+      }
+      
+      return `
+        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+          <svg width="120" height="120" viewBox="0 0 100 100">
+            ${paths.join('')}
+            <circle cx="50" cy="50" r="20" fill="rgba(0,0,0,0.5)"/>
+            <text x="50" y="55" text-anchor="middle" fill="white" font-size="12" font-weight="bold">${totalDeaths}</text>
+          </svg>
+          <div style="font-size:0.9rem;">
+            ${legend.join('')}
+          </div>
+        </div>
+      `;
+    })();
+    
+    // V25: Stats cumulées
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
-      // D9: Trouver le joueur pour récupérer son avatar
       const player = state.players.find(p => p.name === name);
-      // D11 V21: Utiliser l'avatar du joueur depuis le serveur, sinon fallback
       let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
@@ -1363,72 +1447,90 @@ function renderEnd() {
       </div>`;
     }).join("");
 
+    // V25: Stats détaillées avec temps de partie
+    const detailed = rep.detailedStatsByName || {};
+    const detailedHtml = Object.entries(detailed).map(([name, s]) => {
+      const player = state.players.find(p => p.name === name);
+      let avatarEmoji = player?.avatarEmoji || '👤';
+      const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
+      
+      const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
+        const roleName = tRole(rk) || rk;
+        return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
+      }).join("");
+      
+      // V25: Temps de partie min/max
+      const shortestHtml = s.shortestGame ? formatDuration(s.shortestGame) : "—";
+      const longestHtml = s.longestGame ? formatDuration(s.longestGame) : "—";
+      
+      return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
+        <div class="player-left">
+          <div style="font-weight:900; display:flex; align-items:center;">
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+            ${escapeHtml(name)}
+          </div>
+          <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
+          <div style="margin-top:6px; opacity:.95;">
+            <div style="font-weight:900; margin-bottom:4px;">⏱️ Temps de partie</div>
+            <div>Plus courte: <b>${shortestHtml}</b> • Plus longue: <b>${longestHtml}</b></div>
+          </div>
+          <div style="margin-top:6px; opacity:.95;">
+            <div style="font-weight:900; margin-bottom:4px;">Stats par rôle</div>
+            ${roles || "<div>—</div>"}
+          </div>
+        </div>
+      </div>`;
+    }).join("");
 
-const detailed = rep.detailedStatsByName || {};
-const detailedHtml = Object.entries(detailed).map(([name, s]) => {
-  // D9: Trouver le joueur pour récupérer son avatar
-  const player = state.players.find(p => p.name === name);
-  // D11 V21: Utiliser l'avatar du joueur depuis le serveur, sinon fallback
-  let avatarEmoji = player?.avatarEmoji || '👤';
-  const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
-  
-  const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
-    // Traduire la clé de rôle en nom localisé
-    const roleName = tRole(rk) || rk;
-    return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
-  }).join("");
-  return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
-    <div class="player-left">
-      <div style="font-weight:900; display:flex; align-items:center;">
-        <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
-        ${escapeHtml(name)}
+    // V25: Nouvelle structure - Éjections en premier
+    $("endSummary").innerHTML += `
+      <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-secondary" id="tabSummaryBtn">Résumé</button>
+        <button class="btn btn-secondary" id="tabDetailedBtn">Stats détaillées</button>
       </div>
-      <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
-      <div style="margin-top:6px; opacity:.95;">
-        <div style="font-weight:900; margin-bottom:4px;">Stats par rôle</div>
-        ${roles || "<div>—</div>"}
+
+      <div id="tabSummary" style="margin-top:12px;">
+        <div style="margin-bottom:14px; padding:10px; border-radius:8px; background: rgba(0,0,0,0.2); display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.5rem;">⏱️</span>
+          <span>Durée de la partie: <b>${gameDurationHtml}</b></span>
+        </div>
+        
+        <div style="padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
+          <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éjections</div>
+          <div style="opacity:.95;">${deaths || "—"}</div>
+        </div>
+        
+        <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(128,0,255,0.25); background: rgba(0,0,0,0.22);">
+          <div style="font-weight:900; margin-bottom:8px;">🥧 Répartition des éliminations</div>
+          ${pieChartHtml}
+        </div>
+
+        <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(0,255,255,0.25); background: rgba(0,0,0,0.25);">
+          <div style="font-weight:900; margin-bottom:8px;">🏆 Awards</div>
+          ${awardsHtml || "<div>—</div>"}
+        </div>
+
+        <div style="margin-top:14px;">
+          <div style="font-weight:900; margin-bottom:8px;">📈 Stats cumulées (par NOM)</div>
+          ${statsHtml || "<div>—</div>"}
+        </div>
       </div>
-    </div>
-  </div>`;
-}).join("");
 
-$("endSummary").innerHTML += `
-  <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-    <button class="btn btn-secondary" id="tabSummaryBtn">Résumé</button>
-    <button class="btn btn-secondary" id="tabDetailedBtn">Stats détaillées</button>
-  </div>
+      <div id="tabDetailed" style="margin-top:12px; display:none;">
+        <div style="font-weight:900; margin-bottom:8px;">📊 Stats détaillées (par NOM)</div>
+        ${detailedHtml || "<div>—</div>"}
+      </div>
+    `;
 
-  <div id="tabSummary" style="margin-top:12px;">
-    <div style="padding:12px; border-radius:12px; border:1px solid rgba(0,255,255,0.25); background: rgba(0,0,0,0.25);">
-      <div style="font-weight:900; margin-bottom:8px;">🏆 Awards</div>
-      ${awardsHtml || "<div>—</div>"}
-    </div>
-
-    <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
-      <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éjections</div>
-      <div style="opacity:.95;">${deaths || "—"}</div>
-    </div>
-
-    <div style="margin-top:14px;">
-      <div style="font-weight:900; margin-bottom:8px;">📈 Stats cumulées (par NOM)</div>
-      ${statsHtml || "<div>—</div>"}
-    </div>
-  </div>
-
-  <div id="tabDetailed" style="margin-top:12px; display:none;">
-    <div style="font-weight:900; margin-bottom:8px;">📊 Stats détaillées (par NOM)</div>
-    ${detailedHtml || "<div>—</div>"}
-  </div>
-`;
-
-const tabSummaryBtn = document.getElementById("tabSummaryBtn");
-const tabDetailedBtn = document.getElementById("tabDetailedBtn");
-const tabSummary = document.getElementById("tabSummary");
-const tabDetailed = document.getElementById("tabDetailed");
-if (tabSummaryBtn && tabDetailedBtn && tabSummary && tabDetailed) {
-  tabSummaryBtn.onclick = () => { tabSummary.style.display = "block"; tabDetailed.style.display = "none"; };
-  tabDetailedBtn.onclick = () => { tabSummary.style.display = "none"; tabDetailed.style.display = "block"; };
-}  }
+    const tabSummaryBtn = document.getElementById("tabSummaryBtn");
+    const tabDetailedBtn = document.getElementById("tabDetailedBtn");
+    const tabSummary = document.getElementById("tabSummary");
+    const tabDetailed = document.getElementById("tabDetailed");
+    if (tabSummaryBtn && tabDetailedBtn && tabSummary && tabDetailed) {
+      tabSummaryBtn.onclick = () => { tabSummary.style.display = "block"; tabDetailed.style.display = "none"; };
+      tabDetailedBtn.onclick = () => { tabSummary.style.display = "none"; tabDetailed.style.display = "block"; };
+    }
+  }
 
   // ranking table (show roles)
   const table = $("rankingTable");
