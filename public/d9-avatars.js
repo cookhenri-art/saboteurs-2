@@ -470,21 +470,21 @@
     log('Customization modal opened');
   }
   
-  // D11: Fonction pour envoyer la personnalisation au serveur
+  // D11 V21: Fonction pour envoyer la personnalisation au serveur
   function sendCustomizationToServer() {
     if (!window.socket) {
-      log('No socket available, cannot send customization');
+      log('❌ No socket available, cannot send customization');
       return;
     }
     
     const data = getCustomizationForServer();
-    log('Sending customization to server:', data);
+    log('📤 Sending customization to server:', data);
     
     window.socket.emit('updateCustomization', data, (response) => {
       if (response?.ok) {
-        log('Customization updated on server');
+        log('✅ Customization updated on server successfully');
       } else {
-        log('Failed to update customization:', response?.error);
+        log('❌ Failed to update customization:', response?.error);
       }
     });
   }
@@ -600,6 +600,12 @@
       const observer = new MutationObserver(() => {
         if (lobbyScreen.classList.contains('active')) {
           injectCustomizationButton();
+          // D11 V21: Synchroniser automatiquement l'avatar avec le serveur quand on entre dans le lobby
+          // Cela garantit que le serveur a toujours l'avatar correct
+          setTimeout(() => {
+            log('🔄 Auto-syncing customization on lobby entry');
+            sendCustomizationToServer();
+          }, 500); // Délai pour laisser le temps au thème de s'appliquer
         }
       });
       observer.observe(lobbyScreen, { attributes: true, attributeFilter: ['class'] });

@@ -1342,22 +1342,11 @@ function renderEnd() {
     }).join("<br>");
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
     
-    // D11 V5: Obtenir le thème actuel pour afficher les bons avatars
-    const currentTheme = document.documentElement.dataset.theme || 'default';
-    
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       // D9: Trouver le joueur pour récupérer son avatar
       const player = state.players.find(p => p.name === name);
-      // D11 V5: Utiliser le premier avatar du thème actuel si pas d'avatar spécifique
-      let avatarEmoji = '👤';
-      if (window.D9Avatars?.AVATARS) {
-        const themeAvatars = window.D9Avatars.AVATARS[currentTheme] || window.D9Avatars.AVATARS.default;
-        if (themeAvatars && themeAvatars.length > 0) {
-          // Utiliser un avatar basé sur l'index du joueur dans la liste
-          const playerIndex = state.players.findIndex(p => p.name === name);
-          avatarEmoji = themeAvatars[playerIndex % themeAvatars.length].emoji;
-        }
-      }
+      // D11 V21: Utiliser l'avatar du joueur depuis le serveur, sinon fallback
+      let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
@@ -1376,15 +1365,8 @@ const detailed = rep.detailedStatsByName || {};
 const detailedHtml = Object.entries(detailed).map(([name, s]) => {
   // D9: Trouver le joueur pour récupérer son avatar
   const player = state.players.find(p => p.name === name);
-  // D11 V5: Utiliser le premier avatar du thème actuel
-  let avatarEmoji = '👤';
-  if (window.D9Avatars?.AVATARS) {
-    const themeAvatars = window.D9Avatars.AVATARS[currentTheme] || window.D9Avatars.AVATARS.default;
-    if (themeAvatars && themeAvatars.length > 0) {
-      const playerIndex = state.players.findIndex(p => p.name === name);
-      avatarEmoji = themeAvatars[playerIndex % themeAvatars.length].emoji;
-    }
-  }
+  // D11 V21: Utiliser l'avatar du joueur depuis le serveur, sinon fallback
+  let avatarEmoji = player?.avatarEmoji || '👤';
   const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
   
   const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
