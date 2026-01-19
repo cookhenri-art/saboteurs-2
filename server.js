@@ -2019,7 +2019,7 @@ io.on("connection", (socket) => {
     logger.info("customization_updated", { roomCode: code, playerId, avatarEmoji, colorHex });
     
     // Diffuser le nouvel état à tous les joueurs
-    broadcastRoomState(room, "customizationUpdate");
+    emitRoom(room);
     cb && cb({ ok: true });
   });
   
