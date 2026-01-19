@@ -111,6 +111,17 @@
         currentCustomization = { ...currentCustomization, ...parsed };
         log('Customization loaded:', currentCustomization);
       }
+      
+      // D11 V24: Si aucun avatar n'est défini, en assigner un aléatoire
+      if (!currentCustomization.avatarId) {
+        const defaultAvatars = AVATARS.default;
+        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
+        const randomAvatar = defaultAvatars[randomIndex];
+        currentCustomization.avatarId = randomAvatar.id;
+        currentCustomization.avatarEmoji = randomAvatar.emoji;
+        log('Assigned random avatar:', randomAvatar);
+        saveCustomization(); // Sauvegarder immédiatement
+      }
     } catch (e) {
       console.error('[D9-Avatars] Failed to load customization:', e);
     }
