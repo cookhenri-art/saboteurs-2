@@ -74,7 +74,8 @@ function ensurePlayerStats(name) {
       aiAgentLinks: 0,         // Nombre de liens créés
       matchHistory: [],         // Historique des dernières 20 parties
       shortestGame: null,      // V24: Partie la plus courte (ms)
-      longestGame: null        // V24: Partie la plus longue (ms)
+      longestGame: null,       // V24: Partie la plus longue (ms)
+      firstEliminated: 0       // V26: Nombre de fois éliminé en premier
     };
   }
   return statsDb[name];
@@ -1020,7 +1021,8 @@ function buildEndReport(room, winner) {
       chameleonSwaps: s.chameleonSwaps,
       securityRevengeShots: s.securityRevengeShots,
       shortestGame: s.shortestGame,
-      longestGame: s.longestGame
+      longestGame: s.longestGame,
+      firstEliminated: s.firstEliminated || 0
     };
   }
 
@@ -1042,11 +1044,13 @@ for (const [name, s] of Object.entries(statsByName)) {
 
 
 // V24: Stats pour Pie Chart - répartition des morts par source
+// V26: Stats pour Pie Chart - répartition des morts par source (détaillé)
 const deathBySource = {
   vote: 0,
   saboteurs: 0,
   doctor: 0,
-  security: 0,
+  revenge: 0,
+  linked: 0,
   other: 0
 };
 for (const e of room.matchLog) {
@@ -1058,8 +1062,10 @@ for (const e of room.matchLog) {
     deathBySource.saboteurs++;
   } else if (src === "doctor") {
     deathBySource.doctor++;
-  } else if (src === "security" || src === "revenge") {
-    deathBySource.security++;
+  } else if (src === "revenge" || src === "security") {
+    deathBySource.revenge++;
+  } else if (src === "linked" || src === "lover_suicide") {
+    deathBySource.linked++;
   } else {
     deathBySource.other++;
   }
@@ -1075,12 +1081,26 @@ function endGame(room, winner) {
   room.ended = true;
   room.endTime = Date.now(); // V24: Pour calcul durée partie
 
+  // V26: Trouver le premier éliminé
+  let firstDeadId = null;
+  for (const e of room.matchLog) {
+    if (e.type === "player_died" && e.playerId) {
+      firstDeadId = e.playerId;
+      break;
+    }
+  }
+
   // persist stats per name FIRST (so the end report reflects the updated totals)
   for (const p of room.players.values()) {
     if (p.status === "left") continue;
 
     const st = ensurePlayerStats(p.name);
     st.gamesPlayed += 1;
+    
+    // V26: Incrémenter si premier éliminé
+    if (p.playerId === firstDeadId) {
+      st.firstEliminated = (st.firstEliminated || 0) + 1;
+    }
 
     const role = p.role || "unknown";
     st.gamesByRole[role] = (st.gamesByRole[role] || 0) + 1;
