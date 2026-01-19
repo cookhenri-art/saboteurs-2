@@ -167,25 +167,38 @@
     const avatars = AVATARS[theme] || AVATARS.default;
     const avatar = avatars.find(a => a.id === currentCustomization.avatarId);
     
-    // D11 V4: Si l'avatar est trouvé, le retourner
+    // D11 V21: Si l'avatar est trouvé dans ce thème, le retourner
     if (avatar) {
       return avatar;
     }
     
-    // D11 V4: Si l'emoji est stocké mais l'avatar pas trouvé (changement de thème), 
-    // retourner un objet avec l'emoji stocké
-    if (currentCustomization.avatarEmoji) {
-      return { 
-        id: currentCustomization.avatarId || 'custom', 
-        emoji: currentCustomization.avatarEmoji,
-        name: 'Custom'
-      };
+    // D11 V21 Option C: Avatar non trouvé = changement de thème
+    // Chercher l'index de l'avatar dans son thème d'origine
+    if (currentCustomization.avatarId) {
+      let originalIndex = -1;
+      
+      // Chercher dans tous les thèmes pour trouver l'index original
+      for (const themeKey of Object.keys(AVATARS)) {
+        const themeAvatars = AVATARS[themeKey];
+        const idx = themeAvatars.findIndex(a => a.id === currentCustomization.avatarId);
+        if (idx !== -1) {
+          originalIndex = idx;
+          log('Found avatar', currentCustomization.avatarId, 'at index', idx, 'in theme', themeKey);
+          break;
+        }
+      }
+      
+      // Si on a trouvé l'index, utiliser la même position dans le nouveau thème
+      if (originalIndex !== -1 && originalIndex < avatars.length) {
+        const mappedAvatar = avatars[originalIndex];
+        log('Mapping to position', originalIndex, 'in theme', theme, ':', mappedAvatar.emoji);
+        return mappedAvatar;
+      }
     }
     
-    // Sinon retourner le premier avatar du thème
+    // Fallback: retourner le premier avatar du thème
     return avatars[0];
   }
-
   /**
    * Crée le sélecteur d'avatars
    * @param {string} theme - Thème actuel
