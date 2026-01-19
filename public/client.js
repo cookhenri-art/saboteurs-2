@@ -1359,18 +1359,20 @@ function renderEnd() {
     const gameDurationHtml = formatDuration(rep.gameDuration);
     
     // V25: Pie Chart data
-    const deathBySource = rep.deathBySource || { vote: 0, saboteurs: 0, doctor: 0, security: 0, other: 0 };
+    const deathBySource = rep.deathBySource || { vote: 0, saboteurs: 0, doctor: 0, revenge: 0, linked: 0, other: 0 };
     const totalDeaths = Object.values(deathBySource).reduce((a, b) => a + b, 0);
     
     // V25: Générer le Pie Chart SVG
     const pieChartHtml = (() => {
       if (totalDeaths === 0) return '<div style="opacity:0.7;">Aucune élimination</div>';
       
+      // V26: Couleurs et labels mis à jour
       const colors = {
         vote: '#00ffff',
         saboteurs: '#ff4444',
         doctor: '#44ff44',
-        security: '#ffaa00',
+        revenge: '#ffaa00',
+        linked: '#ff66ff',
         other: '#888888'
       };
       
@@ -1378,7 +1380,8 @@ function renderEnd() {
         vote: 'Vote',
         saboteurs: t('saboteurs'),
         doctor: tRole('doctor') || 'Docteur',
-        security: tRole('security') || 'Sécurité',
+        revenge: 'Vengeance',
+        linked: 'Liaison',
         other: 'Autre'
       };
       
@@ -1436,6 +1439,9 @@ function renderEnd() {
       let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
+      // V26: Calcul du taux de première élimination
+      const firstElimPct = s.gamesPlayed > 0 ? Math.round(((s.firstEliminated || 0) / s.gamesPlayed) * 100) : 0;
+      
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
           <div style="font-weight:900; display:flex; align-items:center;">
@@ -1443,6 +1449,7 @@ function renderEnd() {
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
+          <div style="opacity:.8; font-size:0.9rem;">🎯 1ère élim: <b>${s.firstEliminated || 0}</b> fois (${firstElimPct}%)</div>
         </div>
       </div>`;
     }).join("");
