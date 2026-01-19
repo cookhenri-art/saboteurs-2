@@ -1651,6 +1651,17 @@ function publicRoomStateFor(room, viewerId) {
 // ----------------- socket server -----------------
 const app = express();
 
+// CORS pour l'app mobile Capacitor
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 // D6: Configuration de cache pour les assets statiques
 // Fonction middleware pour définir les headers de cache selon le type de fichier
 const cacheMiddleware = (req, res, next) => {
@@ -2628,3 +2639,4 @@ server.listen(PORT, () => {
   console.log(`Infiltration Spatiale server listening on :${PORT}`);
   console.log("[audio] mapped:", AUDIO);
 });
+
