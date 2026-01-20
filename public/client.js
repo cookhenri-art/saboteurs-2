@@ -1662,13 +1662,6 @@ class AudioManager {
     this.userUnlocked = false;
     this.muted = sessionStorage.getItem("is_muted") === "1";
 
-    // Web Audio API pour le boost de volume
-    this.audioContext = null;
-    this.gainNode = null;
-    this.videoBoostActive = false;
-    this.videoBoostMultiplier = 4.0; // Multiplicateur quand visio active (ajustable)
-    this.connectedSources = new Map(); // Track connected MediaElementSource
-
     this.updateButton();
 
     // Autoplay restrictions: browsers may block audio. We re-unlock on ANY user gesture,
@@ -1676,114 +1669,6 @@ class AudioManager {
     const unlockAny = () => this.unlock();
     window.addEventListener("pointerdown", unlockAny, { passive: true });
     window.addEventListener("keydown", unlockAny);
-  }
-
-  /**
-   * Initialise le Web Audio API pour le contrôle du gain
-   */
-  initAudioContext() {
-    if (this.audioContext) return;
-    
-    try {
-      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      this.gainNode = this.audioContext.createGain();
-      this.gainNode.connect(this.audioContext.destination);
-      this.gainNode.gain.value = 1.0;
-      console.log("[audio] Web Audio API initialized for volume boost");
-    } catch (e) {
-      console.error("[audio] Failed to init Web Audio API:", e);
-    }
-  }
-
-  /**
-   * Connecte un élément Audio au GainNode pour contrôle du volume
-   */
-  connectToGain(audioElement) {
-    if (!this.audioContext || !this.gainNode || !audioElement) return;
-    
-    // Éviter de reconnecter un élément déjà connecté
-    if (this.connectedSources.has(audioElement)) return;
-    
-    try {
-      // Résumer le contexte si suspendu
-      if (this.audioContext.state === 'suspended') {
-        this.audioContext.resume();
-      }
-      
-      const source = this.audioContext.createMediaElementSource(audioElement);
-      source.connect(this.gainNode);
-      this.connectedSources.set(audioElement, source);
-      console.log("[audio] Audio element connected to gain node");
-    } catch (e) {
-      // Si l'élément est déjà connecté à un autre contexte, ignorer
-      console.log("[audio] Could not connect to gain (may already be connected):", e.message);
-    }
-  }
-
-  /**
-   * Active le boost de volume (appelé quand la visio s'active)
-   * UNIQUEMENT sur mobile (Android/iOS) où le volume "appel" prend le dessus
-   */
-  activateVideoBoost() {
-    // Vérifier si on est sur mobile
-    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (!isMobile) {
-      console.log("[audio] Video boost skipped (not mobile)");
-      return;
-    }
-    
-    if (this.videoBoostActive) return;
-    
-    this.videoBoostActive = true;
-    this.initAudioContext();
-    
-    if (this.gainNode) {
-      this.gainNode.gain.setValueAtTime(this.videoBoostMultiplier, this.audioContext.currentTime);
-      console.log(`[audio] 🔊 Video boost ACTIVATED (x${this.videoBoostMultiplier})`);
-      
-      // Forcer la reconnexion des sons en cours en les recréant
-      if (this.audio && !this.audio.paused && this.lastCue) {
-        console.log("[audio] Restarting current audio with boost...");
-        const currentTime = this.audio.currentTime;
-        const src = this.audio.src;
-        this.audio.pause();
-        
-        // Recréer l'audio connecté au GainNode
-        const newAudio = this._createAudio(src);
-        if (newAudio) {
-          this.audio = newAudio;
-          newAudio.currentTime = currentTime;
-          newAudio.play().catch(() => {});
-        }
-      }
-    } else {
-      console.log("[audio] ⚠️ GainNode not available for boost");
-    }
-  }
-
-  /**
-   * Désactive le boost de volume (appelé quand la visio se désactive)
-   */
-  deactivateVideoBoost() {
-    if (!this.videoBoostActive) return;
-    
-    this.videoBoostActive = false;
-    
-    if (this.gainNode && this.audioContext) {
-      this.gainNode.gain.setValueAtTime(1.0, this.audioContext.currentTime);
-      console.log("[audio] 🔉 Video boost DEACTIVATED (x1.0)");
-    }
-  }
-
-  /**
-   * Définit le multiplicateur de boost (pour ajustement fin)
-   */
-  setBoostMultiplier(value) {
-    this.videoBoostMultiplier = Math.max(1.0, Math.min(5.0, value)); // Entre 1x et 5x
-    if (this.videoBoostActive && this.gainNode) {
-      this.gainNode.gain.setValueAtTime(this.videoBoostMultiplier, this.audioContext.currentTime);
-    }
-    console.log(`[audio] Boost multiplier set to x${this.videoBoostMultiplier}`);
   }
 
   resolveAudioUrl(urlOrFilename) {
@@ -1804,17 +1689,6 @@ class AudioManager {
     a.preload = "auto";
     a.loop = !!loop;
     a.volume = 1.0;
-    
-    // Toujours connecter au GainNode pour le contrôle du volume
-    // Attendre que l'audio soit prêt avant de connecter
-    a.addEventListener("canplay", () => {
-      // Initialiser le contexte si pas encore fait
-      if (!this.audioContext) {
-        this.initAudioContext();
-      }
-      this.connectToGain(a);
-    }, { once: true });
-    
     // Some browsers start at a non-zero position on first load; force a reset once metadata is ready.
     a.addEventListener("loadedmetadata", () => {
       try { a.currentTime = 0; } catch {}
@@ -1880,10 +1754,6 @@ class AudioManager {
   unlock() {
     console.log("[audio] unlock() called, userUnlocked:", this.userUnlocked, "pendingCue:", !!this.pendingCue);
     this.userUnlocked = true;
-    
-    // Initialiser le Web Audio API au premier unlock (geste utilisateur requis)
-    this.initAudioContext();
-    
     // Cacher l'overlay audio si visible
     const overlay = document.getElementById('audioUnlockOverlay');
     if (overlay) overlay.style.display = 'none';
@@ -2008,7 +1878,6 @@ class AudioManager {
   }
 }
 const audioManager = new AudioManager();
-window.audioManager = audioManager; // Exposer globalement pour le boost vidéo
 
 // UI mute button
 const soundBtn = $("soundBtn");
