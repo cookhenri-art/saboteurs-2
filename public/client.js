@@ -869,29 +869,11 @@ const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.i
 
 renderEjectedPanel();
 
+// Log masqué pour tout le monde (anciennement visible uniquement pour l'hôte)
 const logEl = $("log");
 if (logEl) {
-  if (isHost) {
-    logEl.style.display = "block";
-    logEl.innerHTML = "";
-    for (const l of (state.logs || [])) {
-      const div = document.createElement("div");
-      div.className = "log-line";
-      div.textContent = l.text;
-      logEl.appendChild(div);
-    }
-    for (const l of (state.privateLines || [])) {
-      const div = document.createElement("div");
-      div.className = "log-line private";
-      div.textContent = l.text;
-      logEl.appendChild(div);
-    }
-    logEl.scrollTop = logEl.scrollHeight;
-  } else {
-    // Joueurs : on masque le tableau/log pour réduire la charge visuelle.
-    logEl.style.display = "none";
-    logEl.innerHTML = "";
-  }
+  logEl.style.display = "none";
+  logEl.innerHTML = "";
 }
 
 
@@ -2724,76 +2706,28 @@ function renderVideoOptions(isHost) {
   }
 }
 
-// --- MODE HÔTE : FORCER LA SUITE ---
+// --- MODE HÔTE : FORCER LA SUITE (DÉSACTIVÉ) ---
 
 let phaseTimerInterval = null;
 
 function updateHostControls() {
+  // Panneau hostControls désactivé
   const hostControls = $("hostControls");
-  if (!hostControls) return;
-  
-  const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.isHost;
-  const inGame = state.started && !state.ended;
-  
-  if (!isHost || !inGame) {
+  if (hostControls) {
     hostControls.style.display = "none";
-    if (phaseTimerInterval) {
-      clearInterval(phaseTimerInterval);
-      phaseTimerInterval = null;
-    }
-    return;
   }
-  
-  hostControls.style.display = "block";
-  
-  // Démarrer le timer de phase
-  if (!phaseTimerInterval) {
-    phaseTimerInterval = setInterval(updatePhaseTimer, 1000);
+  if (phaseTimerInterval) {
+    clearInterval(phaseTimerInterval);
+    phaseTimerInterval = null;
   }
-  
-  updatePhaseTimer();
-  updatePendingPlayers();
 }
 
 function updatePhaseTimer() {
-  const elapsed = $("phaseElapsed");
-  if (!elapsed || !state.phaseStartTime) return;
-  
-  const elapsedSeconds = Math.floor((Date.now() - state.phaseStartTime) / 1000);
-  elapsed.textContent = `${elapsedSeconds}s`;
-  
-  // Activer le bouton après 20s
-  const forceBtn = $("forceAdvanceBtn");
-  if (forceBtn) {
-    if (elapsedSeconds >= 20) {
-      forceBtn.disabled = false;
-      forceBtn.style.opacity = "1";
-      forceBtn.style.cursor = "pointer";
-    } else {
-      forceBtn.disabled = true;
-      forceBtn.style.opacity = "0.5";
-      forceBtn.style.cursor = "not-allowed";
-    }
-  }
+  // Désactivé
 }
 
 function updatePendingPlayers() {
-  const pending = $("pendingPlayers");
-  if (!pending) return;
-  
-  const ack = state.ack || { done: 0, total: 0, pending: [] };
-  
-  if (ack.pending && ack.pending.length > 0) {
-    const names = ack.pending.map(pid => {
-      const p = state.players?.find(pl => pl.playerId === pid);
-      return p ? p.name : "?";
-    }).join(", ");
-    pending.textContent = `⏳ En attente de : ${names}`;
-    pending.style.display = "block";
-  } else {
-    pending.textContent = "";
-    pending.style.display = "none";
-  }
+  // Désactivé
 }
 
 // Bouton forcer la suite
