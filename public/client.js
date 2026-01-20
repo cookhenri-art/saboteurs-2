@@ -1730,6 +1730,14 @@ class AudioManager {
     this.videoBoostActive = true;
     
     if (this.gainNode) {
+      // Connecter les éléments audio déjà en cours de lecture
+      if (this.audio) {
+        this.connectToGain(this.audio);
+      }
+      if (this.loopAudio) {
+        this.connectToGain(this.loopAudio);
+      }
+      
       this.gainNode.gain.setValueAtTime(this.videoBoostMultiplier, this.audioContext.currentTime);
       console.log(`[audio] 🔊 Video boost ACTIVATED (x${this.videoBoostMultiplier})`);
     }
@@ -1779,13 +1787,15 @@ class AudioManager {
     a.loop = !!loop;
     a.volume = 1.0;
     
-    // Connecter au GainNode si le boost est actif ou initialisé
-    if (this.audioContext && this.gainNode) {
-      // Attendre que l'audio soit prêt avant de connecter
-      a.addEventListener("canplay", () => {
-        this.connectToGain(a);
-      }, { once: true });
-    }
+    // Toujours connecter au GainNode pour le contrôle du volume
+    // Attendre que l'audio soit prêt avant de connecter
+    a.addEventListener("canplay", () => {
+      // Initialiser le contexte si pas encore fait
+      if (!this.audioContext) {
+        this.initAudioContext();
+      }
+      this.connectToGain(a);
+    }, { once: true });
     
     // Some browsers start at a non-zero position on first load; force a reset once metadata is ready.
     a.addEventListener("loadedmetadata", () => {
@@ -1852,6 +1862,10 @@ class AudioManager {
   unlock() {
     console.log("[audio] unlock() called, userUnlocked:", this.userUnlocked, "pendingCue:", !!this.pendingCue);
     this.userUnlocked = true;
+    
+    // Initialiser le Web Audio API au premier unlock (geste utilisateur requis)
+    this.initAudioContext();
+    
     // Cacher l'overlay audio si visible
     const overlay = document.getElementById('audioUnlockOverlay');
     if (overlay) overlay.style.display = 'none';
