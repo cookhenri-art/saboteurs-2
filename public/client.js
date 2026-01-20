@@ -1734,20 +1734,30 @@ class AudioManager {
     
     if (this.videoBoostActive) return;
     
-    this.initAudioContext();
     this.videoBoostActive = true;
+    this.initAudioContext();
     
     if (this.gainNode) {
-      // Connecter les éléments audio déjà en cours de lecture
-      if (this.audio) {
-        this.connectToGain(this.audio);
-      }
-      if (this.loopAudio) {
-        this.connectToGain(this.loopAudio);
-      }
-      
       this.gainNode.gain.setValueAtTime(this.videoBoostMultiplier, this.audioContext.currentTime);
       console.log(`[audio] 🔊 Video boost ACTIVATED (x${this.videoBoostMultiplier})`);
+      
+      // Forcer la reconnexion des sons en cours en les recréant
+      if (this.audio && !this.audio.paused && this.lastCue) {
+        console.log("[audio] Restarting current audio with boost...");
+        const currentTime = this.audio.currentTime;
+        const src = this.audio.src;
+        this.audio.pause();
+        
+        // Recréer l'audio connecté au GainNode
+        const newAudio = this._createAudio(src);
+        if (newAudio) {
+          this.audio = newAudio;
+          newAudio.currentTime = currentTime;
+          newAudio.play().catch(() => {});
+        }
+      }
+    } else {
+      console.log("[audio] ⚠️ GainNode not available for boost");
     }
   }
 
