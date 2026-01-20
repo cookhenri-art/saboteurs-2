@@ -1722,8 +1722,16 @@ class AudioManager {
 
   /**
    * Active le boost de volume (appelé quand la visio s'active)
+   * UNIQUEMENT sur mobile (Android/iOS) où le volume "appel" prend le dessus
    */
   activateVideoBoost() {
+    // Vérifier si on est sur mobile
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (!isMobile) {
+      console.log("[audio] Video boost skipped (not mobile)");
+      return;
+    }
+    
     if (this.videoBoostActive) return;
     
     this.initAudioContext();
