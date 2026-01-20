@@ -147,6 +147,11 @@ function joinVideoRoomNow(state) {
       isInitializingVideo = false;
       console.log('[Video] ✅ Successfully joined room');
       showVideoStatus('✅ Visio activée', 'success');
+      
+      // Activer le boost audio pour compenser le volume "appel" sur mobile
+      if (window.audioManager && window.audioManager.activateVideoBoost) {
+        window.audioManager.activateVideoBoost();
+      }
     })
     .catch(err => {
       console.error('[Video] ❌ Join error:', err);
@@ -494,6 +499,11 @@ function leaveVideoRoom() {
   videoRoomJoined = false;
   videoRoomUrl = null;
   showVideoStatus('📹 Visio terminée', 'info');
+  
+  // Désactiver le boost audio
+  if (window.audioManager && window.audioManager.deactivateVideoBoost) {
+    window.audioManager.deactivateVideoBoost();
+  }
 }
 
 /**

@@ -1662,6 +1662,13 @@ class AudioManager {
     this.userUnlocked = false;
     this.muted = sessionStorage.getItem("is_muted") === "1";
 
+    // Web Audio API pour le boost de volume
+    this.audioContext = null;
+    this.gainNode = null;
+    this.videoBoostActive = false;
+    this.videoBoostMultiplier = 2.5; // Multiplicateur quand visio active (ajustable)
+    this.connectedSources = new Map(); // Track connected MediaElementSource
+
     this.updateButton();
 
     // Autoplay restrictions: browsers may block audio. We re-unlock on ANY user gesture,
@@ -1669,6 +1676,88 @@ class AudioManager {
     const unlockAny = () => this.unlock();
     window.addEventListener("pointerdown", unlockAny, { passive: true });
     window.addEventListener("keydown", unlockAny);
+  }
+
+  /**
+   * Initialise le Web Audio API pour le contrôle du gain
+   */
+  initAudioContext() {
+    if (this.audioContext) return;
+    
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      this.gainNode = this.audioContext.createGain();
+      this.gainNode.connect(this.audioContext.destination);
+      this.gainNode.gain.value = 1.0;
+      console.log("[audio] Web Audio API initialized for volume boost");
+    } catch (e) {
+      console.error("[audio] Failed to init Web Audio API:", e);
+    }
+  }
+
+  /**
+   * Connecte un élément Audio au GainNode pour contrôle du volume
+   */
+  connectToGain(audioElement) {
+    if (!this.audioContext || !this.gainNode || !audioElement) return;
+    
+    // Éviter de reconnecter un élément déjà connecté
+    if (this.connectedSources.has(audioElement)) return;
+    
+    try {
+      // Résumer le contexte si suspendu
+      if (this.audioContext.state === 'suspended') {
+        this.audioContext.resume();
+      }
+      
+      const source = this.audioContext.createMediaElementSource(audioElement);
+      source.connect(this.gainNode);
+      this.connectedSources.set(audioElement, source);
+      console.log("[audio] Audio element connected to gain node");
+    } catch (e) {
+      // Si l'élément est déjà connecté à un autre contexte, ignorer
+      console.log("[audio] Could not connect to gain (may already be connected):", e.message);
+    }
+  }
+
+  /**
+   * Active le boost de volume (appelé quand la visio s'active)
+   */
+  activateVideoBoost() {
+    if (this.videoBoostActive) return;
+    
+    this.initAudioContext();
+    this.videoBoostActive = true;
+    
+    if (this.gainNode) {
+      this.gainNode.gain.setValueAtTime(this.videoBoostMultiplier, this.audioContext.currentTime);
+      console.log(`[audio] 🔊 Video boost ACTIVATED (x${this.videoBoostMultiplier})`);
+    }
+  }
+
+  /**
+   * Désactive le boost de volume (appelé quand la visio se désactive)
+   */
+  deactivateVideoBoost() {
+    if (!this.videoBoostActive) return;
+    
+    this.videoBoostActive = false;
+    
+    if (this.gainNode && this.audioContext) {
+      this.gainNode.gain.setValueAtTime(1.0, this.audioContext.currentTime);
+      console.log("[audio] 🔉 Video boost DEACTIVATED (x1.0)");
+    }
+  }
+
+  /**
+   * Définit le multiplicateur de boost (pour ajustement fin)
+   */
+  setBoostMultiplier(value) {
+    this.videoBoostMultiplier = Math.max(1.0, Math.min(5.0, value)); // Entre 1x et 5x
+    if (this.videoBoostActive && this.gainNode) {
+      this.gainNode.gain.setValueAtTime(this.videoBoostMultiplier, this.audioContext.currentTime);
+    }
+    console.log(`[audio] Boost multiplier set to x${this.videoBoostMultiplier}`);
   }
 
   resolveAudioUrl(urlOrFilename) {
@@ -1689,6 +1778,15 @@ class AudioManager {
     a.preload = "auto";
     a.loop = !!loop;
     a.volume = 1.0;
+    
+    // Connecter au GainNode si le boost est actif ou initialisé
+    if (this.audioContext && this.gainNode) {
+      // Attendre que l'audio soit prêt avant de connecter
+      a.addEventListener("canplay", () => {
+        this.connectToGain(a);
+      }, { once: true });
+    }
+    
     // Some browsers start at a non-zero position on first load; force a reset once metadata is ready.
     a.addEventListener("loadedmetadata", () => {
       try { a.currentTime = 0; } catch {}
@@ -1878,6 +1976,7 @@ class AudioManager {
   }
 }
 const audioManager = new AudioManager();
+window.audioManager = audioManager; // Exposer globalement pour le boost vidéo
 
 // UI mute button
 const soundBtn = $("soundBtn");
