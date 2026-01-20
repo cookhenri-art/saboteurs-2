@@ -1666,7 +1666,7 @@ class AudioManager {
     this.audioContext = null;
     this.gainNode = null;
     this.videoBoostActive = false;
-    this.videoBoostMultiplier = 2.5; // Multiplicateur quand visio active (ajustable)
+    this.videoBoostMultiplier = 4.0; // Multiplicateur quand visio active (ajustable)
     this.connectedSources = new Map(); // Track connected MediaElementSource
 
     this.updateButton();
