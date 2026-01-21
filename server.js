@@ -663,8 +663,8 @@ function buildDeathsText(room, newlyDeadIds) {
   }).filter(Boolean);
   if (!items.length) return null;
 
-  if (items.length === 1) return `Le joueur ${items[0]} a été éjecté.`;
-  return `Les joueurs ${items.join(", ")} ont été éjectés.`;
+  if (items.length === 1) return `Le joueur ${items[0]} a été éliminé.`;
+  return `Les joueurs ${items.join(", ")} ont été éliminés.`;
 }
 
 function killPlayer(room, playerId, source, extra = {}) {
@@ -800,9 +800,9 @@ function buildEndReport(room, winner) {
       const label = nameRole(e.targetId, tRole);
       if (label) saves.push(label);
     }
-    if (!saves.length) return { title: "Meilleur Docteur House", text: "Aucun sauvetage." };
+    if (!saves.length) return { title: "Meilleur Docteur", text: "Aucun sauvetage." };
     const uniqSaves = Array.from(new Set(saves));
-    return { title: "Meilleur Docteur House", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
+    return { title: "Meilleur Docteur", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
   };
 
   const awardBoucher = () => {
@@ -811,12 +811,18 @@ function buildEndReport(room, winner) {
     const astronautsTerm = getTerm('astronauts', room);
     const doctorRoleLabel = getRoleLabel('doctor', room);
     
-    if (room.doctorLifeUsed) return { title: `Boucher de la ${stationTerm}`, text: "Aucun (potion de vie utilisée)." };
+    // V27: Simplifier le nom de l'école et corriger l'article
+    const shortStation = stationTerm.replace(/ de sorcellerie/gi, '').replace(/ spatiale/gi, '');
+    const startsWithVowel = /^[aeiouéèêëàâäùûüîïôöAEIOUÉÈÊËÀÂÄÙÛÜÎÏÔÖ]/.test(shortStation);
+    const article = startsWithVowel ? "de l'" : "de la ";
+    const boucherTitle = `Boucher ${article}${shortStation}`;
+    
+    if (room.doctorLifeUsed) return { title: boucherTitle, text: "Aucun (potion de vie utilisée)." };
 
     const doctorIds = getDoctorActorIds();
     const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || doctorRoleLabel) : doctorRoleLabel;
 
-    // Astronauts wrongly ejected by doctor potion of death
+    // Astronauts wrongly eliminated by doctor potion of death
     const wrong = [];
     for (const e of room.matchLog) {
       if (e.type !== "doctor_kill") continue;
@@ -837,12 +843,12 @@ function buildEndReport(room, winner) {
       if (label) unsaved.push(label);
     }
 
-    if (!wrong.length && !unsaved.length) return { title: `Boucher de la ${stationTerm}`, text: "Aucun." };
+    if (!wrong.length && !unsaved.length) return { title: boucherTitle, text: "Aucun." };
 
     const parts = [];
-    if (wrong.length) parts.push(`Éjections d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
+    if (wrong.length) parts.push(`Éliminations d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
     if (unsaved.length) parts.push(`Non sauvés : ${Array.from(new Set(unsaved)).join(", ")}`);
-    return { title: `Boucher de la ${stationTerm}`, text: `${doctorName} — ${parts.join(" • ")}` };
+    return { title: boucherTitle, text: `${doctorName} — ${parts.join(" • ")}` };
   };
 
   const awardOeilDeLynx = () => {
@@ -868,8 +874,8 @@ function buildEndReport(room, winner) {
       if (label) found.push(label);
     }
     const uniqFound = Array.from(new Set(found));
-    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éjecté.` };
-    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
+    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éliminé.` };
+    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éliminé(s) : ${uniqFound.join(", ")}` };
   };
 
   const awardLupin = () => {
@@ -988,12 +994,18 @@ function buildEndReport(room, winner) {
   const astronautsTerm = getTerm('astronauts', room);
   const stationTerm = getTerm('station', room);
   
+  // V27: Simplifier le nom de l'école et corriger l'article pour les awards
+  const shortStation = stationTerm.replace(/ de sorcellerie/gi, '').replace(/ spatiale/gi, '');
+  const startsWithVowel = /^[aeiouéèêëàâäùûüîïôöAEIOUÉÈÊËÀÂÄÙÛÜÎÏÔÖ]/.test(shortStation);
+  const articleStation = startsWithVowel ? "de l'" : "de la ";
+  const shortStationCapital = shortStation.charAt(0).toUpperCase() + shortStation.slice(1);
+  
   const awards = [
     awardDoctorHouse(),
     awardBoucher(),
     awardOeilDeLynx(),
     awardLupin(),
-    awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
+    awardSecurity("saboteurs", `Vengeur masqué ${articleStation}${shortStationCapital}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
     awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`),
     awardAssociation(),
     awardSaboteurIncognito(),
@@ -1507,7 +1519,7 @@ function formatLogLine(room, e) {
     case "phase": return { kind: "info", text: `[${t}] ➜ ${getPhaseName(e.phase, room)}` };
     case "roles_assigned": return { kind: "info", text: `[${t}] Rôles attribués.` };
     case "captain_elected": return { kind: "info", text: `[${t}] ⭐ ${captainTerm}: ${name(e.playerId)}` };
-    case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éjecté.` };
+    case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éliminé.` };
     case "player_left": return { kind: "warn", text: `[${t}] 🚪 ${name(e.playerId)} peut revenir (30s).` };
     case "player_removed": return { kind: "warn", text: `[${t}] ⛔ ${name(e.playerId)} est sorti.` };
     case "reconnected": return { kind: "info", text: `[${t}] ✅ ${name(e.playerId)} est revenu.` };
@@ -2493,7 +2505,7 @@ io.on("connection", (socket) => {
         st.doctorSaves += 1;
         saveStats(statsDb);
       } else if (action === "kill") {
-        if (room.doctorDeathUsed) return cb && cb({ ok:false, error:"Potion de mort déjà utilisée." });
+        if (room.doctorDeathUsed) return cb && cb({ ok:false, error:"Potion fatale déjà utilisée." });
         if (!targetId) return cb && cb({ ok:false, error:"Cible manquante." });
         const tP = room.players.get(targetId);
         if (!tP || tP.status !== "alive") return cb && cb({ ok:false, error:"Cible invalide." });
