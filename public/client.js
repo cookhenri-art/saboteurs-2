@@ -351,7 +351,7 @@ function renderEjectedPanel() {
   }
   el.style.display = "block";
   el.innerHTML =
-    `<div style="font-weight:900; margin-bottom:8px;">🚀 ÉLIMINÉS</div>` +
+    `<div style="font-weight:900; margin-bottom:8px;">💀 ÉLIMINÉS</div>` +
     `<div style="display:flex; flex-wrap:wrap; gap:8px;">` +
     ejected.map(p => `<div style="padding:8px 10px; border-radius:999px; border:1px solid rgba(255,0,102,0.45); background:rgba(255,0,102,0.12); font-weight:900;">💀 ${escapeHtml(p.name)}</div>`).join("") +
     `</div>`;
