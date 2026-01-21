@@ -1339,17 +1339,17 @@ function renderEnd() {
       const avatarEmoji = p.avatarEmoji || '👤';
       const role = p.roleLabel || "";
       const statusPill = p.status === "alive" 
-        ? `<span class="pill ok">SURVIVANT</span>` 
-        : `<span class="pill bad">ÉLIMINÉ</span>`;
-      const captainPill = p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : "";
-      return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.1);">
-        <div style="display:flex; align-items:center; gap:10px;">
-          <span style="font-size:1.4rem;">${avatarEmoji}</span>
-          <span style="font-weight:900;">${escapeHtml(p.name)}</span>
+        ? `<span class="pill ok" style="font-size:0.7rem; padding:2px 6px;">SURVIVANT</span>` 
+        : `<span class="pill bad" style="font-size:0.7rem; padding:2px 6px;">ÉLIMINÉ</span>`;
+      const captainPill = p.isCaptain ? `<span class="pill ok" style="font-size:0.7rem; padding:2px 6px;">CAPITAINE</span>` : "";
+      return `<div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.1); gap:4px;">
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-width:0;">
+          <span style="font-size:1.2rem;">${avatarEmoji}</span>
+          <span style="font-weight:900; font-size:0.9rem;">${escapeHtml(p.name)}</span>
           ${captainPill}
           ${statusPill}
         </div>
-        <div style="opacity:.95; font-weight:800;">${escapeHtml(role)}</div>
+        <div style="opacity:.95; font-weight:800; font-size:0.85rem; text-align:right;">${escapeHtml(role)}</div>
       </div>`;
     }).join("");
     
@@ -1503,41 +1503,41 @@ function renderEnd() {
             <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
-          <div style="opacity:.9; margin-bottom:6px;">
+          <div style="opacity:.9; margin-bottom:6px; font-size:0.9rem;">
             Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b>
           </div>
-          <div style="opacity:.9;">
+          <div style="opacity:.9; font-size:0.9rem;">
             ⏱️ Plus courte: <b>${shortestHtml}</b> • Plus longue: <b>${longestHtml}</b>
           </div>
         </div>
         
-        <!-- Grille 2x2 pour les stats spécifiques -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
-          <!-- Colonne gauche haut: Combat -->
+        <!-- Grille responsive pour les stats spécifiques -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; font-size:0.85rem;">
+          <!-- Combat -->
           <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:6px;">🎯 Combat ${saboteursLabel.toLowerCase()}</div>
+            <div style="font-weight:900; margin-bottom:4px;">🎯 Combat</div>
             <div>• Votes corrects: <b>${correctVotes}</b></div>
           </div>
           
-          <!-- Colonne droite haut: Stats Sécurité -->
+          <!-- Stats Sécurité -->
           <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:6px;">🔫 ${securityLabel}</div>
-            <div>• ${saboteursLabel} éliminés: <b>${revengeKillsSab}</b>/${totalRevengeShots}</div>
-            <div>• ${astronautesLabel} (erreur): <b>${revengeKillsInn}</b>/${totalRevengeShots}</div>
+            <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
+            <div>• Éliminés: <b>${revengeKillsSab}</b>/${totalRevengeShots}</div>
+            <div>• Erreurs: <b>${revengeKillsInn}</b>/${totalRevengeShots}</div>
           </div>
           
-          <!-- Colonne gauche bas: Stats Docteur -->
+          <!-- Stats Docteur -->
           <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:6px;">💊 ${doctorLabel}</div>
-            <div>• Fatale ${saboteursLabel.toLowerCase()}: <b>${doctorKillsSab}</b>/${totalDoctorKills}</div>
-            <div>• Fatale ${astronautesLabel.toLowerCase()}: <b>${doctorKillsInn}</b>/${totalDoctorKills}</div>
-            <div>• Vie utilisée: <b>${doctorSaves}</b>/${doctorGames}</div>
+            <div style="font-weight:900; margin-bottom:4px;">💊 ${doctorLabel}</div>
+            <div>• Fatale ok: <b>${doctorKillsSab}</b>/${totalDoctorKills}</div>
+            <div>• Fatale err: <b>${doctorKillsInn}</b>/${totalDoctorKills}</div>
+            <div>• Vie: <b>${doctorSaves}</b>/${doctorGames}</div>
             <div>• Non sauvés: <b>${doctorMissed}</b></div>
           </div>
           
-          <!-- Colonne droite bas: Stats par rôle -->
+          <!-- Stats par rôle -->
           <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:6px;">📈 Stats par rôle</div>
+            <div style="font-weight:900; margin-bottom:4px;">📈 Rôles</div>
             ${roles || "<div>—</div>"}
           </div>
         </div>
