@@ -69,14 +69,24 @@ function ensurePlayerStats(name) {
       chameleonSwaps: 0, securityRevengeShots: 0,
       // Nouvelles stats avancées (Phase 2)
       ejectedBySaboteurs: 0,  // Tué la nuit par saboteurs
-      ejectedByVote: 0,        // Éjecté par vote du jour
+      ejectedByVote: 0,        // Éliminé par vote du jour
       captainElected: 0,       // Nombre de fois élu capitaine
       aiAgentLinks: 0,         // Nombre de liens créés
       matchHistory: [],         // Historique des dernières 20 parties
       shortestGame: null,      // V24: Partie la plus courte (ms)
       longestGame: null,       // V24: Partie la plus longue (ms)
-      firstEliminated: 0       // V26: Nombre de fois éliminé en premier
+      firstEliminated: 0,      // V26: Nombre de fois éliminé en premier
+      // V27: Nouvelles stats Phase 2
+      correctSaboteurVotes: 0, // Votes corrects contre saboteurs (éliminés par vote)
+      revengeKillsOnSaboteurs: 0 // Saboteurs éliminés par vengeance
     };
+  }
+  // V27: Migration pour les anciens profils
+  if (statsDb[name].correctSaboteurVotes === undefined) {
+    statsDb[name].correctSaboteurVotes = 0;
+  }
+  if (statsDb[name].revengeKillsOnSaboteurs === undefined) {
+    statsDb[name].revengeKillsOnSaboteurs = 0;
   }
   return statsDb[name];
 }
@@ -1034,7 +1044,10 @@ function buildEndReport(room, winner) {
       securityRevengeShots: s.securityRevengeShots,
       shortestGame: s.shortestGame,
       longestGame: s.longestGame,
-      firstEliminated: s.firstEliminated || 0
+      firstEliminated: s.firstEliminated || 0,
+      // V27: Nouvelles stats Phase 2
+      correctSaboteurVotes: s.correctSaboteurVotes || 0,
+      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0
     };
   }
 
@@ -1463,6 +1476,25 @@ function finishDayVote(room) {
 function executeEjection(room, ejectedId, reason) {
   const p = room.players.get(ejectedId);
   if (!p || p.status !== "alive") return;
+
+  // V27: Tracker les votes corrects contre saboteurs AVANT l'élimination
+  const ejectedRole = p.role;
+  const ejectedTeam = ROLES[ejectedRole]?.team || "astronauts";
+  if (ejectedTeam === "saboteurs" && reason === "vote") {
+    // Trouver qui a voté pour ce saboteur
+    const votes = room.phaseData?.votes || {};
+    for (const [voterId, targetId] of Object.entries(votes)) {
+      if (targetId === ejectedId) {
+        const voter = room.players.get(voterId);
+        if (voter && voter.name) {
+          const st = ensurePlayerStats(voter.name);
+          st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
+          console.log(`[${room.code}] V27: ${voter.name} voted correctly against saboteur ${p.name}`);
+        }
+      }
+    }
+    saveStats(statsDb);
+  }
 
   const newlyDead = [];
   if (killPlayer(room, ejectedId, "day", { reason })) newlyDead.push(ejectedId);
@@ -2582,6 +2614,13 @@ if (phase === "REVENGE") {
   logEvent(room, "revenge_shot", { by: playerId, targetId: target, targetRole: tP.role || null });
   console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
   ensurePlayerStats(p.name).securityRevengeShots += 1;
+  
+  // V27: Tracker si la cible était un saboteur
+  const targetTeam = ROLES[tP.role]?.team || "astronauts";
+  if (targetTeam === "saboteurs") {
+    ensurePlayerStats(p.name).revengeKillsOnSaboteurs = (ensurePlayerStats(p.name).revengeKillsOnSaboteurs || 0) + 1;
+    console.log(`[${room.code}] V27: ${p.name} revenge killed saboteur ${tP.name}`);
+  }
   saveStats(statsDb);
 
   const casc = applyLinkCascade(room);
