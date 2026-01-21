@@ -1480,14 +1480,21 @@ function renderEnd() {
       
       // V27: Nouvelles stats Phase 2
       const correctVotes = s.correctSaboteurVotes || 0;
-      const revengeKills = s.revengeKillsOnSaboteurs || 0;
+      const revengeKillsSab = s.revengeKillsOnSaboteurs || 0;
+      const revengeKillsInn = s.revengeKillsOnInnocents || 0;
       const totalRevengeShots = s.securityRevengeShots || 0;
+      const doctorKillsSab = s.doctorKillsOnSaboteurs || 0;
+      const doctorKillsInn = s.doctorKillsOnInnocents || 0;
+      const totalDoctorKills = s.doctorKills || 0;
+      const doctorSaves = s.doctorSaves || 0;
+      const doctorMissed = s.doctorMissedSaves || 0;
+      const doctorGames = s.gamesByRole?.doctor || 0;
       
-      // V27: Stats par rôle spécifiques - utiliser les traductions du thème
-      const saboteurLabel = tRole('saboteur') || 'Saboteur';
+      // V27: Labels selon le thème
+      const saboteursLabel = t('saboteurs') || 'Saboteurs';
+      const astronautesLabel = t('astronauts') || 'Astronautes';
       const securityLabel = tRole('security') || 'Chef de sécurité';
       const doctorLabel = tRole('doctor') || 'Docteur';
-      const saboteursLabel = t('saboteurs') || 'Saboteurs';
       
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
@@ -1503,7 +1510,18 @@ function renderEnd() {
           <div style="margin-top:6px; opacity:.95;">
             <div style="font-weight:900; margin-bottom:4px;">🎯 Combat contre les ${saboteursLabel.toLowerCase()}</div>
             <div>• Votes corrects contre ${saboteursLabel.toLowerCase()}: <b>${correctVotes}</b></div>
-            <div>• ${saboteursLabel} éliminés par vengeance: <b>${revengeKills}</b>/${totalRevengeShots}</div>
+          </div>
+          <div style="margin-top:6px; opacity:.95;">
+            <div style="font-weight:900; margin-bottom:4px;">🔫 Stats ${securityLabel}</div>
+            <div>• ${saboteursLabel} éliminés par vengeance: <b>${revengeKillsSab}</b>/${totalRevengeShots}</div>
+            <div>• ${astronautesLabel} éliminés par erreur: <b>${revengeKillsInn}</b>/${totalRevengeShots}</div>
+          </div>
+          <div style="margin-top:6px; opacity:.95;">
+            <div style="font-weight:900; margin-bottom:4px;">💊 Stats ${doctorLabel}</div>
+            <div>• Potion fatale sur ${saboteursLabel.toLowerCase()}: <b>${doctorKillsSab}</b>/${totalDoctorKills}</div>
+            <div>• Potion fatale sur ${astronautesLabel.toLowerCase()} (erreur): <b>${doctorKillsInn}</b>/${totalDoctorKills}</div>
+            <div>• Potion de vie utilisée: <b>${doctorSaves}</b>/${doctorGames}</div>
+            <div>• ${astronautesLabel} non sauvés: <b>${doctorMissed}</b></div>
           </div>
           <div style="margin-top:6px; opacity:.95;">
             <div style="font-weight:900; margin-bottom:4px;">📈 Stats par rôle</div>
