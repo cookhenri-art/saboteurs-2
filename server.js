@@ -1519,7 +1519,7 @@ function formatLogLine(room, e) {
     case "phase": return { kind: "info", text: `[${t}] ➜ ${getPhaseName(e.phase, room)}` };
     case "roles_assigned": return { kind: "info", text: `[${t}] Rôles attribués.` };
     case "captain_elected": return { kind: "info", text: `[${t}] ⭐ ${captainTerm}: ${name(e.playerId)}` };
-    case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éliminé.` };
+    case "player_died": return { kind: "info", text: `[${t}] 💀 ${name(e.playerId)} a été éliminé.` };
     case "player_left": return { kind: "warn", text: `[${t}] 🚪 ${name(e.playerId)} peut revenir (30s).` };
     case "player_removed": return { kind: "warn", text: `[${t}] ⛔ ${name(e.playerId)} est sorti.` };
     case "reconnected": return { kind: "info", text: `[${t}] ✅ ${name(e.playerId)} est revenu.` };
