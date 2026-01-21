@@ -1418,7 +1418,6 @@ function resolveNight(room) {
     else if (nd.saboteurTarget && pid === nd.saboteurTarget && pid !== nd.doctorSave) source = "saboteurs";
     if (killPlayer(room, pid, source)) newlyDead.push(pid);
   }
-  }
 // linked deaths cascade
   const casc = applyLinkCascade(room);
   for (const pid of casc) if (!newlyDead.includes(pid)) newlyDead.push(pid);
