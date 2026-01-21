@@ -272,7 +272,7 @@ const ROLE_INFO = {
   },
   doctor: {
     get title() { return tRole("doctor"); },
-    desc: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible)."
+    desc: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion fatale (tue une cible)."
   },
   security: {
     get title() { return tRole("security"); },
@@ -351,7 +351,7 @@ function renderEjectedPanel() {
   }
   el.style.display = "block";
   el.innerHTML =
-    `<div style="font-weight:900; margin-bottom:8px;">🚀 ÉJECTÉS</div>` +
+    `<div style="font-weight:900; margin-bottom:8px;">🚀 ÉLIMINÉS</div>` +
     `<div style="display:flex; flex-wrap:wrap; gap:8px;">` +
     ejected.map(p => `<div style="padding:8px 10px; border-radius:999px; border:1px solid rgba(255,0,102,0.45); background:rgba(255,0,102,0.12); font-weight:900;">💀 ${escapeHtml(p.name)}</div>`).join("") +
     `</div>`;
@@ -619,7 +619,7 @@ function renderLobby() {
         ${p.isHost ? `<span class="pill ok">HÔTE</span>` : ""}
         ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
         ${p.connected ? `<span class="pill ok">EN LIGNE</span>` : `<span class="pill warn">RECONNEXION…</span>`}
-        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : "")}
+        ${p.status === "left" ? `<span class="pill bad">SORTI</span>` : (p.status === "dead" ? `<span class="pill bad">ÉLIMINÉ</span>` : "")}
       `;
       
       playerInfo.appendChild(playerName);
@@ -864,7 +864,7 @@ function renderGame() {
     ackLine.textContent = "";
   }
 
-// logs (+ panel éjectés)
+// logs (+ panel éliminés)
 const isHost = !!state.players?.find(p => p.playerId === state.you?.playerId)?.isHost;
 
 renderEjectedPanel();
@@ -901,7 +901,7 @@ function getWaitText(phase) {
 
 // dead players have no controls (including ACK), except if they are the actor in REVENGE / captain transfer
 if (meDead && !deadCanAct) {
-  controls.appendChild(makeHint("💀 Vous êtes mort. Vous n’agissez plus."));
+  controls.appendChild(makeHint("💀 Vous êtes éliminé. Vous n’agissez plus."));
   return;
 }
 
@@ -1204,14 +1204,14 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
     const selKill = document.createElement("select");
     selKill.style.width = "100%";
     selKill.style.marginTop = "10px";
-    selKill.appendChild(new Option("Choisir une cible à tuer (potion de mort)", ""));
+    selKill.appendChild(new Option("Choisir une cible à tuer (potion fatale)", ""));
     for (const p of alive) selKill.appendChild(new Option(p.name, p.playerId));
 
     const btnKill = document.createElement("button");
     btnKill.className = "btn btn-primary";
     btnKill.style.marginTop = "10px";
     btnKill.disabled = deathUsed;
-    btnKill.textContent = deathUsed ? "💀 Potion de mort (déjà utilisée)" : "💀 Tuer la cible sélectionnée";
+    btnKill.textContent = deathUsed ? "💀 Potion fatale (déjà utilisée)" : "💀 Tuer la cible sélectionnée";
     btnKill.onclick = () => {
       if (deathUsed) return;
       if (!selKill.value) return setError("Choisis une cible à tuer.");
@@ -1242,7 +1242,7 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
   if (state.phase === "DAY_CAPTAIN_TRANSFER") {
     const alive = state.players.filter(p => p.status === "alive");
     controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Transmettre", (id) => socket.emit("phaseAction", { chosenId: id })));
-    controls.appendChild(makeHint(`Le ${t('captain').toLowerCase()} mort choisit sans connaître le rôle du joueur choisi.`));
+    controls.appendChild(makeHint(`Le ${t('captain').toLowerCase()} éliminé choisit sans connaître le rôle du joueur choisi.`));
   }
 
   if (state.phase === "DAY_VOTE") {
@@ -1321,11 +1321,37 @@ function renderEnd() {
 
   const rep = state.phaseData?.report;
   if (rep) {
-    // V25: Ordre des éjections
+    // V27: Ordre des éliminations avec avatars
     const deaths = (rep.deathOrder || []).map((d, i) => {
+      const player = state.players.find(p => p.name === d.name);
+      const avatarEmoji = player?.avatarEmoji || '👤';
       const rl = d.roleLabel ? ` (${d.roleLabel})` : "";
-      return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
-    }).join("<br>");
+      return `<div style="display:flex; align-items:center; gap:8px; margin:4px 0;">
+        <span style="font-size:1.2rem;">${avatarEmoji}</span>
+        <span>${i + 1}. ${escapeHtml(d.name)}${rl} — ${d.source || "?"}</span>
+      </div>`;
+    }).join("");
+    
+    // V27: Tableau survivants/éliminés avec avatars pour le résumé
+    const playersForSummary = [...state.players].filter(p => p.status !== "left");
+    playersForSummary.sort((a,b) => (a.status === "alive" ? -1 : 1) - (b.status === "alive" ? -1 : 1) || a.name.localeCompare(b.name));
+    const survivantsEliminésHtml = playersForSummary.map(p => {
+      const avatarEmoji = p.avatarEmoji || '👤';
+      const role = p.roleLabel || "";
+      const statusPill = p.status === "alive" 
+        ? `<span class="pill ok">SURVIVANT</span>` 
+        : `<span class="pill bad">ÉLIMINÉ</span>`;
+      const captainPill = p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : "";
+      return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.1);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:1.4rem;">${avatarEmoji}</span>
+          <span style="font-weight:900;">${escapeHtml(p.name)}</span>
+          ${captainPill}
+          ${statusPill}
+        </div>
+        <div style="opacity:.95; font-weight:800;">${escapeHtml(role)}</div>
+      </div>`;
+    }).join("");
     
     // V25: Awards HTML
     const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
@@ -1471,7 +1497,7 @@ function renderEnd() {
       </div>`;
     }).join("");
 
-    // V25: Nouvelle structure - Éjections en premier
+    // V27: Nouvelle structure avec tableau Joueurs
     $("endSummary").innerHTML += `
       <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-secondary" id="tabSummaryBtn">Résumé</button>
@@ -1484,8 +1510,13 @@ function renderEnd() {
           <span>Durée de la partie: <b>${gameDurationHtml}</b></span>
         </div>
         
+        <div style="margin-bottom:14px; padding:12px; border-radius:12px; border:1px solid rgba(0,255,255,0.25); background: rgba(0,0,0,0.22);">
+          <div style="font-weight:900; margin-bottom:8px;">👥 Joueurs</div>
+          ${survivantsEliminésHtml || "<div>—</div>"}
+        </div>
+        
         <div style="padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
-          <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éjections</div>
+          <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éliminations</div>
           <div style="opacity:.95;">${deaths || "—"}</div>
         </div>
         
@@ -1521,21 +1552,9 @@ function renderEnd() {
     }
   }
 
-  // ranking table (show roles)
+  // V27: Tableau des joueurs maintenant dans tabSummary - masquer l'ancien rankingTable
   const table = $("rankingTable");
-  const players = [...state.players].filter(p => p.status !== "left");
-  players.sort((a,b) => (a.status === "alive" ? -1 : 1) - (b.status === "alive" ? -1 : 1) || a.name.localeCompare(b.name));
-  table.innerHTML = players.map(p => {
-    const role = p.roleLabel || (p.status === "alive" ? "" : "");
-    return `<div class="player-item">
-      <div class="player-left">
-        <div style="font-weight:900;">${escapeHtml(p.name)}</div>
-        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.status === "alive" ? `<span class="pill ok">SURVIVANT</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : `<span class="pill warn">SORTI</span>`)}
-      </div>
-      <div style="opacity:.95; font-weight:800;">${escapeHtml(role || "")}</div>
-    </div>`;
-  }).join("");
+  if (table) table.style.display = "none";
 
   $("replayBtn").onclick = () => socket.emit("replaySameRoom");
   $("newGameBtn").onclick = () => socket.emit("newGameResetStats");
@@ -1552,15 +1571,15 @@ function buildPhaseText(s) {
   if (p === "NIGHT_AI_EXCHANGE") return `Échange privé entre ${tRole("ai_agent")} et son partenaire lié. Les deux doivent valider pour continuer.`;
   if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
   if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
-  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion de mort (tue une cible) OU rien.`;
+  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion fatale (tue une cible) OU rien.`;
 
   if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Annonce des effets de la nuit, puis passage au jour.";
   if (p === "DAY_WAKE") return `Réveil de la ${t('station')}. Validez pour passer à la suite.`;
-  if (p === "DAY_CAPTAIN_TRANSFER") return `Le ${t('captain').toLowerCase()} est mort : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`;
+  if (p === "DAY_CAPTAIN_TRANSFER") return `Le ${t('captain').toLowerCase()} a été éliminé : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`;
   if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
-  if (p === "DAY_TIEBREAK") return `Égalité : le ${t('captain').toLowerCase()} choisit l'éjecté.`;
+  if (p === "DAY_TIEBREAK") return `Égalité : le ${t('captain').toLowerCase()} choisit l'éliminé.`;
   if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Résultats du jour, puis passage à la nuit.";
-  if (p === "REVENGE") return `${tRole('security')} : tu as été éjecté, tu peux tirer sur quelqu'un.`;
+  if (p === "REVENGE") return `${tRole('security')} : tu as été éliminé, tu peux tirer sur quelqu'un.`;
   if (p === "MANUAL_ROLE_PICK") return "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.";
   if (p === "GAME_ABORTED") return "Partie interrompue.";
   return "";
@@ -1915,10 +1934,10 @@ function buildRulesHtml(cfg) {
   roleLines.push(`<li><b>${tRole('astronaut')}</b> — aucun pouvoir.</li>`);
   roleLines.push(`<li><b>${tRole('saboteur')}</b> — vote unanimement une cible la nuit.</li>`);
   if (on("radar")) roleLines.push(`<li><b>${tRole('radar')}</b> — inspecte un joueur et découvre son rôle.</li>`);
-  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des ${t('saboteurs').toLowerCase()}) et 1 potion de mort (éjecte une cible) sur toute la partie.</li>`);
+  if (on("doctor")) roleLines.push(`<li><b>${tRole('doctor')}</b> — 1 potion de vie (sauve la cible des ${t('saboteurs').toLowerCase()}) et 1 potion fatale (élimine une cible) sur toute la partie.</li>`);
   if (on("chameleon")) roleLines.push(`<li><b>${tRole('chameleon')}</b> — Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.</li>`);
-  if (on("security")) roleLines.push(`<li><b>${tRole('security')}</b> — si éjecté, tire une dernière fois (vengeance).</li>`);
-  if (on("ai_agent")) roleLines.push(`<li><b>${tRole('ai_agent')}</b> — Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.</li>`);
+  if (on("security")) roleLines.push(`<li><b>${tRole('security')}</b> — si éliminé, tire une dernière fois (vengeance).</li>`);
+  if (on("ai_agent")) roleLines.push(`<li><b>${tRole('ai_agent')}</b> — Nuit 1 : lie 2 joueurs. Si l'un est éliminé, l'autre l'est aussi.</li>`);
 
   return `
     <div style="opacity:.95;">
@@ -1929,7 +1948,7 @@ function buildRulesHtml(cfg) {
       <ul>
         <li><b>Élection obligatoire</b> au début de la ${t('mission')}.</li>
         <li>En cas d'égalité au vote du jour, le ${t('captain').toLowerCase()} <b>tranche</b> (sa voix compte double pour départager).</li>
-        <li>Dès que le ${t('captain').toLowerCase()} est éjecté, il <b>transmet</b> le rôle à un survivant <b>sans connaître son rôle</b>.</li>
+        <li>Dès que le ${t('captain').toLowerCase()} est éliminé, il <b>transmet</b> le rôle à un survivant <b>sans connaître son rôle</b>.</li>
       </ul>
 
       <h3 style="margin:10px 0;">Ordre de nuit</h3>
@@ -1944,7 +1963,7 @@ function buildRulesHtml(cfg) {
 
       <h3 style="margin:10px 0;">Victoire</h3>
       <ul>
-        <li><b>${t('astronauts')}</b> : tous les ${t('saboteurs').toLowerCase()} sont éjectés.</li>
+        <li><b>${t('astronauts')}</b> : tous les ${t('saboteurs').toLowerCase()} sont éliminés.</li>
         <li><b>${t('saboteurs')}</b> : supériorité numérique (parité ou plus).</li>
         <li><b>Association de malfaiteurs</b> : s’il ne reste que 2 joueurs vivants, liés ensemble, et de camps différents, ils gagnent ensemble.</li>
       </ul>
@@ -2452,7 +2471,7 @@ function tRole(roleKey, plural = false) {
 // Petites explications génériques des rôles (identiques pour tous les thèmes)
 function tRoleHelp(roleKey) {
   const helps = {
-    doctor: "Une potion de vie, une potion de mort.",
+    doctor: "Une potion de vie, une potion fatale.",
     security: "Vengeance si tué.",
     radar: "Peut révéler un rôle.",
     ai_agent: "Se lie à un joueur.",
@@ -2786,7 +2805,7 @@ function generateTutorialContent() {
       <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
         <li><strong style="color: var(--neon-red);">${saboteurs}</strong> : choisissent une victime (unanimité requise)</li>
         <li><strong style="color: var(--neon-cyan);">${tRole('radar')}</strong> : inspecte un joueur (${saboteurs.toLowerCase()[0] + saboteurs.toLowerCase().slice(1, -1)} ou non ?)</li>
-        <li><strong style="color: var(--neon-green);">${tRole('doctor')}</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
+        <li><strong style="color: var(--neon-green);">${tRole('doctor')}</strong> : peut sauver OU tuer (1 vie + 1 élimination max)</li>
         <li><strong style="color: var(--neon-orange);">Rôles spéciaux</strong> : ${tRole('chameleon')}, ${tRole('ai_agent')}, etc.</li>
       </ul>
     </div>
@@ -2798,7 +2817,7 @@ function generateTutorialContent() {
         <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
       </div>
       <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
-        <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
+        <li>Les résultats de la nuit sont révélés (qui a été éliminé ?)</li>
         <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
         <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
         <li>Le <strong>${t('captain')}</strong> tranche en cas d'égalité</li>
@@ -2877,7 +2896,7 @@ function generateTutorialContent() {
         <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
           <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
           <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">${astronauts} gagnent</div>
-          <div style="font-size: 0.95rem; color: var(--text-secondary);">Tous les ${saboteurs.toLowerCase()} sont éjectés</div>
+          <div style="font-size: 0.95rem; color: var(--text-secondary);">Tous les ${saboteurs.toLowerCase()} sont éliminés</div>
         </div>
         <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
           <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
