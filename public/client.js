@@ -1858,7 +1858,8 @@ class AudioManager {
     if (overlay) overlay.style.display = 'none';
     
     // V28: Déverrouiller aussi le TTS sur interaction utilisateur
-    if (!this.ttsUnlocked) {
+    // V29: Vérifier que SpeechSynthesis existe (pas dispo sur Android WebView)
+    if (!this.ttsUnlocked && typeof SpeechSynthesisUtterance !== 'undefined') {
       try {
         const emptyUtterance = new SpeechSynthesisUtterance("");
         window.speechSynthesis.speak(emptyUtterance);
@@ -1978,6 +1979,8 @@ class AudioManager {
   }
   tts(text) {
     if (!text || this.muted) return;
+    // V29: Vérifier que SpeechSynthesis existe (pas dispo sur Android WebView)
+    if (typeof SpeechSynthesisUtterance === 'undefined') return;
     try {
       // Important: do NOT cancel TTS in stopAll(), otherwise a fast phase change can cut announcements.
       // Instead, cancel right before speaking to avoid overlaps.
