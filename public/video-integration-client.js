@@ -8,55 +8,7 @@
 // SECTION VIDEO - DAILY.CO INTEGRATION
 // ============================================
 
-console.log('[Video] build=D4-briefing-mode-v2-audio-fix');
-
-// ============================================
-// V29: ANTI-SACCADE AUDIO - State tracking
-// Évite les appels setLocalAudio/setLocalVideo répétés
-// ============================================
-let lastAppliedPhase = null;
-let lastAppliedAudioState = null;
-let lastAppliedVideoState = null;
-let lastPermissionsUpdate = 0;
-const PERMISSIONS_UPDATE_DEBOUNCE = 300; // ms minimum entre deux updates
-
-// V29: Fonction utilitaire pour appliquer l'état audio/video avec cache
-function applyLocalMediaState(callFrame, wantAudio, wantVideo, reason) {
-  if (!callFrame) return;
-  
-  const now = Date.now();
-  let changed = false;
-  
-  // Ne changer l'audio que si nécessaire
-  if (wantAudio !== lastAppliedAudioState) {
-    try {
-      callFrame.setLocalAudio(wantAudio);
-      lastAppliedAudioState = wantAudio;
-      changed = true;
-      console.log('[Video] 🎤 Audio:', wantAudio ? 'ON' : 'OFF', '-', reason);
-    } catch (e) {
-      console.warn('[Video] Error setting audio:', e);
-    }
-  }
-  
-  // Ne changer la vidéo que si nécessaire
-  if (wantVideo !== lastAppliedVideoState) {
-    try {
-      callFrame.setLocalVideo(wantVideo);
-      lastAppliedVideoState = wantVideo;
-      changed = true;
-      console.log('[Video] 📹 Video:', wantVideo ? 'ON' : 'OFF', '-', reason);
-    } catch (e) {
-      console.warn('[Video] Error setting video:', e);
-    }
-  }
-  
-  if (!changed) {
-    console.log('[Video] 📊 No media state change needed for:', reason);
-  }
-  
-  return changed;
-}
+console.log('[Video] build=D4-briefing-mode-v1');
 
 // ============================================
 // D4: INTEGRATION WITH VideoModeController
@@ -181,12 +133,6 @@ function joinVideoRoomNow(state) {
   }
 
   isInitializingVideo = true;
-  
-  // V29: Reset le cache anti-saccade avant de rejoindre
-  lastAppliedPhase = null;
-  lastAppliedAudioState = null;
-  lastAppliedVideoState = null;
-  lastPermissionsUpdate = 0;
 
   const permissions = state.videoPermissions || { video: true, audio: true };
   const baseName = state.you?.name || 'Joueur';
@@ -318,8 +264,8 @@ function initVideoForGame(state) {
 
 /**
  * Met à jour les permissions vidéo selon la phase
- * V29: Anti-saccade - Ne change l'état que si la phase change réellement
  * D4 v5.4: Respecte le choix manuel de l'utilisateur
+ * D4 v5.8: Force démute aux phases clés (GAME_OVER, NIGHT_RESULTS, DAY_WAKE, ROLE_REVEAL)
  */
 function updateVideoPermissions(state) {
   if (!videoRoomJoined || !window.dailyVideo.callFrame) {
@@ -329,111 +275,48 @@ function updateVideoPermissions(state) {
   const permissions = state.videoPermissions;
   if (!permissions) return;
 
-  const phase = state.phase;
-  const now = Date.now();
-  
-  // V29: Debounce - éviter les updates trop fréquents
-  if (now - lastPermissionsUpdate < PERMISSIONS_UPDATE_DEBOUNCE && phase === lastAppliedPhase) {
-    return;
-  }
-  
-  // V29: Ne rien faire si la phase n'a pas changé (sauf première fois)
-  if (phase === lastAppliedPhase && lastAppliedPhase !== null) {
-    // Juste rafraîchir les tracks sans toucher à l'audio/video local
-    if (window.dailyVideo.updatePermissions) {
-      window.dailyVideo.updatePermissions(permissions);
-    }
-    return;
-  }
-  
-  console.log('[Video] 🔄 Phase changed:', lastAppliedPhase, '->', phase);
-  lastAppliedPhase = phase;
-  lastPermissionsUpdate = now;
+  console.log('[Video] Updating permissions:', permissions);
   
   const registry = window.VideoTracksRegistry;
-  const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
-  const myPermissions = permissions[state.you?.playerId] || {};
+  const phase = state.phase;
   
-  // V29: Définir les phases par catégorie pour une gestion simplifiée
-  // Phases où TOUS doivent avoir audio+video ON
-  const FORCE_UNMUTE_PHASES = ['GAME_OVER', 'NIGHT_RESULTS', 'DAY_WAKE', 'ROLE_REVEAL', 'END_STATS', 'END_STATS_OUTRO'];
-  // Phases où l'audio reste ON mais caméra OFF (vote)
-  const AUDIO_ONLY_PHASES = ['DAY_VOTE', 'DAY_TIEBREAK', 'REVENGE'];
-  // Phases silencieuses (nuit privée - seulement certains joueurs parlent)
-  const SILENT_NIGHT_PHASES = ['NIGHT_CHAMELEON', 'NIGHT_DOCTOR', 'NIGHT_RADAR', 'NIGHT_START'];
-  // Phases privées avec communication entre certains rôles
-  const PRIVATE_PHASES = ['NIGHT_SABOTEURS', 'NIGHT_AI_AGENT', 'NIGHT_AI_EXCHANGE'];
+  // D4 v5.8: Phases où on force le démute automatique
+  const FORCE_UNMUTE_PHASES = ['GAME_OVER', 'NIGHT_RESULTS', 'DAY_WAKE', 'ROLE_REVEAL'];
+  const shouldForceUnmute = FORCE_UNMUTE_PHASES.includes(phase);
   
-  // V29: Déterminer l'état souhaité basé sur les permissions du joueur
-  let wantAudio = myPermissions.audio !== false;
-  let wantVideo = myPermissions.video !== false;
-  let reason = myPermissions.reason || phase;
-  
-  // V29: Cas spéciaux
-  if (FORCE_UNMUTE_PHASES.includes(phase)) {
-    // Force unmute pour tous
-    wantAudio = true;
-    wantVideo = true;
-    reason = 'Force unmute phase: ' + phase;
-    
-    // Reset le mute manuel
-    if (registry?.resetManualMute) {
-      registry.resetManualMute();
-    }
-  } else if (AUDIO_ONLY_PHASES.includes(phase)) {
-    // Audio ON, Video OFF
-    wantAudio = true;
-    wantVideo = false;
-    reason = 'Vote phase - audio only';
-  } else if (SILENT_NIGHT_PHASES.includes(phase)) {
-    // Tout OFF sauf si permissions explicites
-    if (!myPermissions.audio && !myPermissions.video) {
-      wantAudio = false;
-      wantVideo = false;
-      reason = 'Silent night phase';
-    }
-  } else if (PRIVATE_PHASES.includes(phase)) {
-    // Suivre les permissions du serveur (privé)
-    wantAudio = myPermissions.audio === true;
-    wantVideo = myPermissions.video === true;
-    reason = 'Private phase: ' + (myPermissions.reason || phase);
-  }
-  
-  // V29: Vérifier si l'utilisateur a manuellement muté (prioritaire sauf FORCE_UNMUTE)
-  if (!FORCE_UNMUTE_PHASES.includes(phase)) {
+  if (shouldForceUnmute) {
+    console.log('[Video] 🔊 Phase', phase, '- Forcing unmute for all players');
+    forceUnmuteWithNotification(phase, registry);
+  } else {
+    // D4 v5.4: Vérifier si l'utilisateur a manuellement muté (seulement si pas de force unmute)
     const userMutedAudio = registry?.getUserMutedAudio?.() || false;
     const userMutedVideo = registry?.getUserMutedVideo?.() || false;
     
-    if (userMutedAudio) {
-      wantAudio = false;
-      reason += ' (user muted audio)';
-    }
-    if (userMutedVideo) {
-      wantVideo = false;
-      reason += ' (user muted video)';
-    }
-  }
-  
-  // V29: Appliquer l'état avec le système anti-saccade
-  const changed = applyLocalMediaState(callFrame, wantAudio, wantVideo, reason);
-  
-  // Mettre à jour les boutons UI si l'état a changé
-  if (changed) {
-    updateMuteButtonsUI(!wantAudio, !wantVideo);
-    
-    // Notification pour les phases de unmute forcé
-    if (FORCE_UNMUTE_PHASES.includes(phase)) {
-      showUnmuteNotification(phase);
+    if (userMutedAudio || userMutedVideo) {
+      console.log('[Video] ⚠️ User has manual mute - preserving user choice:', { userMutedAudio, userMutedVideo });
+      
+      // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
+      setTimeout(() => {
+        const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+        if (callFrame) {
+          if (userMutedAudio) {
+            callFrame.setLocalAudio(false);
+            console.log('[Video] 🔇 Re-applied user audio mute');
+          }
+          if (userMutedVideo) {
+            callFrame.setLocalVideo(false);
+            console.log('[Video] 📷 Re-applied user video mute');
+          }
+        }
+      }, 100);
     }
   }
   
-  // Appliquer les permissions de base (filtrage des tracks distants)
-  if (window.dailyVideo.updatePermissions) {
-    window.dailyVideo.updatePermissions(permissions);
-  }
+  // Appliquer les permissions de base
+  window.dailyVideo.updatePermissions(permissions);
   
-  // Rafraîchir le filtrage des tracks selon les nouvelles permissions
-  if (window.VideoTracksRefresh && changed) {
+  // D4 v5.5: Rafraîchir le filtrage des tracks selon les nouvelles permissions
+  if (window.VideoTracksRefresh) {
     setTimeout(() => {
       window.VideoTracksRefresh();
       console.log('[Video] 🔄 Tracks refreshed for new permissions');
@@ -441,14 +324,13 @@ function updateVideoPermissions(state) {
   }
 
   // Afficher le message de phase
-  if (state.videoPhaseMessage && changed) {
+  if (state.videoPhaseMessage) {
     showVideoStatus(state.videoPhaseMessage, 'info');
   }
 }
 
 /**
- * V29: Force le démute avec notification visuelle (simplifié)
- * Ne fait plus de retry qui causaient des saccades audio
+ * D4 v5.8: Force le démute avec notification visuelle
  */
 function forceUnmuteWithNotification(phase, registry) {
   // Reset le mute manuel
@@ -456,29 +338,49 @@ function forceUnmuteWithNotification(phase, registry) {
     registry.resetManualMute();
   }
   
-  const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
-  if (!callFrame) {
-    console.warn('[Video] ⚠️ No callFrame available for force unmute');
-    return;
-  }
+  // Fonction de réactivation avec retry
+  const forceEnableTracks = (attempt = 1) => {
+    try {
+      const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+      if (!callFrame) {
+        console.warn('[Video] ⚠️ No callFrame available (attempt ' + attempt + ')');
+        return;
+      }
+      
+      // Vérifier si on est toujours dans la room
+      const meetingState = callFrame.meetingState?.();
+      if (meetingState && meetingState !== 'joined-meeting') {
+        console.warn('[Video] ⚠️ Not in meeting state:', meetingState);
+        return;
+      }
+      
+      // Forcer l'activation de la caméra et du micro
+      callFrame.setLocalAudio(true);
+      callFrame.setLocalVideo(true);
+      console.log('[Video] ✅ Camera and mic forcefully enabled (attempt ' + attempt + ')');
+      
+      // Mettre à jour les boutons UI
+      updateMuteButtonsUI(false, false);
+      
+      // Notification visuelle
+      if (attempt === 1) {
+        showUnmuteNotification(phase);
+      }
+      
+      // Retry après 1.5 secondes pour la première tentative
+      if (attempt === 1) {
+        setTimeout(() => forceEnableTracks(2), 1500);
+      }
+    } catch (err) {
+      console.warn('[Video] ⚠️ Could not force enable tracks (attempt ' + attempt + '):', err);
+      if (attempt === 1) {
+        setTimeout(() => forceEnableTracks(2), 1500);
+      }
+    }
+  };
   
-  // Vérifier si on est toujours dans la room
-  const meetingState = callFrame.meetingState?.();
-  if (meetingState && meetingState !== 'joined-meeting') {
-    console.warn('[Video] ⚠️ Not in meeting state:', meetingState);
-    return;
-  }
-  
-  // V29: Utiliser le système anti-saccade
-  const changed = applyLocalMediaState(callFrame, true, true, 'Force unmute: ' + phase);
-  
-  if (changed) {
-    // Mettre à jour les boutons UI
-    updateMuteButtonsUI(false, false);
-    
-    // Notification visuelle
-    showUnmuteNotification(phase);
-  }
+  // Premier passage après 300ms
+  setTimeout(() => forceEnableTracks(1), 300);
 }
 
 /**
@@ -596,13 +498,6 @@ function leaveVideoRoom() {
   window.dailyVideo.leave();
   videoRoomJoined = false;
   videoRoomUrl = null;
-  
-  // V29: Reset le cache anti-saccade
-  lastAppliedPhase = null;
-  lastAppliedAudioState = null;
-  lastAppliedVideoState = null;
-  lastPermissionsUpdate = 0;
-  
   showVideoStatus('📹 Visio terminée', 'info');
   
   // Désactiver le boost audio
