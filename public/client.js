@@ -1516,7 +1516,7 @@ function renderEnd() {
         </div>
         
         <div style="padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
-          <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éliminations</div>
+          <div style="font-weight:900; margin-bottom:8px;">💀 Ordre des éliminations</div>
           <div style="opacity:.95;">${deaths || "—"}</div>
         </div>
         
