@@ -34,11 +34,11 @@
     },
     "security": {
       "name": "Chevalier",
-      "description": "Si tué par les orques, peut porter un coup fatal avec son dernier souffle."
+      "description": "Si éliminé par les orques, peut porter un coup fatal avec son dernier souffle."
     },
     "ai_agent": {
       "name": "Elfe Charmeur",
-      "description": "La première nuit, enchante deux êtres. Si l'un périt, l'autre suit."
+      "description": "La première nuit, enchante deux êtres. Si l'un est éliminé, l'autre suit."
     },
     "engineer": {
       "name": "Nain Espiègle",
@@ -59,7 +59,7 @@
     "NIGHT_CHAMELEON": "Dragon métamorphe, réveille-toi",
     "NIGHT_AI_AGENT": "Elfe charmeur, réveille-toi",
     "NIGHT_RADAR": "Éclaireur, réveille-toi",
-    "NIGHT_SABOTEURS": "Ogres, choisissez votre proie",
+    "NIGHT_SABOTEURS": "Orques, choisissez votre proie",
     "NIGHT_DOCTOR": "Guérisseur, choisissez votre action",
     "NIGHT_RESULTS": "Résultats de la nuit",
     "DAY_WAKE": "Le royaume se réveille",

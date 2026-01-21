@@ -18,7 +18,7 @@
     "saboteur": {
       "name": "Loup-Garou",
       "namePlural": "Loups-Garous",
-      "description": "Créatures qui dévorent les villageois la nuit. Ils agissent ensemble."
+      "description": "Créatures qui éliminent les villageois la nuit. Ils agissent ensemble."
     },
     "astronaut": {
       "name": "Villageois",
@@ -31,15 +31,15 @@
     },
     "doctor": {
       "name": "Sorcière",
-      "description": "Possède une potion de vie et une potion de mort (usage unique)."
+      "description": "Possède une potion de vie et une potion fatale (usage unique)."
     },
     "security": {
       "name": "Chasseur",
-      "description": "Si dévoré par les loups, peut tirer sur un joueur de son choix."
+      "description": "Si éliminé par les loups, peut tirer sur un joueur de son choix."
     },
     "ai_agent": {
       "name": "L'Amoureux",
-      "description": "La première nuit, lie deux joueurs amoureux. Si l'un meurt, l'autre aussi."
+      "description": "La première nuit, lie deux joueurs amoureux. Si l'un est éliminé, l'autre aussi."
     },
     "engineer": {
       "name": "Petit Garçon",

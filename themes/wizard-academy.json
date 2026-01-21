@@ -30,7 +30,7 @@
     },
     "doctor": {
       "name": "Alchimiste",
-      "description": "Possède une potion de protection et une potion mortelle (usage unique)."
+      "description": "Possède une potion de protection et une potion fatale (usage unique)."
     },
     "security": {
       "name": "Gardien du Château",
@@ -38,7 +38,7 @@
     },
     "ai_agent": {
       "name": "Maître du Philtre d'Amour",
-      "description": "La première nuit, lie deux âmes magiquement. Si l'une périt, l'autre aussi."
+      "description": "La première nuit, lie deux âmes magiquement. Si l'une est éliminée, l'autre aussi."
     },
     "engineer": {
       "name": "Apprenti Sorcier",

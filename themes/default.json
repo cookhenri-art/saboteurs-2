@@ -22,7 +22,7 @@
     "astronaut": {
       "name": "Astronaute",
       "namePlural": "Astronautes",
-      "description": "Membres d'équipage innocents qui doivent identifier et éjecter les saboteurs."
+      "description": "Membres d'équipage innocents qui doivent identifier et éliminer les saboteurs."
     },
     "radar": {
       "name": "Officier Radar",
@@ -30,15 +30,15 @@
     },
     "doctor": {
       "name": "Docteur Bio",
-      "description": "Peut sauver ou éliminer un joueur chaque nuit (une seule vie/mort disponible)."
+      "description": "Peut sauver ou éliminer un joueur chaque nuit (une seule utilisation de chaque)."
     },
     "security": {
       "name": "Chef de Sécurité",
-      "description": "Si éjecté par les saboteurs, peut tirer sur un joueur de son choix."
+      "description": "Si éliminé par les saboteurs, peut tirer sur un joueur de son choix."
     },
     "ai_agent": {
       "name": "Agent IA",
-      "description": "La première nuit, lie deux joueurs. Si l'un meurt, l'autre aussi."
+      "description": "La première nuit, lie deux joueurs. Si l'un est éliminé, l'autre aussi."
     },
     "engineer": {
       "name": "Ingénieur",
@@ -64,7 +64,7 @@
     "NIGHT_RESULTS": "Résultats de la nuit",
     "DAY_WAKE": "La station se réveille",
     "DAY_CAPTAIN_TRANSFER": "Transmission du capitaine",
-    "DAY_VOTE": "Vote d'éjection",
+    "DAY_VOTE": "Vote d'élimination",
     "DAY_TIEBREAK": "Égalité - Capitaine tranche",
     "DAY_RESULTS": "Résultats du jour",
     "REVENGE": "Chef de sécurité - Vengeance",
