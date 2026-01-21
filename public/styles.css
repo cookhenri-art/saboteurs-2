@@ -2893,3 +2893,91 @@ select:focus-visible {
   to { transform: rotate(360deg); }
 }
 
+
+/* ============================================
+   FIX MOBILE - MODALS RÈGLES ET TUTORIEL
+   ============================================ */
+
+/* Modal des règles - fix pour mobile */
+@media (max-width: 768px) {
+  #rulesModal > div {
+    margin: 2vh auto !important;
+    max-height: 96vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 12px !important;
+  }
+  
+  #rulesModal #rulesContent {
+    max-height: calc(96vh - 140px) !important;
+    overflow-y: auto !important;
+    flex: 1 !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  #rulesModal #tutorialBtn {
+    margin-top: 10px !important;
+    flex-shrink: 0 !important;
+  }
+  
+  #rulesModal .panel-title {
+    flex-shrink: 0 !important;
+  }
+}
+
+/* Modal tutoriel - fix pour mobile */
+@media (max-width: 768px) {
+  #tutorialModal > div {
+    margin: 1vh auto !important;
+    max-height: 98vh !important;
+    padding: 15px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  #tutorialModal #tutorialContent {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    min-height: 0 !important;
+  }
+  
+  /* Navigation du tutoriel toujours visible en bas */
+  #tutorialModal > div > div:last-child {
+    flex-shrink: 0 !important;
+    padding-top: 10px !important;
+  }
+  
+  /* Réduire les marges des écrans du tutoriel */
+  .tutorial-screen {
+    padding-bottom: 10px !important;
+  }
+  
+  .tutorial-screen div[style*="margin-bottom: 25px"] {
+    margin-bottom: 15px !important;
+  }
+  
+  .tutorial-screen div[style*="font-size: 4rem"] {
+    font-size: 2.5rem !important;
+  }
+}
+
+/* Fix spécifique pour très petits écrans */
+@media (max-width: 400px) {
+  #tutorialModal > div {
+    margin: 0.5vh auto !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+  
+  #rulesModal > div {
+    margin: 1vh auto !important;
+    padding: 10px !important;
+  }
+  
+  #rulesModal #rulesContent {
+    max-height: calc(96vh - 120px) !important;
+    font-size: 0.95rem !important;
+  }
+}
