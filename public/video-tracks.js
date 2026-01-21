@@ -1265,12 +1265,15 @@
   function mountButton() {
     // Keep existing UI button if present; only add fallback on mobile
     const existing = document.querySelector("#videoToggleButton");
-    if (existing) return;
+    if (existing) {
+      // V27: Mettre à jour le bouton existant si videoDisabled change
+      updateVideoButtonState(existing);
+      return;
+    }
 
     // Fallback button bottom-left (mobile friendly)
     const btn = document.createElement("button");
     btn.id = "videoToggleButton";
-    btn.textContent = "🎥 Visio activée";
     btn.style.cssText = `
       position: fixed;
       left: 14px;
@@ -1287,15 +1290,76 @@
     `;
     document.body.appendChild(btn);
 
+    // V27: Mettre à jour l'état initial du bouton
+    updateVideoButtonState(btn);
+
     btn.onclick = () => {
+      // V27: Vérifier si le mode sans vidéo est activé AVANT d'activer la visio
+      const state = window.lastKnownState;
+      if (state?.videoDisabled) {
+        log('⛔ Video disabled for this game - ignoring video activation request');
+        btn.textContent = "🚫 Visio désactivée";
+        btn.style.background = "rgba(100,50,50,0.7)";
+        return;
+      }
+      
       if (window.VideoIntegration && typeof window.VideoIntegration.requestVideoStart === "function") {
         window.VideoIntegration.requestVideoStart();
         btn.textContent = "🎥 Visio demandée…";
-        setTimeout(() => { btn.textContent = "🎥 Visio activée"; }, 1200);
+        setTimeout(() => { 
+          // V27: Re-vérifier après le délai
+          const currentState = window.lastKnownState;
+          if (currentState?.videoDisabled) {
+            btn.textContent = "🚫 Visio désactivée";
+            btn.style.background = "rgba(100,50,50,0.7)";
+          } else {
+            btn.textContent = "🎥 Visio activée";
+            btn.style.background = "rgba(0,100,0,0.55)";
+          }
+        }, 1200);
       } else {
         console.warn("[VideoTracks] VideoIntegration API not ready yet");
       }
     };
+  }
+
+  // V27: Fonction pour mettre à jour l'état du bouton vidéo selon videoDisabled
+  function updateVideoButtonState(btn) {
+    if (!btn) return;
+    
+    const state = window.lastKnownState;
+    const videoDisabled = state?.videoDisabled;
+    
+    if (videoDisabled) {
+      btn.textContent = "🚫 Visio désactivée";
+      btn.style.background = "rgba(100,50,50,0.7)";
+      btn.style.cursor = "not-allowed";
+      btn.style.opacity = "0.7";
+      log('⛔ Video button disabled (videoDisabled=true)');
+    } else {
+      btn.textContent = "🎥 Visio activée";
+      btn.style.background = "rgba(0,0,0,0.55)";
+      btn.style.cursor = "pointer";
+      btn.style.opacity = "1";
+    }
+  }
+
+  // V27: Observer les changements d'état pour mettre à jour le bouton
+  function setupVideoDisabledWatcher() {
+    // Vérifier périodiquement si videoDisabled a changé
+    let lastVideoDisabled = null;
+    setInterval(() => {
+      const state = window.lastKnownState;
+      const currentVideoDisabled = state?.videoDisabled;
+      
+      if (currentVideoDisabled !== lastVideoDisabled) {
+        lastVideoDisabled = currentVideoDisabled;
+        const btn = document.querySelector("#videoToggleButton");
+        if (btn) {
+          updateVideoButtonState(btn);
+        }
+      }
+    }, 1000);
   }
 
   // D4 v5.4: Fonctions toggle pour les boutons de la barre inline
@@ -1472,11 +1536,13 @@
       mountButton();
       waitForCallObject();
       startPeriodicCleanup(); // D5: Démarrer le nettoyage périodique
+      setupVideoDisabledWatcher(); // V27: Observer videoDisabled
     });
   } else {
     mountButton();
     waitForCallObject();
     startPeriodicCleanup(); // D5: Démarrer le nettoyage périodique
+    setupVideoDisabledWatcher(); // V27: Observer videoDisabled
   }
   
   // D5: Nettoyage périodique automatique
