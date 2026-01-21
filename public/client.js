@@ -1478,6 +1478,17 @@ function renderEnd() {
       const shortestHtml = s.shortestGame ? formatDuration(s.shortestGame) : "—";
       const longestHtml = s.longestGame ? formatDuration(s.longestGame) : "—";
       
+      // V27: Nouvelles stats Phase 2
+      const correctVotes = s.correctSaboteurVotes || 0;
+      const revengeKills = s.revengeKillsOnSaboteurs || 0;
+      const totalRevengeShots = s.securityRevengeShots || 0;
+      
+      // V27: Stats par rôle spécifiques - utiliser les traductions du thème
+      const saboteurLabel = tRole('saboteur') || 'Saboteur';
+      const securityLabel = tRole('security') || 'Chef de sécurité';
+      const doctorLabel = tRole('doctor') || 'Docteur';
+      const saboteursLabel = t('saboteurs') || 'Saboteurs';
+      
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
           <div style="font-weight:900; display:flex; align-items:center;">
@@ -1490,7 +1501,12 @@ function renderEnd() {
             <div>Plus courte: <b>${shortestHtml}</b> • Plus longue: <b>${longestHtml}</b></div>
           </div>
           <div style="margin-top:6px; opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">Stats par rôle</div>
+            <div style="font-weight:900; margin-bottom:4px;">🎯 Combat contre les ${saboteursLabel.toLowerCase()}</div>
+            <div>• Votes corrects contre ${saboteursLabel.toLowerCase()}: <b>${correctVotes}</b></div>
+            <div>• ${saboteursLabel} éliminés par vengeance: <b>${revengeKills}</b>/${totalRevengeShots}</div>
+          </div>
+          <div style="margin-top:6px; opacity:.95;">
+            <div style="font-weight:900; margin-bottom:4px;">📈 Stats par rôle</div>
             ${roles || "<div>—</div>"}
           </div>
         </div>
