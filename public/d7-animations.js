@@ -1,7 +1,7 @@
 /* =========================================================
    D7 - ANIMATIONS UX / VISUEL
-   Module pour les animations d'éjection, vote, speaking glow
-   Version: 1.0
+   Module pour les animations d'élimination, vote, speaking glow
+   Version: 1.1 - PEGI 12
 ========================================================= */
 (function() {
   'use strict';
@@ -10,18 +10,18 @@
   function log(...args) { if (DEBUG) console.log('[D7-Animations]', ...args); }
 
   // =========================================================
-  // D7.1 - ANIMATION D'ÉJECTION
+  // D7.1 - ANIMATION D'ÉLIMINATION
   // =========================================================
   
   /**
-   * Anime l'éjection d'un joueur
-   * @param {string} playerId - ID du joueur éjecté
+   * Anime l'élimination d'un joueur
+   * @param {string} playerId - ID du joueur éliminé
    * @param {Function} callback - Callback après animation
    */
   function animateEjection(playerId, callback) {
-    log('Animating ejection for player:', playerId);
+    log('Animating elimination for player:', playerId);
     
-    // D11 V7: Créer un overlay d'éjection visible (ne dépend pas des éléments DOM)
+    // D11 V7: Créer un overlay d'élimination visible (ne dépend pas des éléments DOM)
     const playerName = window.lastKnownState?.players?.find(p => p.playerId === playerId)?.name || 'Joueur';
     
     const overlay = document.createElement('div');
@@ -55,7 +55,7 @@
         margin-top: 20px;
         text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
         animation: fadeInText 0.5s ease-out 0.3s both;
-      ">${playerName} a été éjecté !</div>
+      ">${playerName} a été éliminé !</div>
     `;
     
     // Ajouter les styles d'animation si pas déjà présents
@@ -266,8 +266,8 @@
   // =========================================================
   
   /**
-   * Anime la mort d'un joueur (moins dramatique que l'éjection)
-   * @param {string} playerId - ID du joueur mort
+   * Anime l'élimination d'un joueur (moins dramatique que l'overlay)
+   * @param {string} playerId - ID du joueur éliminé
    * @param {Function} callback - Callback après animation
    */
   function animateDeath(playerId, callback) {
@@ -285,7 +285,7 @@
       });
     });
     
-    // Vibration de mort
+    // Vibration
     if (navigator.vibrate) {
       navigator.vibrate([200, 100, 300]);
     }
@@ -374,7 +374,7 @@
   function setupGameHooks() {
     // Écouter les événements socket si disponible
     if (typeof socket !== 'undefined') {
-      // Éjection
+      // Élimination
       socket.on('playerEjected', (data) => {
         if (data && data.playerId) {
           animateEjection(data.playerId);
