@@ -69,40 +69,27 @@ function ensurePlayerStats(name) {
       chameleonSwaps: 0, securityRevengeShots: 0,
       // Nouvelles stats avancées (Phase 2)
       ejectedBySaboteurs: 0,  // Tué la nuit par saboteurs
-      ejectedByVote: 0,        // Éliminé par vote du jour
+      ejectedByVote: 0,        // Éjecté par vote du jour
       captainElected: 0,       // Nombre de fois élu capitaine
       aiAgentLinks: 0,         // Nombre de liens créés
       matchHistory: [],         // Historique des dernières 20 parties
       shortestGame: null,      // V24: Partie la plus courte (ms)
       longestGame: null,       // V24: Partie la plus longue (ms)
-      firstEliminated: 0,      // V26: Nombre de fois éliminé en premier
-      // V27: Nouvelles stats Phase 2
-      correctSaboteurVotes: 0, // Votes corrects contre saboteurs (éliminés par vote)
-      revengeKillsOnSaboteurs: 0, // Saboteurs éliminés par vengeance
-      revengeKillsOnInnocents: 0, // Innocents éliminés par vengeance (erreur)
-      doctorKillsOnSaboteurs: 0,  // Saboteurs éliminés par potion fatale
-      doctorKillsOnInnocents: 0,  // Innocents éliminés par potion fatale (erreur)
-      doctorMissedSaves: 0        // Innocents morts sans utilisation potion de vie
+      firstEliminated: 0,       // V26: Nombre de fois éliminé en premier
+      // V28: Nouvelles stats Phase 3
+      correctSaboteurVotes: 0,  // Votes corrects contre saboteurs
+      wrongSaboteurVotes: 0,    // Votes contre astronautes (erreurs)
+      totalVotes: 0,            // Total de votes émis
+      doctorNotSavedOpportunities: 0, // Occasions où le docteur aurait pu sauver
+      doctorKillsOnSaboteurs: 0,  // Potion fatale sur saboteurs
+      doctorKillsOnInnocents: 0,  // Potion fatale sur astronautes (erreur)
+      revengeKillsOnSaboteurs: 0, // Vengeance sur saboteurs
+      revengeKillsOnInnocents: 0, // Vengeance sur astronautes (erreur)
+      doctorMissedSaves: 0,       // Non sauvés (potion vie non utilisée)
+      mayorTiebreakerOk: 0,       // Départage du maire qui tue un saboteur
+      mayorTiebreakerKo: 0,       // Départage du maire qui tue un astronaute
+      mayorTiebreakerTotal: 0     // Total de départages du maire
     };
-  }
-  // V27: Migration pour les anciens profils
-  if (statsDb[name].correctSaboteurVotes === undefined) {
-    statsDb[name].correctSaboteurVotes = 0;
-  }
-  if (statsDb[name].revengeKillsOnSaboteurs === undefined) {
-    statsDb[name].revengeKillsOnSaboteurs = 0;
-  }
-  if (statsDb[name].revengeKillsOnInnocents === undefined) {
-    statsDb[name].revengeKillsOnInnocents = 0;
-  }
-  if (statsDb[name].doctorKillsOnSaboteurs === undefined) {
-    statsDb[name].doctorKillsOnSaboteurs = 0;
-  }
-  if (statsDb[name].doctorKillsOnInnocents === undefined) {
-    statsDb[name].doctorKillsOnInnocents = 0;
-  }
-  if (statsDb[name].doctorMissedSaves === undefined) {
-    statsDb[name].doctorMissedSaves = 0;
   }
   return statsDb[name];
 }
@@ -689,8 +676,8 @@ function buildDeathsText(room, newlyDeadIds) {
   }).filter(Boolean);
   if (!items.length) return null;
 
-  if (items.length === 1) return `Le joueur ${items[0]} a été éliminé.`;
-  return `Les joueurs ${items.join(", ")} ont été éliminés.`;
+  if (items.length === 1) return `Le joueur ${items[0]} a été éjecté.`;
+  return `Les joueurs ${items.join(", ")} ont été éjectés.`;
 }
 
 function killPlayer(room, playerId, source, extra = {}) {
@@ -826,9 +813,9 @@ function buildEndReport(room, winner) {
       const label = nameRole(e.targetId, tRole);
       if (label) saves.push(label);
     }
-    if (!saves.length) return { title: "Meilleur Docteur", text: "Aucun sauvetage." };
+    if (!saves.length) return { title: "Meilleur Docteur House", text: "Aucun sauvetage." };
     const uniqSaves = Array.from(new Set(saves));
-    return { title: "Meilleur Docteur", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
+    return { title: "Meilleur Docteur House", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
   };
 
   const awardBoucher = () => {
@@ -837,18 +824,12 @@ function buildEndReport(room, winner) {
     const astronautsTerm = getTerm('astronauts', room);
     const doctorRoleLabel = getRoleLabel('doctor', room);
     
-    // V27: Simplifier le nom de l'école et corriger l'article
-    const shortStation = stationTerm.replace(/ de sorcellerie/gi, '').replace(/ spatiale/gi, '');
-    const startsWithVowel = /^[aeiouéèêëàâäùûüîïôöAEIOUÉÈÊËÀÂÄÙÛÜÎÏÔÖ]/.test(shortStation);
-    const article = startsWithVowel ? "de l'" : "de la ";
-    const boucherTitle = `Boucher ${article}${shortStation}`;
-    
-    if (room.doctorLifeUsed) return { title: boucherTitle, text: "Aucun (potion de vie utilisée)." };
+    if (room.doctorLifeUsed) return { title: `Boucher de la ${stationTerm}`, text: "Aucun (potion de vie utilisée)." };
 
     const doctorIds = getDoctorActorIds();
     const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || doctorRoleLabel) : doctorRoleLabel;
 
-    // Astronauts wrongly eliminated by doctor potion of death
+    // Astronauts wrongly ejected by doctor potion of death
     const wrong = [];
     for (const e of room.matchLog) {
       if (e.type !== "doctor_kill") continue;
@@ -869,12 +850,12 @@ function buildEndReport(room, winner) {
       if (label) unsaved.push(label);
     }
 
-    if (!wrong.length && !unsaved.length) return { title: boucherTitle, text: "Aucun." };
+    if (!wrong.length && !unsaved.length) return { title: `Boucher de la ${stationTerm}`, text: "Aucun." };
 
     const parts = [];
-    if (wrong.length) parts.push(`Éliminations d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
+    if (wrong.length) parts.push(`Éjections d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
     if (unsaved.length) parts.push(`Non sauvés : ${Array.from(new Set(unsaved)).join(", ")}`);
-    return { title: boucherTitle, text: `${doctorName} — ${parts.join(" • ")}` };
+    return { title: `Boucher de la ${stationTerm}`, text: `${doctorName} — ${parts.join(" • ")}` };
   };
 
   const awardOeilDeLynx = () => {
@@ -900,8 +881,8 @@ function buildEndReport(room, winner) {
       if (label) found.push(label);
     }
     const uniqFound = Array.from(new Set(found));
-    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éliminé.` };
-    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éliminé(s) : ${uniqFound.join(", ")}` };
+    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éjecté.` };
+    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
   };
 
   const awardLupin = () => {
@@ -1020,18 +1001,12 @@ function buildEndReport(room, winner) {
   const astronautsTerm = getTerm('astronauts', room);
   const stationTerm = getTerm('station', room);
   
-  // V27: Simplifier le nom de l'école et corriger l'article pour les awards
-  const shortStation = stationTerm.replace(/ de sorcellerie/gi, '').replace(/ spatiale/gi, '');
-  const startsWithVowel = /^[aeiouéèêëàâäùûüîïôöAEIOUÉÈÊËÀÂÄÙÛÜÎÏÔÖ]/.test(shortStation);
-  const articleStation = startsWithVowel ? "de l'" : "de la ";
-  const shortStationCapital = shortStation.charAt(0).toUpperCase() + shortStation.slice(1);
-  
   const awards = [
     awardDoctorHouse(),
     awardBoucher(),
     awardOeilDeLynx(),
     awardLupin(),
-    awardSecurity("saboteurs", `Vengeur masqué ${articleStation}${shortStationCapital}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
+    awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
     awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`),
     awardAssociation(),
     awardSaboteurIncognito(),
@@ -1061,13 +1036,19 @@ function buildEndReport(room, winner) {
       shortestGame: s.shortestGame,
       longestGame: s.longestGame,
       firstEliminated: s.firstEliminated || 0,
-      // V27: Nouvelles stats Phase 2
+      // V28: Nouvelles stats Phase 3
       correctSaboteurVotes: s.correctSaboteurVotes || 0,
-      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0,
-      revengeKillsOnInnocents: s.revengeKillsOnInnocents || 0,
+      wrongSaboteurVotes: s.wrongSaboteurVotes || 0,
+      totalVotes: s.totalVotes || 0,
+      doctorNotSavedOpportunities: s.doctorNotSavedOpportunities || 0,
       doctorKillsOnSaboteurs: s.doctorKillsOnSaboteurs || 0,
       doctorKillsOnInnocents: s.doctorKillsOnInnocents || 0,
-      doctorMissedSaves: s.doctorMissedSaves || 0
+      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0,
+      revengeKillsOnInnocents: s.revengeKillsOnInnocents || 0,
+      doctorMissedSaves: s.doctorMissedSaves || 0,
+      mayorTiebreakerOk: s.mayorTiebreakerOk || 0,
+      mayorTiebreakerKo: s.mayorTiebreakerKo || 0,
+      mayorTiebreakerTotal: s.mayorTiebreakerTotal || 0
     };
   }
 
@@ -1176,6 +1157,83 @@ function endGame(room, winner) {
       }
     }
   }
+  
+  // V28: Calculer et enregistrer les stats Phase 3 basées sur matchLog
+  const playerIdToName = new Map();
+  for (const p of room.players.values()) {
+    playerIdToName.set(p.playerId, p.name);
+  }
+  
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const st = ensurePlayerStats(p.name);
+    
+    // Compter les votes de ce joueur
+    for (const e of room.matchLog) {
+      // Votes contre saboteurs/astronautes
+      if (e.type === "day_vote" && e.voterId === p.playerId) {
+        st.totalVotes = (st.totalVotes || 0) + 1;
+        const targetPlayer = room.players.get(e.targetId);
+        const targetRole = e.targetRole || targetPlayer?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
+        } else {
+          st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+        }
+      }
+      
+      // Stats du docteur - potion fatale
+      if (e.type === "doctor_kill" && e.by === p.playerId) {
+        const targetRole = e.targetRole || room.players.get(e.targetId)?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.doctorKillsOnSaboteurs = (st.doctorKillsOnSaboteurs || 0) + 1;
+        } else {
+          st.doctorKillsOnInnocents = (st.doctorKillsOnInnocents || 0) + 1;
+        }
+      }
+      
+      // Stats du security - vengeance
+      if (e.type === "revenge_shot" && e.by === p.playerId) {
+        const targetRole = e.targetRole || room.players.get(e.targetId)?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.revengeKillsOnSaboteurs = (st.revengeKillsOnSaboteurs || 0) + 1;
+        } else {
+          st.revengeKillsOnInnocents = (st.revengeKillsOnInnocents || 0) + 1;
+        }
+      }
+      
+      // Stats du maire - départage
+      if (e.type === "captain_tiebreak" && e.captainId === p.playerId) {
+        st.mayorTiebreakerTotal = (st.mayorTiebreakerTotal || 0) + 1;
+        const targetTeam = e.targetTeam || ROLES[e.targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.mayorTiebreakerOk = (st.mayorTiebreakerOk || 0) + 1;
+        } else {
+          st.mayorTiebreakerKo = (st.mayorTiebreakerKo || 0) + 1;
+        }
+      }
+    }
+    
+    // V28: Calculer doctorMissedSaves et doctorNotSavedOpportunities
+    // Si le joueur était docteur et n'a pas utilisé la potion de vie
+    if (p.role === "doctor" && !room.doctorLifeUsed) {
+      // Compter les morts par saboteurs (opportunités manquées)
+      let missedOpportunities = 0;
+      for (const e of room.matchLog) {
+        if (e.type === "player_died" && e.source === "saboteurs") {
+          missedOpportunities++;
+        }
+      }
+      if (missedOpportunities > 0) {
+        st.doctorMissedSaves = (st.doctorMissedSaves || 0) + missedOpportunities;
+        st.doctorNotSavedOpportunities = (st.doctorNotSavedOpportunities || 0) + missedOpportunities;
+      }
+    }
+  }
+  
   saveStats(statsDb);
   
   // V26: Vérifier et attribuer les badges
@@ -1393,23 +1451,6 @@ function resolveNight(room) {
   if (nd.saboteurTarget && nd.saboteurTarget !== nd.doctorSave) killed.add(nd.saboteurTarget);
   if (nd.doctorKill) killed.add(nd.doctorKill);
 
-  // V27: Tracker les missed saves du docteur
-  // Si le docteur était vivant, avait sa potion de vie, ne l'a pas utilisée, et un innocent meurt par les saboteurs
-  const doc = Array.from(room.players.values()).find(p => p.role === "doctor" && p.status === "alive");
-  if (doc && !nd.doctorSave && nd.saboteurTarget) {
-    const victim = room.players.get(nd.saboteurTarget);
-    if (victim) {
-      const victimTeam = ROLES[victim.role]?.team || "astronauts";
-      if (victimTeam !== "saboteurs") {
-        // Un innocent meurt et le docteur n'a pas utilisé sa potion de vie
-        const st = ensurePlayerStats(doc.name);
-        st.doctorMissedSaves = (st.doctorMissedSaves || 0) + 1;
-        console.log(`[${room.code}] V27: ${doc.name} missed save on innocent ${victim.name}`);
-        saveStats(statsDb);
-      }
-    }
-  }
-
   const newlyDead = [];
   for (const pid of killed) {
     // Distinguish sources for stats/awards.
@@ -1514,25 +1555,6 @@ function executeEjection(room, ejectedId, reason) {
   const p = room.players.get(ejectedId);
   if (!p || p.status !== "alive") return;
 
-  // V27: Tracker les votes corrects contre saboteurs AVANT l'élimination
-  const ejectedRole = p.role;
-  const ejectedTeam = ROLES[ejectedRole]?.team || "astronauts";
-  if (ejectedTeam === "saboteurs" && reason === "vote") {
-    // Trouver qui a voté pour ce saboteur
-    const votes = room.phaseData?.votes || {};
-    for (const [voterId, targetId] of Object.entries(votes)) {
-      if (targetId === ejectedId) {
-        const voter = room.players.get(voterId);
-        if (voter && voter.name) {
-          const st = ensurePlayerStats(voter.name);
-          st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
-          console.log(`[${room.code}] V27: ${voter.name} voted correctly against saboteur ${p.name}`);
-        }
-      }
-    }
-    saveStats(statsDb);
-  }
-
   const newlyDead = [];
   if (killPlayer(room, ejectedId, "day", { reason })) newlyDead.push(ejectedId);
 
@@ -1588,7 +1610,7 @@ function formatLogLine(room, e) {
     case "phase": return { kind: "info", text: `[${t}] ➜ ${getPhaseName(e.phase, room)}` };
     case "roles_assigned": return { kind: "info", text: `[${t}] Rôles attribués.` };
     case "captain_elected": return { kind: "info", text: `[${t}] ⭐ ${captainTerm}: ${name(e.playerId)}` };
-    case "player_died": return { kind: "info", text: `[${t}] 💀 ${name(e.playerId)} a été éliminé.` };
+    case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éjecté.` };
     case "player_left": return { kind: "warn", text: `[${t}] 🚪 ${name(e.playerId)} peut revenir (30s).` };
     case "player_removed": return { kind: "warn", text: `[${t}] ⛔ ${name(e.playerId)} est sorti.` };
     case "reconnected": return { kind: "info", text: `[${t}] ✅ ${name(e.playerId)} est revenu.` };
@@ -2574,7 +2596,7 @@ io.on("connection", (socket) => {
         st.doctorSaves += 1;
         saveStats(statsDb);
       } else if (action === "kill") {
-        if (room.doctorDeathUsed) return cb && cb({ ok:false, error:"Potion fatale déjà utilisée." });
+        if (room.doctorDeathUsed) return cb && cb({ ok:false, error:"Potion de mort déjà utilisée." });
         if (!targetId) return cb && cb({ ok:false, error:"Cible manquante." });
         const tP = room.players.get(targetId);
         if (!tP || tP.status !== "alive") return cb && cb({ ok:false, error:"Cible invalide." });
@@ -2585,16 +2607,6 @@ io.on("connection", (socket) => {
 
         const st = ensurePlayerStats(p.name);
         st.doctorKills += 1;
-        
-        // V27: Tracker si la cible était un saboteur ou un innocent
-        const targetTeam = ROLES[tP.role]?.team || "astronauts";
-        if (targetTeam === "saboteurs") {
-          st.doctorKillsOnSaboteurs = (st.doctorKillsOnSaboteurs || 0) + 1;
-          console.log(`[${room.code}] V27: ${p.name} doctor killed saboteur ${tP.name}`);
-        } else {
-          st.doctorKillsOnInnocents = (st.doctorKillsOnInnocents || 0) + 1;
-          console.log(`[${room.code}] V27: ${p.name} doctor killed innocent ${tP.name} (error)`);
-        }
         saveStats(statsDb);
       } else if (action === "none") {
         logEvent(room, "doctor_none", { by: playerId });
@@ -2661,16 +2673,6 @@ if (phase === "REVENGE") {
   logEvent(room, "revenge_shot", { by: playerId, targetId: target, targetRole: tP.role || null });
   console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
   ensurePlayerStats(p.name).securityRevengeShots += 1;
-  
-  // V27: Tracker si la cible était un saboteur ou un innocent
-  const targetTeam = ROLES[tP.role]?.team || "astronauts";
-  if (targetTeam === "saboteurs") {
-    ensurePlayerStats(p.name).revengeKillsOnSaboteurs = (ensurePlayerStats(p.name).revengeKillsOnSaboteurs || 0) + 1;
-    console.log(`[${room.code}] V27: ${p.name} revenge killed saboteur ${tP.name}`);
-  } else {
-    ensurePlayerStats(p.name).revengeKillsOnInnocents = (ensurePlayerStats(p.name).revengeKillsOnInnocents || 0) + 1;
-    console.log(`[${room.code}] V27: ${p.name} revenge killed innocent ${tP.name} (error)`);
-  }
   saveStats(statsDb);
 
   const casc = applyLinkCascade(room);
