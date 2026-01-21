@@ -1496,35 +1496,48 @@ function renderEnd() {
       const securityLabel = tRole('security') || 'Chef de sécurité';
       const doctorLabel = tRole('doctor') || 'Docteur';
       
-      return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
-        <div class="player-left">
-          <div style="font-weight:900; display:flex; align-items:center;">
+      return `<div class="player-item" style="margin:12px 0; padding:12px; ${colorStyle}">
+        <!-- En-tête joueur + Stats générales + Temps -->
+        <div style="margin-bottom:12px;">
+          <div style="font-weight:900; display:flex; align-items:center; margin-bottom:8px;">
             <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
-          <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
-          <div style="margin-top:6px; opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">⏱️ Temps de partie</div>
-            <div>Plus courte: <b>${shortestHtml}</b> • Plus longue: <b>${longestHtml}</b></div>
+          <div style="opacity:.9; margin-bottom:6px;">
+            Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b>
           </div>
-          <div style="margin-top:6px; opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">🎯 Combat contre les ${saboteursLabel.toLowerCase()}</div>
-            <div>• Votes corrects contre ${saboteursLabel.toLowerCase()}: <b>${correctVotes}</b></div>
+          <div style="opacity:.9;">
+            ⏱️ Plus courte: <b>${shortestHtml}</b> • Plus longue: <b>${longestHtml}</b>
           </div>
-          <div style="margin-top:6px; opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">🔫 Stats ${securityLabel}</div>
-            <div>• ${saboteursLabel} éliminés par vengeance: <b>${revengeKillsSab}</b>/${totalRevengeShots}</div>
-            <div>• ${astronautesLabel} éliminés par erreur: <b>${revengeKillsInn}</b>/${totalRevengeShots}</div>
+        </div>
+        
+        <!-- Grille 2x2 pour les stats spécifiques -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+          <!-- Colonne gauche haut: Combat -->
+          <div style="opacity:.95;">
+            <div style="font-weight:900; margin-bottom:6px;">🎯 Combat ${saboteursLabel.toLowerCase()}</div>
+            <div>• Votes corrects: <b>${correctVotes}</b></div>
           </div>
-          <div style="margin-top:6px; opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">💊 Stats ${doctorLabel}</div>
-            <div>• Potion fatale sur ${saboteursLabel.toLowerCase()}: <b>${doctorKillsSab}</b>/${totalDoctorKills}</div>
-            <div>• Potion fatale sur ${astronautesLabel.toLowerCase()} (erreur): <b>${doctorKillsInn}</b>/${totalDoctorKills}</div>
-            <div>• Potion de vie utilisée: <b>${doctorSaves}</b>/${doctorGames}</div>
-            <div>• ${astronautesLabel} non sauvés: <b>${doctorMissed}</b></div>
+          
+          <!-- Colonne droite haut: Stats Sécurité -->
+          <div style="opacity:.95;">
+            <div style="font-weight:900; margin-bottom:6px;">🔫 ${securityLabel}</div>
+            <div>• ${saboteursLabel} éliminés: <b>${revengeKillsSab}</b>/${totalRevengeShots}</div>
+            <div>• ${astronautesLabel} (erreur): <b>${revengeKillsInn}</b>/${totalRevengeShots}</div>
           </div>
-          <div style="margin-top:6px; opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">📈 Stats par rôle</div>
+          
+          <!-- Colonne gauche bas: Stats Docteur -->
+          <div style="opacity:.95;">
+            <div style="font-weight:900; margin-bottom:6px;">💊 ${doctorLabel}</div>
+            <div>• Fatale ${saboteursLabel.toLowerCase()}: <b>${doctorKillsSab}</b>/${totalDoctorKills}</div>
+            <div>• Fatale ${astronautesLabel.toLowerCase()}: <b>${doctorKillsInn}</b>/${totalDoctorKills}</div>
+            <div>• Vie utilisée: <b>${doctorSaves}</b>/${doctorGames}</div>
+            <div>• Non sauvés: <b>${doctorMissed}</b></div>
+          </div>
+          
+          <!-- Colonne droite bas: Stats par rôle -->
+          <div style="opacity:.95;">
+            <div style="font-weight:900; margin-bottom:6px;">📈 Stats par rôle</div>
             ${roles || "<div>—</div>"}
           </div>
         </div>
