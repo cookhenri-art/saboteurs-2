@@ -78,7 +78,11 @@ function ensurePlayerStats(name) {
       firstEliminated: 0,      // V26: Nombre de fois éliminé en premier
       // V27: Nouvelles stats Phase 2
       correctSaboteurVotes: 0, // Votes corrects contre saboteurs (éliminés par vote)
-      revengeKillsOnSaboteurs: 0 // Saboteurs éliminés par vengeance
+      revengeKillsOnSaboteurs: 0, // Saboteurs éliminés par vengeance
+      revengeKillsOnInnocents: 0, // Innocents éliminés par vengeance (erreur)
+      doctorKillsOnSaboteurs: 0,  // Saboteurs éliminés par potion fatale
+      doctorKillsOnInnocents: 0,  // Innocents éliminés par potion fatale (erreur)
+      doctorMissedSaves: 0        // Innocents morts sans utilisation potion de vie
     };
   }
   // V27: Migration pour les anciens profils
@@ -87,6 +91,18 @@ function ensurePlayerStats(name) {
   }
   if (statsDb[name].revengeKillsOnSaboteurs === undefined) {
     statsDb[name].revengeKillsOnSaboteurs = 0;
+  }
+  if (statsDb[name].revengeKillsOnInnocents === undefined) {
+    statsDb[name].revengeKillsOnInnocents = 0;
+  }
+  if (statsDb[name].doctorKillsOnSaboteurs === undefined) {
+    statsDb[name].doctorKillsOnSaboteurs = 0;
+  }
+  if (statsDb[name].doctorKillsOnInnocents === undefined) {
+    statsDb[name].doctorKillsOnInnocents = 0;
+  }
+  if (statsDb[name].doctorMissedSaves === undefined) {
+    statsDb[name].doctorMissedSaves = 0;
   }
   return statsDb[name];
 }
@@ -1047,7 +1063,11 @@ function buildEndReport(room, winner) {
       firstEliminated: s.firstEliminated || 0,
       // V27: Nouvelles stats Phase 2
       correctSaboteurVotes: s.correctSaboteurVotes || 0,
-      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0
+      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0,
+      revengeKillsOnInnocents: s.revengeKillsOnInnocents || 0,
+      doctorKillsOnSaboteurs: s.doctorKillsOnSaboteurs || 0,
+      doctorKillsOnInnocents: s.doctorKillsOnInnocents || 0,
+      doctorMissedSaves: s.doctorMissedSaves || 0
     };
   }
 
@@ -1373,6 +1393,23 @@ function resolveNight(room) {
   if (nd.saboteurTarget && nd.saboteurTarget !== nd.doctorSave) killed.add(nd.saboteurTarget);
   if (nd.doctorKill) killed.add(nd.doctorKill);
 
+  // V27: Tracker les missed saves du docteur
+  // Si le docteur était vivant, avait sa potion de vie, ne l'a pas utilisée, et un innocent meurt par les saboteurs
+  const doc = Array.from(room.players.values()).find(p => p.role === "doctor" && p.status === "alive");
+  if (doc && !nd.doctorSave && nd.saboteurTarget) {
+    const victim = room.players.get(nd.saboteurTarget);
+    if (victim) {
+      const victimTeam = ROLES[victim.role]?.team || "astronauts";
+      if (victimTeam !== "saboteurs") {
+        // Un innocent meurt et le docteur n'a pas utilisé sa potion de vie
+        const st = ensurePlayerStats(doc.name);
+        st.doctorMissedSaves = (st.doctorMissedSaves || 0) + 1;
+        console.log(`[${room.code}] V27: ${doc.name} missed save on innocent ${victim.name}`);
+        saveStats(statsDb);
+      }
+    }
+  }
+
   const newlyDead = [];
   for (const pid of killed) {
     // Distinguish sources for stats/awards.
@@ -1380,6 +1417,7 @@ function resolveNight(room) {
     if (nd.doctorKill && pid === nd.doctorKill) source = "doctor";
     else if (nd.saboteurTarget && pid === nd.saboteurTarget && pid !== nd.doctorSave) source = "saboteurs";
     if (killPlayer(room, pid, source)) newlyDead.push(pid);
+  }
   }
 // linked deaths cascade
   const casc = applyLinkCascade(room);
@@ -2548,6 +2586,16 @@ io.on("connection", (socket) => {
 
         const st = ensurePlayerStats(p.name);
         st.doctorKills += 1;
+        
+        // V27: Tracker si la cible était un saboteur ou un innocent
+        const targetTeam = ROLES[tP.role]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.doctorKillsOnSaboteurs = (st.doctorKillsOnSaboteurs || 0) + 1;
+          console.log(`[${room.code}] V27: ${p.name} doctor killed saboteur ${tP.name}`);
+        } else {
+          st.doctorKillsOnInnocents = (st.doctorKillsOnInnocents || 0) + 1;
+          console.log(`[${room.code}] V27: ${p.name} doctor killed innocent ${tP.name} (error)`);
+        }
         saveStats(statsDb);
       } else if (action === "none") {
         logEvent(room, "doctor_none", { by: playerId });
@@ -2615,11 +2663,14 @@ if (phase === "REVENGE") {
   console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
   ensurePlayerStats(p.name).securityRevengeShots += 1;
   
-  // V27: Tracker si la cible était un saboteur
+  // V27: Tracker si la cible était un saboteur ou un innocent
   const targetTeam = ROLES[tP.role]?.team || "astronauts";
   if (targetTeam === "saboteurs") {
     ensurePlayerStats(p.name).revengeKillsOnSaboteurs = (ensurePlayerStats(p.name).revengeKillsOnSaboteurs || 0) + 1;
     console.log(`[${room.code}] V27: ${p.name} revenge killed saboteur ${tP.name}`);
+  } else {
+    ensurePlayerStats(p.name).revengeKillsOnInnocents = (ensurePlayerStats(p.name).revengeKillsOnInnocents || 0) + 1;
+    console.log(`[${room.code}] V27: ${p.name} revenge killed innocent ${tP.name} (error)`);
   }
   saveStats(statsDb);
 
