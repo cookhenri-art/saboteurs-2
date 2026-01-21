@@ -1177,9 +1177,25 @@ function endGame(room, winner) {
         const targetId = votesObj[p.playerId];
         if (targetId) {
           st.totalVotes = (st.totalVotes || 0) + 1;
-          const targetPlayer = room.players.get(targetId);
+          
+          // V28 FIX2: Chercher le joueur cible de manière robuste
+          let targetPlayer = room.players.get(targetId);
+          // Fallback: chercher par itération si get() échoue
+          if (!targetPlayer) {
+            for (const [pid, pl] of room.players.entries()) {
+              if (pid === targetId || String(pid) === String(targetId)) {
+                targetPlayer = pl;
+                break;
+              }
+            }
+          }
+          
           const targetRole = targetPlayer?.role;
           const targetTeam = ROLES[targetRole]?.team || "astronauts";
+          
+          // Debug log
+          console.log(`[V28 Stats] Player ${p.name} voted for ${targetId} (role: ${targetRole}, team: ${targetTeam})`);
+          
           if (targetTeam === "saboteurs") {
             st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
           } else {
