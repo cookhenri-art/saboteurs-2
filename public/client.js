@@ -1504,46 +1504,44 @@ function renderEnd() {
       const doctorLabel = tRole('doctor') || 'Docteur';
       
       return `<div class="player-item" style="margin:12px 0; padding:12px; ${colorStyle}">
-        <!-- Layout 2 colonnes sur PC, 1 colonne sur mobile -->
-        <div style="display:flex; flex-wrap:wrap; gap:16px;">
+        <!-- En-tête joueur -->
+        <div style="font-weight:900; display:flex; align-items:center; margin-bottom:10px;">
+          <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+          ${escapeHtml(name)}
+        </div>
+        <div style="opacity:.9; font-size:0.85rem; margin-bottom:12px;">
+          <div>Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
+          <div>⏱️ Courte: <b>${shortestHtml}</b> • Longue: <b>${longestHtml}</b></div>
+        </div>
+        
+        <!-- Layout 2 colonnes fixes sur PC -->
+        <div style="display:flex; flex-wrap:wrap; gap:20px;">
           
-          <!-- Colonne gauche : Stats générales + Combat + Sécurité + Docteur -->
-          <div style="flex:1 1 250px; min-width:220px; max-width:350px;">
-            <div style="font-weight:900; display:flex; align-items:center; margin-bottom:10px;">
-              <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
-              ${escapeHtml(name)}
-            </div>
-            <div style="opacity:.9; font-size:0.85rem; margin-bottom:10px;">
-              <div>Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b></div>
-              <div>Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
-              <div style="margin-top:4px;">⏱️ Courte: <b>${shortestHtml}</b> • Longue: <b>${longestHtml}</b></div>
+          <!-- Colonne gauche : Combat + Sécurité + Docteur -->
+          <div style="flex:1 1 280px; min-width:250px; font-size:0.85rem;">
+            <div style="margin-bottom:10px;">
+              <div style="font-weight:900; margin-bottom:4px;">🎯 Combat VS ${saboteursLabel.toLowerCase()}</div>
+              <div>• Votes corrects: <b>${correctVotes}</b></div>
             </div>
             
-            <div style="font-size:0.85rem;">
-              <div style="margin-bottom:8px;">
-                <div style="font-weight:900; margin-bottom:4px;">🎯 Combat</div>
-                <div>• Votes corrects: <b>${correctVotes}</b></div>
-              </div>
-              
-              <div style="margin-bottom:8px;">
-                <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
-                <div>• Éliminés: <b>${revengeKillsSab}/${totalRevengeShots}</b> (${pctRevengeSab}%)</div>
-                <div>• Erreurs: <b>${revengeKillsInn}/${totalRevengeShots}</b> (${pctRevengeInn}%)</div>
-              </div>
-              
-              <div>
-                <div style="font-weight:900; margin-bottom:4px;">💊 ${doctorLabel}</div>
-                <div>• Potion fatale ok: <b>${doctorKillsSab}/${totalDoctorKills}</b> (${pctFataleSab}%)</div>
-                <div>• Potion fatale err: <b>${doctorKillsInn}/${totalDoctorKills}</b> (${pctFataleInn}%)</div>
-                <div>• Potion vie: <b>${doctorSaves}/${doctorGames}</b> (${pctVieUsed}%)</div>
-                <div>• Non sauvés: <b>${doctorMissed}</b></div>
-              </div>
+            <div style="margin-bottom:10px;">
+              <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
+              <div>• ${saboteursLabel} éliminés: <b>${revengeKillsSab}/${totalRevengeShots}</b> (${pctRevengeSab}%)</div>
+              <div>• ${astronautesLabel} éliminés (err): <b>${revengeKillsInn}/${totalRevengeShots}</b> (${pctRevengeInn}%)</div>
+            </div>
+            
+            <div>
+              <div style="font-weight:900; margin-bottom:4px;">💊 ${doctorLabel}</div>
+              <div>• Potion fatale ok: <b>${doctorKillsSab}/${totalDoctorKills}</b> (${pctFataleSab}%)</div>
+              <div>• Potion fatale err: <b>${doctorKillsInn}/${totalDoctorKills}</b> (${pctFataleInn}%)</div>
+              <div>• Potion vie: <b>${doctorSaves}/${doctorGames}</b> (${pctVieUsed}%)</div>
+              <div>• Non sauvés: <b>${doctorMissed}</b></div>
             </div>
           </div>
           
-          <!-- Colonne droite : Stats par rôle (peut grandir) -->
-          <div style="flex:1 1 180px; font-size:0.85rem;">
-            <div style="font-weight:900; margin-bottom:6px;">📈 Stats par rôle</div>
+          <!-- Colonne droite : Victoires par rôle -->
+          <div style="flex:1 1 200px; min-width:180px; font-size:0.85rem;">
+            <div style="font-weight:900; margin-bottom:6px;">📈 Victoires par rôle</div>
             ${roles || "<div>—</div>"}
           </div>
           
