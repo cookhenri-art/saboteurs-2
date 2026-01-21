@@ -1170,16 +1170,21 @@ function endGame(room, winner) {
     
     // Compter les votes de ce joueur
     for (const e of room.matchLog) {
-      // Votes contre saboteurs/astronautes
-      if (e.type === "day_vote" && e.voterId === p.playerId) {
-        st.totalVotes = (st.totalVotes || 0) + 1;
-        const targetPlayer = room.players.get(e.targetId);
-        const targetRole = e.targetRole || targetPlayer?.role;
-        const targetTeam = ROLES[targetRole]?.team || "astronauts";
-        if (targetTeam === "saboteurs") {
-          st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
-        } else {
-          st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+      // V28 FIX: Votes sont dans "day_votes" avec objet votes: {voterId: targetId}
+      if (e.type === "day_votes" && e.votes) {
+        const votesObj = e.votes;
+        // Vérifier si ce joueur a voté dans cet événement
+        const targetId = votesObj[p.playerId];
+        if (targetId) {
+          st.totalVotes = (st.totalVotes || 0) + 1;
+          const targetPlayer = room.players.get(targetId);
+          const targetRole = targetPlayer?.role;
+          const targetTeam = ROLES[targetRole]?.team || "astronauts";
+          if (targetTeam === "saboteurs") {
+            st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
+          } else {
+            st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+          }
         }
       }
       
