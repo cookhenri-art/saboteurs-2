@@ -1471,14 +1471,14 @@ function renderEnd() {
       
       const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
         const roleName = tRole(rk) || rk;
-        return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${pct}% (${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)})</div>`;
+        return `<div style="opacity:.95;">• <b>${escapeHtml(roleName)}</b> : ${(s.winsByRole?.[rk]||0)}/${(s.gamesByRole?.[rk]||0)} (${pct}%)</div>`;
       }).join("");
       
       // V25: Temps de partie min/max
       const shortestHtml = s.shortestGame ? formatDuration(s.shortestGame) : "—";
       const longestHtml = s.longestGame ? formatDuration(s.longestGame) : "—";
       
-      // V27: Nouvelles stats Phase 2
+      // V27: Nouvelles stats Phase 2 avec calcul des pourcentages
       const correctVotes = s.correctSaboteurVotes || 0;
       const revengeKillsSab = s.revengeKillsOnSaboteurs || 0;
       const revengeKillsInn = s.revengeKillsOnInnocents || 0;
@@ -1490,6 +1490,13 @@ function renderEnd() {
       const doctorMissed = s.doctorMissedSaves || 0;
       const doctorGames = s.gamesByRole?.doctor || 0;
       
+      // V27: Calcul des pourcentages
+      const pctRevengeSab = totalRevengeShots > 0 ? Math.round((revengeKillsSab / totalRevengeShots) * 100) : 0;
+      const pctRevengeInn = totalRevengeShots > 0 ? Math.round((revengeKillsInn / totalRevengeShots) * 100) : 0;
+      const pctFataleSab = totalDoctorKills > 0 ? Math.round((doctorKillsSab / totalDoctorKills) * 100) : 0;
+      const pctFataleInn = totalDoctorKills > 0 ? Math.round((doctorKillsInn / totalDoctorKills) * 100) : 0;
+      const pctVieUsed = doctorGames > 0 ? Math.round((doctorSaves / doctorGames) * 100) : 0;
+      
       // V27: Labels selon le thème
       const saboteursLabel = t('saboteurs') || 'Saboteurs';
       const astronautesLabel = t('astronauts') || 'Astronautes';
@@ -1497,49 +1504,49 @@ function renderEnd() {
       const doctorLabel = tRole('doctor') || 'Docteur';
       
       return `<div class="player-item" style="margin:12px 0; padding:12px; ${colorStyle}">
-        <!-- En-tête joueur + Stats générales + Temps -->
-        <div style="margin-bottom:12px;">
-          <div style="font-weight:900; display:flex; align-items:center; margin-bottom:8px;">
-            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
-            ${escapeHtml(name)}
-          </div>
-          <div style="opacity:.9; margin-bottom:6px; font-size:0.9rem;">
-            Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b>
-          </div>
-          <div style="opacity:.9; font-size:0.9rem;">
-            ⏱️ Plus courte: <b>${shortestHtml}</b> • Plus longue: <b>${longestHtml}</b>
-          </div>
-        </div>
-        
-        <!-- Grille responsive pour les stats spécifiques -->
-        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; font-size:0.85rem;">
-          <!-- Combat -->
-          <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">🎯 Combat</div>
-            <div>• Votes corrects: <b>${correctVotes}</b></div>
+        <!-- Layout 2 colonnes sur PC, 1 colonne sur mobile -->
+        <div style="display:flex; flex-wrap:wrap; gap:16px;">
+          
+          <!-- Colonne gauche : Stats générales + Combat + Sécurité + Docteur -->
+          <div style="flex:1 1 250px; min-width:220px; max-width:350px;">
+            <div style="font-weight:900; display:flex; align-items:center; margin-bottom:10px;">
+              <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+              ${escapeHtml(name)}
+            </div>
+            <div style="opacity:.9; font-size:0.85rem; margin-bottom:10px;">
+              <div>Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b></div>
+              <div>Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
+              <div style="margin-top:4px;">⏱️ Courte: <b>${shortestHtml}</b> • Longue: <b>${longestHtml}</b></div>
+            </div>
+            
+            <div style="font-size:0.85rem;">
+              <div style="margin-bottom:8px;">
+                <div style="font-weight:900; margin-bottom:4px;">🎯 Combat</div>
+                <div>• Votes corrects: <b>${correctVotes}</b></div>
+              </div>
+              
+              <div style="margin-bottom:8px;">
+                <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
+                <div>• Éliminés: <b>${revengeKillsSab}/${totalRevengeShots}</b> (${pctRevengeSab}%)</div>
+                <div>• Erreurs: <b>${revengeKillsInn}/${totalRevengeShots}</b> (${pctRevengeInn}%)</div>
+              </div>
+              
+              <div>
+                <div style="font-weight:900; margin-bottom:4px;">💊 ${doctorLabel}</div>
+                <div>• Potion fatale ok: <b>${doctorKillsSab}/${totalDoctorKills}</b> (${pctFataleSab}%)</div>
+                <div>• Potion fatale err: <b>${doctorKillsInn}/${totalDoctorKills}</b> (${pctFataleInn}%)</div>
+                <div>• Potion vie: <b>${doctorSaves}/${doctorGames}</b> (${pctVieUsed}%)</div>
+                <div>• Non sauvés: <b>${doctorMissed}</b></div>
+              </div>
+            </div>
           </div>
           
-          <!-- Stats Sécurité -->
-          <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
-            <div>• Éliminés: <b>${revengeKillsSab}</b>/${totalRevengeShots}</div>
-            <div>• Erreurs: <b>${revengeKillsInn}</b>/${totalRevengeShots}</div>
-          </div>
-          
-          <!-- Stats Docteur -->
-          <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">💊 ${doctorLabel}</div>
-            <div>• Fatale ok: <b>${doctorKillsSab}</b>/${totalDoctorKills}</div>
-            <div>• Fatale err: <b>${doctorKillsInn}</b>/${totalDoctorKills}</div>
-            <div>• Vie: <b>${doctorSaves}</b>/${doctorGames}</div>
-            <div>• Non sauvés: <b>${doctorMissed}</b></div>
-          </div>
-          
-          <!-- Stats par rôle -->
-          <div style="opacity:.95;">
-            <div style="font-weight:900; margin-bottom:4px;">📈 Rôles</div>
+          <!-- Colonne droite : Stats par rôle (peut grandir) -->
+          <div style="flex:1 1 180px; font-size:0.85rem;">
+            <div style="font-weight:900; margin-bottom:6px;">📈 Stats par rôle</div>
             ${roles || "<div>—</div>"}
           </div>
+          
         </div>
       </div>`;
     }).join("");
