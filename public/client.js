@@ -1505,8 +1505,8 @@ function renderEnd() {
       
       return `<div class="player-item" style="margin:12px 0; padding:12px; ${colorStyle}">
         <!-- BANDEAU HAUT : Nom + Stats générales (100% largeur) -->
-        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">
-          <div style="font-weight:900; display:flex; align-items:center;">
+        <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">
+          <div style="font-weight:900; display:flex; align-items:center; margin-bottom:6px;">
             <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
@@ -1518,11 +1518,11 @@ function renderEnd() {
           </div>
         </div>
         
-        <!-- 2 COLONNES EN DESSOUS -->
-        <div style="display:flex; flex-wrap:wrap; gap:24px;">
+        <!-- 2 COLONNES avec CSS Grid (plus fiable que flexbox) -->
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; font-size:0.85rem;">
           
           <!-- Colonne gauche : Combat + Sécurité + Docteur -->
-          <div style="flex:1 1 280px; min-width:250px; font-size:0.85rem;">
+          <div>
             <div style="margin-bottom:12px;">
               <div style="font-weight:900; margin-bottom:4px;">🎯 Combat VS ${saboteursLabel.toLowerCase()}</div>
               <div>• Votes corrects: <b>${correctVotes}</b></div>
@@ -1544,7 +1544,7 @@ function renderEnd() {
           </div>
           
           <!-- Colonne droite : Victoires par rôle -->
-          <div style="flex:1 1 200px; min-width:180px; font-size:0.85rem;">
+          <div>
             <div style="font-weight:900; margin-bottom:6px;">📈 Victoires par rôle</div>
             ${roles || "<div>—</div>"}
           </div>
