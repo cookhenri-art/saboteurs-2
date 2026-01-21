@@ -1504,27 +1504,31 @@ function renderEnd() {
       const doctorLabel = tRole('doctor') || 'Docteur';
       
       return `<div class="player-item" style="margin:12px 0; padding:12px; ${colorStyle}">
-        <!-- En-tête joueur -->
-        <div style="font-weight:900; display:flex; align-items:center; margin-bottom:10px;">
-          <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
-          ${escapeHtml(name)}
-        </div>
-        <div style="opacity:.9; font-size:0.85rem; margin-bottom:12px;">
-          <div>Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
-          <div>⏱️ Courte: <b>${shortestHtml}</b> • Longue: <b>${longestHtml}</b></div>
+        <!-- BANDEAU HAUT : Nom + Stats générales (100% largeur) -->
+        <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">
+          <div style="font-weight:900; display:flex; align-items:center;">
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+            ${escapeHtml(name)}
+          </div>
+          <div style="opacity:.9; font-size:0.85rem;">
+            Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b>
+          </div>
+          <div style="opacity:.9; font-size:0.85rem;">
+            ⏱️ Courte: <b>${shortestHtml}</b> • Longue: <b>${longestHtml}</b>
+          </div>
         </div>
         
-        <!-- Layout 2 colonnes fixes sur PC -->
-        <div style="display:flex; flex-wrap:wrap; gap:20px;">
+        <!-- 2 COLONNES EN DESSOUS -->
+        <div style="display:flex; flex-wrap:wrap; gap:24px;">
           
           <!-- Colonne gauche : Combat + Sécurité + Docteur -->
           <div style="flex:1 1 280px; min-width:250px; font-size:0.85rem;">
-            <div style="margin-bottom:10px;">
+            <div style="margin-bottom:12px;">
               <div style="font-weight:900; margin-bottom:4px;">🎯 Combat VS ${saboteursLabel.toLowerCase()}</div>
               <div>• Votes corrects: <b>${correctVotes}</b></div>
             </div>
             
-            <div style="margin-bottom:10px;">
+            <div style="margin-bottom:12px;">
               <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
               <div>• ${saboteursLabel} éliminés: <b>${revengeKillsSab}/${totalRevengeShots}</b> (${pctRevengeSab}%)</div>
               <div>• ${astronautesLabel} éliminés (err): <b>${revengeKillsInn}/${totalRevengeShots}</b> (${pctRevengeInn}%)</div>
