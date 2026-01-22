@@ -8,7 +8,7 @@
 // SECTION VIDEO - DAILY.CO INTEGRATION
 // ============================================
 
-console.log('[Video] build=D4-briefing-mode-v1');
+console.log('[Video] build=D4-briefing-mode-v1-capacitor');
 
 // ============================================
 // D4: INTEGRATION WITH VideoModeController
@@ -47,6 +47,11 @@ let videoUserRequestedPersisted = (() => {
 })();
 
 let isPreparingVideoRoom = false;
+
+// CAPACITOR: URL de base pour les appels API
+const VIDEO_API_BASE = window.IS_CAPACITOR 
+  ? 'https://saboteurs-2.onrender.com' 
+  : '';
 
 // Expose une API simple pour le bouton (video-tracks.js)
 window.VideoIntegration = window.VideoIntegration || {};
@@ -96,7 +101,7 @@ function prepareVideoRoom(state) {
   if (!state?.roomCode) return;
 
   isPreparingVideoRoom = true;
-  const apiUrl = `/api/video/create-room/${state.roomCode}`;
+  const apiUrl = `${VIDEO_API_BASE}/api/video/create-room/${state.roomCode}`;
   console.log('[Video] 📡 Preparing room (no-join):', apiUrl);
 
   fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
@@ -147,11 +152,6 @@ function joinVideoRoomNow(state) {
       isInitializingVideo = false;
       console.log('[Video] ✅ Successfully joined room');
       showVideoStatus('✅ Visio activée', 'success');
-      
-      // Activer le boost audio pour compenser le volume "appel" sur mobile
-      if (window.audioManager && window.audioManager.activateVideoBoost) {
-        window.audioManager.activateVideoBoost();
-      }
     })
     .catch(err => {
       console.error('[Video] ❌ Join error:', err);
@@ -217,7 +217,7 @@ function initVideoForGame(state) {
   });
 
   // Demander la création de la room vidéo au serveur
-  const apiUrl = `/api/video/create-room/${state.roomCode}`;
+  const apiUrl = `${VIDEO_API_BASE}/api/video/create-room/${state.roomCode}`;
   console.log('[Video] 📡 Fetching:', apiUrl);
 
   isCreatingRoom = true;
@@ -249,13 +249,26 @@ function initVideoForGame(state) {
         console.log('[Video] ℹ️ Using FREE Daily.co room (10 participants max)');
       }
 
-      // Desktop: join maintenant
-      joinVideoRoomNow(state);
+      // Rejoindre la room automatiquement
+      const permissions = state.videoPermissions || { video: true, audio: true };
+      const baseName = state.you?.name || 'Joueur';
+      const youId = state.you?.playerId || window.playerId || state.you?.id || '';
+      const userName = youId ? `${baseName}#${youId}` : baseName;
+
+      console.log('[Video] 🚀 Joining room...', { userName, permissions });
+
+      return window.dailyVideo.joinRoom(videoRoomUrl, userName, permissions);
+    })
+    .then(() => {
+      if (videoRoomUrl) {
+        videoRoomJoined = true;
+        console.log('[Video] ✅ Successfully joined room');
+        showVideoStatus('✅ Visio connectée', 'success');
+      }
     })
     .catch(err => {
-      console.error('[Video] ❌ API error:', err);
-      isCreatingRoom = false;
-      showVideoStatus('❌ Erreur serveur vidéo', 'error');
+      console.error('[Video] ❌ Error:', err);
+      showVideoStatus('❌ Erreur vidéo', 'error');
     })
     .finally(() => {
       isCreatingRoom = false;
@@ -263,294 +276,81 @@ function initVideoForGame(state) {
 }
 
 /**
- * Met à jour les permissions vidéo selon la phase
- * D4 v5.4: Respecte le choix manuel de l'utilisateur
- * D4 v5.8: Force démute aux phases clés (GAME_OVER, NIGHT_RESULTS, DAY_WAKE, ROLE_REVEAL)
+ * Met à jour les permissions vidéo selon la phase de jeu
+ * DEBUG: Logs ajoutés pour diagnostic saccades
  */
+var _debugCallCount = 0;  // DEBUG counter
+
 function updateVideoPermissions(state) {
-  if (!videoRoomJoined || !window.dailyVideo.callFrame) {
+  _debugCallCount++;
+  console.log('[Video DEBUG] ===== updateVideoPermissions #' + _debugCallCount + ' =====');
+  console.log('[Video DEBUG] phase:', state.phase);
+  console.log('[Video DEBUG] videoPermissions:', JSON.stringify(state.videoPermissions));
+  console.log('[Video DEBUG] timestamp:', new Date().toISOString());
+  
+  if (!videoRoomJoined || !window.dailyVideo) {
+    console.log('[Video DEBUG] SKIPPED - not joined or no dailyVideo');
     return;
   }
 
-  const permissions = state.videoPermissions;
-  if (!permissions) return;
-
-  console.log('[Video] Updating permissions:', permissions);
+  const permissions = state.videoPermissions || { video: true, audio: true };
   
-  const registry = window.VideoTracksRegistry;
-  const phase = state.phase;
-  
-  // D4 v5.8: Phases où on force le démute automatique
-  const FORCE_UNMUTE_PHASES = ['GAME_OVER', 'NIGHT_RESULTS', 'DAY_WAKE', 'ROLE_REVEAL'];
-  const shouldForceUnmute = FORCE_UNMUTE_PHASES.includes(phase);
-  
-  if (shouldForceUnmute) {
-    console.log('[Video] 🔊 Phase', phase, '- Forcing unmute for all players');
-    forceUnmuteWithNotification(phase, registry);
-  } else {
-    // D4 v5.4: Vérifier si l'utilisateur a manuellement muté (seulement si pas de force unmute)
-    const userMutedAudio = registry?.getUserMutedAudio?.() || false;
-    const userMutedVideo = registry?.getUserMutedVideo?.() || false;
-    
-    if (userMutedAudio || userMutedVideo) {
-      console.log('[Video] ⚠️ User has manual mute - preserving user choice:', { userMutedAudio, userMutedVideo });
-      
-      // D4 v5.4: Réappliquer le mute manuel APRÈS les permissions serveur
-      setTimeout(() => {
-        const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
-        if (callFrame) {
-          if (userMutedAudio) {
-            callFrame.setLocalAudio(false);
-            console.log('[Video] 🔇 Re-applied user audio mute');
-          }
-          if (userMutedVideo) {
-            callFrame.setLocalVideo(false);
-            console.log('[Video] 📷 Re-applied user video mute');
-          }
-        }
-      }, 100);
-    }
+  // D4: Utiliser le VideoModeController s'il est disponible
+  if (window.videoModeCtrl) {
+    console.log('[Video DEBUG] Calling videoModeCtrl.updateFromRoomState');
+    window.videoModeCtrl.updateFromRoomState(state);
   }
   
-  // Appliquer les permissions de base
+  // Appliquer les permissions via dailyVideo
+  console.log('[Video DEBUG] Calling dailyVideo.updatePermissions');
   window.dailyVideo.updatePermissions(permissions);
-  
-  // D4 v5.5: Rafraîchir le filtrage des tracks selon les nouvelles permissions
-  if (window.VideoTracksRefresh) {
-    setTimeout(() => {
-      window.VideoTracksRefresh();
-      console.log('[Video] 🔄 Tracks refreshed for new permissions');
-    }, 200);
-  }
-
-  // Afficher le message de phase
-  if (state.videoPhaseMessage) {
-    showVideoStatus(state.videoPhaseMessage, 'info');
-  }
 }
 
 /**
- * D4 v5.8: Force le démute avec notification visuelle
- */
-function forceUnmuteWithNotification(phase, registry) {
-  // Reset le mute manuel
-  if (registry?.resetManualMute) {
-    registry.resetManualMute();
-  }
-  
-  // Fonction de réactivation avec retry
-  const forceEnableTracks = (attempt = 1) => {
-    try {
-      const callFrame = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
-      if (!callFrame) {
-        console.warn('[Video] ⚠️ No callFrame available (attempt ' + attempt + ')');
-        return;
-      }
-      
-      // Vérifier si on est toujours dans la room
-      const meetingState = callFrame.meetingState?.();
-      if (meetingState && meetingState !== 'joined-meeting') {
-        console.warn('[Video] ⚠️ Not in meeting state:', meetingState);
-        return;
-      }
-      
-      // Forcer l'activation de la caméra et du micro
-      callFrame.setLocalAudio(true);
-      callFrame.setLocalVideo(true);
-      console.log('[Video] ✅ Camera and mic forcefully enabled (attempt ' + attempt + ')');
-      
-      // Mettre à jour les boutons UI
-      updateMuteButtonsUI(false, false);
-      
-      // Notification visuelle
-      if (attempt === 1) {
-        showUnmuteNotification(phase);
-      }
-      
-      // Retry après 1.5 secondes pour la première tentative
-      if (attempt === 1) {
-        setTimeout(() => forceEnableTracks(2), 1500);
-      }
-    } catch (err) {
-      console.warn('[Video] ⚠️ Could not force enable tracks (attempt ' + attempt + '):', err);
-      if (attempt === 1) {
-        setTimeout(() => forceEnableTracks(2), 1500);
-      }
-    }
-  };
-  
-  // Premier passage après 300ms
-  setTimeout(() => forceEnableTracks(1), 300);
-}
-
-/**
- * D4 v5.8: Met à jour visuellement les boutons mute
- */
-function updateMuteButtonsUI(audioMuted, videoMuted) {
-  // Boutons du briefing UI
-  const briefingMicBtn = document.getElementById('briefingMicBtn');
-  const briefingCamBtn = document.getElementById('briefingCamBtn');
-  
-  if (briefingMicBtn) {
-    if (audioMuted) {
-      briefingMicBtn.textContent = '🔇';
-      briefingMicBtn.classList.add('is-off');
-    } else {
-      briefingMicBtn.textContent = '🎤';
-      briefingMicBtn.classList.remove('is-off');
-    }
-  }
-  
-  if (briefingCamBtn) {
-    if (videoMuted) {
-      briefingCamBtn.textContent = '📷';
-      briefingCamBtn.classList.add('is-off');
-    } else {
-      briefingCamBtn.textContent = '📹';
-      briefingCamBtn.classList.remove('is-off');
-    }
-  }
-  
-  // Boutons de la barre inline
-  const inlineMicBtn = document.getElementById('inlineMicBtn');
-  const inlineCamBtn = document.getElementById('inlineCamBtn');
-  
-  if (inlineMicBtn) {
-    if (audioMuted) {
-      inlineMicBtn.textContent = '🔇';
-      inlineMicBtn.style.background = 'rgba(180, 50, 50, 0.7)';
-    } else {
-      inlineMicBtn.textContent = '🎤';
-      inlineMicBtn.style.background = 'rgba(0, 100, 100, 0.5)';
-    }
-  }
-  
-  if (inlineCamBtn) {
-    if (videoMuted) {
-      inlineCamBtn.textContent = '📷';
-      inlineCamBtn.style.background = 'rgba(180, 50, 50, 0.7)';
-    } else {
-      inlineCamBtn.textContent = '📹';
-      inlineCamBtn.style.background = 'rgba(0, 100, 100, 0.5)';
-    }
-  }
-}
-
-/**
- * D4 v5.8: Affiche une notification de démute
- */
-function showUnmuteNotification(phase) {
-  // Message selon la phase
-  let message = '🔊 Micro et caméra réactivés';
-  if (phase === 'GAME_OVER') {
-    message = '🎉 Fin de partie - Micro et caméra réactivés pour le débrief !';
-  } else if (phase === 'DAY_WAKE') {
-    message = '☀️ Jour - Micro et caméra réactivés pour la discussion !';
-  } else if (phase === 'NIGHT_RESULTS') {
-    message = '🌙 Résultats - Micro et caméra réactivés !';
-  } else if (phase === 'ROLE_REVEAL') {
-    message = '🎭 Révélation des rôles - Micro et caméra réactivés !';
-  }
-  
-  // Créer la notification
-  let notif = document.getElementById('unmuteNotification');
-  if (!notif) {
-    notif = document.createElement('div');
-    notif.id = 'unmuteNotification';
-    notif.style.cssText = `
-      position: fixed;
-      top: 80px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, rgba(0, 150, 100, 0.95), rgba(0, 100, 80, 0.95));
-      color: #fff;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.95rem;
-      z-index: 10001;
-      box-shadow: 0 4px 20px rgba(0, 255, 150, 0.3);
-      border: 2px solid rgba(0, 255, 150, 0.5);
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    `;
-    document.body.appendChild(notif);
-  }
-  
-  notif.textContent = message;
-  notif.style.opacity = '1';
-  
-  // Cacher après 4 secondes
-  setTimeout(() => {
-    notif.style.opacity = '0';
-  }, 4000);
-  
-  console.log('[Video] 📢 Unmute notification shown:', message);
-}
-
-/**
- * Quitte la room vidéo
+ * Quitte la room vidéo proprement
  */
 function leaveVideoRoom() {
   if (!videoRoomJoined) return;
 
-  console.log('[Video] Leaving room...');
-  window.dailyVideo.leave();
+  console.log('[Video] 👋 Leaving video room...');
+
+  if (window.dailyVideo) {
+    window.dailyVideo.leave();
+  }
+
   videoRoomJoined = false;
   videoRoomUrl = null;
-  showVideoStatus('📹 Visio terminée', 'info');
-  
-  // Désactiver le boost audio
-  if (window.audioManager && window.audioManager.deactivateVideoBoost) {
-    window.audioManager.deactivateVideoBoost();
-  }
+  isInitializingVideo = false;
+  isCreatingRoom = false;
 }
 
 /**
- * Affiche un message de statut vidéo (optionnel - peut être adapté à votre UI)
- */
-function showVideoStatus(message, type = 'info') {
-  console.log(`[Video Status - ${type}]`, message);
-  
-  // Option 1: Afficher dans la console seulement
-  // (Commentez cette partie si vous avez déjà un système de notifications)
-  
-  // Option 2: Créer une notification temporaire
-  const notification = document.createElement('div');
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 120px;
-    right: 20px;
-    padding: 12px 20px;
-    background: ${type === 'error' ? '#ef4444' : type === 'success' ? '#10b981' : '#3b82f6'};
-    color: white;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 14px;
-    z-index: 9997;
-    animation: slideInRight 0.3s ease-out;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  `;
-  
-  document.body.appendChild(notification);
-  
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    notification.style.transform = 'translateX(100%)';
-    notification.style.transition = 'all 0.3s ease-out';
-    setTimeout(() => notification.remove(), 300);
-  }, 3000);
-}
-
-/**
- * Nettoie la vidéo (appelé lors de la déconnexion)
+ * Nettoie les ressources vidéo
  */
 function cleanupVideo() {
-  if (videoRoomJoined) {
-    window.dailyVideo.destroy();
-    videoRoomJoined = false;
-    videoRoomUrl = null;
+  leaveVideoRoom();
+  
+  // Reset des flags
+  videoUserRequestedSession = false;
+  try { sessionStorage.removeItem('videoUserRequestedSession'); } catch (e) {}
+}
+
+/**
+ * Affiche un message de statut vidéo
+ */
+function showVideoStatus(message, type = 'info') {
+  console.log(`[Video Status - ${type}] ${message}`);
+  
+  // Utiliser le système de notification existant si disponible
+  if (window.showToast) {
+    window.showToast(message, type);
+  }
+  
+  // Ou mettre à jour un élément de statut
+  const statusEl = document.getElementById('videoStatus');
+  if (statusEl) {
+    statusEl.textContent = message;
+    statusEl.className = `video-status video-status-${type}`;
   }
 }
 
@@ -793,4 +593,4 @@ if (window.dailyVideo) {
   };
 }
 
-console.log('[Video Integration] Module loaded successfully ✅');
+console.log('[Video Integration] Module loaded successfully ✅ (Capacitor-ready)');

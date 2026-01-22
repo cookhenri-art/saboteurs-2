@@ -1012,12 +1012,22 @@ background: rgba(10, 14, 39, 0.95);
    * permissions: { video:boolean, audio:boolean, reason?:string }
    */
   async updatePermissions(permissions) {
-    if (!permissions || !this.callFrame) return;
+    console.log('[Daily DEBUG] >>> updatePermissions() called from video-integration');
+    if (!permissions || !this.callFrame) {
+      console.log('[Daily DEBUG] <<< updatePermissions() SKIPPED - no permissions or callFrame');
+      return;
+    }
     // On considère que si l'objet change, c'est un changement de phase/role => reset overrides
     await this.applyPermissions(permissions, { phaseChanged: true });
   }
 
   async applyPermissions(permissions, { phaseChanged } = { phaseChanged: false }) {
+    // DEBUG: Log chaque appel
+    console.log('[Daily DEBUG] ===== applyPermissions CALLED =====');
+    console.log('[Daily DEBUG] permissions:', JSON.stringify(permissions));
+    console.log('[Daily DEBUG] phaseChanged:', phaseChanged);
+    console.log('[Daily DEBUG] timestamp:', new Date().toISOString());
+    
     this.allowed = {
       video: !!permissions.video,
       audio: !!permissions.audio,
@@ -1040,9 +1050,11 @@ background: rgba(10, 14, 39, 0.95);
 
     // ENFORCE: si interdit -> forcer OFF
     if (!this.allowed.video) {
+      console.log('[Daily DEBUG] 📹 setLocalVideo(false) - video NOT allowed');
       try { await this.callFrame.setLocalVideo(false); } catch (e) { console.warn("setLocalVideo(false) failed", e); }
     }
     if (!this.allowed.audio) {
+      console.log('[Daily DEBUG] 🎤 setLocalAudio(false) - audio NOT allowed');
       try { await this.callFrame.setLocalAudio(false); } catch (e) { console.warn("setLocalAudio(false) failed", e); }
       await this.deafenRemotes(true);
     } else {
@@ -1052,12 +1064,16 @@ background: rgba(10, 14, 39, 0.95);
     // Si autorisé, on applique l'état voulu (override utilisateur ou "ON" par défaut)
     if (this.allowed.video) {
       const desiredVideo = (this.userPref.video !== null) ? this.userPref.video : true;
+      console.log('[Daily DEBUG] 📹 setLocalVideo(' + desiredVideo + ') - video allowed, desired:', desiredVideo);
       try { await this.callFrame.setLocalVideo(desiredVideo); } catch (e) { console.warn("setLocalVideo(desired) failed", e); }
     }
     if (this.allowed.audio) {
       const desiredAudio = (this.userPref.audio !== null) ? this.userPref.audio : true;
+      console.log('[Daily DEBUG] 🎤 setLocalAudio(' + desiredAudio + ') - audio allowed, desired:', desiredAudio);
       try { await this.callFrame.setLocalAudio(desiredAudio); } catch (e) { console.warn("setLocalAudio(desired) failed", e); }
     }
+    
+    console.log('[Daily DEBUG] ===== applyPermissions DONE =====');
 
     // Message de statut (optionnel)
     if (!this.allowed.video && this.allowed.audio) this.updateStatus("🎧 Audio only");
@@ -1159,17 +1175,24 @@ background: rgba(10, 14, 39, 0.95);
   }
 
   async toggleMicrophone() {
-    if (!this.callFrame) return;
+    console.log('[Daily DEBUG] 🎤 toggleMicrophone() called by user');
+    if (!this.callFrame) {
+      console.log('[Daily DEBUG] 🎤 toggleMicrophone() SKIPPED - no callFrame');
+      return;
+    }
 
     if (!this.allowed.audio) {
+      console.log('[Daily DEBUG] 🎤 toggleMicrophone() BLOCKED - audio not allowed');
       this.updateStatus("⚠️ Micro interdit pour cette phase");
       return;
     }
     try {
       const current = await this.callFrame.localAudio();
       const next = !current;
+      console.log('[Daily DEBUG] 🎤 toggleMicrophone() current:', current, '-> next:', next);
       this.userPref.audio = next; // store override
       await this.callFrame.setLocalAudio(next);
+      console.log('[Daily DEBUG] 🎤 setLocalAudio(' + next + ') SUCCESS');
       await this.updateButtonStates();
     } catch (e) {
       console.error("[Daily] toggleMicrophone error:", e);
