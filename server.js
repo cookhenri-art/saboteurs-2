@@ -1194,13 +1194,19 @@ function endGame(room, winner) {
           const targetTeam = ROLES[targetRole]?.team || "astronauts";
           
           // Debug log
-          console.log(`[V28 Stats] Player ${p.name} voted for ${targetId} (role: ${targetRole}, team: ${targetTeam})`);
+          const voterTeam = ROLES[p.role]?.team || "astronauts";
+          console.log(`[V30 Stats] Player ${p.name} (team: ${voterTeam}) voted for ${targetId} (role: ${targetRole}, team: ${targetTeam})`);
           
-          if (targetTeam === "saboteurs") {
-            st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
-          } else {
-            st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+          // V30: Ne compter les votes que pour les astronautes
+          // Les saboteurs ne doivent pas avoir de "votes faux" car leur but est de tuer les innocents
+          if (voterTeam !== "saboteurs") {
+            if (targetTeam === "saboteurs") {
+              st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
+            } else {
+              st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+            }
           }
+          // Note: Les saboteurs n'ont pas de stats de votes corrects/faux
         }
       }
       
