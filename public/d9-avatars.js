@@ -93,7 +93,8 @@
   
   let currentCustomization = {
     avatarId: null,
-    avatarEmoji: null, // D11 V4: Stocker aussi l'emoji
+    avatarEmoji: null, // D11 V4: Stocker aussi l'emoji (fallback)
+    customAvatar: null, // V30: Avatar photo personnalisé (data URL)
     colorId: 'cyan',
     gamesPlayed: 0,
     wins: 0,
@@ -112,8 +113,14 @@
         log('Customization loaded:', currentCustomization);
       }
       
-      // D11 V24: Si aucun avatar n'est défini, en assigner un aléatoire
-      if (!currentCustomization.avatarId) {
+      // V30: Charger l'avatar photo si disponible
+      if (window.AvatarCustomizer && AvatarCustomizer.hasCustomAvatar()) {
+        currentCustomization.customAvatar = AvatarCustomizer.getSavedAvatar();
+        log('Custom avatar photo loaded');
+      }
+      
+      // D11 V24: Si aucun avatar n'est défini (et pas de photo), en assigner un aléatoire
+      if (!currentCustomization.avatarId && !currentCustomization.customAvatar) {
         const defaultAvatars = AVATARS.default;
         const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
         const randomAvatar = defaultAvatars[randomIndex];
@@ -430,16 +437,143 @@
     `;
     modal.appendChild(title);
     
-    // Section Avatar
+    // Section Avatar Photo
     const avatarSection = document.createElement('div');
-    avatarSection.innerHTML = '<h3 style="margin-bottom: 10px; color: var(--text-primary);">Avatar</h3>';
-    avatarSection.appendChild(createAvatarSelector(theme));
+    avatarSection.id = 'avatar-photo-section';
+    avatarSection.innerHTML = '<h3 style="margin-bottom: 10px; color: var(--text-primary);">📷 Avatar</h3>';
+    
+    // Conteneur pour l'avatar
+    const avatarContainer = document.createElement('div');
+    avatarContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    `;
+    
+    // Vérifier si un avatar photo existe
+    const hasPhoto = window.AvatarCustomizer && AvatarCustomizer.hasCustomAvatar();
+    const savedAvatar = hasPhoto ? AvatarCustomizer.getSavedAvatar() : null;
+    
+    if (savedAvatar) {
+      // Afficher l'avatar existant
+      const avatarPreview = document.createElement('div');
+      avatarPreview.style.cssText = `
+        width: 120px; height: 120px;
+        border-radius: 50%;
+        border: 3px solid var(--neon-cyan, #00ffff);
+        overflow: hidden;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+      `;
+      avatarPreview.innerHTML = `<img src="${savedAvatar}" style="width: 100%; height: 100%; object-fit: cover;">`;
+      avatarContainer.appendChild(avatarPreview);
+      
+      // Boutons modifier/supprimer
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display: flex; gap: 10px;';
+      
+      const modifyBtn = document.createElement('button');
+      modifyBtn.innerHTML = '📷 Modifier';
+      modifyBtn.className = 'btn';
+      modifyBtn.style.cssText = `
+        padding: 8px 16px;
+        background: rgba(0, 212, 255, 0.2);
+        border: 1px solid var(--neon-cyan, #00ffff);
+        color: var(--neon-cyan, #00ffff);
+        border-radius: 8px;
+        cursor: pointer;
+      `;
+      modifyBtn.onclick = async () => {
+        const result = await AvatarCustomizer.create(theme);
+        if (result) {
+          AvatarCustomizer.saveOriginalPhoto(result.originalPhoto);
+          AvatarCustomizer.saveAvatar(result.avatar);
+          currentCustomization.customAvatar = result.avatar;
+          saveCustomization();
+          overlay.remove();
+          openCustomizationModal(); // Rouvrir pour rafraîchir
+        }
+      };
+      btnRow.appendChild(modifyBtn);
+      
+      const deleteBtn = document.createElement('button');
+      deleteBtn.innerHTML = '🗑️ Supprimer';
+      deleteBtn.className = 'btn';
+      deleteBtn.style.cssText = `
+        padding: 8px 16px;
+        background: rgba(255, 100, 100, 0.2);
+        border: 1px solid #ff6b6b;
+        color: #ff6b6b;
+        border-radius: 8px;
+        cursor: pointer;
+      `;
+      deleteBtn.onclick = () => {
+        if (confirm('Supprimer ton avatar photo ?')) {
+          AvatarCustomizer.clearAvatar();
+          currentCustomization.customAvatar = null;
+          saveCustomization();
+          overlay.remove();
+          openCustomizationModal(); // Rouvrir pour rafraîchir
+        }
+      };
+      btnRow.appendChild(deleteBtn);
+      
+      avatarContainer.appendChild(btnRow);
+    } else {
+      // Pas d'avatar photo - afficher le bouton de création
+      const createBtn = document.createElement('button');
+      createBtn.innerHTML = `
+        <div style="font-size: 3rem; margin-bottom: 8px;">📸</div>
+        <div>Créer mon avatar photo</div>
+      `;
+      createBtn.style.cssText = `
+        width: 150px; height: 150px;
+        border: 2px dashed rgba(0, 212, 255, 0.5);
+        border-radius: 16px;
+        background: rgba(0, 212, 255, 0.1);
+        color: var(--text-primary, #fff);
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s;
+      `;
+      createBtn.onmouseenter = () => {
+        createBtn.style.borderColor = '#00d4ff';
+        createBtn.style.background = 'rgba(0, 212, 255, 0.2)';
+      };
+      createBtn.onmouseleave = () => {
+        createBtn.style.borderColor = 'rgba(0, 212, 255, 0.5)';
+        createBtn.style.background = 'rgba(0, 212, 255, 0.1)';
+      };
+      createBtn.onclick = async () => {
+        const result = await AvatarCustomizer.create(theme);
+        if (result) {
+          AvatarCustomizer.saveOriginalPhoto(result.originalPhoto);
+          AvatarCustomizer.saveAvatar(result.avatar);
+          currentCustomization.customAvatar = result.avatar;
+          saveCustomization();
+          overlay.remove();
+          openCustomizationModal(); // Rouvrir pour rafraîchir
+        }
+      };
+      avatarContainer.appendChild(createBtn);
+      
+      // Info
+      const info = document.createElement('p');
+      info.style.cssText = 'font-size: 0.8rem; opacity: 0.7; text-align: center; margin-top: 8px;';
+      info.textContent = 'Prends une photo et ajoute un style thématique !';
+      avatarContainer.appendChild(info);
+    }
+    
+    avatarSection.appendChild(avatarContainer);
     modal.appendChild(avatarSection);
     
     // Section Couleur
     const colorSection = document.createElement('div');
     colorSection.style.marginTop = '20px';
-    colorSection.innerHTML = '<h3 style="margin-bottom: 10px; color: var(--text-primary);">Couleur</h3>';
+    colorSection.innerHTML = '<h3 style="margin-bottom: 10px; color: var(--text-primary);">🎨 Couleur</h3>';
     colorSection.appendChild(createColorSelector());
     modal.appendChild(colorSection);
     
@@ -454,7 +588,7 @@
     `;
     const badge = getBadge();
     statsSection.innerHTML = `
-      <h3 style="margin-bottom: 10px; color: var(--text-primary);">Statistiques</h3>
+      <h3 style="margin-bottom: 10px; color: var(--text-primary);">📊 Statistiques</h3>
       <p style="color: var(--text-secondary);">
         Parties jouées: <strong>${currentCustomization.gamesPlayed}</strong><br>
         Victoires: <strong>${currentCustomization.wins}</strong><br>
@@ -465,15 +599,20 @@
     
     // Bouton Valider et Fermer
     const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Valider';
+    closeBtn.textContent = '✓ Valider';
     closeBtn.className = 'btn btn-primary';
     closeBtn.style.cssText = `
       margin-top: 20px;
       width: 100%;
       padding: 12px;
+      background: linear-gradient(135deg, #00d4ff 0%, #00ff88 100%);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
     `;
     closeBtn.addEventListener('click', () => {
-      // D11: Envoyer les changements au serveur
       sendCustomizationToServer();
       overlay.remove();
     });
@@ -484,7 +623,6 @@
     // Fermer en cliquant à l'extérieur
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay) {
-        // D11: Envoyer les changements au serveur
         sendCustomizationToServer();
         overlay.remove();
       }
@@ -593,17 +731,27 @@
     const playerId = sessionStorage.getItem('is_playerId');
     const roomCode = sessionStorage.getItem('is_roomCode');
     
-    log('getCustomizationForServer:', { theme, avatarId: avatar?.id, avatarEmoji: avatar?.emoji });
+    // V30: Récupérer l'avatar photo si disponible
+    const customAvatar = window.AvatarCustomizer?.getSavedAvatar() || currentCustomization.customAvatar || null;
+    
+    log('getCustomizationForServer:', { 
+      theme, 
+      hasCustomAvatar: !!customAvatar,
+      avatarId: avatar?.id, 
+      avatarEmoji: avatar?.emoji 
+    });
     
     return {
       playerId,
       roomCode,
+      // V30: Avatar photo prioritaire sur emoji
+      customAvatar: customAvatar,
       avatarId: avatar?.id,
-      avatarEmoji: avatar?.emoji,
+      avatarEmoji: customAvatar ? null : avatar?.emoji, // Pas d'emoji si photo
       colorId: color.id,
       colorHex: color.hex,
       badgeId: badge.id,
-      badgeEmoji: badge.icon, // D11 V4: Corrigé - c'est 'icon' pas 'emoji'
+      badgeEmoji: badge.icon,
       badgeName: badge.name,
       gamesPlayed: currentCustomization.gamesPlayed,
       wins: currentCustomization.wins
