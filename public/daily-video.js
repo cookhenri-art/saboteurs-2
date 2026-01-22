@@ -55,6 +55,10 @@ class DailyVideoManager {
 
     // Préférences utilisateur (quand il a le droit). null = pas d'override
     this.userPref = { video: null, audio: null };
+    
+    // FIX ANTI-SACCADE: Cache de l'état actuel pour éviter les appels répétés
+    this._lastAudioState = null;
+    this._lastVideoState = null;
 
     this.isMobile = window.innerWidth < 768;
 
@@ -726,6 +730,10 @@ background: rgba(10, 14, 39, 0.95);
     // Reset prefs at (re)join
     this.userPref = { video: null, audio: null };
     this.allowed = { ...permissions };
+    
+    // FIX ANTI-SACCADE: Reset le cache au (re)join
+    this._lastAudioState = null;
+    this._lastVideoState = null;
 
     if (!window.DailyIframe) {
       await this.loadDailyScript();
@@ -832,6 +840,9 @@ background: rgba(10, 14, 39, 0.95);
       console.error("[Daily] leave error:", e);
     }
     this.container?.style.setProperty("display", "none", "important");
+    // FIX ANTI-SACCADE: Reset le cache au leave
+    this._lastAudioState = null;
+    this._lastVideoState = null;
   }
 
   async destroy() {
@@ -843,6 +854,9 @@ background: rgba(10, 14, 39, 0.95);
     }
     this.callFrame = null;
     this.container?.style.setProperty("display", "none", "important");
+    // FIX ANTI-SACCADE: Reset le cache au destroy
+    this._lastAudioState = null;
+    this._lastVideoState = null;
   }
 
 
@@ -1034,11 +1048,9 @@ background: rgba(10, 14, 39, 0.95);
       reason: permissions.reason || ""
     };
 
-    // Si la phase change, on remet les overrides utilisateur à zéro,
-    // afin que les nouvelles règles s'appliquent directement.
-    if (phaseChanged) {
-      this.userPref = { video: null, audio: null };
-    }
+    // FIX: Ne plus réinitialiser userPref ici - on utilise VideoTracksRegistry
+    // qui mémorise le choix manuel de l'utilisateur de façon persistante
+    // Anciennement: if (phaseChanged) { this.userPref = { video: null, audio: null }; }
 
     // UI lock/unlock
     this.setButtonEnabled(this.camButton, this.allowed.video, this.allowed.video ? "" : "Caméra interdite: " + (this.allowed.reason || "phase"));
@@ -1048,29 +1060,53 @@ background: rgba(10, 14, 39, 0.95);
     const shouldOverlay = !this.allowed.video && !this.allowed.audio;
     this.setOverlay(shouldOverlay, this.allowed.reason);
 
-    // ENFORCE: si interdit -> forcer OFF
+    // ENFORCE: si interdit -> forcer OFF (avec cache anti-saccade)
     if (!this.allowed.video) {
-      console.log('[Daily DEBUG] 📹 setLocalVideo(false) - video NOT allowed');
-      try { await this.callFrame.setLocalVideo(false); } catch (e) { console.warn("setLocalVideo(false) failed", e); }
+      if (this._lastVideoState !== false) {
+        console.log('[Daily DEBUG] 📹 setLocalVideo(false) - video NOT allowed');
+        try { await this.callFrame.setLocalVideo(false); this._lastVideoState = false; } catch (e) { console.warn("setLocalVideo(false) failed", e); }
+      } else {
+        console.log('[Daily DEBUG] 📹 SKIP setLocalVideo(false) - already OFF');
+      }
     }
     if (!this.allowed.audio) {
-      console.log('[Daily DEBUG] 🎤 setLocalAudio(false) - audio NOT allowed');
-      try { await this.callFrame.setLocalAudio(false); } catch (e) { console.warn("setLocalAudio(false) failed", e); }
+      if (this._lastAudioState !== false) {
+        console.log('[Daily DEBUG] 🎤 setLocalAudio(false) - audio NOT allowed');
+        try { await this.callFrame.setLocalAudio(false); this._lastAudioState = false; } catch (e) { console.warn("setLocalAudio(false) failed", e); }
+      } else {
+        console.log('[Daily DEBUG] 🎤 SKIP setLocalAudio(false) - already OFF');
+      }
       await this.deafenRemotes(true);
     } else {
       await this.deafenRemotes(false);
     }
 
-    // Si autorisé, on applique l'état voulu (override utilisateur ou "ON" par défaut)
+    // FIX: Consulter VideoTracksRegistry pour connaître le choix manuel de l'utilisateur
+    // Cela évite de rallumer le micro/caméra si l'utilisateur l'a manuellement coupé
+    const userMutedAudio = window.VideoTracksRegistry?.getUserMutedAudio?.() || false;
+    const userMutedVideo = window.VideoTracksRegistry?.getUserMutedVideo?.() || false;
+    
+    console.log('[Daily DEBUG] userMutedAudio:', userMutedAudio, 'userMutedVideo:', userMutedVideo);
+
+    // Si autorisé, on applique l'état voulu (respect du choix manuel utilisateur)
+    // AVEC CACHE ANTI-SACCADE: on n'appelle setLocalVideo/Audio que si l'état change
     if (this.allowed.video) {
-      const desiredVideo = (this.userPref.video !== null) ? this.userPref.video : true;
-      console.log('[Daily DEBUG] 📹 setLocalVideo(' + desiredVideo + ') - video allowed, desired:', desiredVideo);
-      try { await this.callFrame.setLocalVideo(desiredVideo); } catch (e) { console.warn("setLocalVideo(desired) failed", e); }
+      const desiredVideo = userMutedVideo ? false : true;
+      if (this._lastVideoState !== desiredVideo) {
+        console.log('[Daily DEBUG] 📹 setLocalVideo(' + desiredVideo + ') - video allowed, userMuted:', userMutedVideo);
+        try { await this.callFrame.setLocalVideo(desiredVideo); this._lastVideoState = desiredVideo; } catch (e) { console.warn("setLocalVideo(desired) failed", e); }
+      } else {
+        console.log('[Daily DEBUG] 📹 SKIP setLocalVideo(' + desiredVideo + ') - no change');
+      }
     }
     if (this.allowed.audio) {
-      const desiredAudio = (this.userPref.audio !== null) ? this.userPref.audio : true;
-      console.log('[Daily DEBUG] 🎤 setLocalAudio(' + desiredAudio + ') - audio allowed, desired:', desiredAudio);
-      try { await this.callFrame.setLocalAudio(desiredAudio); } catch (e) { console.warn("setLocalAudio(desired) failed", e); }
+      const desiredAudio = userMutedAudio ? false : true;
+      if (this._lastAudioState !== desiredAudio) {
+        console.log('[Daily DEBUG] 🎤 setLocalAudio(' + desiredAudio + ') - audio allowed, userMuted:', userMutedAudio);
+        try { await this.callFrame.setLocalAudio(desiredAudio); this._lastAudioState = desiredAudio; } catch (e) { console.warn("setLocalAudio(desired) failed", e); }
+      } else {
+        console.log('[Daily DEBUG] 🎤 SKIP setLocalAudio(' + desiredAudio + ') - no change');
+      }
     }
     
     console.log('[Daily DEBUG] ===== applyPermissions DONE =====');
@@ -1168,6 +1204,8 @@ background: rgba(10, 14, 39, 0.95);
       const next = !current;
       this.userPref.video = next; // store override
       await this.callFrame.setLocalVideo(next);
+      // FIX ANTI-SACCADE: Mettre à jour le cache après toggle manuel
+      this._lastVideoState = next;
       await this.updateButtonStates();
     } catch (e) {
       console.error("[Daily] toggleCamera error:", e);
@@ -1192,6 +1230,8 @@ background: rgba(10, 14, 39, 0.95);
       console.log('[Daily DEBUG] 🎤 toggleMicrophone() current:', current, '-> next:', next);
       this.userPref.audio = next; // store override
       await this.callFrame.setLocalAudio(next);
+      // FIX ANTI-SACCADE: Mettre à jour le cache après toggle manuel
+      this._lastAudioState = next;
       console.log('[Daily DEBUG] 🎤 setLocalAudio(' + next + ') SUCCESS');
       await this.updateButtonStates();
     } catch (e) {
