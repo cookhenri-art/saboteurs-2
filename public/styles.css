@@ -2981,3 +2981,11 @@ select:focus-visible {
     font-size: 0.95rem !important;
   }
 }
+
+/* V30: Stats détaillées - responsive mobile */
+@media (max-width: 600px) {
+  .stats-detailed-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+}
