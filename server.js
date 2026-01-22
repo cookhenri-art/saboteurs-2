@@ -75,7 +75,20 @@ function ensurePlayerStats(name) {
       matchHistory: [],         // Historique des dernières 20 parties
       shortestGame: null,      // V24: Partie la plus courte (ms)
       longestGame: null,       // V24: Partie la plus longue (ms)
-      firstEliminated: 0       // V26: Nombre de fois éliminé en premier
+      firstEliminated: 0,       // V26: Nombre de fois éliminé en premier
+      // V28: Nouvelles stats Phase 3
+      correctSaboteurVotes: 0,  // Votes corrects contre saboteurs
+      wrongSaboteurVotes: 0,    // Votes contre astronautes (erreurs)
+      totalVotes: 0,            // Total de votes émis
+      doctorNotSavedOpportunities: 0, // Occasions où le docteur aurait pu sauver
+      doctorKillsOnSaboteurs: 0,  // Potion fatale sur saboteurs
+      doctorKillsOnInnocents: 0,  // Potion fatale sur astronautes (erreur)
+      revengeKillsOnSaboteurs: 0, // Vengeance sur saboteurs
+      revengeKillsOnInnocents: 0, // Vengeance sur astronautes (erreur)
+      doctorMissedSaves: 0,       // Non sauvés (potion vie non utilisée)
+      mayorTiebreakerOk: 0,       // Départage du maire qui tue un saboteur
+      mayorTiebreakerKo: 0,       // Départage du maire qui tue un astronaute
+      mayorTiebreakerTotal: 0     // Total de départages du maire
     };
   }
   return statsDb[name];
@@ -1022,7 +1035,20 @@ function buildEndReport(room, winner) {
       securityRevengeShots: s.securityRevengeShots,
       shortestGame: s.shortestGame,
       longestGame: s.longestGame,
-      firstEliminated: s.firstEliminated || 0
+      firstEliminated: s.firstEliminated || 0,
+      // V28: Nouvelles stats Phase 3
+      correctSaboteurVotes: s.correctSaboteurVotes || 0,
+      wrongSaboteurVotes: s.wrongSaboteurVotes || 0,
+      totalVotes: s.totalVotes || 0,
+      doctorNotSavedOpportunities: s.doctorNotSavedOpportunities || 0,
+      doctorKillsOnSaboteurs: s.doctorKillsOnSaboteurs || 0,
+      doctorKillsOnInnocents: s.doctorKillsOnInnocents || 0,
+      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0,
+      revengeKillsOnInnocents: s.revengeKillsOnInnocents || 0,
+      doctorMissedSaves: s.doctorMissedSaves || 0,
+      mayorTiebreakerOk: s.mayorTiebreakerOk || 0,
+      mayorTiebreakerKo: s.mayorTiebreakerKo || 0,
+      mayorTiebreakerTotal: s.mayorTiebreakerTotal || 0
     };
   }
 
@@ -1131,6 +1157,104 @@ function endGame(room, winner) {
       }
     }
   }
+  
+  // V28: Calculer et enregistrer les stats Phase 3 basées sur matchLog
+  const playerIdToName = new Map();
+  for (const p of room.players.values()) {
+    playerIdToName.set(p.playerId, p.name);
+  }
+  
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const st = ensurePlayerStats(p.name);
+    
+    // Compter les votes de ce joueur
+    for (const e of room.matchLog) {
+      // V28 FIX: Votes sont dans "day_votes" avec objet votes: {voterId: targetId}
+      if (e.type === "day_votes" && e.votes) {
+        const votesObj = e.votes;
+        // Vérifier si ce joueur a voté dans cet événement
+        const targetId = votesObj[p.playerId];
+        if (targetId) {
+          st.totalVotes = (st.totalVotes || 0) + 1;
+          
+          // V28 FIX2: Chercher le joueur cible de manière robuste
+          let targetPlayer = room.players.get(targetId);
+          // Fallback: chercher par itération si get() échoue
+          if (!targetPlayer) {
+            for (const [pid, pl] of room.players.entries()) {
+              if (pid === targetId || String(pid) === String(targetId)) {
+                targetPlayer = pl;
+                break;
+              }
+            }
+          }
+          
+          const targetRole = targetPlayer?.role;
+          const targetTeam = ROLES[targetRole]?.team || "astronauts";
+          
+          // Debug log
+          console.log(`[V28 Stats] Player ${p.name} voted for ${targetId} (role: ${targetRole}, team: ${targetTeam})`);
+          
+          if (targetTeam === "saboteurs") {
+            st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
+          } else {
+            st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+          }
+        }
+      }
+      
+      // Stats du docteur - potion fatale
+      if (e.type === "doctor_kill" && e.by === p.playerId) {
+        const targetRole = e.targetRole || room.players.get(e.targetId)?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.doctorKillsOnSaboteurs = (st.doctorKillsOnSaboteurs || 0) + 1;
+        } else {
+          st.doctorKillsOnInnocents = (st.doctorKillsOnInnocents || 0) + 1;
+        }
+      }
+      
+      // Stats du security - vengeance
+      if (e.type === "revenge_shot" && e.by === p.playerId) {
+        const targetRole = e.targetRole || room.players.get(e.targetId)?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.revengeKillsOnSaboteurs = (st.revengeKillsOnSaboteurs || 0) + 1;
+        } else {
+          st.revengeKillsOnInnocents = (st.revengeKillsOnInnocents || 0) + 1;
+        }
+      }
+      
+      // Stats du maire - départage
+      if (e.type === "captain_tiebreak" && e.captainId === p.playerId) {
+        st.mayorTiebreakerTotal = (st.mayorTiebreakerTotal || 0) + 1;
+        const targetTeam = e.targetTeam || ROLES[e.targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.mayorTiebreakerOk = (st.mayorTiebreakerOk || 0) + 1;
+        } else {
+          st.mayorTiebreakerKo = (st.mayorTiebreakerKo || 0) + 1;
+        }
+      }
+    }
+    
+    // V28: Calculer doctorMissedSaves et doctorNotSavedOpportunities
+    // Si le joueur était docteur et n'a pas utilisé la potion de vie
+    if (p.role === "doctor" && !room.doctorLifeUsed) {
+      // Compter les morts par saboteurs (opportunités manquées)
+      let missedOpportunities = 0;
+      for (const e of room.matchLog) {
+        if (e.type === "player_died" && e.source === "saboteurs") {
+          missedOpportunities++;
+        }
+      }
+      if (missedOpportunities > 0) {
+        st.doctorMissedSaves = (st.doctorMissedSaves || 0) + missedOpportunities;
+        st.doctorNotSavedOpportunities = (st.doctorNotSavedOpportunities || 0) + missedOpportunities;
+      }
+    }
+  }
+  
   saveStats(statsDb);
   
   // V26: Vérifier et attribuer les badges
