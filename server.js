@@ -1662,6 +1662,7 @@ function publicRoomStateFor(room, viewerId) {
       isHost: room.hostPlayerId === p.playerId,
       isCaptain: !!p.isCaptain,
       // D9: Données de personnalisation
+      customAvatar: p.customAvatar || null, // V30: Avatar photo
       avatarId: p.avatarId || null,
       avatarEmoji: p.avatarEmoji || null,
       colorId: p.colorId || null,
@@ -2002,6 +2003,7 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
     p.lastSeenAt = now;
     
     // D9: Mettre à jour les données de personnalisation si fournies
+    if (customization.customAvatar !== undefined) p.customAvatar = customization.customAvatar; // V30
     if (customization.avatarEmoji) p.avatarEmoji = customization.avatarEmoji;
     if (customization.avatarId) p.avatarId = customization.avatarId;
     if (customization.colorHex) p.colorHex = customization.colorHex;
@@ -2156,7 +2158,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, themeId, customAvatar, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -2175,8 +2177,8 @@ io.on("connection", (socket) => {
       rooms.set(code, room);
       logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId });
       
-      // D9: Préparer les données de personnalisation
-      const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+      // D9: Préparer les données de personnalisation (V30: + customAvatar)
+      const customization = { customAvatar, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
       joinRoomCommon(socket, room, playerId, name, playerToken, customization);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
@@ -2185,14 +2187,14 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, customAvatar, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "joinRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
     }
     
-    // D9: Préparer les données de personnalisation
-    const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+    // D9: Préparer les données de personnalisation (V30: + customAvatar)
+    const customization = { customAvatar, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
     
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
@@ -2249,7 +2251,7 @@ io.on("connection", (socket) => {
   });
   
   // D11 V4: Mettre à jour la personnalisation d'un joueur (avatar, couleur, badge)
-  socket.on("updateCustomization", ({ playerId, roomCode, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("updateCustomization", ({ playerId, roomCode, customAvatar, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
     if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
@@ -2257,7 +2259,8 @@ io.on("connection", (socket) => {
     const p = getPlayer(room, playerId);
     if (!p) return cb && cb({ ok: false, error: "Joueur introuvable" });
     
-    // Mettre à jour les champs de personnalisation
+    // Mettre à jour les champs de personnalisation (V30: + customAvatar)
+    if (customAvatar !== undefined) p.customAvatar = customAvatar;
     if (avatarId !== undefined) p.avatarId = avatarId;
     if (avatarEmoji !== undefined) p.avatarEmoji = avatarEmoji;
     if (colorId !== undefined) p.colorId = colorId;
@@ -2266,7 +2269,7 @@ io.on("connection", (socket) => {
     if (badgeEmoji !== undefined) p.badgeEmoji = badgeEmoji;
     if (badgeName !== undefined) p.badgeName = badgeName;
     
-    logger.info("customization_updated", { roomCode: code, playerId, avatarEmoji, colorHex });
+    logger.info("customization_updated", { roomCode: code, playerId, hasCustomAvatar: !!customAvatar, avatarEmoji, colorHex });
     
     // Diffuser le nouvel état à tous les joueurs
     emitRoom(room);
