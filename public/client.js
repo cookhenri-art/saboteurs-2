@@ -1525,8 +1525,8 @@ function renderEnd() {
           </div>
         </div>
         
-        <!-- 2 COLONNES avec CSS Grid -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; font-size:0.85rem;">
+        <!-- 2 COLONNES sur desktop, 1 COLONNE sur mobile avec CSS Grid responsive -->
+        <div class="stats-grid-responsive" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; font-size:0.85rem;">
           
           <!-- Colonne gauche : Combat + Sécurité + Docteur -->
           <div>
