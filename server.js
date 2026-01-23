@@ -95,7 +95,7 @@ const ACCOUNT_LIMITS = {
   },
   free: {
     videoCredits: 2,        // 2 parties vidéo gratuites pour tester
-    avatars: 1,
+    avatars: 2,             // 1 avatar par thème gratuit (Spatial + Loup-Garou)
     themes: ["default", "werewolf"],
     customPrompt: false
   },
@@ -515,8 +515,11 @@ async function sendVerificationEmail(email, username, token) {
   try {
     const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
     
+    // Utiliser le domaine vérifié sur Resend
+    const emailFrom = process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>";
+    
     const { data, error } = await resend.emails.send({
-      from: "Saboteur Game <onboarding@resend.dev>",
+      from: emailFrom,
       to: email,
       subject: "🎮 Vérifie ton compte Saboteur !",
       html: `
@@ -2353,6 +2356,17 @@ app.get("/api/rooms", (req, res) => {
     videoEnabled: r.videoEnabled
   }));
   res.json({ rooms: roomList });
+});
+
+// API: Liste des thèmes de jeu disponibles
+app.get("/api/themes", (req, res) => {
+  const themes = [
+    { id: "default", name: "Spatial", icon: "🚀", premium: false },
+    { id: "werewolf", name: "Loup-Garou", icon: "🐺", premium: false },
+    { id: "wizard-academy", name: "Académie des Sorciers", icon: "🧙", premium: true },
+    { id: "mythic-realms", name: "Royaumes Mythiques", icon: "⚔️", premium: true }
+  ];
+  res.json({ themes });
 });
 
 // Récupérer son rôle (pendant la partie)
