@@ -1514,7 +1514,7 @@ function emitRoom(room) {
   const roomData = serializeRoom(room);
   for (const player of room.players.values()) {
     if (player.connected && player.socketId) {
-      io.to(player.socketId).emit("roomUpdate", roomData);
+      io.to(player.socketId).emit("roomState", roomData);  // FIX: était "roomUpdate"
     }
   }
 }
@@ -1621,6 +1621,9 @@ io.on("connection", (socket) => {
       socket.join(code);
 
       console.log(`🏠 Room ${code} créée par ${playerName}`);
+
+      // FIX: Émettre roomState pour que le client passe au lobby
+      emitRoom(room);
 
       cb?.({
         ok: true,
