@@ -48,7 +48,8 @@ const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
 const DATABASE_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, "saboteur.db");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
 const UPLOADS_DIR = path.join(__dirname, "uploads");
-const AVATARS_DIR = path.join(__dirname, "public", "avatars");
+// IMPORTANT: Avatars sur le disque persistant /data/avatars/ (pas dans public/)
+const AVATARS_DIR = path.join(DATA_DIR, "avatars");
 
 // Secrets et API
 const JWT_SECRET = process.env.JWT_SECRET || "saboteur-jwt-2024-dev-key-change-in-production";
@@ -444,14 +445,14 @@ function isBlockedEmailDomain(email) {
   return !!blocked;
 }
 
-// Vérifier limite de création de comptes par IP (max 3 en 24h)
+// Vérifier limite de création de comptes par IP (max 5 en 24h)
 function checkAccountCreationLimit(ip) {
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const count = dbGet(
     "SELECT COUNT(*) as count FROM account_creation_log WHERE ip_address = ? AND created_at > ?",
     [ip, yesterday]
   );
-  return (count?.count || 0) < 3;
+  return (count?.count || 0) < 5;
 }
 
 // Récupérer les limites selon le type de compte
@@ -813,6 +814,47 @@ app.get("/api/auth/me", authenticateToken, (req, res) => {
 
   } catch (error) {
     console.error("❌ Erreur profil:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Changer le mot de passe
+app.post("/api/auth/change-password", authenticateToken, express.json(), async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: "Mot de passe actuel et nouveau requis" });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: "Le nouveau mot de passe doit faire au moins 6 caractères" });
+    }
+
+    const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    // Vérifier le mot de passe actuel
+    const validPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!validPassword) {
+      return res.status(400).json({ error: "Mot de passe actuel incorrect" });
+    }
+
+    // Hasher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Mettre à jour
+    dbRun("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, user.id]);
+    saveDatabase();
+
+    console.log(`🔐 Mot de passe changé pour ${user.email}`);
+
+    res.json({ success: true, message: "Mot de passe modifié avec succès !" });
+
+  } catch (error) {
+    console.error("❌ Erreur changement mot de passe:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -2217,6 +2259,9 @@ app.delete("/api/admin/user", (req, res) => {
   // Supprimer les avatars associés
   dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
   
+  // Supprimer le log de création (pour permettre de recréer un compte)
+  dbRun("DELETE FROM account_creation_log WHERE email = ?", [email.toLowerCase()]);
+  
   // Supprimer l'utilisateur
   dbRun("DELETE FROM users WHERE id = ?", [user.id]);
   
@@ -2248,6 +2293,9 @@ app.post("/api/admin/delete-user", express.json(), (req, res) => {
   // Supprimer les avatars associés
   dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
   
+  // Supprimer le log de création (pour permettre de recréer un compte)
+  dbRun("DELETE FROM account_creation_log WHERE email = ?", [email.toLowerCase()]);
+  
   // Supprimer l'utilisateur
   dbRun("DELETE FROM users WHERE id = ?", [user.id]);
   
@@ -2256,6 +2304,43 @@ app.post("/api/admin/delete-user", express.json(), (req, res) => {
   console.log(`🗑️ ADMIN: Utilisateur ${email} supprimé`);
 
   res.json({ success: true, message: `Utilisateur ${user.username} (${email}) supprimé` });
+});
+
+// ADMIN: Effacer les logs de création de comptes (reset limites IP)
+app.post("/api/admin/clear-ip-logs", express.json(), (req, res) => {
+  const { secretCode, ip } = req.body;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Code secret invalide" });
+  }
+
+  if (ip) {
+    // Effacer uniquement pour une IP spécifique
+    const result = dbRun("DELETE FROM account_creation_log WHERE ip_address = ?", [ip]);
+    console.log(`🧹 ADMIN: Logs IP ${ip} effacés`);
+    res.json({ success: true, message: `Logs pour IP ${ip} effacés` });
+  } else {
+    // Effacer tous les logs
+    dbRun("DELETE FROM account_creation_log");
+    console.log(`🧹 ADMIN: Tous les logs de création effacés`);
+    res.json({ success: true, message: "Tous les logs de création effacés" });
+  }
+
+  saveDatabase();
+});
+
+// ADMIN: Voir les logs de création (debug)
+app.get("/api/admin/ip-logs", (req, res) => {
+  const { secretCode } = req.query;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Code secret invalide" });
+  }
+
+  const logs = dbAll("SELECT * FROM account_creation_log ORDER BY created_at DESC LIMIT 100");
+  res.json({ logs });
 });
 
 // Liste des rooms actives (pour debug/admin)
