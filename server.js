@@ -1055,17 +1055,23 @@ app.post("/api/avatars/generate", authenticateToken, uploadPhoto.single("photo")
 
     console.log(`🎨 Génération avatar: ${theme}/${character} pour ${user.username}`);
 
-    // Appeler Replicate
-    const output = await replicate.run("fofr/face-to-many:a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5571e66aa", {
+    // Paramètres par défaut ou personnalisés (admin)
+    const instant_id = parseFloat(req.body.instant_id_strength) || 0.8;
+    const prompt_str = parseFloat(req.body.prompt_strength) || 4.5;
+    const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
+    const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
+
+    // Appeler Replicate - utilise la dernière version automatiquement
+    const output = await replicate.run("fofr/face-to-many", {
       input: {
         image: base64Image,
         style: "3D",
         prompt: finalPrompt,
         negative_prompt: "blurry, bad quality, distorted, ugly, deformed",
-        prompt_strength: 4.5,
-        denoising_strength: 0.65,
-        instant_id_strength: 0.8,
-        control_depth_strength: 0.8
+        prompt_strength: prompt_str,
+        denoising_strength: denoise_str,
+        instant_id_strength: instant_id,
+        control_depth_strength: depth_str
       }
     });
 
