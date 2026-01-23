@@ -11,7 +11,11 @@ const OFFLINE_URL = '/offline.html';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
+  '/game.html',
+  '/avatar.html',
+  '/verify-email.html',
   '/styles.css',
+  '/auth-themes.css',
   '/client.js',
   '/d7-animations.js',
   '/d8-performance.js',
