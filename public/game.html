@@ -663,6 +663,15 @@
         banner.className = 'guest-banner';
         banner.innerHTML = '👤 Mode Invité - Chat uniquement. <a href="/">Créer un compte</a> pour accéder aux parties vidéo !';
         document.body.insertBefore(banner, document.body.children[1]);
+
+        // Générer un nom aléatoire pour l'invité
+        setTimeout(function() {
+          var playerNameInput = document.getElementById('playerName');
+          if (playerNameInput && !playerNameInput.value) {
+            var randomId = Math.floor(1000 + Math.random() * 9000);
+            playerNameInput.value = 'Invité-' + randomId;
+          }
+        }, 100);
       } else if (token && savedUser) {
         // Utilisateur connecté
         try {
@@ -683,13 +692,13 @@
             document.getElementById('userBarCredits').textContent = '🎬 ' + (user.videoCredits || 0) + ' partie(s) vidéo';
           }
 
-          // Pré-remplir le nom du joueur
+          // Pré-remplir le nom du joueur IMMÉDIATEMENT
           setTimeout(function() {
             var playerNameInput = document.getElementById('playerName');
             if (playerNameInput && !playerNameInput.value) {
               playerNameInput.value = user.username;
             }
-          }, 500);
+          }, 100);
         } catch (e) {
           console.error('Erreur parsing user:', e);
         }
