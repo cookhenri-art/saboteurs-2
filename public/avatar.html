@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎨 Créer mon Avatar IA - Saboteur</title>
+  <link rel="stylesheet" href="auth-themes.css">
+  
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      padding-top: 80px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .header h1 {
+      font-family: var(--font-title);
+      color: var(--neon-main);
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      text-shadow: 0 0 15px var(--neon-main);
+    }
+
+    .header-buttons {
+      display: flex;
+      gap: 10px;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.9) 100%);
+      border: 2px solid var(--metal-grey);
+      border-radius: calc(var(--border-radius) + 10px);
+      padding: 25px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .card-title {
+      font-family: var(--font-title);
+      color: var(--neon-main);
+      font-size: 1.1rem;
+      margin-bottom: 20px;
+      letter-spacing: 1px;
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 3px dashed var(--metal-grey);
+      border-radius: var(--border-radius);
+      padding: 40px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--neon-main);
+      background: rgba(0, 0, 0, 0.4);
+    }
+
+    .upload-zone.has-photo { padding: 10px; }
+    .upload-zone .icon { font-size: 3rem; margin-bottom: 15px; }
+    .upload-zone p { color: var(--text-secondary); }
+
+    .upload-preview {
+      max-width: 200px;
+      max-height: 200px;
+      border-radius: var(--border-radius);
+      display: none;
+    }
+
+    /* Theme Selector */
+    .theme-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .theme-btn {
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--metal-grey);
+      border-radius: var(--border-radius);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: center;
+      font-family: var(--font-body);
+    }
+
+    .theme-btn:hover {
+      border-color: var(--neon-main);
+      color: var(--text-primary);
+    }
+
+    .theme-btn.active {
+      border-color: var(--neon-main);
+      background: rgba(0, 255, 255, 0.1);
+      color: var(--neon-main);
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    }
+
+    .theme-btn.locked {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .theme-btn .icon { font-size: 1.5rem; display: block; margin-bottom: 5px; }
+    .theme-btn .name { font-size: 0.85rem; }
+    .theme-btn .lock { font-size: 0.7rem; color: var(--neon-orange); }
+
+    /* Character Selector */
+    .character-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .character-btn {
+      padding: 12px 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--metal-grey);
+      border-radius: var(--border-radius);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 0.8rem;
+      text-align: center;
+      font-family: var(--font-body);
+    }
+
+    .character-btn:hover {
+      border-color: var(--neon-purple);
+      color: var(--text-primary);
+    }
+
+    .character-btn.active {
+      border-color: var(--neon-purple);
+      background: rgba(157, 78, 221, 0.15);
+      color: var(--neon-purple);
+    }
+
+    /* Result */
+    .result-zone {
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid var(--metal-grey);
+      border-radius: var(--border-radius);
+      background: rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .result-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .result-placeholder .icon { font-size: 4rem; margin-bottom: 15px; opacity: 0.5; }
+
+    .result-image {
+      max-width: 100%;
+      max-height: 400px;
+      border-radius: var(--border-radius);
+      display: none;
+    }
+
+    /* Progress */
+    .progress-bar {
+      height: 6px;
+      background: var(--metal-grey);
+      border-radius: 3px;
+      margin: 20px 0;
+      overflow: hidden;
+      display: none;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--neon-main), var(--neon-purple));
+      border-radius: 3px;
+      animation: progress 3s ease-in-out infinite;
+    }
+
+    @keyframes progress {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+
+    /* Stats */
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+      margin-top: 20px;
+    }
+
+    .stat { text-align: center; }
+    .stat-value { font-family: var(--font-title); font-size: 1.5rem; color: var(--neon-main); }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); }
+
+    /* Generate Button */
+    .generate-btn {
+      width: 100%;
+      padding: 18px;
+      font-size: 1.1rem;
+      margin-top: 20px;
+    }
+
+    /* Gallery */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .gallery-item {
+      aspect-ratio: 1;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      border: 2px solid var(--metal-grey);
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .gallery-item:hover {
+      border-color: var(--neon-main);
+      transform: scale(1.05);
+    }
+
+    .gallery-item.active {
+      border-color: var(--neon-green);
+      box-shadow: 0 0 15px var(--neon-green);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Download */
+    .download-btn {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid var(--neon-green);
+      border-radius: var(--border-radius);
+      color: var(--neon-green);
+      cursor: pointer;
+      display: none;
+      font-family: var(--font-body);
+    }
+
+    .download-btn:hover {
+      background: var(--neon-green);
+      color: var(--primary-bg);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sélecteur de thème -->
+  <div class="theme-selector-mini">
+    <button class="theme-btn-mini active" data-theme="default" title="Spatial">🚀</button>
+    <button class="theme-btn-mini" data-theme="werewolf" title="Loup-Garou">🐺</button>
+    <button class="theme-btn-mini" data-theme="wizard-academy" title="Sorciers">🧙</button>
+    <button class="theme-btn-mini" data-theme="mythic-realms" title="Mythique">⚔️</button>
+  </div>
+
+  <div class="container">
+    <header class="header">
+      <h1>🎨 CRÉER MON AVATAR IA</h1>
+      <div class="header-buttons">
+        <a href="/" class="btn btn-secondary">🏠 Accueil</a>
+        <a href="/game.html" class="btn btn-primary">🎮 Jouer</a>
+      </div>
+    </header>
+
+    <div class="message error" id="errorMessage"></div>
+    <div class="message success" id="successMessage"></div>
+
+    <div class="main-grid">
+      <!-- Controls -->
+      <div class="card">
+        <h2 class="card-title">📸 TA PHOTO</h2>
+        
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
+          <div class="icon">📷</div>
+          <p>Clique pour ajouter ta photo</p>
+          <p style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);">Selfie de face recommandé</p>
+          <img class="upload-preview" id="uploadPreview">
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display: none">
+
+        <h2 class="card-title" style="margin-top: 25px;">🎨 THÈME DE L'AVATAR</h2>
+        <div class="theme-grid" id="avatarThemeGrid"></div>
+
+        <h2 class="card-title">👤 PERSONNAGE</h2>
+        <div class="character-grid" id="characterGrid"></div>
+
+        <button class="btn btn-primary generate-btn" id="generateBtn" onclick="generateAvatar()" disabled>
+          ✨ GÉNÉRER MON AVATAR
+        </button>
+
+        <div class="stats" id="userStats">
+          <div class="stat">
+            <div class="stat-value" id="avatarsUsed">0</div>
+            <div class="stat-label">Avatars créés</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value" id="avatarsLimit">1</div>
+            <div class="stat-label">Limite</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result -->
+      <div class="card">
+        <h2 class="card-title">🖼️ RÉSULTAT</h2>
+        
+        <div class="result-zone" id="resultZone">
+          <div class="result-placeholder">
+            <div class="icon">🎭</div>
+            <p>Ton avatar apparaîtra ici</p>
+          </div>
+          <img class="result-image" id="resultImage">
+          <button class="download-btn" id="downloadBtn" onclick="downloadAvatar()">⬇️ Télécharger</button>
+        </div>
+
+        <div class="progress-bar" id="progressBar">
+          <div class="progress-fill"></div>
+        </div>
+
+        <h2 class="card-title" style="margin-top: 25px;">📁 MES AVATARS</h2>
+        <div class="gallery" id="gallery">
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Aucun avatar pour le moment</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = '';
+    let currentUser = null;
+    let selectedAvatarTheme = 'default';
+    let selectedCharacter = null;
+    let uploadedFile = null;
+    let lastGeneratedUrl = null;
+
+    const avatarThemes = {
+      default: {
+        name: 'Spatial', icon: '🚀', premium: false,
+        characters: { astronaut: 'Astronaute', alien: 'Alien', bounty_hunter: 'Chasseur', cyborg: 'Cyborg', captain: 'Capitaine' }
+      },
+      werewolf: {
+        name: 'Loup-Garou', icon: '🐺', premium: false,
+        characters: { werewolf: 'Loup-garou', vampire: 'Vampire', mayor: 'Maire', peasant: 'Paysan', witch: 'Sorcière', hunter: 'Chasseur' }
+      },
+      'wizard-academy': {
+        name: 'Sorciers', icon: '🧙', premium: true,
+        characters: { wizard: 'Sorcier', house_elf: 'Elfe', goblin: 'Gobelin', ghost: 'Fantôme', professor: 'Professeur' }
+      },
+      'mythic-realms': {
+        name: 'Mythique', icon: '⚔️', premium: true,
+        characters: { knight: 'Chevalier', dragon: 'Dragon', dwarf: 'Nain', elf: 'Elfe', orc: 'Orque' }
+      }
+    };
+
+    // Site theme
+    function initSiteTheme() {
+      const saved = localStorage.getItem('saboteur_theme') || 'default';
+      document.documentElement.setAttribute('data-theme', saved);
+      document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === saved);
+      });
+    }
+
+    document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.dataset.theme;
+        document.documentElement.setAttribute('data-theme', name);
+        localStorage.setItem('saboteur_theme', name);
+        document.querySelectorAll('.theme-btn-mini').forEach(b => b.classList.toggle('active', b.dataset.theme === name));
+      });
+    });
+
+    // Init
+    async function init() {
+      initSiteTheme();
+      
+      const token = localStorage.getItem('saboteur_token');
+      if (!token) {
+        window.location.href = '/?redirect=avatar';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          updateStats();
+          loadMyAvatars();
+        } else {
+          window.location.href = '/';
+        }
+      } catch (e) { console.error(e); }
+
+      renderAvatarThemes();
+      renderCharacters();
+    }
+
+    function renderAvatarThemes() {
+      const grid = document.getElementById('avatarThemeGrid');
+      grid.innerHTML = '';
+      const userPremium = currentUser?.accountType !== 'free';
+
+      for (const [key, theme] of Object.entries(avatarThemes)) {
+        const locked = theme.premium && !userPremium;
+        const btn = document.createElement('button');
+        btn.className = `theme-btn ${key === selectedAvatarTheme ? 'active' : ''} ${locked ? 'locked' : ''}`;
+        btn.innerHTML = `<span class="icon">${theme.icon}</span><span class="name">${theme.name}</span>${locked ? '<span class="lock">🔒 Premium</span>' : ''}`;
+        if (!locked) btn.onclick = () => selectAvatarTheme(key);
+        grid.appendChild(btn);
+      }
+    }
+
+    function renderCharacters() {
+      const grid = document.getElementById('characterGrid');
+      grid.innerHTML = '';
+      const theme = avatarThemes[selectedAvatarTheme];
+      if (!theme) return;
+
+      for (const [key, name] of Object.entries(theme.characters)) {
+        const btn = document.createElement('button');
+        btn.className = `character-btn ${key === selectedCharacter ? 'active' : ''}`;
+        btn.textContent = name;
+        btn.onclick = () => selectCharacter(key);
+        grid.appendChild(btn);
+      }
+
+      if (selectedCharacter && !theme.characters[selectedCharacter]) selectedCharacter = null;
+      updateGenerateButton();
+    }
+
+    function selectAvatarTheme(key) {
+      selectedAvatarTheme = key;
+      document.querySelectorAll('#avatarThemeGrid .theme-btn').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      renderCharacters();
+    }
+
+    function selectCharacter(key) {
+      selectedCharacter = key;
+      document.querySelectorAll('.character-btn').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      updateGenerateButton();
+    }
+
+    function updateGenerateButton() {
+      document.getElementById('generateBtn').disabled = !uploadedFile || !selectedCharacter;
+    }
+
+    function updateStats() {
+      if (currentUser) {
+        document.getElementById('avatarsUsed').textContent = currentUser.avatarsUsed || 0;
+        const limits = { free: 1, subscriber: 30, pack: 50, family: 100, admin: '∞' };
+        document.getElementById('avatarsLimit').textContent = limits[currentUser.accountType] || 1;
+      }
+    }
+
+    // Upload
+    document.getElementById('photoInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById('uploadPreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.getElementById('uploadZone').classList.add('has-photo');
+        document.querySelector('#uploadZone .icon').style.display = 'none';
+        document.querySelectorAll('#uploadZone p').forEach(p => p.style.display = 'none');
+      };
+      reader.readAsDataURL(file);
+      updateGenerateButton();
+    });
+
+    // Generate
+    async function generateAvatar() {
+      if (!uploadedFile || !selectedCharacter) return;
+
+      const btn = document.getElementById('generateBtn');
+      const progress = document.getElementById('progressBar');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Génération...';
+      progress.style.display = 'block';
+      hideMessages();
+
+      const formData = new FormData();
+      formData.append('photo', uploadedFile);
+      formData.append('theme', selectedAvatarTheme);
+      formData.append('character', selectedCharacter);
+
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/avatars/generate`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          lastGeneratedUrl = data.url;
+          const img = document.getElementById('resultImage');
+          img.src = data.url;
+          img.style.display = 'block';
+          document.querySelector('.result-placeholder').style.display = 'none';
+          document.getElementById('downloadBtn').style.display = 'block';
+          showSuccess(`Avatar "${data.characterName}" créé !`);
+          document.getElementById('avatarsUsed').textContent = data.avatarsUsed;
+          loadMyAvatars();
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) { showError('Erreur réseau'); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ GÉNÉRER MON AVATAR';
+        progress.style.display = 'none';
+        updateGenerateButton();
+      }
+    }
+
+    // Gallery
+    async function loadMyAvatars() {
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/avatars/my-avatars`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        const gallery = document.getElementById('gallery');
+
+        if (data.avatars?.length > 0) {
+          gallery.innerHTML = '';
+          for (const av of data.avatars) {
+            const item = document.createElement('div');
+            item.className = `gallery-item ${av.image_url === data.currentAvatar ? 'active' : ''}`;
+            item.innerHTML = `<img src="${av.image_url}" alt="Avatar">`;
+            item.onclick = () => setCurrentAvatar(av.image_url);
+            gallery.appendChild(item);
+          }
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function setCurrentAvatar(url) {
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/avatars/set-current`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: url })
+        });
+        if (res.ok) {
+          document.querySelectorAll('.gallery-item').forEach(item => {
+            item.classList.toggle('active', item.querySelector('img').src.includes(url));
+          });
+          showSuccess('Avatar sélectionné !');
+        }
+      } catch (e) { showError('Erreur'); }
+    }
+
+    function downloadAvatar() {
+      if (!lastGeneratedUrl) return;
+      const link = document.createElement('a');
+      link.href = lastGeneratedUrl;
+      link.download = `saboteur-avatar-${Date.now()}.webp`;
+      link.click();
+    }
+
+    // Messages
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      document.getElementById('errorMessage').classList.add('show');
+      document.getElementById('successMessage').classList.remove('show');
+    }
+
+    function showSuccess(msg) {
+      document.getElementById('successMessage').textContent = msg;
+      document.getElementById('successMessage').classList.add('show');
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+
+    function hideMessages() {
+      document.getElementById('errorMessage').classList.remove('show');
+      document.getElementById('successMessage').classList.remove('show');
+    }
+
+    init();
+  </script>
+</body>
+</html>

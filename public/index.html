@@ -1,573 +1,676 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="default">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>🎭 LES SABOTEURS - D4 Briefing 🎭</title>
-  <!-- D10: PWA Meta Tags -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎭 LES SABOTEURS - Jeu de Déduction Sociale</title>
+  
+  <!-- PWA Meta Tags -->
   <meta name="description" content="Saboteur - Un jeu multijoueur de déduction sociale avec vidéo intégrée.">
   <meta name="theme-color" content="#00ffff">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Saboteur">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icons/icon-192x192.webp">
 
-  <!-- Polices pour thème Default (Spatial) -->
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="auth-themes.css">
   
-  <!-- Polices pour thème Werewolf (Village) -->
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Polices pour thème Wizard Academy (Académie) -->
-  <link href="https://fonts.googleapis.com/css2?family=Philosopher:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Polices pour thème Mythic Realms (Royaume) -->
-  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Uncial+Antiqua:wght@700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
-  
-  <link rel="stylesheet" href="styles.css" />
-</head>
-
-<body>
-  <!-- Bouton RÈGLES en haut à gauche -->
-  <div id="topLeftButtons" style="
-    position: fixed; left: 10px; top: 10px; z-index: 9999;
-  ">
-    <button id="rulesBtn" class="btn btn-secondary" style="
-      padding: 10px 16px; border-radius: 10px; font-weight: 800;
-    ">📜 <span class="rulesBtnText">RÈGLES</span></button>
-  </div>
-  
-  <!-- Bouton APP en bas à gauche (séparé pour éviter conflits tactiles) -->
-  <div id="installAppContainer" style="
-    position: fixed; left: 10px; bottom: 80px; z-index: 9998;
-  ">
-    <button id="installAppBtn" type="button" style="
-      padding: 10px 14px; border-radius: 12px; font-weight: 800;
-      display: flex; align-items: center; gap: 8px;
-      background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(0,255,255,0.15) 100%);
-      border: 2px solid var(--neon-cyan, #00ffff);
-      color: var(--neon-cyan, #00ffff);
-      cursor: pointer;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-      font-family: inherit;
-      font-size: 0.9rem;
-    ">
-      <img src="/icons/icon-192x192.webp" alt="App" style="width: 28px; height: 28px; border-radius: 6px;">
-      <span>APP</span>
-      <span style="font-size: 1.2rem;">⬇️</span>
-    </button>
-  </div>
-  
-  <!-- Bouton MUTE à droite -->
-  <div id="topRightButtons" style="
-    position: fixed; right: 20px; top: 20px; z-index: 9999;
-  ">
-    <button id="soundBtn" class="btn btn-secondary" style="
-      padding: 10px 16px; border-radius: 10px; font-weight: 900;
-      min-width: 56px;
-    " title="Couper / réactiver le son">🔊</button>
-  </div>
-
-  <div class="container">
-    <!-- Audio Unlock Overlay -->
-    <div id="audioUnlockOverlay" style="
-      display: none;
+  <style>
+    /* Particules animées */
+    .particles {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.95);
-      z-index: 99999;
-      justify-content: center;
-      align-items: center;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--neon-main);
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: twinkle 3s infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* Container principal */
+    .main-container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
       flex-direction: column;
-      gap: 20px;
-    ">
-      <div style="font-size: 4rem; animation: pulse 1.5s infinite;">🔊</div>
-      <div style="font-size: 1.5rem; color: var(--neon-cyan); font-weight: 800; text-align: center;">
-        CLIQUEZ POUR ACTIVER LE SON
-      </div>
-      <button id="audioUnlockBtn" class="btn btn-primary" style="
-        padding: 20px 40px;
-        font-size: 1.3rem;
-        font-weight: 900;
-        animation: glow 1.5s infinite;
-      ">🎵 ACTIVER L'AUDIO</button>
-    </div>
-    
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      padding-top: 80px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-title {
+      font-family: var(--font-title);
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      color: var(--neon-main);
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--neon-green);
+      letter-spacing: 2px;
+    }
+
+    /* Carte auth */
+    .auth-card {
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.9) 100%);
+      border: 2px solid var(--metal-grey);
+      border-radius: calc(var(--border-radius) + 10px);
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      margin-bottom: 30px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: var(--border-radius);
+      padding: 5px;
+      border: 1px solid var(--metal-grey);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: calc(var(--border-radius) - 2px);
+      transition: all 0.3s;
+      font-family: var(--font-title);
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    .tab.active {
+      background: var(--btn-gradient);
+      color: var(--btn-text);
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--neon-main);
+    }
+
+    /* Forms */
+    .form-container {
+      display: none;
+    }
+
+    .form-container.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .btn-full {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    .btn-guest {
+      background: linear-gradient(135deg, var(--neon-purple) 0%, #6b21a8 100%);
+      color: white;
+      width: 100%;
+      padding: 16px;
+      margin-top: 15px;
+      border: none;
+      border-radius: var(--border-radius);
+      font-family: var(--font-title);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-guest:hover {
+      box-shadow: 0 5px 30px rgba(157, 78, 221, 0.5);
+      transform: translateY(-2px);
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 25px 0;
+      color: var(--text-muted);
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--metal-grey);
+    }
+
+    .divider span {
+      padding: 0 15px;
+      font-size: 0.85rem;
+    }
+
+    /* User info */
+    .user-info {
+      display: none;
+      text-align: center;
+      padding: 25px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--neon-green);
+      margin-bottom: 20px;
+    }
+
+    .user-info.show { display: block; }
+
+    .user-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid var(--neon-main);
+      margin: 0 auto 15px;
+      object-fit: cover;
+      display: none;
+    }
+
+    .user-avatar.show { display: block; }
+
+    .user-info .username {
+      font-family: var(--font-title);
+      font-size: 1.3rem;
+      color: var(--neon-main);
+      margin-bottom: 8px;
+    }
+
+    .user-info .credits {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* Verification banner */
+    .verification-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 0, 85, 0.15) 100%);
+      border: 1px solid var(--neon-orange);
+      border-radius: var(--border-radius);
+      padding: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .verification-banner.show { display: block; }
+
+    .verification-banner p {
+      color: var(--neon-orange);
+      margin-bottom: 12px;
+    }
+
+    .verification-banner button {
+      background: var(--neon-orange);
+      color: var(--primary-bg);
+      border: none;
+      padding: 10px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Home screen */
+    .home-screen {
+      display: none;
+    }
+
+    .home-screen.show {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Features */
+    .features {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--metal-grey);
+    }
+
+    .features h3 {
+      color: var(--neon-main);
+      font-family: var(--font-title);
+      font-size: 0.85rem;
+      margin-bottom: 18px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .feature-item .icon { font-size: 1.3rem; }
+
+    /* Promo */
+    .promo-section { margin-top: 15px; }
+
+    .promo-toggle {
+      color: var(--neon-purple);
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-align: center;
+      display: block;
+    }
+
+    .promo-toggle:hover { text-decoration: underline; }
+
+    .promo-input {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .promo-input.show { display: block; }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 25px 20px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .theme-selector-mini {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+      }
+      .theme-btn-mini {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+
+  <!-- Sélecteur de thème -->
+  <div class="theme-selector-mini">
+    <button class="theme-btn-mini active" data-theme="default" title="Spatial">🚀</button>
+    <button class="theme-btn-mini" data-theme="werewolf" title="Loup-Garou">🐺</button>
+    <button class="theme-btn-mini" data-theme="wizard-academy" title="Sorciers">🧙</button>
+    <button class="theme-btn-mini" data-theme="mythic-realms" title="Mythique">⚔️</button>
+  </div>
+
+  <div class="main-container">
     <div class="header">
-      <div class="logo"></div>
-      <h1 id="mainTitle">INFILTRATION SPATIALE</h1>
-      <div class="subtitle">⚡ MISSION TEMPS RÉEL ⚡</div>
-      <div id="buildBadge" style="margin-top:10px; opacity:.85; font-size:.95rem;"></div>
-      <div id="topBanner" style="display:none; margin-top:12px; color: var(--neon-orange); font-weight:700; letter-spacing:1px;"></div>
+      <h1 class="logo-title">LES SABOTEURS</h1>
+      <p class="subtitle">⚡ JEU DE DÉDUCTION SOCIALE ⚡</p>
     </div>
 
-    <!-- HOME -->
-    <div id="homeScreen" class="screen active">
-      <div style="width: 100%; max-width: 800px; margin: 0 auto;
-          background: linear-gradient(135deg, #0a0e27 0%, #1a1e3f 50%, #0a0e27 100%);
-          border: 3px solid var(--metal-grey); border-radius: 20px; padding: 40px;
-          box-shadow: 0 0 60px rgba(0,255,255,0.3), inset 0 0 100px rgba(0,0,0,0.5);">
-        
-        <!-- Titre Principal -->
-        <div style="text-align: center; margin-bottom: 40px;">
-          <h1 style="color: var(--neon-cyan); font-size: clamp(2rem, 6vw, 3rem); margin: 0; 
-              text-shadow: 0 0 30px var(--neon-cyan); letter-spacing: 3px;">
-            LES SABOTEURS
-          </h1>
-          <p style="color: var(--neon-green); margin-top: 10px; font-size: 1rem; opacity: 0.8;">
-            Jeu de déduction sociale multijoueur
-          </p>
-        </div>
+    <div class="auth-card">
+      <div class="message error" id="errorMessage"></div>
+      <div class="message success" id="successMessage"></div>
 
-        <!-- Sélecteur de Thème -->
-        <div style="margin-bottom: 30px; padding: 20px; border-radius: 12px; 
-            border: 2px solid rgba(0, 255, 255, 0.3); background: rgba(0, 0, 0, 0.4);">
-          <div style="text-align: center; margin-bottom: 15px;">
-            <span style="color: var(--neon-cyan); font-weight: 700; font-size: 1.1rem;">
-              🎨 CHOIX DU THÈME
-            </span>
-          </div>
-          <div id="homeThemeSelector" style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
-            <!-- Les boutons seront générés par JS -->
-          </div>
-          <div id="homeThemeDescription" style="text-align: center; margin-top: 15px; 
-              color: rgba(255, 255, 255, 0.7); font-size: 0.9rem; min-height: 24px;">
-          </div>
-        </div>
-
-        <!-- Formulaire -->
-        <div style="padding: 20px; border-radius: 12px; 
-            border: 2px solid var(--neon-cyan); background: rgba(0, 255, 255, 0.05);">
-          <div class="form-group" style="margin-bottom: 20px;">
-            <label for="playerName" style="color: var(--neon-cyan); font-weight: 700; margin-bottom: 8px; display: block;">
-              NOM DU JOUEUR
-            </label>
-            <input type="text" id="playerName" placeholder="Entrez votre nom" maxlength="20"
-                style="width: 100%; padding: 12px; font-size: 1rem; border-radius: 8px;
-                background: rgba(0, 0, 0, 0.6); border: 2px solid rgba(0, 255, 255, 0.3);
-                color: white; outline: none; transition: all 0.3s;">
-          </div>
-          <div class="btn-group" style="display: flex; gap: 10px; flex-direction: column;">
-            <button class="btn btn-primary" id="createBtn" style="padding: 15px; font-size: 1.1rem;">
-              🚀 CRÉER UNE MISSION
-            </button>
-            <button class="btn btn-secondary" id="joinBtn" style="padding: 15px; font-size: 1.1rem;">
-              🔗 REJOINDRE UNE MISSION
-            </button>
-          </div>
-        </div>
-
+      <div class="verification-banner" id="verificationBanner">
+        <p>📧 Vérifie ton email pour débloquer les <strong>2 parties vidéo gratuites</strong> !</p>
+        <button onclick="resendVerification()">Renvoyer l'email</button>
       </div>
-    </div>
 
-    <!-- CREATE -->
-    <div id="createScreen" class="screen">
-      <div class="control-panel">
-        <h2 class="panel-title" id="createMissionTitle">CRÉER UNE MISSION</h2>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="createRoomBtn">Générer Code Mission</button>
-          <button class="btn btn-secondary" id="backFromCreate">Retour</button>
-        </div>
+      <div class="user-info" id="userInfo">
+        <img src="/avatars/default.webp" alt="Avatar" class="user-avatar" id="userAvatar">
+        <div class="username" id="displayUsername">Joueur</div>
+        <div class="credits" id="displayCredits">🎬 2 parties vidéo disponibles</div>
       </div>
-    </div>
 
-    <!-- JOIN -->
-    <div id="joinScreen" class="screen">
-      <div class="control-panel">
-        <h2 class="panel-title" id="joinMissionTitle">REJOINDRE UNE MISSION</h2>
+      <div class="tabs" id="authTabs">
+        <div class="tab active" data-tab="login">CONNEXION</div>
+        <div class="tab" data-tab="register">INSCRIPTION</div>
+      </div>
+
+      <!-- Login Form -->
+      <div class="form-container active" id="loginForm">
         <div class="form-group">
-          <label for="joinRoomCode">Numéro de salle</label>
-          <input type="text" id="joinRoomCode" placeholder="0000" maxlength="4">
+          <label>EMAIL</label>
+          <input type="email" id="loginEmail" placeholder="ton@email.com" autocomplete="email">
         </div>
-        <div class="btn-group">
-          <button class="btn btn-primary" id="joinRoomBtn">Connexion</button>
-          <button class="btn btn-secondary" id="backFromJoin">Retour</button>
+        <div class="form-group">
+          <label>MOT DE PASSE</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
         </div>
-      </div>
-    </div>
-
-    <!-- LOBBY (cockpit style) -->
-    <div id="lobbyScreen" class="screen">
-      <div style="width: 100%; max-width: 1200px; margin: 0 auto;
-          background: linear-gradient(135deg, #0a0e27 0%, #1a1e3f 50%, #0a0e27 100%);
-          border: 3px solid var(--metal-grey); border-radius: 20px; padding: 40px;
-          box-shadow: 0 0 60px rgba(0,255,255,0.3), inset 0 0 100px rgba(0,0,0,0.5);">
-
-        <div style="text-align: center; margin-bottom: 40px; position: relative; display:flex; flex-direction:column; align-items:center;">
-          <div style="position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-              width: min(380px, 86vw); height: 62px; background: rgba(0,255,255,0.1);
-              border: 2px solid var(--neon-cyan); border-radius: 10px;"></div>
-	          <h1 class="lobby-title-text" style="display:flex; align-items:center; justify-content:center;
-              color: var(--neon-cyan); font-size: clamp(1.3rem, 5vw, 1.9rem);
-              margin: 0; padding: 0 10px; height: 62px; box-sizing: border-box;
-	              white-space: nowrap; line-height: 62px; letter-spacing: 2px;
-              max-width: min(380px, 86vw); overflow: hidden; text-overflow: ellipsis;
-              text-shadow: 0 0 30px var(--neon-cyan); position: relative; text-align:center;">
-            LES SABOTEURS
-          </h1>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap;">
-          <div>
-            <div style="color: var(--neon-orange); font-size: 1rem; margin-bottom: 5px;">CODE MISSION</div>
-            <div id="displayRoomCode" style="color: var(--neon-cyan); font-size: 2.5rem;
-                font-weight: bold; text-shadow: 0 0 20px var(--neon-cyan);">0000</div>
-          </div>
-          <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
-            <button class="btn btn-secondary" id="readyBtn">✅ PRÊT</button>
-            <button class="btn btn-primary" id="startGameBtn" style="display:none;">🚀 Lancer Mission</button>
-          </div>
-        </div>
-
-        <div style="text-align: center; margin: 40px 0;">
-          <div id="playerCount" style="font-size: 7rem; color: var(--neon-cyan);
-              text-shadow: 0 0 80px var(--neon-cyan); font-weight: 900;
-              font-family: 'Orbitron', sans-serif;">0</div>
-          <div style="color: var(--metal-grey); font-size: 1.1rem; margin-top: -10px;">MEMBRES D'ÉQUIPAGE</div>
-        </div>
-
-        <div style="margin: 25px 0;">
-          <div style="position: relative; height: 50px;
-              background: linear-gradient(to right, var(--neon-cyan) 0%, var(--neon-cyan) 50%, var(--neon-red) 50%, var(--neon-red) 100%);
-              border-radius: 25px; overflow: hidden; border: 3px solid var(--metal-grey);
-              box-shadow: 0 0 30px rgba(0,255,255,0.5), inset 0 0 30px rgba(0,0,0,0.8);">
-            <div id="balanceIndicatorCockpit" style="position: absolute; top: 50%; left: 50%;
-                transform: translate(-50%, -50%); width: 26px; height: 26px;
-                background: var(--neon-green); border-radius: 50%;
-                box-shadow: 0 0 40px var(--neon-green); border: 3px solid white;
-                transition: left 0.3s ease;"></div>
-          </div>
-	          <div id="balanceLabelsCockpit" style="display:flex; justify-content:space-between; margin-top:12px; padding: 0 10px; gap:12px; flex-wrap:wrap;">
-	            <span id="balanceLabelLeft" style="color: var(--neon-cyan); font-size: 1.1rem; font-weight:bold;">ASTRONAUTES</span>
-	            <span id="balanceStatusCockpit" style="color: var(--neon-green); font-size: 1.1rem; font-weight:bold; display:none;">MISSION BALANCED</span>
-	            <span id="balanceLabelRight" style="color: var(--neon-red); font-size: 1.1rem; font-weight:bold;">SABOTEURS</span>
-	          </div>
-        </div>
-
-        <!-- Phrase de répartition simple -->
-        <div id="autoAllocation" style="text-align: center; margin: 20px 0 15px 0; 
-            color: var(--neon-cyan); font-size: 1.05rem; opacity: 0.9;"></div>
-
-        <!-- Config rôles en pleine largeur -->
-        <div style="background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-            border: 2px solid var(--neon-orange); box-shadow: 0 0 20px rgba(255,165,0,0.3);">
-          <h3 style="color: var(--neon-orange); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">CONFIG RÔLES (HÔTE)</h3>
-          <div id="rolesConfig"></div>
-        </div>
-
-        <!-- Sélection de thème (hôte uniquement) -->
-        <div id="themeSelector" style="display:none; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-            border: 2px solid var(--neon-purple, #9d4edd); box-shadow: 0 0 20px rgba(157,78,221,0.3);">
-          <h3 style="color: var(--neon-purple, #9d4edd); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">🎨 THÈME (HÔTE)</h3>
-          <div id="themeButtons" style="display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;"></div>
-          <div id="themeDescription" style="margin-top: 15px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; color: #ccc; font-size: 0.95rem; text-align: center; min-height: 40px;"></div>
-        </div>
-
-        <!-- V9.3.1: Options vidéo (hôte uniquement) -->
-        <div id="videoOptions" style="display:none; margin-top: 20px; background: rgba(0,0,0,0.6); padding: 20px; border-radius: 15px;
-            border: 2px solid var(--neon-cyan); box-shadow: 0 0 20px rgba(0,255,255,0.3);">
-          <h3 style="color: var(--neon-cyan); margin:0 0 12px 0; font-size:1.2rem; text-align:center;">📹 OPTIONS VIDÉO (HÔTE)</h3>
-          <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
-            <label style="display: flex; align-items: center; gap: 8px; color: #ccc; font-size: 1rem; cursor: pointer;">
-              <input type="checkbox" id="disableVideoCheckbox" style="width: 20px; height: 20px; cursor: pointer;">
-              <span>Désactiver la vidéo pour cette partie</span>
-            </label>
-          </div>
-          <div style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.4); border-radius: 8px; color: #999; font-size: 0.9rem; text-align: center;">
-            <span id="videoOptionDescription" style="font-size: 0.95rem; line-height: 1.5;">Ce mode est idéal pour des parties avec cartes, sans maître du jeu. L'application remplacera ce dernier. L'hôte peut cocher le mode manuel dans la configuration des rôles, pour que chaque joueur renseigne sa carte de rôle reçue.</span>
-          </div>
-        </div>
+        <button class="btn btn-primary btn-full" id="loginBtn" onclick="login()">
+          🚀 CONNEXION
+        </button>
+        <div class="divider"><span>OU</span></div>
+        <button class="btn-guest" onclick="playAsGuest()">
+          👤 JOUER EN INVITÉ (Chat uniquement)
+        </button>
       </div>
 
-      <div class="control-panel" style="margin-top: 20px;">
-        <h2 class="panel-title" id="connectedPlayersTitle">ÉQUIPAGE CONNECTÉ</h2>
-        <div class="players-list" id="playersList"></div>
-      </div>
-    </div>
-
-    <!-- GAME -->
-    <div id="gameScreen" class="screen">
-      <div id="gameBackdrop" style="width:100%; height:250px; border-radius:16px; overflow:hidden; border:2px solid var(--neon-cyan);
-        background-size:cover; background-position:center 45%; margin-bottom: 16px; position:relative;">
-        <img id="ejectionOverlay" src="/images/default/out.webp" alt="ejection" style="display:none; position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.28; pointer-events:none;">
-      </div>
-      <div id="deadBanner" style="display:none; margin-bottom: 12px; padding:10px 12px; border-radius:12px; border:2px solid var(--neon-red); color: var(--neon-red); font-weight:900; text-align:center;">💀 Vous avez été éliminé</div>
-
-      <div class="control-panel" style="max-width: 900px;">
-        <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; align-items:center;">
-          <div>
-            <div style="opacity:.85; letter-spacing:2px; font-family:'Orbitron',sans-serif; font-size:.9rem;">MISSION</div>
-            <div id="hudRoom" style="font-size:1.6rem; font-weight:900; letter-spacing:3px;"></div>
-          </div>
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <div id="roleIcons" style="display:flex; gap:8px; align-items:center;"></div>
-            <div id="linkBanner" style="display:none; padding:6px 10px; border:2px solid var(--neon-orange); border-radius:10px; color:var(--neon-orange); font-weight:800;"></div>
-          </div>
+      <!-- Register Form -->
+      <div class="form-container" id="registerForm">
+        <div class="form-group">
+          <label>PSEUDO</label>
+          <input type="text" id="registerUsername" placeholder="Ton pseudo de joueur" maxlength="20">
         </div>
-
+        <div class="form-group">
+          <label>EMAIL</label>
+          <input type="email" id="registerEmail" placeholder="ton@email.com">
+        </div>
+        <div class="form-group">
+          <label>MOT DE PASSE</label>
+          <input type="password" id="registerPassword" placeholder="Minimum 6 caractères">
+        </div>
         
-        <!-- VIDEO DOCK (prototype) : visio intégrée à l'UI en phase de discussion -->
-        <div id="videoDockSlot">
-          <div id="videoDockSlotHeader">
-            <div class="title">📹 VISIO (discussion)</div>
-            <div class="actions">
-              <button id="videoDockExpandBtn" type="button" title="Ouvrir en fenêtre">⤢</button>
-              <button id="videoDockHideBtn" type="button" title="Masquer la visio">✕</button>
+        <div class="promo-section">
+          <span class="promo-toggle" onclick="togglePromo()">🎁 J'ai un code promo</span>
+          <div class="promo-input" id="promoInput">
+            <div class="form-group" style="margin-bottom: 0;">
+              <input type="text" id="promoCode" placeholder="CODE-PROMO">
             </div>
           </div>
-          <div id="videoDockSlotBody"></div>
         </div>
 
-<div style="margin-top: 18px;">
-          <div id="phaseTitle" class="panel-title" style="margin-bottom:10px;">—</div>
-          <div id="phaseText" style="font-size:1.1rem; line-height:1.4; opacity:.95;"></div>
-          <div id="ackLine" style="margin-top:10px; color: var(--neon-green); font-weight:800;"></div>
-        </div>
-
-        <div id="controls" style="margin-top: 18px;"></div>
-        
-        <!-- Panneau de contrôle hôte (force advance) -->
-        <div id="hostControls" style="display:none; margin-top: 18px; padding: 15px; background: rgba(255,165,0,0.1); border: 2px solid var(--neon-orange); border-radius: 12px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-            <div>
-              <div style="color: var(--neon-orange); font-weight: 800; font-size: 1.1rem; margin-bottom: 5px;">⚡ CONTRÔLES HÔTE</div>
-              <div id="phaseTimer" style="color: #ccc; font-size: 0.9rem;">Phase active depuis : <span id="phaseElapsed">0s</span></div>
-              <div id="pendingPlayers" style="margin-top: 5px; color: #999; font-size: 0.85rem;"></div>
-            </div>
-            <button id="forceAdvanceBtn" class="btn" style="background: var(--neon-orange); color: #000; font-weight: 800; padding: 12px 20px; opacity: 0.5; cursor: not-allowed;" disabled>
-              ⏭️ Forcer la suite (20s min)
-            </button>
-          </div>
-        </div>
-        
-        <div id="log" style="margin-top:16px; max-height:220px; overflow:auto; padding:10px; border-radius:12px;
-          background: rgba(0,0,0,0.35); border:1px solid rgba(0,255,255,0.25);"></div>
-      </div>
-    </div>
-
-    <!-- END -->
-    <div id="endScreen" class="screen">
-      <div id="endBackdrop" style="width:100%; height:250px; border-radius:16px; overflow:hidden; border:2px solid var(--neon-cyan);
-        background-size:cover; background-position:center 45%; margin-bottom: 16px;"></div>
-      <div class="control-panel" style="max-width: 900px;">
-        <h2 class="panel-title winner-title" id="winnerTitle"></h2>
-        <div id="endSummary" style="margin-bottom:16px;"></div>
-        
-        <!-- Badges débloqués cette partie -->
-        <div id="newBadgesSection" style="display:none; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, rgba(157,78,221,0.2), rgba(255,165,0,0.2)); border: 2px solid var(--neon-purple, #9d4edd); border-radius: 15px;">
-          <h3 style="color: var(--neon-purple, #9d4edd); margin: 0 0 15px 0; text-align: center; font-size: 1.4rem;">🏆 BADGES DÉBLOQUÉS</h3>
-          <div id="newBadgesList" style="display: flex; flex-wrap: wrap; gap: 12px; justify-content: center;"></div>
-        </div>
-        
-        <div class="ranking-table" id="rankingTable"></div>
-
-        <div class="btn-group" style="margin-top: 18px;">
-          <button class="btn btn-primary" id="replayBtn">🔁 Rejouer dans cette chambre (garder les stats)</button>
-          <button class="btn btn-secondary" id="newGameBtn">🆕 Nouvelle partie (réinitialiser les stats)</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="errorDisplay"></div>
-  </div>
-
-  <!-- Rules modal -->
-  <div id="rulesModal" style="display:none; position:fixed; inset:0; z-index:10000; background: rgba(0,0,0,0.75); overflow-y:auto;">
-    <div style="max-width: 900px; margin: 2vh auto; max-height: 96vh; background: linear-gradient(135deg, var(--dark-panel), #0d1f3a);
-      border:2px solid var(--neon-cyan); border-radius: 16px; padding: 18px; position: relative; display:flex; flex-direction:column;">
-      <button id="rulesClose" class="btn btn-secondary" style="position:absolute; right:12px; top:12px; z-index:1;">✖</button>
-      <div class="panel-title" style="flex-shrink:0;">RÈGLES</div>
-      <div id="rulesContent" style="line-height:1.45; font-size:1.05rem; flex:1; overflow-y:auto; padding-right:10px; min-height:0;"></div>
-      <button id="tutorialBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%; flex-shrink:0;">📖 Voir le tutoriel rapide</button>
-    </div>
-  </div>
-
-  <!-- Tutorial modal -->
-  <div id="tutorialModal" style="display:none; position:fixed; inset:0; z-index:10001; background: rgba(0,0,0,0.85); overflow-y:auto;">
-    <div style="max-width: 700px; margin: 2vh auto; max-height: 96vh; background: linear-gradient(135deg, var(--primary-bg), var(--secondary-bg));
-      border:3px solid var(--neon-cyan); border-radius: 20px; padding: 20px; position: relative; box-shadow: 0 0 60px var(--neon-cyan); display:flex; flex-direction:column;">
-      <button id="tutorialClose" class="btn btn-secondary" style="position:absolute; right:15px; top:15px; z-index:1;">✖</button>
-      
-      <div id="tutorialContent" style="flex:1; overflow-y:auto; min-height:0;">
-        <!-- Écran 1 -->
-        <div class="tutorial-screen" data-screen="1" style="display:block;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
-            <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Bienvenue !</h2>
-          </div>
-          <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary);">
-            <strong>Infiltration Spatiale</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">saboteurs</span> 
-            tentent d'éliminer les <span style="color: var(--neon-cyan);">astronautes</span> sans être découverts.
-          </p>
-          <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary);">
-            Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).
-          </p>
-        </div>
-
-        <!-- Écran 2 -->
-        <div class="tutorial-screen" data-screen="2" style="display:none;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
-            <h2 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
-          </div>
-          <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
-            <li><strong style="color: var(--neon-red);">Saboteurs</strong> : choisissent une victime (unanimité requise)</li>
-            <li><strong style="color: var(--neon-cyan);">Officier Radar</strong> : inspecte un joueur (saboteur ou non ?)</li>
-            <li><strong style="color: var(--neon-green);">Docteur Bio</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
-            <li><strong style="color: var(--neon-orange);">Rôles spéciaux</strong> : Caméléon, Agent IA, etc.</li>
-          </ul>
-        </div>
-
-        <!-- Écran 3 -->
-        <div class="tutorial-screen" data-screen="3" style="display:none;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">☀️</div>
-            <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
-          </div>
-          <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
-            <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
-            <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
-            <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
-            <li>Le <strong>Capitaine</strong> tranche en cas d'égalité</li>
-          </ul>
-          <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: var(--text-secondary);">
-            <strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !
-          </p>
-        </div>
-
-        <!-- Écran 4 -->
-        <div class="tutorial-screen" data-screen="4" style="display:none;">
-          <div style="text-align:center; margin-bottom: 25px;">
-            <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
-            <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
-          </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
-              <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
-              <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">Astronautes gagnent</div>
-              <div style="font-size: 0.95rem; color: var(--text-secondary);">Tous les saboteurs sont éliminés</div>
-            </div>
-            <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
-              <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
-              <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">Saboteurs gagnent</div>
-              <div style="font-size: 0.95rem; color: var(--text-secondary);">Nombre de saboteurs ≥ astronautes</div>
-            </div>
-          </div>
-          <p style="text-align: center; font-size: 1.1rem; color: var(--neon-green); font-weight: 800;">
-            Prêt à jouer ? Créez ou rejoignez une mission ! 🚀
-          </p>
-        </div>
+        <button class="btn btn-primary btn-full" id="registerBtn" onclick="register()">
+          ✨ CRÉER MON COMPTE
+        </button>
+        <div class="divider"><span>OU</span></div>
+        <button class="btn-guest" onclick="playAsGuest()">
+          👤 JOUER EN INVITÉ (Chat uniquement)
+        </button>
       </div>
 
-      <!-- Navigation -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--neon-cyan); flex-shrink:0;">
-        <button id="tutorialPrev" class="btn btn-secondary">← Précédent</button>
-        <div style="display: flex; gap: 8px;">
-          <div class="tutorial-dot" data-dot="1" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="2" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="3" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="4" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="5" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
-          <div class="tutorial-dot" data-dot="6" style="width: 12px; height: 12px; border-radius: 50%; background: var(--neon-cyan); opacity: 0.3; cursor: pointer;"></div>
-        </div>
-        <button id="tutorialNext" class="btn btn-primary">Suivant →</button>
+      <!-- Home Screen -->
+      <div class="home-screen" id="homeScreen">
+        <button class="btn btn-primary btn-full" onclick="goToGame()">🎮 JOUER MAINTENANT</button>
+        <button class="btn btn-secondary btn-full" onclick="goToAvatars()">🎨 CRÉER MON AVATAR IA</button>
+        <button class="btn btn-secondary btn-full" onclick="logout()">🚪 DÉCONNEXION</button>
       </div>
 
-      <div style="text-align: center; margin-top: 10px; flex-shrink:0;">
-        <label style="display: inline-flex; align-items: center; gap: 8px; cursor: pointer; color: #ccc; font-size: 0.95rem;">
-          <input type="checkbox" id="tutorialDontShow" style="width: 18px; height: 18px; cursor: pointer;">
-          <span>Ne plus afficher ce tutoriel</span>
-        </label>
+      <div class="features" id="featuresBox">
+        <h3>✨ AVANTAGES DU COMPTE GRATUIT</h3>
+        <div class="feature-grid">
+          <div class="feature-item"><span class="icon">🎬</span><span>2 parties vidéo</span></div>
+          <div class="feature-item"><span class="icon">🎨</span><span>1 avatar IA</span></div>
+          <div class="feature-item"><span class="icon">🚀</span><span>2 thèmes</span></div>
+          <div class="feature-item"><span class="icon">💬</span><span>Chat illimité</span></div>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ============================= -->
-  <!-- D4 — Video Briefing Mode -->
-  <!-- ============================= -->
-  <link rel="stylesheet" href="video-tracks.css">
-  <link rel="stylesheet" href="video-briefing.css">
-  <!-- Daily Call Object API (required for Daily.createCallObject) -->
-  <script src="https://unpkg.com/@daily-co/daily-js@0.60.0/dist/daily.js"></script>
-  <script src="video-mode-controller.js"></script>
-  <script src="video-tracks.js"></script>
-  <script src="video-briefing-ui.js"></script>
-
-  <!-- Boot: ensure Socket.IO client is available (works on Render + local; shows a clear error if server not running) -->
   <script>
-    (function () {
-      function loadScript(src) {
-        return new Promise(function (resolve) {
-          var s = document.createElement('script');
-          s.src = src;
-          s.async = true;
-          s.onload = function () { resolve(true); };
-          s.onerror = function () { resolve(false); };
-          document.head.appendChild(s);
-        });
-      }
+    const API_URL = '';
+    let currentUser = null;
 
-      function loadClient() {
-        var s = document.createElement('script');
-        s.src = 'client.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
+    // Theme
+    function initTheme() {
+      const saved = localStorage.getItem('saboteur_theme') || 'default';
+      setTheme(saved);
+    }
 
-      function loadVideoManager() {
-        // Charger le CSS d'abord
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'daily-video.css';
-        document.head.appendChild(link);
-        
-        // Puis le JS
-        var s = document.createElement('script');
-        s.src = 'daily-video.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
-
-      function loadVideoIntegration() {
-        var s = document.createElement('script');
-        s.src = 'video-integration-client.js';
-        s.async = true;
-        document.body.appendChild(s);
-      }
-
-      // Try local first (Render/local). If not available (e.g., opened via file://), fallback to CDN
-      loadScript('/socket.io/socket.io.js').then(function () {
-        if (typeof window.io === 'undefined') {
-          return loadScript('https://cdn.socket.io/4.7.5/socket.io.min.js');
-        }
-        return true;
-      })
-      .then(function() {
-        // Charger Daily.co
-        return loadScript('https://unpkg.com/@daily-co/daily-js@0.60.0/dist/daily-iframe.js');
-      })
-      .then(function() {
-        // Charger le video manager
-        loadVideoManager();
-        // Charger le client principal
-        loadClient();
-        // Charger l'intégration vidéo (après le client)
-        setTimeout(loadVideoIntegration, 1000);
-        
-        // D7-D10: Charger les nouveaux modules
-        setTimeout(function() {
-          loadScript('d7-animations.js');
-          loadScript('d8-performance.js');
-          loadScript('d9-avatars.js');
-          loadScript('d10-pwa.js');
-        }, 1500);
+    function setTheme(name) {
+      document.documentElement.setAttribute('data-theme', name);
+      localStorage.setItem('saboteur_theme', name);
+      document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === name);
       });
-    })();
+      createParticles();
+    }
+
+    document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+      btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+    });
+
+    // Particles
+    function createParticles() {
+      const c = document.getElementById('particles');
+      c.innerHTML = '';
+      for (let i = 0; i < 80; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 5 + 's';
+        c.appendChild(p);
+      }
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+        document.getElementById(tab.dataset.tab + 'Form').classList.add('active');
+        hideMessages();
+      });
+    });
+
+    // Messages
+    function showError(msg) {
+      document.getElementById('errorMessage').textContent = msg;
+      document.getElementById('errorMessage').classList.add('show');
+      document.getElementById('successMessage').classList.remove('show');
+    }
+
+    function showSuccess(msg) {
+      document.getElementById('successMessage').textContent = msg;
+      document.getElementById('successMessage').classList.add('show');
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+
+    function hideMessages() {
+      document.getElementById('errorMessage').classList.remove('show');
+      document.getElementById('successMessage').classList.remove('show');
+    }
+
+    function togglePromo() {
+      document.getElementById('promoInput').classList.toggle('show');
+    }
+
+    // API
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) return showError('Email et mot de passe requis');
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Connexion...';
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('saboteur_token', data.token);
+          localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+          currentUser = data.user;
+          showLoggedInState();
+          showSuccess('Connexion réussie !');
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) { showError('Erreur réseau'); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 CONNEXION';
+      }
+    }
+
+    async function register() {
+      const username = document.getElementById('registerUsername').value.trim();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const promo = document.getElementById('promoCode').value.trim();
+
+      if (!username || !email || !password) return showError('Tous les champs requis');
+      if (password.length < 6) return showError('Mot de passe trop court');
+
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Création...';
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username, password, promoCode: promo })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('saboteur_token', data.token);
+          localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+          currentUser = data.user;
+          showLoggedInState();
+          showSuccess('Compte créé ! Vérifie ton email.');
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) { showError('Erreur réseau'); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = '✨ CRÉER MON COMPTE';
+      }
+    }
+
+    async function resendVerification() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${API_URL}/api/auth/resend-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentUser.email })
+        });
+        const data = await res.json();
+        data.success ? showSuccess('Email renvoyé !') : showError(data.error);
+      } catch (e) { showError('Erreur'); }
+    }
+
+    // States
+    function showLoggedInState() {
+      document.getElementById('authTabs').style.display = 'none';
+      document.getElementById('loginForm').classList.remove('active');
+      document.getElementById('registerForm').classList.remove('active');
+      document.getElementById('featuresBox').style.display = 'none';
+      document.getElementById('userInfo').classList.add('show');
+      document.getElementById('homeScreen').classList.add('show');
+
+      if (currentUser) {
+        document.getElementById('displayUsername').textContent = currentUser.username;
+        if (currentUser.currentAvatar) {
+          const av = document.getElementById('userAvatar');
+          av.src = currentUser.currentAvatar;
+          av.classList.add('show');
+        }
+        const c = currentUser.videoCredits;
+        document.getElementById('displayCredits').textContent = 
+          (c === '∞' || c > 1000) ? '🎬 Vidéo illimitée' : `🎬 ${c} partie(s) vidéo`;
+        document.getElementById('verificationBanner').classList.toggle('show', !currentUser.emailVerified);
+      }
+    }
+
+    function showLoggedOutState() {
+      document.getElementById('authTabs').style.display = 'flex';
+      document.getElementById('loginForm').classList.add('active');
+      document.getElementById('registerForm').classList.remove('active');
+      document.getElementById('featuresBox').style.display = 'block';
+      document.getElementById('userInfo').classList.remove('show');
+      document.getElementById('homeScreen').classList.remove('show');
+      document.getElementById('verificationBanner').classList.remove('show');
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('.tab[data-tab="login"]').classList.add('active');
+    }
+
+    // Navigation
+    function playAsGuest() {
+      localStorage.removeItem('saboteur_token');
+      localStorage.removeItem('saboteur_user');
+      window.location.href = '/game.html?mode=guest';
+    }
+
+    function goToGame() { window.location.href = '/game.html'; }
+    function goToAvatars() { window.location.href = '/avatar.html'; }
+
+    function logout() {
+      localStorage.removeItem('saboteur_token');
+      localStorage.removeItem('saboteur_user');
+      currentUser = null;
+      showLoggedOutState();
+      showSuccess('Déconnexion réussie');
+    }
+
+    // Init
+    async function init() {
+      initTheme();
+      createParticles();
+
+      const token = localStorage.getItem('saboteur_token');
+      const saved = localStorage.getItem('saboteur_user');
+
+      if (token && saved) {
+        try {
+          const res = await fetch(`${API_URL}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+            showLoggedInState();
+          } else {
+            localStorage.removeItem('saboteur_token');
+            localStorage.removeItem('saboteur_user');
+            showLoggedOutState();
+          }
+        } catch (e) {
+          currentUser = JSON.parse(saved);
+          showLoggedInState();
+        }
+      } else {
+        showLoggedOutState();
+      }
+    }
+
+    document.getElementById('loginPassword').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('registerPassword').addEventListener('keypress', e => { if (e.key === 'Enter') register(); });
+
+    init();
   </script>
 </body>
 </html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎭 LES SABOTEURS - Jouer</title>
+  
+  <meta name="description" content="Saboteur - Un jeu multijoueur de déduction sociale avec vidéo intégrée.">
+  <meta name="theme-color" content="#00ffff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.webp">
+
+  <link rel="stylesheet" href="auth-themes.css">
+  <link rel="stylesheet" href="styles.css">
+  
+  <style>
+    /* User bar en haut */
+    .user-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 100%);
+      border-bottom: 1px solid var(--metal-grey);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 10000;
+    }
+
+    .user-bar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-bar-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--neon-main);
+      object-fit: cover;
+    }
+
+    .user-bar-name {
+      font-family: var(--font-title);
+      color: var(--neon-main);
+      font-size: 1rem;
+    }
+
+    .user-bar-credits {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      background: rgba(0,0,0,0.5);
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--metal-grey);
+    }
+
+    .user-bar-credits.warning {
+      border-color: var(--neon-orange);
+      color: var(--neon-orange);
+    }
+
+    .user-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-bar-btn {
+      padding: 8px 16px;
+      border-radius: var(--border-radius);
+      font-family: var(--font-title);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      text-decoration: none;
+    }
+
+    .user-bar-btn-primary {
+      background: var(--btn-gradient);
+      color: var(--btn-text);
+    }
+
+    .user-bar-btn-secondary {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--metal-grey);
+    }
+
+    .user-bar-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Guest mode banner */
+    .guest-banner {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: linear-gradient(90deg, var(--neon-purple), #6b21a8);
+      color: white;
+      text-align: center;
+      padding: 10px;
+      font-size: 0.9rem;
+      z-index: 9999;
+    }
+
+    .guest-banner.show {
+      display: block;
+    }
+
+    .guest-banner a {
+      color: white;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-left: 10px;
+    }
+
+    /* Video credits warning */
+    .video-warning {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.95);
+      border: 2px solid var(--neon-orange);
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 400px;
+      text-align: center;
+      z-index: 100000;
+    }
+
+    .video-warning.show {
+      display: block;
+    }
+
+    .video-warning h2 {
+      color: var(--neon-orange);
+      font-family: var(--font-title);
+      margin-bottom: 15px;
+    }
+
+    .video-warning p {
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .video-warning-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .video-warning-btn {
+      padding: 14px 20px;
+      border-radius: var(--border-radius);
+      font-family: var(--font-title);
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s;
+    }
+
+    .video-warning-btn-upgrade {
+      background: var(--btn-gradient);
+      color: var(--btn-text);
+    }
+
+    .video-warning-btn-chat {
+      background: transparent;
+      color: var(--text-secondary);
+      border: 1px solid var(--metal-grey);
+    }
+
+    .video-warning-btn-close {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+
+    /* Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.8);
+      z-index: 99999;
+    }
+
+    .overlay.show {
+      display: block;
+    }
+
+    /* Ajustement du contenu principal */
+    body {
+      padding-top: 60px;
+    }
+
+    body.guest-mode {
+      padding-top: 100px;
+    }
+
+    /* Theme selector dans user bar */
+    .theme-selector-bar {
+      display: flex;
+      gap: 5px;
+    }
+
+    .theme-btn-bar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--metal-grey);
+      background: transparent;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+    }
+
+    .theme-btn-bar.active {
+      border-color: var(--neon-main);
+      box-shadow: 0 0 8px var(--neon-main);
+    }
+
+    @media (max-width: 600px) {
+      .user-bar {
+        padding: 0 10px;
+      }
+
+      .user-bar-name {
+        display: none;
+      }
+
+      .user-bar-btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+      }
+
+      .theme-selector-bar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- User Bar -->
+  <div class="user-bar" id="userBar">
+    <div class="user-bar-left">
+      <img src="/icons/icon-192x192.webp" class="user-bar-avatar" id="userBarAvatar" alt="Avatar">
+      <span class="user-bar-name" id="userBarName">Invité</span>
+      <span class="user-bar-credits" id="userBarCredits">Chat uniquement</span>
+    </div>
+    <div class="user-bar-right">
+      <div class="theme-selector-bar">
+        <button class="theme-btn-bar active" data-theme="default">🚀</button>
+        <button class="theme-btn-bar" data-theme="werewolf">🐺</button>
+        <button class="theme-btn-bar" data-theme="wizard-academy">🧙</button>
+        <button class="theme-btn-bar" data-theme="mythic-realms">⚔️</button>
+      </div>
+      <a href="/avatar.html" class="user-bar-btn user-bar-btn-secondary" id="avatarBtn">🎨 Avatar</a>
+      <button class="user-bar-btn user-bar-btn-primary" id="authBtn" onclick="handleAuthBtn()">Connexion</button>
+    </div>
+  </div>
+
+  <!-- Guest Banner -->
+  <div class="guest-banner" id="guestBanner">
+    👤 Mode Invité - Chat uniquement. <a href="/">Créer un compte</a> pour accéder aux parties vidéo !
+  </div>
+
+  <!-- Video Warning Modal -->
+  <div class="overlay" id="overlay"></div>
+  <div class="video-warning" id="videoWarning">
+    <h2>⚠️ Plus de crédits vidéo</h2>
+    <p>Tu as utilisé tes 2 parties vidéo gratuites.</p>
+    <div class="video-warning-btns">
+      <button class="video-warning-btn video-warning-btn-upgrade" onclick="goUpgrade()">
+        💎 S'abonner (1.49€/mois)
+      </button>
+      <button class="video-warning-btn video-warning-btn-chat" onclick="continueChatOnly()">
+        💬 Continuer en chat
+      </button>
+      <button class="video-warning-btn video-warning-btn-close" onclick="closeVideoWarning()">
+        Fermer
+      </button>
+    </div>
+  </div>
+
+  <!-- Le contenu du jeu sera ici (inclus depuis client.js existant) -->
+  <div class="container" id="gameContainer">
+    <!-- Le jeu existant se charge ici -->
+  </div>
+
+  <script>
+    // ========================================
+    // Auth Integration for Game
+    // ========================================
+    
+    const API_URL = '';
+    let currentUser = null;
+    let isGuestMode = false;
+
+    // Theme
+    function initTheme() {
+      const saved = localStorage.getItem('saboteur_theme') || 'default';
+      setTheme(saved);
+    }
+
+    function setTheme(name) {
+      document.documentElement.setAttribute('data-theme', name);
+      localStorage.setItem('saboteur_theme', name);
+      document.querySelectorAll('.theme-btn-bar').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === name);
+      });
+    }
+
+    document.querySelectorAll('.theme-btn-bar').forEach(btn => {
+      btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+    });
+
+    // Check auth status
+    async function checkAuth() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mode') === 'guest') {
+        setGuestMode();
+        return;
+      }
+
+      const token = localStorage.getItem('saboteur_token');
+      const saved = localStorage.getItem('saboteur_user');
+
+      if (!token || !saved) {
+        // Redirect to login
+        window.location.href = '/';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          currentUser = data.user;
+          localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+          updateUserBar();
+        } else {
+          // Token invalid
+          localStorage.removeItem('saboteur_token');
+          localStorage.removeItem('saboteur_user');
+          window.location.href = '/';
+        }
+      } catch (e) {
+        // Use cached data
+        currentUser = JSON.parse(saved);
+        updateUserBar();
+      }
+    }
+
+    function setGuestMode() {
+      isGuestMode = true;
+      document.body.classList.add('guest-mode');
+      document.getElementById('guestBanner').classList.add('show');
+      document.getElementById('userBarName').textContent = 'Invité';
+      document.getElementById('userBarCredits').textContent = 'Chat uniquement';
+      document.getElementById('authBtn').textContent = 'Créer un compte';
+      document.getElementById('avatarBtn').style.display = 'none';
+    }
+
+    function updateUserBar() {
+      if (!currentUser) return;
+
+      document.getElementById('userBarName').textContent = currentUser.username;
+      
+      if (currentUser.currentAvatar) {
+        document.getElementById('userBarAvatar').src = currentUser.currentAvatar;
+      }
+
+      const credits = currentUser.videoCredits;
+      const creditsEl = document.getElementById('userBarCredits');
+      
+      if (credits === '∞' || credits > 1000) {
+        creditsEl.textContent = '🎬 Vidéo illimitée';
+        creditsEl.classList.remove('warning');
+      } else if (credits > 0) {
+        creditsEl.textContent = `🎬 ${credits} partie(s) vidéo`;
+        creditsEl.classList.remove('warning');
+      } else {
+        creditsEl.textContent = '⚠️ 0 crédit vidéo';
+        creditsEl.classList.add('warning');
+      }
+
+      document.getElementById('authBtn').textContent = '🚪 Déconnexion';
+    }
+
+    function handleAuthBtn() {
+      if (currentUser) {
+        logout();
+      } else {
+        window.location.href = '/';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('saboteur_token');
+      localStorage.removeItem('saboteur_user');
+      window.location.href = '/';
+    }
+
+    // Video credit check
+    async function canPlayVideo() {
+      if (isGuestMode) {
+        showVideoWarning('guest');
+        return false;
+      }
+
+      if (!currentUser) return false;
+
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/video/can-play`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!data.canPlay) {
+          showVideoWarning(data.reason);
+          return false;
+        }
+
+        return true;
+      } catch (e) {
+        console.error('Video check error:', e);
+        return false;
+      }
+    }
+
+    async function consumeVideoCredit() {
+      if (isGuestMode || !currentUser) return;
+
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/video/consume-credit`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          // Update local credits
+          if (data.videoCredits !== '∞') {
+            currentUser.videoCredits = data.videoCredits;
+            localStorage.setItem('saboteur_user', JSON.stringify(currentUser));
+            updateUserBar();
+          }
+        }
+      } catch (e) {
+        console.error('Consume credit error:', e);
+      }
+    }
+
+    function showVideoWarning(reason) {
+      const modal = document.getElementById('videoWarning');
+      const overlay = document.getElementById('overlay');
+      
+      const h2 = modal.querySelector('h2');
+      const p = modal.querySelector('p');
+
+      if (reason === 'guest') {
+        h2.textContent = '👤 Mode Invité';
+        p.textContent = 'Crée un compte gratuit pour accéder aux parties vidéo !';
+      } else if (reason === 'email_not_verified') {
+        h2.textContent = '📧 Email non vérifié';
+        p.textContent = 'Vérifie ton email pour débloquer les parties vidéo.';
+      } else {
+        h2.textContent = '⚠️ Plus de crédits vidéo';
+        p.textContent = 'Tu as utilisé tes 2 parties vidéo gratuites.';
+      }
+
+      modal.classList.add('show');
+      overlay.classList.add('show');
+    }
+
+    function closeVideoWarning() {
+      document.getElementById('videoWarning').classList.remove('show');
+      document.getElementById('overlay').classList.remove('show');
+    }
+
+    function goUpgrade() {
+      // TODO: Redirect to Stripe checkout
+      alert('Paiement Stripe à venir !');
+    }
+
+    function continueChatOnly() {
+      closeVideoWarning();
+      // Disable video mode in game
+      if (window.gameSetChatOnly) {
+        window.gameSetChatOnly(true);
+      }
+    }
+
+    // Expose functions for game client
+    window.authCanPlayVideo = canPlayVideo;
+    window.authConsumeVideoCredit = consumeVideoCredit;
+    window.authGetUser = () => currentUser;
+    window.authIsGuest = () => isGuestMode;
+
+    // Init
+    initTheme();
+    checkAuth();
+  </script>
+
+  <!-- Inclure le client.js existant du jeu -->
+  <script src="client.js"></script>
+</body>
+</html>

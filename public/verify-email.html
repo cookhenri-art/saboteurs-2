@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vérification Email - Saboteur</title>
+  <link rel="stylesheet" href="auth-themes.css">
+  
+  <style>
+    .main-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .verify-card {
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.9) 100%);
+      border: 2px solid var(--metal-grey);
+      border-radius: calc(var(--border-radius) + 10px);
+      padding: 50px 40px;
+      max-width: 450px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    }
+
+    .icon {
+      font-size: 5rem;
+      margin-bottom: 25px;
+      display: block;
+    }
+
+    .title {
+      font-family: var(--font-title);
+      font-size: 1.8rem;
+      color: var(--neon-main);
+      margin-bottom: 20px;
+      letter-spacing: 2px;
+    }
+
+    .title.success { color: var(--neon-green); }
+    .title.error { color: var(--neon-red); }
+
+    .message {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }
+
+    .message strong {
+      color: var(--neon-main);
+    }
+
+    .btn-play {
+      display: inline-block;
+      background: var(--btn-gradient);
+      color: var(--btn-text);
+      padding: 16px 40px;
+      border-radius: var(--border-radius);
+      text-decoration: none;
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+    }
+
+    .btn-play:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 30px rgba(0, 0, 0, 0.4);
+    }
+
+    .loading {
+      opacity: 0.7;
+    }
+
+    /* Animation */
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .icon.animate {
+      animation: bounce 1s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="verify-card">
+      <span class="icon animate" id="icon">⏳</span>
+      <h1 class="title" id="title">Vérification en cours...</h1>
+      <p class="message" id="message">Patiente quelques secondes...</p>
+      <a href="/" class="btn-play" id="btn" style="display: none;">🎮 Jouer maintenant</a>
+    </div>
+  </div>
+
+  <script>
+    // Apply saved theme
+    const savedTheme = localStorage.getItem('saboteur_theme') || 'default';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    async function verifyEmail() {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        showError('Lien invalide', 'Aucun token de vérification trouvé.');
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/auth/verify-email?token=${token}`);
+        const data = await response.json();
+
+        if (data.success) {
+          showSuccess(data.username);
+        } else {
+          showError('Erreur', data.error || 'Token invalide ou expiré');
+        }
+      } catch (error) {
+        showError('Erreur', 'Impossible de contacter le serveur');
+      }
+    }
+
+    function showSuccess(username) {
+      document.getElementById('icon').textContent = '✅';
+      document.getElementById('icon').classList.remove('animate');
+      document.getElementById('title').textContent = 'Email vérifié !';
+      document.getElementById('title').className = 'title success';
+      document.getElementById('message').innerHTML = `
+        Bravo <strong>${username}</strong> ! 🎉<br><br>
+        Tu as maintenant accès à <strong>2 parties vidéo gratuites</strong>.<br>
+        Connecte-toi et profite du jeu !
+      `;
+      document.getElementById('btn').style.display = 'inline-block';
+    }
+
+    function showError(title, message) {
+      document.getElementById('icon').textContent = '❌';
+      document.getElementById('icon').classList.remove('animate');
+      document.getElementById('title').textContent = title;
+      document.getElementById('title').className = 'title error';
+      document.getElementById('message').textContent = message;
+      document.getElementById('btn').textContent = '🏠 Retour à l\'accueil';
+      document.getElementById('btn').style.display = 'inline-block';
+    }
+
+    verifyEmail();
+  </script>
+</body>
+</html>

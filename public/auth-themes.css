@@ -1,0 +1,451 @@
+/* ========================================
+   SABOTEUR - THÈMES CSS PARTAGÉS
+   À inclure dans toutes les pages d'auth
+   ======================================== */
+
+/* ========================================
+   POLICES GOOGLE FONTS
+   ======================================== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Text:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Philosopher:wght@400;700&family=Cormorant+Garamond:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=MedievalSharp&family=Lora:wght@400;600;700&display=swap');
+
+/* ========================================
+   THÈME 1 : INFILTRATION SPATIALE (Default)
+   ======================================== */
+:root[data-theme="default"],
+:root {
+  /* Couleurs de fond */
+  --primary-bg: #0a0e1a;
+  --secondary-bg: #1a1f35;
+  --tertiary-bg: #243447;
+  --deep-space: #000B18;
+  --dark-panel: #0a1628;
+  
+  /* Couleurs néon/accent */
+  --neon-cyan: #00ffff;
+  --neon-blue: #00d9ff;
+  --neon-purple: #9d4edd;
+  --neon-green: #00ff88;
+  --neon-orange: #ff6b35;
+  --neon-red: #ff0055;
+  --neon-main: #00ffff;
+  
+  /* Couleurs texte */
+  --text-primary: #e0f4ff;
+  --text-secondary: #8ab4d5;
+  --text-muted: #5a7a95;
+  
+  /* Couleurs fonctionnelles */
+  --metal-grey: #3a4a5a;
+  
+  /* Polices */
+  --font-title: 'Orbitron', sans-serif;
+  --font-body: 'Rajdhani', sans-serif;
+  
+  /* Effets */
+  --border-radius: 0px;
+  --glow-intensity: 0.8;
+  
+  /* Gradient bouton */
+  --btn-gradient: linear-gradient(135deg, #00ffff 0%, #00d9ff 100%);
+  --btn-text: #0a0e1a;
+}
+
+/* ========================================
+   THÈME 2 : LA CHASSE AU LOUP (Werewolf)
+   ======================================== */
+:root[data-theme="werewolf"] {
+  /* Couleurs de fond */
+  --primary-bg: #0f1419;
+  --secondary-bg: #1a2332;
+  --tertiary-bg: #2d3e52;
+  --deep-space: #0f1419;
+  --dark-panel: #1a2332;
+  
+  /* Couleurs néon/accent */
+  --neon-cyan: #4a7c9b;
+  --neon-blue: #5a9bd4;
+  --neon-purple: #7b68ee;
+  --neon-red: #dc143c;
+  --neon-orange: #ff8c42;
+  --neon-green: #4ecdc4;
+  --neon-main: #4a7c9b;
+  
+  /* Couleurs texte */
+  --text-primary: #f0e7d8;
+  --text-secondary: #c9b99b;
+  --text-muted: #8a7a6a;
+  
+  /* Couleurs fonctionnelles */
+  --metal-grey: #5a6a7a;
+  
+  /* Polices */
+  --font-title: 'Cinzel', serif;
+  --font-body: 'Crimson Text', serif;
+  
+  /* Effets */
+  --border-radius: 8px;
+  --glow-intensity: 0.6;
+  
+  /* Gradient bouton */
+  --btn-gradient: linear-gradient(135deg, #4a7c9b 0%, #5a9bd4 100%);
+  --btn-text: #0f1419;
+}
+
+/* ========================================
+   THÈME 3 : L'ACADÉMIE DES SORCIERS (Wizard)
+   ======================================== */
+:root[data-theme="wizard-academy"] {
+  /* Couleurs de fond */
+  --primary-bg: #1a0f2e;
+  --secondary-bg: #2d1b4e;
+  --tertiary-bg: #4a2e6e;
+  --deep-space: #1a0f2e;
+  --dark-panel: #2d1b4e;
+  
+  /* Couleurs néon/accent */
+  --neon-purple: #c77dff;
+  --neon-pink: #ff66cc;
+  --neon-blue: #7c3aed;
+  --neon-cyan: #c77dff;
+  --neon-gold: #ffd700;
+  --neon-red: #ff006e;
+  --neon-main: #c77dff;
+  --neon-orange: #ff66cc;
+  --neon-green: #06ffa5;
+  
+  /* Couleurs texte */
+  --text-primary: #f0e6ff;
+  --text-secondary: #c0b3d8;
+  --text-muted: #8a7aa8;
+  
+  /* Couleurs fonctionnelles */
+  --metal-grey: #5a4a7a;
+  
+  /* Polices */
+  --font-title: 'Philosopher', sans-serif;
+  --font-body: 'Cormorant Garamond', serif;
+  
+  /* Effets */
+  --border-radius: 12px;
+  --glow-intensity: 0.9;
+  
+  /* Gradient bouton */
+  --btn-gradient: linear-gradient(135deg, #c77dff 0%, #7c3aed 100%);
+  --btn-text: #1a0f2e;
+}
+
+/* ========================================
+   THÈME 4 : ROYAUMES MYTHIQUES (Mythic)
+   ======================================== */
+:root[data-theme="mythic-realms"] {
+  /* Couleurs de fond */
+  --primary-bg: #0d1b2a;
+  --secondary-bg: #1b263b;
+  --tertiary-bg: #2d3e52;
+  --deep-space: #0d1b2a;
+  --dark-panel: #1b263b;
+  
+  /* Couleurs néon/accent */
+  --neon-gold: #fca311;
+  --neon-orange: #ff8c42;
+  --neon-red: #d62828;
+  --neon-green: #80b918;
+  --neon-blue: #4a90e2;
+  --neon-purple: #9b59b6;
+  --neon-main: #fca311;
+  --neon-cyan: #fca311;
+  
+  /* Couleurs texte */
+  --text-primary: #e5e5e5;
+  --text-secondary: #b8bec9;
+  --text-muted: #7a8495;
+  
+  /* Couleurs fonctionnelles */
+  --metal-grey: #4a5a6a;
+  
+  /* Polices */
+  --font-title: 'MedievalSharp', serif;
+  --font-body: 'Lora', serif;
+  
+  /* Effets */
+  --border-radius: 6px;
+  --glow-intensity: 0.8;
+  
+  /* Gradient bouton */
+  --btn-gradient: linear-gradient(135deg, #fca311 0%, #ff8c42 100%);
+  --btn-text: #0d1b2a;
+}
+
+/* ========================================
+   ANIMATIONS PAR THÈME
+   ======================================== */
+
+/* Animation titre - DEFAULT */
+:root[data-theme="default"] .logo-title,
+:root .logo-title {
+  animation: neonPulse 2s ease-in-out infinite;
+}
+
+@keyframes neonPulse {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8),
+                 0 0 20px rgba(0, 255, 255, 0.6);
+  }
+  50% { 
+    text-shadow: 0 0 20px rgba(0, 255, 255, 1),
+                 0 0 40px rgba(0, 255, 255, 0.8),
+                 0 0 60px rgba(0, 255, 255, 0.6);
+  }
+}
+
+/* Animation titre - WEREWOLF */
+:root[data-theme="werewolf"] .logo-title {
+  animation: moonGlow 3s ease-in-out infinite;
+}
+
+@keyframes moonGlow {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(74, 124, 155, 0.6),
+                 0 0 20px rgba(74, 124, 155, 0.4);
+  }
+  50% { 
+    text-shadow: 0 0 15px rgba(74, 124, 155, 0.8),
+                 0 0 30px rgba(74, 124, 155, 0.6);
+  }
+}
+
+/* Animation titre - WIZARD */
+:root[data-theme="wizard-academy"] .logo-title {
+  animation: magicSparkle 2.5s ease-in-out infinite;
+}
+
+@keyframes magicSparkle {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(199, 125, 255, 0.7),
+                 0 0 20px rgba(199, 125, 255, 0.5);
+  }
+  50% { 
+    text-shadow: 0 0 20px rgba(199, 125, 255, 1),
+                 0 0 40px rgba(255, 102, 204, 0.7),
+                 0 0 60px rgba(199, 125, 255, 0.5);
+  }
+}
+
+/* Animation titre - MYTHIC */
+:root[data-theme="mythic-realms"] .logo-title {
+  animation: fireGlow 2s ease-in-out infinite;
+}
+
+@keyframes fireGlow {
+  0%, 100% { 
+    text-shadow: 0 0 10px rgba(252, 163, 17, 0.7),
+                 0 0 20px rgba(252, 163, 17, 0.5);
+  }
+  50% { 
+    text-shadow: 0 0 15px rgba(252, 163, 17, 1),
+                 0 0 30px rgba(255, 140, 66, 0.8),
+                 0 0 45px rgba(214, 40, 40, 0.5);
+  }
+}
+
+/* ========================================
+   STYLES DE BASE PARTAGÉS
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body);
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-bg) 0%, var(--secondary-bg) 50%, var(--deep-space) 100%);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ========================================
+   COMPOSANTS PARTAGÉS
+   ======================================== */
+
+/* Boutons */
+.btn {
+  padding: 14px 28px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 1px;
+}
+
+.btn-primary {
+  background: var(--btn-gradient);
+  color: var(--btn-text);
+  box-shadow: 0 0 20px rgba(var(--neon-main), 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 30px rgba(var(--neon-main), 0.5);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 2px solid var(--metal-grey);
+}
+
+.btn-secondary:hover {
+  border-color: var(--neon-main);
+  color: var(--neon-main);
+}
+
+/* Inputs */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  color: var(--neon-main);
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--font-title);
+  letter-spacing: 1px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--metal-grey);
+  border-radius: var(--border-radius);
+  background: rgba(0, 0, 0, 0.4);
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-family: var(--font-body);
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--neon-main);
+  box-shadow: 0 0 15px rgba(var(--neon-main), 0.3);
+  background: rgba(var(--neon-main), 0.05);
+}
+
+.form-group input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Cards */
+.card {
+  background: linear-gradient(135deg, rgba(var(--primary-bg), 0.95) 0%, rgba(var(--secondary-bg), 0.9) 100%);
+  border: 2px solid var(--metal-grey);
+  border-radius: calc(var(--border-radius) + 10px);
+  padding: 30px;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Messages */
+.message {
+  padding: 14px;
+  border-radius: var(--border-radius);
+  margin-bottom: 20px;
+  display: none;
+  font-weight: 500;
+}
+
+.message.error {
+  background: rgba(255, 0, 85, 0.15);
+  border: 1px solid var(--neon-red);
+  color: var(--neon-red);
+}
+
+.message.success {
+  background: rgba(0, 255, 136, 0.15);
+  border: 1px solid var(--neon-green);
+  color: var(--neon-green);
+}
+
+.message.show {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 8px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Sélecteur de thème mini */
+.theme-selector-mini {
+  position: fixed;
+  top: 15px;
+  right: 15px;
+  display: flex;
+  gap: 8px;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 8px 12px;
+  border-radius: 30px;
+  border: 1px solid var(--metal-grey);
+}
+
+.theme-btn-mini {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--metal-grey);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.theme-btn-mini:hover {
+  transform: scale(1.1);
+}
+
+.theme-btn-mini.active {
+  border-color: var(--neon-main);
+  box-shadow: 0 0 10px var(--neon-main);
+}
