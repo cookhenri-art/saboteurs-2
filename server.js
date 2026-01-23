@@ -2056,6 +2056,69 @@ app.get("/api/admin/stats", authenticateToken, (req, res) => {
   });
 });
 
+// ADMIN: Upgrade un compte avec code secret
+app.post("/api/admin/upgrade", async (req, res) => {
+  const { email, secretCode } = req.body;
+
+  // Code secret pour upgrader (change-le en production !)
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Code secret invalide" });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: "Email requis" });
+  }
+
+  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ error: "Utilisateur non trouvé" });
+  }
+
+  // Upgrader vers admin avec crédits illimités
+  dbRun(`
+    UPDATE users SET 
+      account_type = 'admin',
+      email_verified = 1,
+      video_credits = 99999,
+      avatars_used = 0
+    WHERE id = ?
+  `, [user.id]);
+
+  saveDatabase();
+
+  console.log(`👑 ADMIN: ${email} upgradé vers admin`);
+
+  res.json({
+    success: true,
+    message: `${user.username} est maintenant admin !`,
+    user: {
+      email: user.email,
+      username: user.username,
+      accountType: 'admin',
+      videoCredits: 99999
+    }
+  });
+});
+
+// ADMIN: Voir tous les utilisateurs
+app.get("/api/admin/users", (req, res) => {
+  const { secretCode } = req.query;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Code secret invalide" });
+  }
+
+  const users = dbAll(`
+    SELECT id, email, username, account_type, email_verified, video_credits, avatars_used, created_at, last_login
+    FROM users ORDER BY created_at DESC LIMIT 100
+  `);
+
+  res.json({ users });
+});
+
 // Liste des rooms actives (pour debug/admin)
 app.get("/api/rooms", (req, res) => {
   const roomList = Array.from(rooms.values()).map(r => ({
