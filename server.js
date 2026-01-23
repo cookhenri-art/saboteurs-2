@@ -1403,7 +1403,18 @@ function createRoom(code, hostId, hostName, hostSocketId, options = {}) {
     endedAt: null,
     winner: null,
     aborted: false,  // Ajout flag aborted
-    config: {},  // Ajout config vide
+    // Config des rôles par défaut
+    config: {
+      rolesEnabled: {
+        doctor: true,
+        security: true,
+        radar: true,
+        ai_agent: true,
+        engineer: true,
+        chameleon: true
+      },
+      manualRoles: false
+    },
     // Options
     theme: options.theme || "default",
     videoEnabled: options.videoEnabled || false,
@@ -1514,10 +1525,23 @@ function logEvent(room, type, data) {
 }
 
 function emitRoom(room) {
-  const roomData = serializeRoom(room);
+  const baseRoomData = serializeRoom(room);
   for (const player of room.players.values()) {
     if (player.connected && player.socketId) {
-      io.to(player.socketId).emit("roomState", roomData);  // FIX: était "roomUpdate"
+      // Créer un état personnalisé pour ce joueur avec 'you'
+      const personalizedData = {
+        ...baseRoomData,
+        you: {
+          playerId: player.id,
+          name: player.name,
+          status: player.status || "alive",
+          role: player.role || null,
+          roleLabel: player.role || null,
+          isCaptain: !!player.isCaptain,
+          isHost: room.hostId === player.id
+        }
+      };
+      io.to(player.socketId).emit("roomState", personalizedData);
     }
   }
 }
@@ -1755,6 +1779,38 @@ io.on("connection", (socket) => {
     if (!player) return cb?.({ ok: false });
 
     player.ready = data.ready !== false;
+    emitRoom(room);
+    cb?.({ ok: true });
+  });
+
+  // Mettre à jour la configuration des rôles (hôte uniquement)
+  socket.on("updateConfig", (data, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb?.({ ok: false, error: "Room introuvable" });
+
+    // Seul l'hôte peut modifier la config
+    if (socket.data.playerId !== room.hostId) {
+      return cb?.({ ok: false, error: "Seul l'hôte peut modifier la configuration" });
+    }
+
+    // Ne pas modifier si la partie a commencé
+    if (room.state !== "lobby") {
+      return cb?.({ ok: false, error: "Impossible de modifier en cours de partie" });
+    }
+
+    // Mettre à jour la config
+    if (data.config) {
+      room.config = {
+        ...room.config,
+        ...data.config,
+        rolesEnabled: {
+          ...room.config.rolesEnabled,
+          ...(data.config.rolesEnabled || {})
+        }
+      };
+    }
+
+    console.log(`⚙️ Config mise à jour pour room ${room.code}:`, room.config);
     emitRoom(room);
     cb?.({ ok: true });
   });
