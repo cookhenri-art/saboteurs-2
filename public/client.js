@@ -2613,15 +2613,19 @@ fetch('https://saboteurs-2.onrender.com/api/themes')
       console.log("[themes] Loaded themes:", availableThemes.map(t => t.id));
       console.log("[themes] Available themes count:", availableThemes.length);
       
-      // Appliquer le thème par défaut au chargement
-      const defaultTheme = availableThemes.find(t => t.id === "default");
-      if (defaultTheme) {
-        currentTheme = defaultTheme;
-        homeSelectedTheme = "default";
-        console.log("[themes] Set default theme:", currentTheme.id);
-        console.log("[themes] Default theme has roles:", Object.keys(currentTheme.roles || {}));        
+      // Utiliser le thème sauvegardé dans localStorage (défini par index.html ou sélecteur)
+      const savedThemeId = localStorage.getItem('saboteur_theme') || "default";
+      const savedTheme = availableThemes.find(t => t.id === savedThemeId);
+      const themeToApply = savedTheme || availableThemes.find(t => t.id === "default");
+      
+      if (themeToApply) {
+        currentTheme = themeToApply;
+        homeSelectedTheme = themeToApply.id;
+        window.homeSelectedTheme = themeToApply.id;
+        console.log("[themes] Applied saved theme:", currentTheme.id);
+        console.log("[themes] Theme has roles:", Object.keys(currentTheme.roles || {}));        
         // Appliquer les styles CSS
-        applyThemeStyles("default");
+        applyThemeStyles(themeToApply.id);
         
         // Appliquer les traductions
         applyThemeTranslations();
@@ -2629,7 +2633,7 @@ fetch('https://saboteurs-2.onrender.com/api/themes')
         // Rendre le sélecteur de thème sur la page d'accueil
         renderHomeThemeSelector();
       } else {
-        console.error("[themes] No default theme found!");
+        console.error("[themes] No theme found!");
       }
     } else {
       console.error("[themes] Invalid response format:", data);
