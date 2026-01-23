@@ -2701,7 +2701,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -2717,8 +2717,14 @@ io.on("connection", (socket) => {
         logger.info("room_theme_set", { roomCode: code, themeId });
       }
       
+      // Gérer le mode chatOnly (vidéo désactivée)
+      if (chatOnly === true || videoEnabled === false) {
+        room.videoDisabled = true;
+        logger.info("room_video_disabled", { roomCode: code, chatOnly, videoEnabled });
+      }
+      
       rooms.set(code, room);
-      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId });
+      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId, videoDisabled: room.videoDisabled });
       
       // D9: Préparer les données de personnalisation
       const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
