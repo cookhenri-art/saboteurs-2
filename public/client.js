@@ -240,20 +240,9 @@ function setNotice(msg) {
 }
 
 function mustName() {
-  const field = $("playerName");
-  const rawValue = field ? field.value : "FIELD_NOT_FOUND";
-  const n = (rawValue || "").trim();
-  
-  // DEBUG - à retirer après fix
-  console.log('[DEBUG mustName]', {
-    fieldExists: !!field,
-    rawValue: rawValue,
-    trimmedValue: n,
-    length: n.length
-  });
-  
+  const n = ($("playerName").value || "").trim();
   if (n.length < 2) {
-    setError(`Nom invalide (min 2 caractères). [Debug: "${n}", len=${n.length}]`);
+    setError("Nom invalide (min 2 caractères).");
     return null;
   }
   return n.slice(0, 20);
@@ -2238,11 +2227,20 @@ function emitCreateRoom() {
   // D9 V20: Récupérer les données de personnalisation avec le bon thème
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   
+  // Récupérer le token d'auth si présent
+  const token = localStorage.getItem('saboteur_token');
+  
+  // Vérifier si la vidéo est désactivée
+  const disableVideoCheckbox = document.getElementById('disableVideoCheckbox');
+  const chatOnly = disableVideoCheckbox ? disableVideoCheckbox.checked : true;
+  
   socket.emit("createRoom", { 
     playerId, 
-    name, 
-    playerToken, 
-    themeId: homeSelectedTheme,
+    playerName: name,  // FIX: Le serveur attend "playerName" pas "name"
+    token,             // FIX: Le serveur attend "token" pas "playerToken"
+    theme: homeSelectedTheme,  // FIX: Le serveur attend "theme" pas "themeId"
+    videoEnabled: !chatOnly,
+    chatOnly,
     // D9: Données de personnalisation
     customAvatar: customization.customAvatar, // V30: Avatar photo
     avatarId: customization.avatarId,
@@ -2290,11 +2288,14 @@ $("joinRoomBtn").onclick = () => {
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   console.log('[D9 V20] joinRoom customization:', customization);
   
+  // Récupérer le token d'auth si présent
+  const token = localStorage.getItem('saboteur_token');
+  
   socket.emit("joinRoom", { 
     playerId, 
-    name, 
+    playerName: name,  // FIX: Le serveur attend "playerName" pas "name"
     roomCode, 
-    playerToken,
+    token,             // FIX: Le serveur attend "token" pas "playerToken"
     // D9: Données de personnalisation
     customAvatar: customization.customAvatar, // V30: Avatar photo
     avatarId: customization.avatarId,
