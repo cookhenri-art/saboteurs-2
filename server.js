@@ -1061,8 +1061,20 @@ app.post("/api/avatars/generate", authenticateToken, uploadPhoto.single("photo")
     const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
     const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
 
-    // Appeler Replicate - version Latest a07f252a
-    const output = await replicate.run("fofr/face-to-many:a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5adc8deaf", {
+    // Récupérer automatiquement la dernière version du modèle
+    let modelVersion = "fofr/face-to-many"; // Par défaut sans version = latest
+    try {
+      const model = await replicate.models.get("fofr", "face-to-many");
+      if (model.latest_version?.id) {
+        modelVersion = `fofr/face-to-many:${model.latest_version.id}`;
+        console.log(`📦 Utilisation version: ${model.latest_version.id.substring(0, 8)}...`);
+      }
+    } catch (versionError) {
+      console.log(`⚠️ Impossible de récupérer la version, utilisation du fallback`);
+    }
+
+    // Appeler Replicate avec la dernière version
+    const output = await replicate.run(modelVersion, {
       input: {
         image: base64Image,
         style: "3D",
