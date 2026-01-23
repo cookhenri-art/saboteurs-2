@@ -240,9 +240,20 @@ function setNotice(msg) {
 }
 
 function mustName() {
-  const n = ($("playerName").value || "").trim();
+  const field = $("playerName");
+  const rawValue = field ? field.value : "FIELD_NOT_FOUND";
+  const n = (rawValue || "").trim();
+  
+  // DEBUG - à retirer après fix
+  console.log('[DEBUG mustName]', {
+    fieldExists: !!field,
+    rawValue: rawValue,
+    trimmedValue: n,
+    length: n.length
+  });
+  
   if (n.length < 2) {
-    setError("Nom invalide (min 2 caractères).");
+    setError(`Nom invalide (min 2 caractères). [Debug: "${n}", len=${n.length}]`);
     return null;
   }
   return n.slice(0, 20);
@@ -2210,12 +2221,16 @@ $("joinBtn").onclick = () => { clearError(); showScreen("joinScreen"); };
 $("backFromCreate").onclick = () => { clearError(); showScreen("homeScreen"); };
 $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 
-function createRoomFlow() {
+// FIX: Fonction pour émettre la création de room (utilise le nom sauvegardé ou le champ)
+function emitCreateRoom() {
   clearError();
-  const name = mustName();
-  if (!name) return;
-  sessionStorage.setItem(STORAGE.name, name);
-  showScreen("createScreen");
+  // Récupérer le nom depuis sessionStorage (sauvegardé par createRoomFlow) ou depuis le champ
+  let name = sessionStorage.getItem(STORAGE.name);
+  if (!name) {
+    name = mustName();
+    if (!name) return;
+    sessionStorage.setItem(STORAGE.name, name);
+  }
 
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
@@ -2246,9 +2261,21 @@ function createRoomFlow() {
   });
 }
 
+// createBtn sur homeScreen: Valide le nom, sauvegarde, et crée directement la room
+function createRoomFlow() {
+  clearError();
+  const name = mustName();
+  if (!name) return;
+  sessionStorage.setItem(STORAGE.name, name);
+  showScreen("createScreen");
+  // Émettre immédiatement la création
+  emitCreateRoom();
+}
+
 // UX: the big home button creates the room directly.
 $("createBtn").onclick = createRoomFlow;
-$("createRoomBtn").onclick = createRoomFlow;
+// createRoomBtn sur createScreen: Utilise le nom déjà sauvegardé
+$("createRoomBtn").onclick = emitCreateRoom;
 
 $("joinRoomBtn").onclick = () => {
   clearError();
