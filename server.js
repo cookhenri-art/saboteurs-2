@@ -75,6 +75,11 @@ const io = new Server(server, {
   pingInterval: 25000
 });
 
+// Middlewares - IMPORTANT: doit être AVANT les routes !
+app.use(express.json());
+app.use(express.static("public"));
+app.use("/avatars", express.static(AVATARS_DIR));
+
 // ============================================================================
 // SECTION 3: CONSTANTES DU JEU
 // ============================================================================
@@ -2002,13 +2007,6 @@ function endGame(room, winner, reason) {
 // ============================================================================
 // SECTION 15: ROUTES STATIQUES ET API DIVERSES
 // ============================================================================
-
-// Middleware
-app.use(express.json());
-app.use(express.static("public"));
-
-// Servir les avatars
-app.use("/avatars", express.static(AVATARS_DIR));
 
 // Health check
 app.get("/health", (req, res) => {
