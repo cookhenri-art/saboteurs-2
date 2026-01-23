@@ -696,42 +696,72 @@
           document.documentElement.setAttribute('data-theme', newTheme);
           localStorage.setItem('saboteur_theme', newTheme);
           console.log('[Theme] Changé vers:', newTheme);
-          // Émettre au serveur si dans un lobby
+          // Émettre au serveur avec setTheme (pas updateConfig)
           if (window.socket && window.state && window.state.phase === 'LOBBY') {
-            window.socket.emit('updateConfig', { themeId: newTheme });
+            window.socket.emit('setTheme', { themeId: newTheme }, (res) => {
+              if (res?.ok) {
+                console.log('[Theme] Serveur a accepté le thème:', newTheme);
+              } else {
+                console.log('[Theme] Erreur serveur:', res?.error);
+              }
+            });
           }
         });
       }
       
-      // Fonction pour cacher/montrer le sélecteur de thème selon la phase
+      // Fonction pour cacher le sélecteur de thème quand la partie commence
       window.updateThemeSelectVisibility = function() {
         const themeSelect = document.getElementById('themeSelectHeader');
         if (!themeSelect) return;
         
-        // Cacher si la partie a commencé (phase !== LOBBY et phase !== null/undefined)
         const state = window.state;
-        const isInGame = state && state.started === true;
+        // Cacher si started=true OU si phase n'est pas LOBBY
+        const isInGame = state && (state.started === true || (state.phase && state.phase !== 'LOBBY'));
         
         if (isInGame) {
           themeSelect.style.display = 'none';
+          console.log('[Theme] Sélecteur caché - partie en cours');
         } else {
           themeSelect.style.display = 'block';
         }
+        
+        // Synchroniser avec le thème du serveur
+        if (state && state.themeId && themeSelect.value !== state.themeId) {
+          themeSelect.value = state.themeId;
+          document.documentElement.setAttribute('data-theme', state.themeId);
+          console.log('[Theme] Synchronisé avec serveur:', state.themeId);
+        }
       };
       
-      // Observer les changements de state pour cacher le thème pendant la partie
-      const originalSetState = Object.getOwnPropertyDescriptor(window, 'state')?.set;
-      let _gameState = window.state;
-      Object.defineProperty(window, 'state', {
-        get: function() { return _gameState; },
-        set: function(newState) {
-          _gameState = newState;
-          window.updateThemeSelectVisibility();
-        },
-        configurable: true
+      // Appeler la fonction quand socket reçoit roomState
+      window.addEventListener('load', function() {
+        // Attendre que le socket soit prêt
+        const checkSocket = setInterval(function() {
+          if (window.socket) {
+            clearInterval(checkSocket);
+            
+            // Écouter roomState pour mettre à jour la visibilité du thème
+            window.socket.on('roomState', function(state) {
+              setTimeout(window.updateThemeSelectVisibility, 100);
+            });
+            
+            // En mode invité: intercepter les émissions pour forcer chatOnly
+            if (isGuestMode) {
+              const originalEmit = window.socket.emit.bind(window.socket);
+              window.socket.emit = function(event, data, cb) {
+                if (event === 'createRoom' || event === 'joinRoom') {
+                  data = { ...data, chatOnly: true, videoEnabled: false };
+                  console.log('[Guest] Forcing chatOnly mode for', event);
+                }
+                return originalEmit(event, data, cb);
+              };
+              console.log('[Guest] Socket emit intercepté pour forcer chatOnly');
+            }
+          }
+        }, 100);
       });
       
-      // En mode invité: forcer la vidéo désactivée
+      // En mode invité: forcer la checkbox vidéo désactivée
       if (isGuestMode) {
         // Observer le DOM pour forcer la checkbox vidéo
         const forceVideoDisabled = function() {
@@ -755,18 +785,6 @@
         forceVideoDisabled();
         const observer = new MutationObserver(forceVideoDisabled);
         observer.observe(document.body, { childList: true, subtree: true });
-        
-        // Aussi intercepter socket.emit pour forcer chatOnly
-        const originalEmit = window.socket?.emit;
-        if (window.socket && originalEmit) {
-          window.socket.emit = function(event, data, cb) {
-            if (event === 'createRoom' || event === 'joinRoom') {
-              data = { ...data, chatOnly: true, videoEnabled: false };
-              console.log('[Guest] Forcing chatOnly mode');
-            }
-            return originalEmit.call(this, event, data, cb);
-          };
-        }
       }
 
       // Fonction de déconnexion
