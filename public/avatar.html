@@ -160,6 +160,140 @@
       color: var(--neon-purple);
     }
 
+    /* Admin Sliders Section */
+    .admin-section {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(255, 107, 107, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.3);
+      border-radius: var(--border-radius);
+    }
+
+    .admin-section.show {
+      display: block;
+    }
+
+    .admin-section h4 {
+      color: #ff6b6b;
+      margin-bottom: 15px;
+      font-family: var(--font-title);
+    }
+
+    .slider-group {
+      margin-bottom: 20px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .slider-header label {
+      font-size: 0.9em;
+      color: var(--text-secondary);
+    }
+
+    .slider-value {
+      background: rgba(255, 107, 107, 0.3);
+      padding: 4px 10px;
+      border-radius: 5px;
+      font-weight: bold;
+      color: #ff6b6b;
+      min-width: 40px;
+      text-align: center;
+    }
+
+    .slider {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+
+    .slider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      cursor: pointer;
+      border: none;
+    }
+
+    .slider-hints {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75em;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+
+    /* Presets */
+    .presets-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 15px;
+    }
+
+    .preset-btn {
+      padding: 8px 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--metal-grey);
+      border-radius: var(--border-radius);
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 0.85em;
+      transition: all 0.3s;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--neon-main);
+      color: var(--neon-main);
+    }
+
+    /* Custom Prompt */
+    .custom-prompt-section {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .custom-prompt-section.show {
+      display: block;
+    }
+
+    .custom-prompt-section textarea {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--metal-grey);
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--text-primary);
+      resize: vertical;
+      min-height: 80px;
+      font-family: var(--font-body);
+    }
+
+    .custom-prompt-section textarea:focus {
+      outline: none;
+      border-color: var(--neon-purple);
+    }
+
     /* Result */
     .result-zone {
       min-height: 300px;
@@ -194,6 +328,10 @@
       margin: 20px 0;
       overflow: hidden;
       display: none;
+    }
+
+    .progress-bar.show {
+      display: block;
     }
 
     .progress-fill {
@@ -279,9 +417,59 @@
       font-family: var(--font-body);
     }
 
+    .download-btn.show {
+      display: block;
+    }
+
     .download-btn:hover {
       background: var(--neon-green);
       color: var(--primary-bg);
+    }
+
+    /* Error banner */
+    .error-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255, 0, 85, 0.2) 0%, rgba(255, 107, 53, 0.2) 100%);
+      border: 1px solid var(--neon-red);
+      border-radius: var(--border-radius);
+      padding: 15px;
+      margin-bottom: 20px;
+      color: var(--neon-red);
+      text-align: center;
+    }
+
+    .error-banner.show {
+      display: block;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--neon-green);
+      color: var(--primary-bg);
+      padding: 15px 25px;
+      border-radius: var(--border-radius);
+      display: none;
+      z-index: 1001;
+      font-weight: 600;
+    }
+
+    .toast.show {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+
+    .toast.error {
+      background: var(--neon-red);
+      color: white;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
     }
   </style>
 </head>
@@ -303,8 +491,8 @@
       </div>
     </header>
 
-    <div class="message error" id="errorMessage"></div>
-    <div class="message success" id="successMessage"></div>
+    <!-- Error Banner -->
+    <div class="error-banner" id="errorBanner"></div>
 
     <div class="main-grid">
       <!-- Controls -->
@@ -324,6 +512,77 @@
 
         <h2 class="card-title">👤 PERSONNAGE</h2>
         <div class="character-grid" id="characterGrid"></div>
+
+        <!-- Custom Prompt (Premium/Admin) -->
+        <div class="custom-prompt-section" id="customPromptSection">
+          <h2 class="card-title">✨ PROMPT PERSONNALISÉ</h2>
+          <textarea id="customPrompt" placeholder="Décris ton personnage personnalisé..."></textarea>
+        </div>
+
+        <!-- Admin Sliders -->
+        <div class="admin-section" id="adminSection">
+          <h4>🔧 Paramètres avancés (Admin)</h4>
+          
+          <!-- Slider 1: Ressemblance -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label>👤 Ressemblance au visage</label>
+              <span class="slider-value" id="sliderValue1">5</span>
+            </div>
+            <input type="range" min="0" max="10" value="5" class="slider" id="slider1" oninput="updateSliderValue(1)">
+            <div class="slider-hints">
+              <span>Stylisé</span>
+              <span>Fidèle</span>
+            </div>
+          </div>
+
+          <!-- Slider 2: Force du style -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label>🎨 Force du style/prompt</label>
+              <span class="slider-value" id="sliderValue2">5.5</span>
+            </div>
+            <input type="range" min="0" max="10" value="5.5" step="0.5" class="slider" id="slider2" oninput="updateSliderValue(2)">
+            <div class="slider-hints">
+              <span>Subtil</span>
+              <span>Intense</span>
+            </div>
+          </div>
+
+          <!-- Slider 3: Transformation -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label>🔄 Niveau de transformation</label>
+              <span class="slider-value" id="sliderValue3">8</span>
+            </div>
+            <input type="range" min="0" max="10" value="8" class="slider" id="slider3" oninput="updateSliderValue(3)">
+            <div class="slider-hints">
+              <span>Original</span>
+              <span>Transformé</span>
+            </div>
+          </div>
+
+          <!-- Slider 4: Structure -->
+          <div class="slider-group">
+            <div class="slider-header">
+              <label>📐 Conservation de la structure</label>
+              <span class="slider-value" id="sliderValue4">6</span>
+            </div>
+            <input type="range" min="0" max="10" value="6" class="slider" id="slider4" oninput="updateSliderValue(4)">
+            <div class="slider-hints">
+              <span>Libre</span>
+              <span>Fidèle</span>
+            </div>
+          </div>
+
+          <!-- Presets rapides -->
+          <div class="presets-row">
+            <button class="preset-btn" onclick="applyPreset('balanced')">⚖️ Équilibré</button>
+            <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
+            <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
+            <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
+          </div>
+        </div>
 
         <button class="btn btn-primary generate-btn" id="generateBtn" onclick="generateAvatar()" disabled>
           ✨ GÉNÉRER MON AVATAR
@@ -346,7 +605,7 @@
         <h2 class="card-title">🖼️ RÉSULTAT</h2>
         
         <div class="result-zone" id="resultZone">
-          <div class="result-placeholder">
+          <div class="result-placeholder" id="resultPlaceholder">
             <div class="icon">🎭</div>
             <p>Ton avatar apparaîtra ici</p>
           </div>
@@ -365,6 +624,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
 
   <script>
     const API_URL = '';
@@ -428,6 +690,14 @@
           currentUser = data.user;
           updateStats();
           loadMyAvatars();
+          
+          // Show admin section if admin
+          if (currentUser.accountType === 'admin') {
+            document.getElementById('adminSection').classList.add('show');
+            document.getElementById('customPromptSection').classList.add('show');
+          } else if (currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack') {
+            document.getElementById('customPromptSection').classList.add('show');
+          }
         } else {
           window.location.href = '/';
         }
@@ -514,6 +784,45 @@
       updateGenerateButton();
     });
 
+    // Sliders
+    function updateSliderValue(num) {
+      const slider = document.getElementById('slider' + num);
+      document.getElementById('sliderValue' + num).textContent = slider.value;
+    }
+
+    function getSliderValues() {
+      return {
+        instant_id_strength: parseFloat(document.getElementById('slider1').value) / 10,
+        prompt_strength: parseFloat(document.getElementById('slider2').value),
+        denoising_strength: parseFloat(document.getElementById('slider3').value) / 10,
+        control_depth_strength: parseFloat(document.getElementById('slider4').value) / 10
+      };
+    }
+
+    function applyPreset(presetName) {
+      const presets = {
+        balanced: { s1: 5, s2: 5.5, s3: 8, s4: 6 },
+        realistic: { s1: 8, s2: 4, s3: 6, s4: 8 },
+        stylized: { s1: 3, s2: 7, s3: 9, s4: 4 },
+        extreme: { s1: 1, s2: 9, s3: 10, s4: 2 }
+      };
+
+      const preset = presets[presetName];
+      if (!preset) return;
+
+      document.getElementById('slider1').value = preset.s1;
+      document.getElementById('slider2').value = preset.s2;
+      document.getElementById('slider3').value = preset.s3;
+      document.getElementById('slider4').value = preset.s4;
+
+      updateSliderValue(1);
+      updateSliderValue(2);
+      updateSliderValue(3);
+      updateSliderValue(4);
+
+      showToast(`✅ Preset "${presetName}" appliqué !`);
+    }
+
     // Generate
     async function generateAvatar() {
       if (!uploadedFile || !selectedCharacter) return;
@@ -522,13 +831,28 @@
       const progress = document.getElementById('progressBar');
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Génération...';
-      progress.style.display = 'block';
-      hideMessages();
+      progress.classList.add('show');
+      hideError();
 
       const formData = new FormData();
       formData.append('photo', uploadedFile);
       formData.append('theme', selectedAvatarTheme);
       formData.append('character', selectedCharacter);
+
+      // Custom prompt
+      const customPrompt = document.getElementById('customPrompt').value.trim();
+      if (customPrompt && (currentUser.accountType === 'admin' || currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack')) {
+        formData.append('customPrompt', customPrompt);
+      }
+
+      // Admin sliders
+      if (currentUser.accountType === 'admin') {
+        const sliders = getSliderValues();
+        formData.append('instant_id_strength', sliders.instant_id_strength);
+        formData.append('prompt_strength', sliders.prompt_strength);
+        formData.append('denoising_strength', sliders.denoising_strength);
+        formData.append('control_depth_strength', sliders.control_depth_strength);
+      }
 
       try {
         const token = localStorage.getItem('saboteur_token');
@@ -544,19 +868,20 @@
           const img = document.getElementById('resultImage');
           img.src = data.url;
           img.style.display = 'block';
-          document.querySelector('.result-placeholder').style.display = 'none';
-          document.getElementById('downloadBtn').style.display = 'block';
-          showSuccess(`Avatar "${data.characterName}" créé !`);
+          document.getElementById('resultPlaceholder').style.display = 'none';
+          document.getElementById('downloadBtn').classList.add('show');
+          showToast(`🎉 Avatar "${data.characterName}" créé !`);
           document.getElementById('avatarsUsed').textContent = data.avatarsUsed;
           loadMyAvatars();
         } else {
-          showError(data.error || 'Erreur');
+          showError(data.error || 'Erreur de génération');
         }
-      } catch (e) { showError('Erreur réseau'); }
-      finally {
+      } catch (e) { 
+        showError('Erreur réseau'); 
+      } finally {
         btn.disabled = false;
         btn.innerHTML = '✨ GÉNÉRER MON AVATAR';
-        progress.style.display = 'none';
+        progress.classList.remove('show');
         updateGenerateButton();
       }
     }
@@ -594,7 +919,7 @@
           document.querySelectorAll('.gallery-item').forEach(item => {
             item.classList.toggle('active', item.querySelector('img').src.includes(url));
           });
-          showSuccess('Avatar sélectionné !');
+          showToast('✅ Avatar sélectionné !');
         }
       } catch (e) { showError('Erreur'); }
     }
@@ -609,20 +934,20 @@
 
     // Messages
     function showError(msg) {
-      document.getElementById('errorMessage').textContent = msg;
-      document.getElementById('errorMessage').classList.add('show');
-      document.getElementById('successMessage').classList.remove('show');
+      const banner = document.getElementById('errorBanner');
+      banner.textContent = msg;
+      banner.classList.add('show');
     }
 
-    function showSuccess(msg) {
-      document.getElementById('successMessage').textContent = msg;
-      document.getElementById('successMessage').classList.add('show');
-      document.getElementById('errorMessage').classList.remove('show');
+    function hideError() {
+      document.getElementById('errorBanner').classList.remove('show');
     }
 
-    function hideMessages() {
-      document.getElementById('errorMessage').classList.remove('show');
-      document.getElementById('successMessage').classList.remove('show');
+    function showToast(msg, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast show' + (isError ? ' error' : '');
+      setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
     init();
