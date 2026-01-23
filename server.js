@@ -2117,6 +2117,68 @@ app.get("/api/admin/users", (req, res) => {
   res.json({ users });
 });
 
+// ADMIN: Supprimer un utilisateur (pour tests)
+app.delete("/api/admin/user", (req, res) => {
+  const { secretCode, email } = req.query;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Code secret invalide" });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: "Email requis" });
+  }
+
+  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ error: "Utilisateur non trouvé" });
+  }
+
+  // Supprimer les avatars associés
+  dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
+  
+  // Supprimer l'utilisateur
+  dbRun("DELETE FROM users WHERE id = ?", [user.id]);
+  
+  saveDatabase();
+
+  console.log(`🗑️ ADMIN: Utilisateur ${email} supprimé`);
+
+  res.json({ success: true, message: `Utilisateur ${user.username} (${email}) supprimé` });
+});
+
+// ADMIN: Supprimer un utilisateur (version POST, plus facile depuis console)
+app.post("/api/admin/delete-user", express.json(), (req, res) => {
+  const { secretCode, email } = req.body;
+  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ error: "Code secret invalide" });
+  }
+
+  if (!email) {
+    return res.status(400).json({ error: "Email requis" });
+  }
+
+  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ error: "Utilisateur non trouvé" });
+  }
+
+  // Supprimer les avatars associés
+  dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
+  
+  // Supprimer l'utilisateur
+  dbRun("DELETE FROM users WHERE id = ?", [user.id]);
+  
+  saveDatabase();
+
+  console.log(`🗑️ ADMIN: Utilisateur ${email} supprimé`);
+
+  res.json({ success: true, message: `Utilisateur ${user.username} (${email}) supprimé` });
+});
+
 // Liste des rooms actives (pour debug/admin)
 app.get("/api/rooms", (req, res) => {
   const roomList = Array.from(rooms.values()).map(r => ({
