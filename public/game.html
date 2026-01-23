@@ -671,6 +671,10 @@
           background: #1a1f35;
           color: white;
         }
+        .theme-select-header:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
         /* Cacher le bouton avatar en bas à droite */
         #customizationBtn {
           display: none !important;
@@ -697,6 +701,72 @@
             window.socket.emit('updateConfig', { themeId: newTheme });
           }
         });
+      }
+      
+      // Fonction pour cacher/montrer le sélecteur de thème selon la phase
+      window.updateThemeSelectVisibility = function() {
+        const themeSelect = document.getElementById('themeSelectHeader');
+        if (!themeSelect) return;
+        
+        // Cacher si la partie a commencé (phase !== LOBBY et phase !== null/undefined)
+        const state = window.state;
+        const isInGame = state && state.started === true;
+        
+        if (isInGame) {
+          themeSelect.style.display = 'none';
+        } else {
+          themeSelect.style.display = 'block';
+        }
+      };
+      
+      // Observer les changements de state pour cacher le thème pendant la partie
+      const originalSetState = Object.getOwnPropertyDescriptor(window, 'state')?.set;
+      let _gameState = window.state;
+      Object.defineProperty(window, 'state', {
+        get: function() { return _gameState; },
+        set: function(newState) {
+          _gameState = newState;
+          window.updateThemeSelectVisibility();
+        },
+        configurable: true
+      });
+      
+      // En mode invité: forcer la vidéo désactivée
+      if (isGuestMode) {
+        // Observer le DOM pour forcer la checkbox vidéo
+        const forceVideoDisabled = function() {
+          const checkbox = document.getElementById('disableVideoCheckbox');
+          if (checkbox) {
+            checkbox.checked = true;
+            checkbox.disabled = true;
+            checkbox.style.opacity = '0.6';
+            checkbox.style.cursor = 'not-allowed';
+            // Empêcher tout changement
+            checkbox.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              this.checked = true;
+              return false;
+            });
+          }
+        };
+        
+        // Appliquer immédiatement et observer les changements du DOM
+        forceVideoDisabled();
+        const observer = new MutationObserver(forceVideoDisabled);
+        observer.observe(document.body, { childList: true, subtree: true });
+        
+        // Aussi intercepter socket.emit pour forcer chatOnly
+        const originalEmit = window.socket?.emit;
+        if (window.socket && originalEmit) {
+          window.socket.emit = function(event, data, cb) {
+            if (event === 'createRoom' || event === 'joinRoom') {
+              data = { ...data, chatOnly: true, videoEnabled: false };
+              console.log('[Guest] Forcing chatOnly mode');
+            }
+            return originalEmit.call(this, event, data, cb);
+          };
+        }
       }
 
       // Fonction de déconnexion
