@@ -252,6 +252,51 @@
       gap: 12px;
     }
 
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.98) 0%, rgba(26, 31, 53, 0.95) 100%);
+      border: 2px solid var(--neon-main);
+      border-radius: calc(var(--border-radius) + 10px);
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+    }
+
+    .modal-content h3 {
+      font-family: var(--font-title);
+      color: var(--neon-main);
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons .btn {
+      flex: 1;
+    }
+
     /* Features */
     .features {
       margin-top: 30px;
@@ -415,7 +460,31 @@
       <div class="home-screen" id="homeScreen">
         <button class="btn btn-primary btn-full" onclick="goToGame()">🎮 JOUER MAINTENANT</button>
         <button class="btn btn-secondary btn-full" onclick="goToAvatars()">🎨 CRÉER MON AVATAR IA</button>
+        <button class="btn btn-secondary btn-full" onclick="showChangePassword()">🔐 MODIFIER MOT DE PASSE</button>
         <button class="btn btn-secondary btn-full" onclick="logout()">🚪 DÉCONNEXION</button>
+      </div>
+
+      <!-- Modal changement mot de passe -->
+      <div class="modal" id="passwordModal">
+        <div class="modal-content">
+          <h3>🔐 Changer le mot de passe</h3>
+          <div class="form-group">
+            <label>MOT DE PASSE ACTUEL</label>
+            <input type="password" id="currentPassword" placeholder="••••••••">
+          </div>
+          <div class="form-group">
+            <label>NOUVEAU MOT DE PASSE</label>
+            <input type="password" id="newPassword" placeholder="Minimum 6 caractères">
+          </div>
+          <div class="form-group">
+            <label>CONFIRMER</label>
+            <input type="password" id="confirmPassword" placeholder="Retape le nouveau mot de passe">
+          </div>
+          <div class="modal-buttons">
+            <button class="btn btn-primary" onclick="changePassword()">✅ Valider</button>
+            <button class="btn btn-secondary" onclick="hideChangePassword()">❌ Annuler</button>
+          </div>
+        </div>
       </div>
 
       <div class="features" id="featuresBox">
@@ -626,6 +695,61 @@
 
     function goToGame() { window.location.href = '/game.html'; }
     function goToAvatars() { window.location.href = '/avatar.html'; }
+
+    function showChangePassword() {
+      document.getElementById('passwordModal').classList.add('show');
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    }
+
+    function hideChangePassword() {
+      document.getElementById('passwordModal').classList.remove('show');
+    }
+
+    async function changePassword() {
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showError('Remplis tous les champs');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showError('Le nouveau mot de passe doit faire au moins 6 caractères');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showError('Les mots de passe ne correspondent pas');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/auth/change-password`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showSuccess(data.message);
+          hideChangePassword();
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) {
+        showError('Erreur réseau');
+      }
+    }
 
     function logout() {
       localStorage.removeItem('saboteur_token');

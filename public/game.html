@@ -529,6 +529,9 @@
     checkAuth();
   </script>
 
+  <!-- Socket.IO doit être chargé AVANT client.js -->
+  <script src="/socket.io/socket.io.js"></script>
+  
   <!-- Inclure le client.js existant du jeu -->
   <script src="client.js"></script>
 </body>
