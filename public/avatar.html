@@ -522,6 +522,55 @@
       from { transform: translateX(-50%) translateY(20px); opacity: 0; }
       to { transform: translateX(-50%) translateY(0); opacity: 1; }
     }
+
+    /* Presets de rendu */
+    .preset-section {
+      margin: 20px 0;
+    }
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 600px) {
+      .preset-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .preset-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 8px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-primary);
+    }
+    .preset-btn:hover {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 255, 255, 0.1);
+    }
+    .preset-btn.active {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 255, 255, 0.2);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+    .preset-icon {
+      font-size: 1.8rem;
+    }
+    .preset-name {
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--neon-cyan);
+    }
+    .preset-desc {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
   </style>
 </head>
 <body>
@@ -563,6 +612,33 @@
 
         <h2 class="card-title">👤 PERSONNAGE</h2>
         <div class="character-grid" id="characterGrid"></div>
+
+        <!-- Presets de rendu (comptes gratuits et premium non-admin) -->
+        <div class="preset-section" id="presetSection">
+          <h2 class="card-title">🎭 STYLE DE RENDU</h2>
+          <div class="preset-grid" id="presetGrid">
+            <button class="preset-btn active" data-preset="standard" onclick="selectPreset('standard')">
+              <span class="preset-icon">🎯</span>
+              <span class="preset-name">Standard</span>
+              <span class="preset-desc">Équilibré</span>
+            </button>
+            <button class="preset-btn" data-preset="transformed" onclick="selectPreset('transformed')">
+              <span class="preset-icon">🔥</span>
+              <span class="preset-name">Transformé</span>
+              <span class="preset-desc">Plus stylisé</span>
+            </button>
+            <button class="preset-btn" data-preset="natural" onclick="selectPreset('natural')">
+              <span class="preset-icon">👤</span>
+              <span class="preset-name">Naturel</span>
+              <span class="preset-desc">Proche photo</span>
+            </button>
+            <button class="preset-btn" data-preset="artistic" onclick="selectPreset('artistic')">
+              <span class="preset-icon">✨</span>
+              <span class="preset-name">Artistique</span>
+              <span class="preset-desc">Très stylisé</span>
+            </button>
+          </div>
+        </div>
 
         <!-- Custom Prompt (Premium/Admin) -->
         <div class="custom-prompt-section" id="customPromptSection">
@@ -706,6 +782,47 @@
       }
     };
 
+    // Presets de rendu (valeurs pour prompt_strength et denoising_strength)
+    const renderPresets = {
+      standard: { 
+        name: 'Standard', 
+        prompt_strength: 4.5, 
+        denoising_strength: 0.65,
+        instant_id_strength: 0.8,
+        control_depth_strength: 0.8
+      },
+      transformed: { 
+        name: 'Transformé', 
+        prompt_strength: 6.0, 
+        denoising_strength: 0.75,
+        instant_id_strength: 0.6,
+        control_depth_strength: 0.7
+      },
+      natural: { 
+        name: 'Naturel', 
+        prompt_strength: 3.0, 
+        denoising_strength: 0.5,
+        instant_id_strength: 0.9,
+        control_depth_strength: 0.9
+      },
+      artistic: { 
+        name: 'Artistique', 
+        prompt_strength: 7.5, 
+        denoising_strength: 0.85,
+        instant_id_strength: 0.5,
+        control_depth_strength: 0.6
+      }
+    };
+    let selectedPreset = 'standard';
+
+    function selectPreset(presetId) {
+      selectedPreset = presetId;
+      document.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.preset === presetId);
+      });
+      console.log('[Preset] Sélectionné:', presetId, renderPresets[presetId]);
+    }
+
     // Site theme
     function initSiteTheme() {
       const saved = localStorage.getItem('saboteur_theme') || 'default';
@@ -742,12 +859,17 @@
           updateStats();
           loadMyAvatars();
           
-          // Show admin section if admin
+          // Show admin section if admin (hide presets, show sliders)
           if (currentUser.accountType === 'admin') {
             document.getElementById('adminSection').classList.add('show');
             document.getElementById('customPromptSection').classList.add('show');
+            document.getElementById('presetSection').style.display = 'none'; // Admin a les sliders
           } else if (currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack') {
             document.getElementById('customPromptSection').classList.add('show');
+            document.getElementById('presetSection').style.display = 'block'; // Premium voit les presets
+          } else {
+            // Compte gratuit : presets visibles, pas de prompt perso
+            document.getElementById('presetSection').style.display = 'block';
           }
         } else {
           window.location.href = '/';
@@ -903,6 +1025,14 @@
         formData.append('prompt_strength', sliders.prompt_strength);
         formData.append('denoising_strength', sliders.denoising_strength);
         formData.append('control_depth_strength', sliders.control_depth_strength);
+      } else {
+        // Utiliser les presets pour les non-admins
+        const preset = renderPresets[selectedPreset] || renderPresets.standard;
+        formData.append('instant_id_strength', preset.instant_id_strength);
+        formData.append('prompt_strength', preset.prompt_strength);
+        formData.append('denoising_strength', preset.denoising_strength);
+        formData.append('control_depth_strength', preset.control_depth_strength);
+        console.log('[Generate] Preset utilisé:', selectedPreset, preset);
       }
 
       try {
@@ -945,14 +1075,23 @@
         const data = await res.json();
         const gallery = document.getElementById('gallery');
 
+        // Vérifier si c'est un compte gratuit (pas de suppression autorisée)
+        const savedUser = localStorage.getItem('saboteur_user');
+        const isFreeAccount = savedUser && JSON.parse(savedUser).accountType === 'free';
+
         if (data.avatars?.length > 0) {
           gallery.innerHTML = '';
           for (const av of data.avatars) {
             const item = document.createElement('div');
             item.className = `gallery-item ${av.image_url === data.currentAvatar ? 'active' : ''}`;
+            
+            // Ne pas afficher le bouton de suppression pour les comptes gratuits
+            const deleteBtn = isFreeAccount ? '' : 
+              `<button class="delete-avatar-btn" onclick="event.stopPropagation(); deleteAvatar('${av.image_url}', ${av.id})" title="Supprimer">🗑️</button>`;
+            
             item.innerHTML = `
               <img src="${av.image_url}" alt="Avatar" onerror="this.style.display='none'; this.parentElement.classList.add('broken');">
-              <button class="delete-avatar-btn" onclick="event.stopPropagation(); deleteAvatar('${av.image_url}', ${av.id})" title="Supprimer">🗑️</button>
+              ${deleteBtn}
             `;
             item.onclick = () => setCurrentAvatar(av.image_url);
             gallery.appendChild(item);

@@ -693,7 +693,10 @@
       window.location.href = '/game.html?mode=guest';
     }
 
-    function goToGame() { window.location.href = '/game.html'; }
+    function goToGame() { 
+      const theme = localStorage.getItem('saboteur_theme') || 'default';
+      window.location.href = '/game.html?theme=' + theme; 
+    }
     function goToAvatars() { window.location.href = '/avatar.html'; }
 
     function showChangePassword() {

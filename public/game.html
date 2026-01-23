@@ -124,8 +124,8 @@
           </p>
         </div>
 
-        <!-- Sélecteur de Thème -->
-        <div style="margin-bottom: 30px; padding: 20px; border-radius: 12px; 
+        <!-- Sélecteur de Thème - Caché car choisi sur l'accueil -->
+        <div id="homeThemeSelectorContainer" style="display: none; margin-bottom: 30px; padding: 20px; border-radius: 12px; 
             border: 2px solid rgba(0, 255, 255, 0.3); background: rgba(0, 0, 0, 0.4);">
           <div style="text-align: center; margin-bottom: 15px;">
             <span style="color: var(--neon-cyan); font-weight: 700; font-size: 1.1rem;">
@@ -697,6 +697,54 @@
         // Pas de token et pas en mode invité, rediriger vers l'accueil
         window.location.href = '/';
       }
+
+      // === APPLIQUER LE THÈME ===
+      // Récupérer le thème depuis l'URL ou localStorage
+      const urlParams = new URLSearchParams(window.location.search);
+      const themeFromUrl = urlParams.get('theme');
+      const themeFromStorage = localStorage.getItem('saboteur_theme');
+      const currentTheme = themeFromUrl || themeFromStorage || 'default';
+      
+      // Appliquer le thème au document
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      localStorage.setItem('saboteur_theme', currentTheme);
+      console.log('[Auth] Thème appliqué:', currentTheme);
+
+      // === CACHER LE BOUTON "VISIO ACTIVÉE" AU DÉMARRAGE ===
+      setTimeout(function() {
+        // Cacher le statut vidéo en bas à gauche (il apparaîtra dans le lobby)
+        const videoStatusElements = document.querySelectorAll('[id*="videoStatus"], [class*="video-status"]');
+        videoStatusElements.forEach(function(el) {
+          if (el.closest('#homeScreen')) {
+            el.style.display = 'none';
+          }
+        });
+        
+        // Trouver et cacher l'indicateur "Visio activée" sur l'écran d'accueil
+        const visioIndicator = document.querySelector('#homeScreen [style*="Visio"]');
+        if (visioIndicator) visioIndicator.style.display = 'none';
+      }, 100);
+
+      // === GESTION VIDÉO POUR INVITÉS / SANS CRÉDITS ===
+      setTimeout(function() {
+        const disableVideoCheckbox = document.getElementById('disableVideoCheckbox');
+        if (!disableVideoCheckbox) return;
+
+        const shouldDisableVideo = isGuestMode || 
+          (savedUser && JSON.parse(savedUser).videoCredits <= 0 && JSON.parse(savedUser).accountType !== 'admin');
+
+        if (shouldDisableVideo) {
+          // Cocher et verrouiller la case "Désactiver la vidéo"
+          disableVideoCheckbox.checked = true;
+          disableVideoCheckbox.disabled = true;
+          disableVideoCheckbox.parentElement.style.opacity = '0.6';
+          disableVideoCheckbox.parentElement.title = isGuestMode 
+            ? 'Vidéo non disponible en mode invité' 
+            : 'Vous n\'avez plus de crédits vidéo';
+          
+          console.log('[Auth] Vidéo désactivée automatiquement:', isGuestMode ? 'mode invité' : 'plus de crédits');
+        }
+      }, 1000);
     })();
   </script>
 </body>
