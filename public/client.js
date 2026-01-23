@@ -2498,7 +2498,11 @@ showScreen("homeScreen");
 
 let availableThemes = [];
 let currentTheme = null;
-let homeSelectedTheme = "default"; // Thème choisi sur la page d'accueil (avant d'entrer dans une room)
+// Thème choisi sur la page d'accueil - initialiser depuis localStorage si disponible
+let homeSelectedTheme = localStorage.getItem('saboteur_theme') || "default";
+// Exposer globalement pour game.html
+window.homeSelectedTheme = homeSelectedTheme;
+console.log('[Theme] homeSelectedTheme initialisé à:', homeSelectedTheme);
 
 // Résout le chemin d'une image de rôle selon le thème actif
 function getRoleImagePath(filename) {

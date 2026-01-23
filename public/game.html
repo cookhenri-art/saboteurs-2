@@ -693,10 +693,47 @@
         currentThemeSelect.value = savedTheme;
         currentThemeSelect.addEventListener('change', function() {
           const newTheme = this.value;
-          document.documentElement.setAttribute('data-theme', newTheme);
+          
+          // 1. Mettre à jour localStorage
           localStorage.setItem('saboteur_theme', newTheme);
+          
+          // 2. Mettre à jour homeSelectedTheme (variable globale du client.js)
+          if (typeof window.homeSelectedTheme !== 'undefined') {
+            window.homeSelectedTheme = newTheme;
+          }
+          // Aussi mettre à jour la variable locale du client.js si elle existe
+          if (typeof homeSelectedTheme !== 'undefined') {
+            homeSelectedTheme = newTheme;
+          }
+          
+          // 3. Appliquer les styles visuels via la fonction du client.js
+          if (typeof applyThemeStyles === 'function') {
+            applyThemeStyles(newTheme);
+          } else {
+            document.documentElement.setAttribute('data-theme', newTheme);
+          }
+          
+          // 4. Appliquer les traductions via la fonction du client.js
+          if (typeof applyThemeTranslations === 'function') {
+            applyThemeTranslations();
+          }
+          
+          // 5. Mettre à jour currentTheme si availableThemes existe
+          if (typeof availableThemes !== 'undefined' && Array.isArray(availableThemes)) {
+            const theme = availableThemes.find(t => t.id === newTheme);
+            if (theme && typeof currentTheme !== 'undefined') {
+              currentTheme = theme;
+            }
+          }
+          
+          // 6. Précharger les assets du thème
+          if (typeof preloadThemeAssets === 'function') {
+            preloadThemeAssets(newTheme);
+          }
+          
           console.log('[Theme] Changé vers:', newTheme);
-          // Émettre au serveur avec setTheme (pas updateConfig)
+          
+          // 7. Émettre au serveur avec setTheme si dans un lobby
           if (window.socket && window.state && window.state.phase === 'LOBBY') {
             window.socket.emit('setTheme', { themeId: newTheme }, (res) => {
               if (res?.ok) {
@@ -725,10 +762,37 @@
           themeSelect.style.display = 'block';
         }
         
-        // Synchroniser avec le thème du serveur
+        // Synchroniser avec le thème du serveur (pour les non-hôtes qui rejoignent)
         if (state && state.themeId && themeSelect.value !== state.themeId) {
           themeSelect.value = state.themeId;
-          document.documentElement.setAttribute('data-theme', state.themeId);
+          localStorage.setItem('saboteur_theme', state.themeId);
+          
+          // Mettre à jour homeSelectedTheme
+          if (typeof window.homeSelectedTheme !== 'undefined') {
+            window.homeSelectedTheme = state.themeId;
+          }
+          if (typeof homeSelectedTheme !== 'undefined') {
+            homeSelectedTheme = state.themeId;
+          }
+          
+          // Appliquer les styles et traductions
+          if (typeof applyThemeStyles === 'function') {
+            applyThemeStyles(state.themeId);
+          } else {
+            document.documentElement.setAttribute('data-theme', state.themeId);
+          }
+          if (typeof applyThemeTranslations === 'function') {
+            applyThemeTranslations();
+          }
+          
+          // Mettre à jour currentTheme
+          if (typeof availableThemes !== 'undefined' && Array.isArray(availableThemes)) {
+            const theme = availableThemes.find(t => t.id === state.themeId);
+            if (theme && typeof currentTheme !== 'undefined') {
+              currentTheme = theme;
+            }
+          }
+          
           console.log('[Theme] Synchronisé avec serveur:', state.themeId);
         }
       };
