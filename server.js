@@ -1241,6 +1241,14 @@ app.post("/api/avatars/set-current", authenticateToken, express.json(), (req, re
 // Supprimer un avatar
 app.delete("/api/avatars/delete", authenticateToken, express.json(), (req, res) => {
   try {
+    // Vérifier le type de compte - les comptes gratuits ne peuvent pas supprimer leurs avatars
+    const userInfo = dbGet("SELECT account_type FROM users WHERE id = ?", [req.user.id]);
+    if (userInfo?.account_type === "free") {
+      return res.status(403).json({ 
+        error: "Les comptes gratuits ne peuvent pas supprimer leurs avatars. Passez à un compte premium pour cette fonctionnalité." 
+      });
+    }
+
     const { avatarId, avatarUrl } = req.body;
 
     // Trouver l'avatar par ID ou URL
@@ -2366,7 +2374,8 @@ app.get("/api/themes", (req, res) => {
     { id: "wizard-academy", name: "Académie des Sorciers", icon: "🧙", premium: true },
     { id: "mythic-realms", name: "Royaumes Mythiques", icon: "⚔️", premium: true }
   ];
-  res.json({ themes });
+  // Retourner le tableau directement (format attendu par client.js)
+  res.json(themes);
 });
 
 // Récupérer son rôle (pendant la partie)
