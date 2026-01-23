@@ -1824,8 +1824,8 @@ io.on("connection", (socket) => {
       return cb?.({ ok: false, error: "Seul l'hôte peut lancer" });
     }
 
-    if (room.players.size < 5) {
-      return cb?.({ ok: false, error: "Minimum 5 joueurs" });
+    if (room.players.size < 4) {
+      return cb?.({ ok: false, error: "Minimum 4 joueurs" });
     }
 
     // Vérifier que tout le monde est prêt
