@@ -2308,6 +2308,12 @@ socket.on("roomState", (s) => {
   state = s;
   // D6: Stocker aussi dans window.lastKnownState pour video-tracks.js
   window.lastKnownState = s;
+  // Exposer state globalement pour game.html
+  window.state = s;
+  // Mettre à jour la visibilité du sélecteur de thème
+  if (typeof window.updateThemeSelectVisibility === 'function') {
+    window.updateThemeSelectVisibility();
+  }
   
   refreshBuildBadge();
 
