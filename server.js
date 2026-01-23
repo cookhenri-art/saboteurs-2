@@ -1,24 +1,11 @@
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
- * ║                    🎮 SABOTEUR - SERVEUR UNIFIÉ V1.0                       ║
+ * ║            🎮 SABOTEUR - SERVEUR UNIFIÉ V2.0 (FUSION)                     ║
  * ║                                                                           ║
- * ║  Fusion de:                                                               ║
- * ║  - Système d'authentification et avatars IA (V4)                          ║
- * ║  - Jeu multijoueur Saboteur (V29)                                         ║
- * ║                                                                           ║
- * ║  Fonctionnalités:                                                         ║
- * ║  ✅ Authentification (login/register/email verification)                  ║
- * ║  ✅ Génération d'avatars IA (Replicate)                                   ║
- * ║  ✅ Jeu multijoueur temps réel (Socket.IO)                                ║
- * ║  ✅ Vidéo intégrée (Daily.co)                                             ║
- * ║  ✅ Anti-fraude (2 parties gratuites, email obligatoire pour vidéo)       ║
- * ║  ✅ Base de données SQLite persistante                                    ║
+ * ║  Base: saboteur reprise avatar (logique jeu complète)                     ║
+ * ║  + Système d'authentification et avatars IA                               ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
-
-// ============================================================================
-// SECTION 1: IMPORTS
-// ============================================================================
 
 const path = require("path");
 const fs = require("fs");
@@ -28,34 +15,33 @@ const https = require("https");
 const crypto = require("crypto");
 const express = require("express");
 const { Server } = require("socket.io");
-const multer = require("multer");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const initSqlJs = require("sql.js");
-const sharp = require("sharp");
-const Replicate = require("replicate");
-const { Resend } = require("resend");
+const logger = require("./logger");
+const RateLimiter = require("./rate-limiter");
+const dailyManager = require("./daily-manager");
+const videoPermissions = require("./video-permissions");
 
-// ============================================================================
-// SECTION 2: CONFIGURATION
-// ============================================================================
+// Auth dependencies (optionnelles - graceful fallback si non installées)
+let bcrypt, jwt, initSqlJs, sharp, Replicate, Resend, multer;
+try { bcrypt = require("bcryptjs"); } catch(e) { console.log("⚠️ bcryptjs non installé"); }
+try { jwt = require("jsonwebtoken"); } catch(e) { console.log("⚠️ jsonwebtoken non installé"); }
+try { initSqlJs = require("sql.js"); } catch(e) { console.log("⚠️ sql.js non installé"); }
+try { sharp = require("sharp"); } catch(e) { console.log("⚠️ sharp non installé"); }
+try { Replicate = require("replicate"); } catch(e) { console.log("⚠️ replicate non installé"); }
+try { Resend = require("resend").Resend; } catch(e) { console.log("⚠️ resend non installé"); }
+try { multer = require("multer"); } catch(e) { console.log("⚠️ multer non installé"); }
 
 const PORT = process.env.PORT || 3000;
-const BUILD_ID = process.env.BUILD_ID || "saboteur-unified-v1.0";
-
-// Chemins
+const BUILD_ID = process.env.BUILD_ID || "saboteur-unified-v2.0";
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, "data");
-const DATABASE_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, "saboteur.db");
 const STATS_FILE = path.join(DATA_DIR, "stats.json");
+const DATABASE_PATH = process.env.DATABASE_PATH || path.join(DATA_DIR, "saboteur.db");
 const UPLOADS_DIR = path.join(__dirname, "uploads");
-// IMPORTANT: Avatars sur le disque persistant /data/avatars/ (pas dans public/)
 const AVATARS_DIR = path.join(DATA_DIR, "avatars");
 
 // Secrets et API
 const JWT_SECRET = process.env.JWT_SECRET || "saboteur-jwt-2024-dev-key-change-in-production";
 const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const DAILY_API_KEY = process.env.DAILY_API_KEY || "";
 const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
 
 // Créer les dossiers nécessaires
@@ -63,176 +49,98 @@ fs.mkdirSync(DATA_DIR, { recursive: true });
 fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 fs.mkdirSync(AVATARS_DIR, { recursive: true });
 
-// Clients API
-const replicate = REPLICATE_API_TOKEN ? new Replicate({ auth: REPLICATE_API_TOKEN }) : null;
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
-
-// Express + Socket.IO
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: { origin: "*" },
-  pingTimeout: 60000,
-  pingInterval: 25000
-});
-
-// Middlewares - IMPORTANT: doit être AVANT les routes !
-app.use(express.json());
-app.use(express.static("public"));
-app.use("/avatars", express.static(AVATARS_DIR));
+// Clients API (optionnels)
+const replicate = (REPLICATE_API_TOKEN && Replicate) ? new Replicate({ auth: REPLICATE_API_TOKEN }) : null;
+const resend = (RESEND_API_KEY && Resend) ? new Resend(RESEND_API_KEY) : null;
 
 // ============================================================================
-// SECTION 3: CONSTANTES DU JEU
+// SECTION AUTH: LIMITES COMPTES ET DOMAINES BLOQUÉS
 // ============================================================================
 
-// Limites selon le type de compte
 const ACCOUNT_LIMITS = {
-  guest: {
-    videoCredits: 0,        // Pas de vidéo sans compte
-    avatars: 0,
-    themes: ["default", "werewolf"],
-    customPrompt: false
-  },
-  free: {
-    videoCredits: 2,        // 2 parties vidéo gratuites pour tester
-    avatars: 2,             // 1 avatar par thème gratuit (Spatial + Loup-Garou)
-    themes: ["default", "werewolf"],
-    customPrompt: false
-  },
-  subscriber: {
-    videoCredits: Infinity,
-    avatars: 30,
-    themes: ["default", "werewolf", "wizard-academy", "mythic-realms"],
-    customPrompt: true
-  },
-  pack: {
-    videoCredits: 50,       // Crédits achetés
-    avatars: 50,
-    themes: ["default", "werewolf", "wizard-academy", "mythic-realms", "gang", "corporate"],
-    customPrompt: true
-  },
-  family: {
-    videoCredits: Infinity,
-    avatars: 100,           // Partagés entre 6 comptes
-    themes: ["default", "werewolf", "wizard-academy", "mythic-realms", "gang", "corporate", 
-             "kingdoms", "gothic-manor", "galaxy", "deadly-games"],
-    customPrompt: true
-  },
-  admin: {
-    videoCredits: Infinity,
-    avatars: Infinity,
-    themes: "all",
-    customPrompt: true
-  }
+  guest: { videoCredits: 0, avatars: 0, themes: ["default", "werewolf"], customPrompt: false },
+  free: { videoCredits: 2, avatars: 2, themes: ["default", "werewolf"], customPrompt: false },
+  subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true },
+  admin: { videoCredits: Infinity, avatars: Infinity, themes: "all", customPrompt: true }
 };
 
-// Codes admin
 const ADMIN_CODES = ["HENRICO-DEV", "SABOTEUR-ADMIN", "DEV-UNLIMITED"];
 
-// Domaines email jetables bloqués
 const BLOCKED_EMAIL_DOMAINS = [
   "tempmail.com", "throwaway.email", "guerrillamail.com", "mailinator.com",
   "10minutemail.com", "temp-mail.org", "fakeinbox.com", "trashmail.com",
   "yopmail.com", "mohmal.com", "getairmail.com", "tempail.com"
 ];
 
-// Rôles du jeu
-const ROLES = {
-  saboteur:   { team: "saboteurs", wakeAtNight: true,  label: "Saboteur" },
-  astronaut:  { team: "astronauts", wakeAtNight: false, label: "Astronaute" },
-  radar:      { team: "astronauts", wakeAtNight: true,  label: "Opérateur Radar" },
-  doctor:     { team: "astronauts", wakeAtNight: true,  label: "Médecin" },
-  security:   { team: "astronauts", wakeAtNight: false, label: "Agent de Sécurité" },
-  chameleon:  { team: "astronauts", wakeAtNight: true,  label: "Caméléon" },
-  ai_agent:   { team: "astronauts", wakeAtNight: true,  label: "Agent IA" },
-  engineer:   { team: "astronauts", wakeAtNight: false, label: "Ingénieur" }
-};
-
 // Thèmes pour avatars IA
 const AVATAR_THEMES = {
   default: {
-    name: "Infiltration Spatiale",
-    icon: "🚀",
-    premium: false,
-    background: "deep space background with stars and nebula, three distant suns glowing red yellow and blue",
+    name: "Infiltration Spatiale", icon: "🚀", premium: false,
+    background: "deep space background with stars and nebula",
     characters: {
-      astronaut: { name: "Astronaute", prompt: "wearing white NASA astronaut helmet with open visor, full space suit with oxygen tubes" },
-      alien: { name: "Alien", prompt: "green alien skin color, elongated bald head, huge bulging black eyes, extraterrestrial creature" },
-      bounty_hunter: { name: "Chasseur de primes", prompt: "large sci-fi rifle strapped on back, worn brown leather jacket with armor plates, Star-Lord style" },
-      cyborg: { name: "Robot/Cyborg", prompt: "half robot face with metal plates, one glowing red cybernetic eye, Terminator style" },
-      captain: { name: "Capitaine", prompt: "wearing navy captain hat with gold insignia, military uniform with medals" }
+      astronaut: { name: "Astronaute", prompt: "wearing white NASA astronaut helmet" },
+      alien: { name: "Alien", prompt: "green alien with huge black eyes" },
+      cyborg: { name: "Cyborg", prompt: "half robot face with glowing red eye" }
     }
   },
   werewolf: {
-    name: "Loups-Garous",
-    icon: "🐺",
-    premium: false,
-    background: "dark medieval village at night, old wooden houses, giant bright full moon, fog and mist",
+    name: "Loups-Garous", icon: "🐺", premium: false,
+    background: "dark medieval village at night with full moon",
     characters: {
-      werewolf: { name: "Loup-garou", prompt: "werewolf transformation with thick brown fur, wolf snout, sharp white fangs, yellow glowing wolf eyes" },
-      vampire: { name: "Vampire", prompt: "vampire with pale white skin, sharp fangs, glowing red eyes, black cape, Dracula style" },
-      mayor: { name: "Maire", prompt: "wearing tall black top hat, tricolor mayor sash, formal black victorian suit" },
-      peasant: { name: "Paysan", prompt: "holding wooden pitchfork, straw farmer hat, medieval clothes" },
-      witch: { name: "Sorcière", prompt: "tall twisted black pointy witch hat, crooked nose with wart, wild grey messy hair" },
-      hunter: { name: "Chasseur", prompt: "old hunting rifle, leather bandolier with bullets, Van Helsing style" }
+      werewolf: { name: "Loup-garou", prompt: "werewolf with fur and fangs" },
+      vampire: { name: "Vampire", prompt: "vampire with pale skin and fangs" },
+      witch: { name: "Sorcière", prompt: "witch with pointy hat" }
     }
   },
   "wizard-academy": {
-    name: "Académie des Sorciers",
-    icon: "🧙",
-    premium: true,
-    background: "magical great hall with high cathedral ceiling, floating candles, Hogwarts style",
+    name: "Académie des Sorciers", icon: "🧙", premium: true,
+    background: "magical great hall with floating candles",
     characters: {
-      wizard: { name: "Sorcier", prompt: "pointed wizard hat with stars, purple wizard robe, glowing magic wand" },
-      house_elf: { name: "Elfe de maison", prompt: "large pointy bat ears, enormous sad bulging eyes, torn pillowcase, Dobby style" },
-      goblin: { name: "Gobelin", prompt: "long pointed ears, hooked nose, small beady eyes, banker suit, Gringotts goblin" },
-      ghost: { name: "Fantôme", prompt: "pale bluish-white translucent skin, ethereal smoky aura, ghostly apparition" },
-      professor: { name: "Professeur", prompt: "wise magic professor with long grey beard, academic robes, half-moon spectacles" }
+      wizard: { name: "Sorcier", prompt: "wizard with pointy hat and wand" },
+      ghost: { name: "Fantôme", prompt: "translucent ghostly apparition" }
     }
   },
   "mythic-realms": {
-    name: "Royaumes Mythiques",
-    icon: "⚔️",
-    premium: true,
-    background: "epic fantasy dragon lair with rivers of glowing lava, piles of gold treasure",
+    name: "Royaumes Mythiques", icon: "⚔️", premium: true,
+    background: "epic fantasy dragon lair",
     characters: {
-      knight: { name: "Chevalier", prompt: "full medieval plate armor, shining silver, sword on back, noble warrior" },
-      dragon: { name: "Dragon", prompt: "dragonborn with green scales, dragon snout, reptilian yellow slit eyes, small horns" },
-      dwarf: { name: "Nain", prompt: "very long thick braided beard, iron viking helmet, large battle axe, Gimli style" },
-      elf: { name: "Elfe", prompt: "very long pointed ears, flowing white silver hair, elegant bow, Legolas style" },
-      orc: { name: "Orque", prompt: "green skin, large tusks, tribal war paint, heavy fur armor, World of Warcraft orc" }
+      knight: { name: "Chevalier", prompt: "knight in shining armor" },
+      dragon: { name: "Dragon", prompt: "dragonborn with scales" }
     }
   }
 };
 
 // ============================================================================
-// SECTION 4: BASE DE DONNÉES SQLITE
+// SECTION AUTH: BASE DE DONNÉES SQLITE
 // ============================================================================
 
-let db = null;
+let authDb = null;
 
-async function initDatabase() {
-  console.log("📂 Initialisation de la base de données...");
+async function initAuthDatabase() {
+  if (!initSqlJs) {
+    console.log("⚠️ sql.js non disponible - Auth désactivée");
+    return;
+  }
   
+  console.log("📂 Initialisation de la base de données auth...");
   const SQL = await initSqlJs();
   
-  // Charger la base existante ou en créer une nouvelle
   try {
     if (fs.existsSync(DATABASE_PATH)) {
       const fileBuffer = fs.readFileSync(DATABASE_PATH);
-      db = new SQL.Database(fileBuffer);
-      console.log("📂 Base de données chargée depuis", DATABASE_PATH);
+      authDb = new SQL.Database(fileBuffer);
+      console.log("📂 Base auth chargée depuis", DATABASE_PATH);
     } else {
-      db = new SQL.Database();
-      console.log("📂 Nouvelle base de données créée");
+      authDb = new SQL.Database();
+      console.log("📂 Nouvelle base auth créée");
     }
   } catch (err) {
-    console.error("⚠️ Erreur chargement DB, création nouvelle:", err.message);
-    db = new SQL.Database();
+    console.error("⚠️ Erreur chargement DB auth:", err.message);
+    authDb = new SQL.Database();
   }
   
   // Créer les tables
-  db.run(`
+  authDb.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
@@ -242,149 +150,195 @@ async function initDatabase() {
       email_verified INTEGER DEFAULT 0,
       verification_token TEXT,
       verification_expires DATETIME,
-      
-      -- Crédits
       video_credits INTEGER DEFAULT 2,
       avatars_used INTEGER DEFAULT 0,
-      
-      -- Avatar actuel
       current_avatar TEXT,
-      
-      -- Anti-fraude
       created_from_ip TEXT,
       last_video_ip TEXT,
-      
-      -- Stats
       lifetime_games INTEGER DEFAULT 0,
-      
-      -- Timestamps
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_login DATETIME
     )
   `);
 
-  db.run(`
+  authDb.run(`
     CREATE TABLE IF NOT EXISTS avatars (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
       theme TEXT,
       character_type TEXT,
       image_url TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  db.run(`
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS account_creation_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ip_address TEXT,
+      email TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS blocked_email_domains (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      domain TEXT UNIQUE
+    )
+  `);
+
+  authDb.run(`
     CREATE TABLE IF NOT EXISTS games_played (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
       ip_address TEXT,
       game_mode TEXT,
-      played_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES users(id)
+      played_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
 
-  db.run(`
-    CREATE TABLE IF NOT EXISTS guest_generations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ip_address TEXT NOT NULL,
-      avatar_url TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS account_creation_log (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      ip_address TEXT NOT NULL,
-      email TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  db.run(`
-    CREATE TABLE IF NOT EXISTS blocked_email_domains (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      domain TEXT UNIQUE NOT NULL,
-      reason TEXT,
-      added_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-
-  // Index pour performance
-  db.run(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_games_user ON games_played(user_id)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_account_ip ON account_creation_log(ip_address, created_at)`);
-
-  // Insérer les domaines bloqués par défaut
-  for (const domain of BLOCKED_EMAIL_DOMAINS) {
-    try {
-      db.run(`INSERT OR IGNORE INTO blocked_email_domains (domain, reason) VALUES (?, ?)`, 
-        [domain, "Email jetable"]);
-    } catch (e) {}
-  }
-  
-  saveDatabase();
-  console.log("✅ Base de données initialisée");
+  saveAuthDatabase();
+  console.log("✅ Base de données auth initialisée");
 }
 
-function saveDatabase() {
-  if (db) {
-    try {
-      const data = db.export();
-      const buffer = Buffer.from(data);
-      fs.writeFileSync(DATABASE_PATH, buffer);
-    } catch (e) {
-      console.error("❌ Erreur sauvegarde DB:", e.message);
-    }
+function saveAuthDatabase() {
+  if (!authDb) return;
+  try {
+    const data = authDb.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(DATABASE_PATH, buffer);
+  } catch (e) {
+    console.error("❌ Erreur sauvegarde DB auth:", e);
   }
 }
 
-// Helpers DB
+// Helper fonctions DB
 function dbRun(sql, params = []) {
-  db.run(sql, params);
-  saveDatabase();
+  if (!authDb) return null;
+  try {
+    authDb.run(sql, params);
+    saveAuthDatabase();
+    return true;
+  } catch (e) {
+    console.error("❌ DB Error:", e.message);
+    return false;
+  }
 }
 
 function dbGet(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  if (stmt.step()) {
-    const row = stmt.getAsObject();
+  if (!authDb) return null;
+  try {
+    const stmt = authDb.prepare(sql);
+    stmt.bind(params);
+    if (stmt.step()) {
+      const row = stmt.getAsObject();
+      stmt.free();
+      return row;
+    }
     stmt.free();
-    return row;
+    return null;
+  } catch (e) {
+    console.error("❌ DB Get Error:", e.message);
+    return null;
   }
-  stmt.free();
-  return null;
-}
-
-function dbAll(sql, params = []) {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const results = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return results;
 }
 
 function dbInsert(sql, params = []) {
-  db.run(sql, params);
-  const result = db.exec("SELECT last_insert_rowid() as id")[0];
-  saveDatabase();
-  return { lastInsertRowid: result?.values?.[0]?.[0] || 0 };
+  if (!authDb) return { lastInsertRowid: 0 };
+  try {
+    authDb.run(sql, params);
+    const result = authDb.exec("SELECT last_insert_rowid() as id");
+    saveAuthDatabase();
+    return { lastInsertRowid: result[0]?.values[0]?.[0] || 0 };
+  } catch (e) {
+    console.error("❌ DB Insert Error:", e.message);
+    return { lastInsertRowid: 0 };
+  }
 }
 
 // ============================================================================
-// SECTION 5: HELPERS GÉNÉRAUX
+// SECTION AUTH: HELPERS
 // ============================================================================
 
-const nowMs = () => Date.now();
+function getClientIP(req) {
+  return req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
+}
 
+function generateVerificationToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function isBlockedEmailDomain(email) {
+  const domain = email.split("@")[1]?.toLowerCase();
+  if (!domain) return true;
+  if (BLOCKED_EMAIL_DOMAINS.includes(domain)) return true;
+  const blocked = dbGet("SELECT id FROM blocked_email_domains WHERE domain = ?", [domain]);
+  return !!blocked;
+}
+
+function checkAccountCreationLimit(ip) {
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const count = dbGet("SELECT COUNT(*) as count FROM account_creation_log WHERE ip_address = ? AND created_at > ?", [ip, yesterday]);
+  return (count?.count || 0) < 5;
+}
+
+function getUserLimits(user) {
+  if (!user) return ACCOUNT_LIMITS.guest;
+  return ACCOUNT_LIMITS[user.account_type] || ACCOUNT_LIMITS.free;
+}
+
+// JWT Middleware
+function authenticateToken(req, res, next) {
+  if (!jwt) return res.status(500).json({ error: "Auth non configurée" });
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Token requis" });
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ error: "Token invalide" });
+    req.user = user;
+    next();
+  });
+}
+
+function optionalAuth(req, res, next) {
+  if (!jwt) return next();
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (token) {
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+      if (!err) req.user = user;
+    });
+  }
+  next();
+}
+
+async function sendVerificationEmail(email, username, token) {
+  if (!resend) {
+    console.log(`📧 [DEV] Lien vérification: ${APP_URL}/verify-email.html?token=${token}`);
+    return { success: true, simulated: true };
+  }
+  try {
+    const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
+    await resend.emails.send({
+      from: process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>",
+      to: email,
+      subject: "🎮 Vérifie ton compte Saboteur !",
+      html: `<h1>Bienvenue ${username}!</h1><p><a href="${verifyUrl}">Clique ici pour vérifier</a></p>`
+    });
+    return { success: true };
+  } catch (e) {
+    console.error("❌ Erreur email:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ============================================================================
+// ANCIEN SERVEUR - HELPERS ORIGINAUX
+// ============================================================================
+
+// ----------------- helpers -----------------
+const nowMs = () => Date.now();
 function normalize(str) {
   return String(str || "")
     .toLowerCase()
@@ -392,11 +346,7 @@ function normalize(str) {
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 }
-
-function randInt(min, max) { 
-  return Math.floor(Math.random() * (max - min + 1)) + min; 
-}
-
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -405,15 +355,8 @@ function shuffle(arr) {
   }
   return a;
 }
-
-function uniq(arr) { 
-  return Array.from(new Set(arr)); 
-}
-
-function countSaboteursFor(n) { 
-  return n <= 6 ? 1 : (n <= 11 ? 2 : 3); 
-}
-
+function uniq(arr) { return Array.from(new Set(arr)); }
+function countSaboteursFor(n) { return n <= 6 ? 1 : (n <= 11 ? 2 : 3); }
 function genRoomCode(existing) {
   for (let i = 0; i < 2000; i++) {
     const code = String(randInt(0, 9999)).padStart(4, "0");
@@ -422,247 +365,1850 @@ function genRoomCode(existing) {
   return String(randInt(0, 999999)).padStart(6, "0");
 }
 
-function getClientIP(req) {
-  return req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || 
-         req.socket?.remoteAddress || 
-         "unknown";
-}
-
-function generateVerificationToken() {
-  return crypto.randomBytes(32).toString("hex");
-}
-
-// Vérifier si un email utilise un domaine bloqué
-function isBlockedEmailDomain(email) {
-  const domain = email.split("@")[1]?.toLowerCase();
-  if (!domain) return true;
-  
-  // Vérifier dans la liste en mémoire
-  if (BLOCKED_EMAIL_DOMAINS.includes(domain)) return true;
-  
-  // Vérifier dans la base de données
-  const blocked = dbGet("SELECT id FROM blocked_email_domains WHERE domain = ?", [domain]);
-  return !!blocked;
-}
-
-// Vérifier limite de création de comptes par IP (max 5 en 24h)
-function checkAccountCreationLimit(ip) {
-  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const count = dbGet(
-    "SELECT COUNT(*) as count FROM account_creation_log WHERE ip_address = ? AND created_at > ?",
-    [ip, yesterday]
-  );
-  return (count?.count || 0) < 5;
-}
-
-// Récupérer les limites selon le type de compte
-function getUserLimits(user) {
-  if (!user) return ACCOUNT_LIMITS.guest;
-  
-  const accountType = user.account_type || "free";
-  
-  // Vérifier si c'est un admin via code
-  if (accountType === "admin") return ACCOUNT_LIMITS.admin;
-  
-  return ACCOUNT_LIMITS[accountType] || ACCOUNT_LIMITS.free;
-}
-
-// ============================================================================
-// SECTION 6: AUTHENTIFICATION
-// ============================================================================
-
-// Middleware JWT
-function authenticateToken(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  
-  if (!token) {
-    return res.status(401).json({ error: "Token requis" });
+// ----------------- stats persistence -----------------
+function loadStats() {
+  try {
+    if (!fs.existsSync(STATS_FILE)) return {};
+    return JSON.parse(fs.readFileSync(STATS_FILE, "utf-8")) || {};
+  } catch {
+    return {};
   }
+}
+function saveStats(db) {
+  try {
+    fs.writeFileSync(STATS_FILE, JSON.stringify(db, null, 2), "utf-8");
+  } catch (e) {
+    console.error("[stats] save error", e);
+  }
+}
+const statsDb = loadStats();
+function ensurePlayerStats(name) {
+  if (!statsDb[name]) {
+    statsDb[name] = {
+      gamesPlayed: 0, wins: 0, losses: 0,
+      winsByRole: {}, gamesByRole: {},
+      doctorSaves: 0, doctorKills: 0,
+      radarInspects: 0, radarCorrect: 0,
+      chameleonSwaps: 0, securityRevengeShots: 0,
+      // Nouvelles stats avancées (Phase 2)
+      ejectedBySaboteurs: 0,  // Tué la nuit par saboteurs
+      ejectedByVote: 0,        // Éjecté par vote du jour
+      captainElected: 0,       // Nombre de fois élu capitaine
+      aiAgentLinks: 0,         // Nombre de liens créés
+      matchHistory: [],         // Historique des dernières 20 parties
+      shortestGame: null,      // V24: Partie la plus courte (ms)
+      longestGame: null,       // V24: Partie la plus longue (ms)
+      firstEliminated: 0,       // V26: Nombre de fois éliminé en premier
+      // V28: Nouvelles stats Phase 3
+      correctSaboteurVotes: 0,  // Votes corrects contre saboteurs
+      wrongSaboteurVotes: 0,    // Votes contre astronautes (erreurs)
+      totalVotes: 0,            // Total de votes émis
+      doctorNotSavedOpportunities: 0, // Occasions où le docteur aurait pu sauver
+      doctorKillsOnSaboteurs: 0,  // Potion fatale sur saboteurs
+      doctorKillsOnInnocents: 0,  // Potion fatale sur astronautes (erreur)
+      revengeKillsOnSaboteurs: 0, // Vengeance sur saboteurs
+      revengeKillsOnInnocents: 0, // Vengeance sur astronautes (erreur)
+      doctorMissedSaves: 0,       // Non sauvés (potion vie non utilisée)
+      mayorTiebreakerOk: 0,       // Départage du maire qui tue un saboteur
+      mayorTiebreakerKo: 0,       // Départage du maire qui tue un astronaute
+      mayorTiebreakerTotal: 0     // Total de départages du maire
+    };
+  }
+  return statsDb[name];
+}
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: "Token invalide ou expiré" });
-    }
-    req.user = user;
-    next();
+// ----------------- assets auto-map (audio) -----------------
+// Manifest-first: public/sounds/audio-manifest.json (key -> filename)
+// Fallback: scan public/sounds and keyword-match filenames/keys.
+const SOUNDS_DIR = path.join(__dirname, "public", "sounds");
+const AUDIO_MANIFEST_PATH = path.join(SOUNDS_DIR, "audio-manifest.json");
+
+function safeReadJSON(filePath) {
+  try {
+    if (!fs.existsSync(filePath)) return null;
+    return JSON.parse(fs.readFileSync(filePath, "utf-8"));
+  } catch (e) {
+    console.warn("[audio] manifest read/parse failed:", e.message);
+    return null;
+  }
+}
+
+function listSoundFilesFromDir() {
+  if (!fs.existsSync(SOUNDS_DIR)) return [];
+  return fs.readdirSync(SOUNDS_DIR).filter((f) => {
+    const lf = String(f).toLowerCase();
+    if (lf.startsWith(".")) return false;
+    if (lf === "readme.md") return false;
+    if (lf === "audio-manifest.json") return false;
+    return lf.endsWith(".mp3") || lf.endsWith(".wav") || lf.endsWith(".ogg");
   });
 }
 
-// Middleware optionnel (utilisateur ou invité)
-function optionalAuth(req, res, next) {
-  const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1];
-  
-  if (token) {
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-      if (!err) {
-        req.user = user;
-      }
-    });
-  }
-  next();
+function tokenizeForSearch(s) {
+  const norm = normalize(s).replace(/\s+/g, " ").trim();
+  return norm ? norm.split(" ") : [];
 }
 
-// Envoyer email de vérification
-async function sendVerificationEmail(email, username, token) {
-  if (!resend) {
-    console.log("⚠️ Resend non configuré - Email simulé");
-    console.log(`📧 Lien: ${APP_URL}/verify-email.html?token=${token}`);
-    return { success: true, simulated: true };
+// soundIndex: key -> "/sounds/<file>"
+let soundIndex = Object.create(null);
+// keywordIndex: [{ url, tokens:Set<string> }]
+let soundKeywordsIndex = [];
+let audioManifestLoaded = false;
+
+function buildIndexFromManifest(manifestObj) {
+  const idx = Object.create(null);
+  const kw = [];
+  for (const [k, file] of Object.entries(manifestObj || {})) {
+    if (!k || !file) continue;
+    const key = String(k).trim();
+    const filename = String(file).trim();
+    const url = "/sounds/" + filename;
+    idx[key] = url;
+
+    const base = filename.replace(/\.[^.]+$/, "");
+    const toks = new Set([...tokenizeForSearch(key), ...tokenizeForSearch(base)]);
+    kw.push({ url, tokens: toks });
+  }
+  return { idx, kw };
+}
+
+function buildIndexFromScan(files) {
+  const idx = Object.create(null);
+  const kw = [];
+  for (const f of files) {
+    const base = String(f).replace(/\.[^.]+$/, "");
+    // best-effort key from filename: "RADAR_OFFICER_WAKE.mp3" => "RADAR_OFFICER_WAKE"
+    const key = base.toUpperCase().replace(/[^A-Z0-9]+/g, "_");
+    const url = "/sounds/" + f;
+    idx[key] = url;
+
+    const toks = new Set(tokenizeForSearch(base));
+    kw.push({ url, tokens: toks });
+  }
+  return { idx, kw };
+}
+
+function initAudioIndex() {
+  const manifest = safeReadJSON(AUDIO_MANIFEST_PATH);
+  if (manifest && typeof manifest === "object") {
+    const built = buildIndexFromManifest(manifest);
+    soundIndex = built.idx;
+    soundKeywordsIndex = built.kw;
+    audioManifestLoaded = true;
+    console.log(`[audio] manifest loaded: ${Object.keys(soundIndex).length} keys`);
+    return;
+  }
+  const files = listSoundFilesFromDir();
+  const built = buildIndexFromScan(files);
+  soundIndex = built.idx;
+  soundKeywordsIndex = built.kw;
+  audioManifestLoaded = false;
+  console.log(`[audio] manifest missing -> scanned: ${Object.keys(soundIndex).length} sounds`);
+}
+
+function findSoundByKey(key) {
+  if (!key) return null;
+  return soundIndex[String(key).trim()] || null;
+}
+
+function findSoundByKeywords(keywords) {
+  const wants = (keywords || []).flatMap((k) => tokenizeForSearch(k));
+  if (!wants.length) return null;
+
+  let bestUrl = null;
+  let bestScore = 0;
+
+  for (const entry of soundKeywordsIndex) {
+    let score = 0;
+    for (const w of wants) if (entry.tokens.has(w)) score++;
+    if (score > bestScore) {
+      bestScore = score;
+      bestUrl = entry.url;
+    }
+  }
+  return bestScore > 0 ? bestUrl : null;
+}
+
+function getSoundUrl(key, keywordsFallback = []) {
+  const direct = findSoundByKey(key);
+  if (direct) {
+    // Extraire juste le nom du fichier depuis l'URL complète
+    // Ex: "/sounds/INTRO_LOBBY.mp3" -> "INTRO_LOBBY.mp3"
+    const filename = direct.split('/').pop();
+    return filename;
+  }
+  const fallback = findSoundByKeywords([key, ...(keywordsFallback || [])]);
+  if (fallback) {
+    const filename = fallback.split('/').pop();
+    return filename;
+  }
+  return null;
+}
+
+// Role wake/sleep keys
+function roleAudioKey(roleKey, mode /* "WAKE" | "SLEEP" */) {
+  const r = String(roleKey || "").toUpperCase();
+  const m = String(mode || "").toUpperCase();
+  if (!r || !m) return null;
+  const alias = {
+    CHAMELEON: "CHAMELEON",
+    RADAR: "RADAR",
+    DOCTOR: "DOCTOR",
+    SABOTEUR: "SABOTEURS",
+    SABOTEURS: "SABOTEURS",
+    SECURITY: "SECURITY",
+    AI_AGENT: "IA",
+    IA_AGENT: "IA",
+    IA: "IA",
+    ENGINEER: "ENGINEER"
+  };
+  const rr = alias[r] || r;
+  return `${rr}_${m}`;
+}
+
+// Initialize audio index once at boot
+initAudioIndex();
+
+// Canonical keys used by the game (manifest-first)
+const AUDIO = {
+  // lobby / generic
+  GENERIC_MAIN: getSoundUrl("GENERIC_MAIN", ["generique"]) || null,
+  INTRO_LOBBY: getSoundUrl("INTRO_LOBBY", ["attente", "lancement"]) || null,
+  WAITING_LOOP: getSoundUrl("WAITING_LOOP", ["waiting", "loop", "attente"]) || null,
+
+  // generic prompts
+  CHECK_ROLE: getSoundUrl("CHECK_ROLE", ["check", "role", "verifiez", "verifier", "roles"]) || null,
+
+  // captain election
+  ELECTION_CHIEF: getSoundUrl("ELECTION_CHIEF", ["election", "chef"]) || null,
+
+  // station sleep / wake
+  STATION_SLEEP: getSoundUrl("STATION_SLEEP", ["station", "endort"]) || null,
+  STATION_WAKE_LIGHT: getSoundUrl("STATION_WAKE_LIGHT", ["wake", "light", "leger"]) || getSoundUrl("WAKE_LIGHT", ["wake", "light"]) || null,
+  STATION_WAKE_HEAVY: getSoundUrl("STATION_WAKE_HEAVY", ["wake", "heavy", "lourd"]) || getSoundUrl("WAKE_HEAVY", ["wake", "heavy"]) || null,
+
+  // role wake/sleep (canonical)
+  CHAMELEON_WAKE: getSoundUrl("CHAMELEON_WAKE", ["cameleon", "wake", "reveil"]) || null,
+  CHAMELEON_SLEEP: getSoundUrl("CHAMELEON_SLEEP", ["cameleon", "sleep", "dort"]) || null,
+
+  IA_WAKE: getSoundUrl("IA_WAKE", ["ia", "agent", "wake", "reveil"]) || null,
+  IA_SLEEP: getSoundUrl("IA_SLEEP", ["ia", "agent", "sleep", "dort"]) || null,
+
+  RADAR_WAKE: getSoundUrl("RADAR_WAKE", ["radar", "wake", "reveil"]) || getSoundUrl("RADAR_OFFICER_WAKE", ["radar", "wake", "reveil"]) || null,
+  RADAR_SLEEP: getSoundUrl("RADAR_SLEEP", ["radar", "sleep", "dort"]) || getSoundUrl("RADAR_OFFICER_SLEEP", ["radar", "sleep", "dort"]) || null,
+
+  SABOTEURS_WAKE: getSoundUrl("SABOTEURS_WAKE", ["saboteurs", "wake", "reveil"]) || null,
+  SABOTEURS_SLEEP: getSoundUrl("SABOTEURS_SLEEP", ["saboteurs", "sleep", "dort"]) || null,
+  SABOTEURS_VOTE: getSoundUrl("SABOTEURS_VOTE", ["saboteurs", "vote"]) || null,
+
+  DOCTOR_WAKE: getSoundUrl("DOCTOR_WAKE", ["docteur", "wake", "reveil"]) || null,
+  DOCTOR_SLEEP: getSoundUrl("DOCTOR_SLEEP", ["docteur", "sleep", "dort"]) || null,
+
+  SECURITY_REVENGE: getSoundUrl("SECURITY_REVENGE", ["security", "revenge", "vengeance"]) || getSoundUrl("REVENGE", ["venge"]) || null,
+
+  VOTE_ANNONCE: getSoundUrl("VOTE_ANNONCE", ["vote", "annonce"]) || null,
+
+  // end screen / victory / stats outro
+  END_VICTORY: getSoundUrl("END_VICTORY", ["victory", "victoire"]) || getSoundUrl("END_SCREEN_SONG", ["ecran", "fin"]) || null,
+  END_STATS_OUTRO: getSoundUrl("END_STATS_OUTRO", ["stats", "outro"]) || getSoundUrl("OUTRO", ["outro", "fin"]) || null,
+
+  // legacy fallbacks (keep old keys usable)
+  END_SCREEN_SONG: getSoundUrl("END_SCREEN_SONG", ["ecran", "fin"]) || null,
+  OUTRO: getSoundUrl("OUTRO", ["outro", "fin"]) || null
+};
+// -----------------------------------------------------------------------------
+
+
+// ----------------- roles -----------------
+
+const ROLES = {
+  astronaut: { label: "Astronaute", icon: "astronaute.webp", team: "astronauts" },
+  saboteur: { label: "Saboteur", icon: "saboteur.webp", team: "saboteurs" },
+  doctor: { label: "Docteur bio", icon: "docteur.webp", team: "astronauts" },
+  security: { label: "Chef de sécurité", icon: "chef-securite.webp", team: "astronauts" },
+  ai_agent: { label: "Agent IA", icon: "liaison-ia.webp", team: "astronauts" },
+  radar: { label: "Officier radar", icon: "radar.webp", team: "astronauts" },
+  engineer: { label: "Ingénieur", icon: "ingenieur.webp", team: "astronauts" },
+  chameleon: { label: "Caméléon", icon: "cameleon.webp", team: "astronauts" }
+};
+const CAPTAIN_ICON = "capitaine.webp";
+
+/**
+ * Obtient le nom traduit d'un rôle selon le thème de la room
+ * @param {string} roleKey - Clé du rôle (astronaut, saboteur, etc.)
+ * @param {object} room - L'objet room contenant le themeId
+ * @param {boolean} plural - Si true, retourne la forme plurielle
+ * @returns {string} - Le nom traduit du rôle
+ */
+function getRoleLabel(roleKey, room, plural = false) {
+  if (!roleKey) return "?";
+  const themeId = room?.themeId || "default";
+  try {
+    return themeManager.getRoleName(themeId, roleKey, plural);
+  } catch (e) {
+    // Fallback si le thème n'existe pas
+    return ROLES[roleKey]?.label || roleKey;
+  }
+}
+
+/**
+ * Obtient un terme traduit selon le thème de la room
+ * @param {string} termKey - Clé du terme (captain, station, saboteurs, astronauts, etc.)
+ * @param {object} room - L'objet room contenant le themeId
+ * @returns {string} - Le terme traduit
+ */
+function getTerm(termKey, room) {
+  if (!termKey) return "";
+  const themeId = room?.themeId || "default";
+  try {
+    const theme = themeManager.getTheme(themeId);
+    return theme.terms?.[termKey] || termKey;
+  } catch (e) {
+    // Fallback
+    const defaults = {
+      captain: "Chef de station",
+      station: "station",
+      crew: "équipage",
+      mission: "mission",
+      title: "Infiltration Spatiale",
+      saboteurs: "Saboteurs",
+      astronauts: "Astronautes"
+    };
+    return defaults[termKey] || termKey;
+  }
+}
+
+/**
+ * Traduit un nom de phase selon le thème de la room
+ * @param {string} phaseKey - Clé de la phase (CAPTAIN_CANDIDACY, NIGHT_RADAR, etc.)
+ * @param {object} room - L'objet room contenant le themeId
+ * @returns {string} - Le nom traduit de la phase
+ */
+function getPhaseName(phaseKey, room) {
+  if (!phaseKey) return "";
+  
+  const captainTerm = getTerm('captain', room);
+  const saboteursTerm = getTerm('saboteurs', room);
+  
+  // Map simple pour les phases communes
+  const simpleMap = {
+    LOBBY: "LOBBY",
+    ROLE_REVEAL: "RÉVÉLATION DES RÔLES",
+    CAPTAIN_CANDIDACY: `Élection du ${captainTerm}`,
+    CAPTAIN_VOTE: `Vote pour ${captainTerm}`,
+    NIGHT_START: "Début de la nuit",
+    NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
+    NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
+    NIGHT_AI_EXCHANGE: `Échange IA (privé)`,
+    NIGHT_RADAR: `${getRoleLabel('radar', room)}, réveille-toi`,
+    NIGHT_SABOTEURS: `${saboteursTerm}, réveillez-vous`,
+    NIGHT_DOCTOR: `${getRoleLabel('doctor', room)}, réveille-toi`,
+    NIGHT_RESULTS: "Résultats de la nuit",
+    DAY_WAKE: "Réveil",
+    DAY_VOTE: "Vote d'éjection",
+    DAY_RESULTS: "Résultats",
+    REVENGE: `Vengeance du ${getRoleLabel('security', room)}`,
+    GAME_OVER: "Fin de partie",
+    GAME_ABORTED: "Partie interrompue"
+  };
+  
+  return simpleMap[phaseKey] || phaseKey;
+}
+
+function defaultConfig() {
+  return {
+    rolesEnabled: {
+      doctor: true,
+      security: true,
+      radar: true,
+      ai_agent: true,
+      engineer: true,
+      chameleon: true
+    },
+    manualRoles: false
+  };
+}
+
+// ----------------- room model -----------------
+function newRoom(code, hostPlayerId) {
+  return {
+    code,
+    hostPlayerId,
+    config: defaultConfig(),
+    themeId: "default",  // Thème sélectionné par l'hôte
+
+    started: false,
+    ended: false,
+    aborted: false,
+
+    phase: "LOBBY",
+    prevPhase: null,
+    phaseData: {},
+    phaseAck: new Set(),
+    phaseStartTime: Date.now(),  // Pour tracking durée phase (mode hôte)
+
+    day: 0,
+    night: 0,
+
+    captainElected: false,
+
+    players: new Map(),     // playerId -> player
+    playerTokens: new Map(), // playerToken -> playerId (pour reconnexion robuste)
+    timers: new Map(),      // playerId -> {notifyTimer, removeTimer}
+    matchLog: [],
+
+    // consumables
+    doctorLifeUsed: false,
+    doctorDeathUsed: false,
+    chameleonUsed: false,
+    afterChameleonReveal: false,
+
+    nightData: {},
+    audio: { file: null, queueLoopFile: null, tts: null }
+  };
+}
+
+function logEvent(room, type, data = {}) {
+  room.matchLog.push({ t: nowMs(), type, ...data });
+  if (room.matchLog.length > 300) room.matchLog.shift();
+}
+
+function alivePlayers(room) {
+  return Array.from(room.players.values()).filter(p => p.status === "alive");
+}
+function activePlayers(room) {
+  return Array.from(room.players.values()).filter(p => p.status !== "left");
+}
+function getPlayer(room, playerId) { return room.players.get(playerId) || null; }
+function getRoleHolder(room, roleKey) {
+  return Array.from(room.players.values()).find(p => p.status === "alive" && p.role === roleKey) || null;
+}
+function getAliveByRole(room, roleKey) {
+  return Array.from(room.players.values()).filter(p => p.status === "alive" && p.role === roleKey);
+}
+function getCaptain(room) {
+  return Array.from(room.players.values()).find(p => p.isCaptain) || null;
+}
+function hasAliveRole(room, roleKey) { return !!getRoleHolder(room, roleKey); }
+
+function computeTeams(room) {
+  const alive = alivePlayers(room);
+  const sab = alive.filter(p => p.role === "saboteur").length;
+  return { saboteurs: sab, astronauts: alive.length - sab, aliveTotal: alive.length };
+}
+
+function ensureMinPlayers(room) {
+  // Do NOT abort because players died. Only abort if too few ACTIVE players remain (left/disconnected removed).
+  const active = activePlayers(room).length;
+  if (room.started && !room.ended && active < 4) {
+    room.aborted = true;
+    setPhase(room, "GAME_ABORTED", { reason: "Pas assez de joueurs actifs (moins de 4)." });
+    logEvent(room, "game_aborted", { active });
+  }
+}
+
+function computeAudioCue(room, prevPhase) {
+  const phase = room.phase;
+  const data = room.phaseData || {};
+
+  const withDeaths = (baseTts) => {
+    const dt = data.deathsText || null;
+    if (dt && baseTts) return `${baseTts} ${dt}`;
+    if (dt && !baseTts) return dt;
+    return baseTts || null;
+  };
+
+  const prevSleep = () => {
+    switch (prevPhase) {
+      case "NIGHT_CHAMELEON": return AUDIO.CHAMELEON_SLEEP;
+      case "NIGHT_AI_AGENT": return AUDIO.IA_SLEEP;
+      case "NIGHT_RADAR": return AUDIO.RADAR_SLEEP;
+      case "NIGHT_SABOTEURS": return AUDIO.SABOTEURS_SLEEP;
+      case "NIGHT_DOCTOR": return AUDIO.DOCTOR_SLEEP;
+      case "ROLE_REVEAL": return room.afterChameleonReveal ? AUDIO.STATION_SLEEP : null;
+      default: return null;
+    }
+  };
+
+  const seqIf = (wakeFile, tts, queueLoopFile = null) => {
+    const s = prevSleep();
+    const seq = [];
+    if (s) seq.push(s);
+    if (wakeFile) seq.push(wakeFile);
+    if (seq.length >= 2) return { sequence: seq, file: null, queueLoopFile, tts };
+    if (seq.length === 1) return { sequence: seq, file: null, queueLoopFile, tts };
+    return { file: wakeFile || null, queueLoopFile, tts };
+  };
+
+  if (phase === "LOBBY") return { file: AUDIO.INTRO_LOBBY, queueLoopFile: null, tts: null };
+  if (phase === "MANUAL_ROLE_PICK") return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Mode manuel. Choisissez votre rôle." };
+  if (phase === "ROLE_REVEAL") {
+    if (data.resume === "night" && data.fromChameleon) {
+      // After the Caméléon swap: play Caméléon sleep then a dedicated "check role" prompt (MP3).
+      // (No TTS here; CHECK_ROLE is provided as an audio asset.)
+      return { sequence: [AUDIO.CHAMELEON_SLEEP, AUDIO.CHECK_ROLE].filter(Boolean), file: null, queueLoopFile: null, tts: null };
+    }
+    return { file: AUDIO.GENERIC_MAIN, queueLoopFile: null, tts: "Vérifiez votre rôle." };
+  }
+  if (phase === "CAPTAIN_CANDIDACY" || phase === "CAPTAIN_VOTE") return { file: AUDIO.ELECTION_CHIEF, queueLoopFile: null, tts: "Élection du capitaine." };
+
+  if (phase === "NIGHT_START") return { file: AUDIO.STATION_SLEEP, queueLoopFile: null, tts: "La station s'endort." };
+
+  if (phase === "NIGHT_CHAMELEON") return seqIf(AUDIO.CHAMELEON_WAKE, "Caméléon, réveille-toi.");
+  if (phase === "NIGHT_AI_AGENT") {
+    // If we are coming right after the Caméléon reveal, we want the IA prompt AFTER the station sleep.
+    const comingFromStationSleep = prevSleep() === AUDIO.STATION_SLEEP;
+    if (comingFromStationSleep && !AUDIO.IA_WAKE) {
+      return { sequence: [AUDIO.STATION_SLEEP].filter(Boolean), file: null, queueLoopFile: null, tts: null, ttsAfterSequence: "Agent IA, réveille-toi." };
+    }
+    // Otherwise use the standard sequence builder (prev sleep + IA wake if available).
+    return seqIf(AUDIO.IA_WAKE, AUDIO.IA_WAKE ? null : "Agent IA, réveille-toi.");
+  }
+  
+  if (phase === "NIGHT_AI_EXCHANGE") return { file: null, queueLoopFile: null, tts: "Échange privé IA." };
+
+if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, réveille-toi.");
+  if (phase === "NIGHT_SABOTEURS") return seqIf(AUDIO.SABOTEURS_WAKE, "Saboteurs, choisissez une cible. Unanimité requise.", AUDIO.WAITING_LOOP);
+  if (phase === "NIGHT_DOCTOR") return seqIf(AUDIO.DOCTOR_WAKE, "Docteur bio, choisissez votre action.");
+
+  if (phase === "NIGHT_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("Résultats de la nuit.") };
+
+  if (phase === "DAY_WAKE") return { file: data.anyDeaths ? AUDIO.STATION_WAKE_HEAVY : AUDIO.STATION_WAKE_LIGHT, queueLoopFile: null, tts: "La station se réveille." };
+  if (phase === "DAY_CAPTAIN_TRANSFER") return { file: null, queueLoopFile: null, tts: "Transmission du capitaine." };
+  if (phase === "DAY_VOTE") return { file: AUDIO.VOTE_ANNONCE, queueLoopFile: AUDIO.WAITING_LOOP, tts: "Vote d'éjection." };
+  if (phase === "DAY_TIEBREAK") return { file: null, queueLoopFile: null, tts: "Égalité. Capitaine, tranche." };
+  if (phase === "DAY_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("Résultats du jour.") };
+
+  if (phase === "REVENGE") return { file: AUDIO.SECURITY_REVENGE, queueLoopFile: null, tts: "Chef de sécurité, vengeance." };
+
+  if (phase === "GAME_OVER") {
+    // Prefer a short victory sting then stats outro if available
+    const seq = [];
+    if (AUDIO.END_VICTORY) seq.push(AUDIO.END_VICTORY);
+    if (AUDIO.END_STATS_OUTRO) seq.push(AUDIO.END_STATS_OUTRO);
+    if (seq.length) return { sequence: seq, file: null, queueLoopFile: null, tts: "Fin de partie." };
+    return { file: AUDIO.END_SCREEN_SONG || AUDIO.OUTRO || null, queueLoopFile: null, tts: "Fin de partie." };
   }
 
-  try {
-    const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
-    
-    // Utiliser le domaine vérifié sur Resend
-    const emailFrom = process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>";
-    
-    const { data, error } = await resend.emails.send({
-      from: emailFrom,
-      to: email,
-      subject: "🎮 Vérifie ton compte Saboteur !",
-      html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; background: #1a1a2e; color: white; padding: 20px; }
-            .container { max-width: 500px; margin: 0 auto; background: #16213e; border-radius: 15px; padding: 30px; }
-            h1 { color: #00ffff; }
-            .btn { display: inline-block; background: linear-gradient(135deg, #00ffff, #ff00ff); color: black; padding: 15px 30px; text-decoration: none; border-radius: 10px; font-weight: bold; margin: 20px 0; }
-            .footer { margin-top: 30px; font-size: 12px; color: #888; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>🎭 Bienvenue sur Saboteur !</h1>
-            <p>Salut <strong>${username}</strong> !</p>
-            <p>Clique sur le bouton ci-dessous pour vérifier ton email et débloquer <strong>2 parties vidéo gratuites</strong> :</p>
-            <a href="${verifyUrl}" class="btn">✅ Vérifier mon email</a>
-            <p>Ou copie ce lien :</p>
-            <p style="word-break: break-all; font-size: 12px; color: #00ffff;">${verifyUrl}</p>
-            <p class="footer">
-              Ce lien expire dans 24 heures.<br>
-              📧 Cet email sert uniquement à sécuriser ton compte. Aucun spam, aucune pub, promis !
-            </p>
-          </div>
-        </body>
-        </html>
-      `
-    });
+  if (phase === "GAME_ABORTED") return { file: null, queueLoopFile: null, tts: "Partie interrompue." };
 
-    if (error) {
-      console.error("❌ Erreur envoi email:", error);
-      return { success: false, error };
+  return { file: null, queueLoopFile: null, tts: null };
+}
+
+function setPhase(room, phase, data = {}) {
+  const prev = room.phase;
+  room.prevPhase = prev;
+  room.phase = phase;
+  room.phaseData = data;
+  room.phaseAck = new Set();
+  room.phaseStartTime = Date.now(); // Tracker le début de phase
+  room.audio = computeAudioCue(room, prev);
+  if (prev === "ROLE_REVEAL" && room.afterChameleonReveal) room.afterChameleonReveal = false;
+  
+  logEvent(room, "phase", { phase });
+  
+  // Log structuré
+  const alive = alivePlayers(room).length;
+  logger.phaseStart(room.code, phase, room.day, room.night, alive);
+  
+  // Calculer et émettre les permissions vidéo pour cette phase
+  const permissions = videoPermissions.calculateRoomPermissions(phase, room.players);
+  const videoMessage = videoPermissions.getPhaseVideoMessage(phase);
+  
+  // Stocker les permissions dans la room pour référence
+  room.videoPermissions = permissions;
+  room.videoPhaseMessage = videoMessage;
+  
+  try {
+    console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night} video=${videoMessage}`);
+  } catch {}
+
+}
+
+function requiredPlayersForPhase(room) {
+  const alive = alivePlayers(room).map(p => p.playerId);
+  const d = room.phaseData || {};
+  switch (room.phase) {
+    case "LOBBY": return alive;
+    case "MANUAL_ROLE_PICK": return alive;
+    case "ROLE_REVEAL": return alive;
+    case "CAPTAIN_CANDIDACY": return alive;
+    case "CAPTAIN_VOTE": return alive;
+    case "NIGHT_START": return alive;
+    case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
+    case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
+    case "NIGHT_AI_EXCHANGE": return (d.iaId && d.partnerId) ? [d.iaId, d.partnerId] : [];
+    case "NIGHT_RADAR": return d.actorId ? [d.actorId] : [];
+    case "NIGHT_SABOTEURS": return d.actorIds || [];
+    case "NIGHT_DOCTOR": return d.actorId ? [d.actorId] : [];
+    case "NIGHT_RESULTS": return alive;
+    case "DAY_WAKE": return alive;
+    case "DAY_CAPTAIN_TRANSFER": return d.actorId ? [d.actorId] : [];
+    case "DAY_VOTE": return alive;
+    case "DAY_TIEBREAK": return d.actorId ? [d.actorId] : [];
+    case "DAY_RESULTS": return alive;
+    case "REVENGE": return d.actorId ? [d.actorId] : [];
+    case "GAME_OVER": return alive;
+    case "GAME_ABORTED": return alive;
+    default: return alive;
+  }
+}
+
+function ack(room, playerId) {
+  room.phaseAck.add(playerId);
+  const required = requiredPlayersForPhase(room);
+  return room.phaseAck.size >= required.length;
+}
+
+function applyLinkCascade(room) {
+  const newlyDead = [];
+  let changed = true;
+  const seen = new Set();
+  while (changed) {
+    changed = false;
+    for (const p of room.players.values()) {
+      if (!p.linkedTo) continue;
+      const other = room.players.get(p.linkedTo);
+      if (!other) continue;
+
+      const key = [p.playerId, other.playerId].sort().join("-");
+      if (seen.has(key)) continue;
+
+      if (p.status !== "alive" && other.status === "alive") {
+        if (killPlayer(room, other.playerId, "link")) newlyDead.push(other.playerId);
+        changed = true;
+      } else if (other.status !== "alive" && p.status === "alive") {
+        if (killPlayer(room, p.playerId, "link")) newlyDead.push(p.playerId);
+        changed = true;
+      }
+      seen.add(key);
+    }
+  }
+  return newlyDead;
+}
+
+
+function buildDeathsText(room, newlyDeadIds) {
+  const ids = (newlyDeadIds || []).filter(Boolean);
+  if (!ids.length) return null;
+  const items = ids.map((id) => {
+    const p = room.players.get(id);
+    if (!p) return null;
+    const roleLabel = getRoleLabel(p.role, room);
+    return `${p.name} (${roleLabel})`;
+  }).filter(Boolean);
+  if (!items.length) return null;
+
+  if (items.length === 1) return `Le joueur ${items[0]} a été éjecté.`;
+  return `Les joueurs ${items.join(", ")} ont été éjectés.`;
+}
+
+function killPlayer(room, playerId, source, extra = {}) {
+  const p = room.players.get(playerId);
+  if (!p || p.status !== "alive") return false;
+  p.status = "dead";
+  logEvent(room, "player_died", { playerId, source, ...extra });
+  return true;
+}
+
+function checkWin(room) {
+  if (room.aborted) return "ABORTED";
+
+  // abort only if too few ACTIVE players remain
+  ensureMinPlayers(room);
+  if (room.aborted) return "ABORTED";
+
+  const alive = alivePlayers(room);
+  const { saboteurs, astronauts, aliveTotal } = computeTeams(room);
+
+  // Lovers mixed win: only two alive, linked together, and mixed teams
+  if (aliveTotal === 2) {
+    const a = alive[0];
+    const b = alive[1];
+    const linked = a.linkedTo === b.playerId && b.linkedTo === a.playerId;
+    if (linked) {
+      const teamA = ROLES[a.role]?.team || "astronauts";
+      const teamB = ROLES[b.role]?.team || "astronauts";
+      if (teamA !== teamB) return "AMOUREUX";
+    }
+  }
+
+  if (saboteurs === 0) return "ASTRONAUTES";
+
+  // Saboteurs win on parity/superiority (classic)
+  if (saboteurs >= astronauts) {
+    // special 2v2 before night: allow if can flip
+    if (aliveTotal === 4 && saboteurs === 2 && astronauts === 2) {
+      const canFlip =
+        (!room.doctorDeathUsed && hasAliveRole(room, "doctor")) ||
+        (!room.doctorLifeUsed && hasAliveRole(room, "doctor")) ||
+        hasAliveRole(room, "security") ||
+        (room.night === 1 && hasAliveRole(room, "chameleon") && !room.chameleonUsed);
+      if (canFlip) return null;
+    }
+    return "SABOTEURS";
+  }
+
+  return null;
+}
+
+function buildEndReport(room, winner) {
+  const players = Array.from(room.players.values()).map(p => ({
+    playerId: p.playerId,
+    name: p.name,
+    status: p.status,
+    role: p.role,
+    roleLabel: getRoleLabel(p.role, room),
+    isCaptain: !!p.isCaptain
+  }));
+
+  // death order (first time each player died)
+  const deathOrder = [];
+  const seen = new Set();
+  for (const e of room.matchLog) {
+    if (e.type !== "player_died") continue;
+    if (seen.has(e.playerId)) continue;
+    seen.add(e.playerId);
+    const name = room.players.get(e.playerId)?.name || e.playerId;
+    const role = room.players.get(e.playerId)?.role;
+    const roleLabel = getRoleLabel(role, room);
+    
+    // Traduire la source
+    let source = e.source || "?";
+    if (source === "saboteurs") source = getTerm('saboteurs', room).toLowerCase();
+    else if (source === "doctor") source = getRoleLabel('doctor', room).toLowerCase();
+    else if (source === "security") source = getRoleLabel('security', room).toLowerCase();
+    
+    deathOrder.push({ playerId: e.playerId, name, roleLabel, source });
+  }
+
+  // match-specific counters from matchLog
+  const counters = {};
+  const inc = (pid, k) => {
+    if (!pid) return;
+    counters[pid] = counters[pid] || {};
+    counters[pid][k] = (counters[pid][k] || 0) + 1;
+  };
+  for (const e of room.matchLog) {
+    if (e.type === "doctor_save") inc(e.by, "doctorSaves");
+    if (e.type === "doctor_kill") {
+      inc(e.by, "doctorKills");
+      const tRole = room.players.get(e.targetId)?.role;
+      const team = ROLES[tRole]?.team || "astronauts";
+      if (team === "astronauts") inc(e.by, "doctorKillsAstronauts");
+      else inc(e.by, "doctorKillsSaboteurs");
+    }
+    if (e.type === "radar_inspect") inc(e.by, "radarInspects");
+    if (e.type === "chameleon_swap") inc(e.by, "chameleonSwaps");
+    if (e.type === "revenge_shot") {
+      inc(e.by, "revengeShots");
+      const tRole = room.players.get(e.targetId)?.role;
+      const team = ROLES[tRole]?.team || "astronauts";
+      if (team === "saboteurs") inc(e.by, "revengeKillsSaboteurs");
+      else inc(e.by, "revengeKillsAstronauts");
+    }
+    if (e.type === "ai_link") inc(e.by, "aiLinks");
+  }
+
+  // ----------------- Awards (match) -----------------
+  // Helper formatters
+  const nameRole = (pid, roleOverride = null) => {
+    const p = room.players.get(pid);
+    if (!p) return null;
+    const role = roleOverride || p.role;
+    const roleLabel = getRoleLabel(role, room);
+    return `${p.name} (${roleLabel})`;
+  };
+
+  const getDoctorActorIds = () => {
+    const ids = new Set();
+    for (const e of room.matchLog) if (e.type?.startsWith("doctor_") && e.by) ids.add(e.by);
+    return Array.from(ids);
+  };
+
+  const awardDoctorHouse = () => {
+    const saves = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "doctor_save") continue;
+      if (!e.by || !e.targetId) continue;
+      const tRole = e.targetRole || room.players.get(e.targetId)?.role || null;
+      if ((ROLES[tRole]?.team || "astronauts") === "saboteurs") continue;
+      const label = nameRole(e.targetId, tRole);
+      if (label) saves.push(label);
+    }
+    if (!saves.length) return { title: "Meilleur Docteur House", text: "Aucun sauvetage." };
+    const uniqSaves = Array.from(new Set(saves));
+    return { title: "Meilleur Docteur House", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
+  };
+
+  const awardBoucher = () => {
+    // Only if the doctor did NOT use the life potion during the match.
+    const stationTerm = getTerm('station', room);
+    const astronautsTerm = getTerm('astronauts', room);
+    const doctorRoleLabel = getRoleLabel('doctor', room);
+    
+    if (room.doctorLifeUsed) return { title: `Boucher de la ${stationTerm}`, text: "Aucun (potion de vie utilisée)." };
+
+    const doctorIds = getDoctorActorIds();
+    const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || doctorRoleLabel) : doctorRoleLabel;
+
+    // Astronauts wrongly ejected by doctor potion of death
+    const wrong = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "doctor_kill") continue;
+      const tRole = e.targetRole || room.players.get(e.targetId)?.role || null;
+      if (!tRole) continue;
+      const team = ROLES[tRole]?.team || "astronauts";
+      if (team === "saboteurs") continue;
+      const label = nameRole(e.targetId, tRole);
+      if (label) wrong.push(label);
     }
 
-    console.log(`📧 Email envoyé à ${email}`);
-    return { success: true, data };
-  } catch (error) {
-    console.error("❌ Erreur Resend:", error);
-    return { success: false, error };
+    // "non sauvés": victims of saboteurs while life potion unused
+    const unsaved = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "player_died") continue;
+      if (e.source !== "saboteurs") continue;
+      const label = nameRole(e.playerId);
+      if (label) unsaved.push(label);
+    }
+
+    if (!wrong.length && !unsaved.length) return { title: `Boucher de la ${stationTerm}`, text: "Aucun." };
+
+    const parts = [];
+    if (wrong.length) parts.push(`Éjections d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
+    if (unsaved.length) parts.push(`Non sauvés : ${Array.from(new Set(unsaved)).join(", ")}`);
+    return { title: `Boucher de la ${stationTerm}`, text: `${doctorName} — ${parts.join(" • ")}` };
+  };
+
+  const awardOeilDeLynx = () => {
+    const saboteurTerm = getTerm('saboteurs', room).toLowerCase().slice(0, -1); // saboteur/loup/orque
+    
+    // Saboteurs inspected by radar who later got ejected
+    const diedAt = new Map();
+    for (const e of room.matchLog) {
+      if (e.type !== "player_died") continue;
+      if (!e.playerId) continue;
+      if (!diedAt.has(e.playerId)) diedAt.set(e.playerId, e.t || 0);
+    }
+
+    const found = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "radar_inspect") continue;
+      if (e.role !== "saboteur") continue;
+      const dt = diedAt.get(e.targetId);
+      if (!dt) continue;
+      // must be "mort par la suite"
+      if ((dt || 0) <= (e.t || 0)) continue;
+      const label = room.players.get(e.targetId)?.name || e.targetId;
+      if (label) found.push(label);
+    }
+    const uniqFound = Array.from(new Set(found));
+    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éjecté.` };
+    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
+  };
+
+  const awardLupin = () => {
+    const saboteurTerm = getTerm('saboteurs', room).toLowerCase().slice(0, -1);
+    
+    const names = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "chameleon_swap") continue;
+      if (e.targetOldRole !== "saboteur") continue;
+      const n = room.players.get(e.targetId)?.name || e.targetId;
+      if (n) names.push(n);
+    }
+    const uniqNames = Array.from(new Set(names));
+    if (!uniqNames.length) return { title: "Le Lupin d'Or", text: `Aucun ${saboteurTerm} volé.` };
+    return { title: "Le Lupin d'Or", text: `A volé le rôle de : ${uniqNames.join(", ")}` };
+  };
+
+  const awardSecurity = (teamWanted, title, emptyText) => {
+    const perShooter = new Map(); // shooterId -> {count, victims[]}
+    for (const e of room.matchLog) {
+      if (e.type !== "revenge_shot") continue;
+      const tRole = e.targetRole || room.players.get(e.targetId)?.role || null;
+      const team = ROLES[tRole]?.team || "astronauts";
+      const wanted = (teamWanted === "saboteurs") ? (team === "saboteurs") : (team !== "saboteurs");
+      if (!wanted) continue;
+      const shooter = e.by;
+      if (!shooter) continue;
+      if (!perShooter.has(shooter)) perShooter.set(shooter, { count: 0, victims: [] });
+      const o = perShooter.get(shooter);
+      o.count += 1;
+      const v = nameRole(e.targetId, tRole) || (room.players.get(e.targetId)?.name || e.targetId);
+      if (v) o.victims.push(v);
+    }
+    let best = null;
+    for (const [pid, o] of perShooter.entries()) {
+      if (!best || o.count > best.count) best = { pid, ...o };
+    }
+    if (!best) return { title, text: emptyText };
+    const shooterName = room.players.get(best.pid)?.name || best.pid;
+    const victims = Array.from(new Set(best.victims));
+    return { title, text: `${shooterName} — victime(s) : ${victims.join(", ")}` };
+  };
+
+  const awardAssociation = () => {
+    if (winner !== "AMOUREUX") return { title: "Association de Malfaiteurs", text: "—" };
+    const alive = alivePlayers(room);
+    if (alive.length !== 2) return { title: "Association de Malfaiteurs", text: "—" };
+    const a = alive[0], b = alive[1];
+    const linked = a.linkedTo === b.playerId && b.linkedTo === a.playerId;
+    if (!linked) return { title: "Association de Malfaiteurs", text: "—" };
+    return { title: "Association de Malfaiteurs", text: `${a.name} 🤝 ${b.name}` };
+  };
+
+  const awardSaboteurIncognito = () => {
+    if (winner !== "SABOTEURS") return { title: "Saboteur Incognito", text: "—" };
+
+    // Aggregate votes AGAINST each player across all day votes.
+    const votesAgainst = Object.create(null);
+    for (const e of room.matchLog) {
+      if (e.type !== "day_votes") continue;
+      const counts = e.counts || {};
+      for (const [pid, n] of Object.entries(counts)) votesAgainst[pid] = (votesAgainst[pid] || 0) + (n || 0);
+    }
+
+    const aliveSab = alivePlayers(room).filter(p => p.role === "saboteur");
+    const winners = aliveSab.filter(p => (votesAgainst[p.playerId] || 0) === 0).map(p => p.name);
+    const uniq = Array.from(new Set(winners));
+    if (!uniq.length) return { title: "Saboteur Incognito", text: "Aucun." };
+    return { title: "Saboteur Incognito", text: `0 vote contre lui : ${uniq.join(", ")}` };
+  };
+
+  // V24: Award Meilleur Chef de station (départage pour éliminer saboteur)
+  const awardBestCaptain = () => {
+    const captainTerm = getTerm('captain', room);
+    const saboteurTerm = getTerm('saboteurs', room).toLowerCase().slice(0, -1);
+    
+    const goodTiebreaks = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "captain_tiebreak") continue;
+      if (e.targetTeam === "saboteurs") {
+        const captainName = room.players.get(e.captainId)?.name || "?";
+        const targetName = room.players.get(e.targetId)?.name || "?";
+        goodTiebreaks.push({ captain: captainName, target: targetName });
+      }
+    }
+    
+    if (!goodTiebreaks.length) return { title: `Meilleur ${captainTerm}`, text: `Aucun départage contre ${saboteurTerm}.` };
+    const captains = [...new Set(goodTiebreaks.map(t => t.captain))];
+    const targets = [...new Set(goodTiebreaks.map(t => t.target))];
+    return { title: `Meilleur ${captainTerm}`, text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` };
+  };
+
+  // V24: Award Pire Chef de station (départage pour éliminer astronaute)
+  const awardWorstCaptain = () => {
+    const captainTerm = getTerm('captain', room);
+    const astronautTerm = getTerm('astronauts', room).toLowerCase().slice(0, -1);
+    
+    const badTiebreaks = [];
+    for (const e of room.matchLog) {
+      if (e.type !== "captain_tiebreak") continue;
+      if (e.targetTeam === "astronauts") {
+        const captainName = room.players.get(e.captainId)?.name || "?";
+        const targetName = room.players.get(e.targetId)?.name || "?";
+        badTiebreaks.push({ captain: captainName, target: targetName });
+      }
+    }
+    
+    if (!badTiebreaks.length) return { title: `Pire ${captainTerm}`, text: `Aucun départage contre ${astronautTerm}.` };
+    const captains = [...new Set(badTiebreaks.map(t => t.captain))];
+    const targets = [...new Set(badTiebreaks.map(t => t.target))];
+    return { title: `Pire ${captainTerm}`, text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` };
+  };
+
+
+  const saboteursTerm = getTerm('saboteurs', room);
+  const astronautsTerm = getTerm('astronauts', room);
+  const stationTerm = getTerm('station', room);
+  
+  const awards = [
+    awardDoctorHouse(),
+    awardBoucher(),
+    awardOeilDeLynx(),
+    awardLupin(),
+    awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
+    awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`),
+    awardAssociation(),
+    awardSaboteurIncognito(),
+    awardBestCaptain(),
+    awardWorstCaptain()
+  ];
+
+  // snapshot of persistent stats for present players
+  const statsByName = {};
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const s = statsDb[p.name] || ensurePlayerStats(p.name);
+    const wr = s.gamesPlayed ? Math.round((s.wins / s.gamesPlayed) * 100) : 0;
+    statsByName[p.name] = {
+      gamesPlayed: s.gamesPlayed,
+      wins: s.wins,
+      losses: s.losses,
+      winRatePct: wr,
+      winsByRole: s.winsByRole,
+      gamesByRole: s.gamesByRole,
+      doctorSaves: s.doctorSaves,
+      doctorKills: s.doctorKills,
+      radarInspects: s.radarInspects,
+      radarCorrect: s.radarCorrect,
+      chameleonSwaps: s.chameleonSwaps,
+      securityRevengeShots: s.securityRevengeShots,
+      shortestGame: s.shortestGame,
+      longestGame: s.longestGame,
+      firstEliminated: s.firstEliminated || 0,
+      // V28: Nouvelles stats Phase 3
+      correctSaboteurVotes: s.correctSaboteurVotes || 0,
+      wrongSaboteurVotes: s.wrongSaboteurVotes || 0,
+      totalVotes: s.totalVotes || 0,
+      doctorNotSavedOpportunities: s.doctorNotSavedOpportunities || 0,
+      doctorKillsOnSaboteurs: s.doctorKillsOnSaboteurs || 0,
+      doctorKillsOnInnocents: s.doctorKillsOnInnocents || 0,
+      revengeKillsOnSaboteurs: s.revengeKillsOnSaboteurs || 0,
+      revengeKillsOnInnocents: s.revengeKillsOnInnocents || 0,
+      doctorMissedSaves: s.doctorMissedSaves || 0,
+      mayorTiebreakerOk: s.mayorTiebreakerOk || 0,
+      mayorTiebreakerKo: s.mayorTiebreakerKo || 0,
+      mayorTiebreakerTotal: s.mayorTiebreakerTotal || 0
+    };
   }
+
+
+const detailedStatsByName = {};
+for (const [name, s] of Object.entries(statsByName)) {
+  const gamesByRole = s.gamesByRole || {};
+  const winsByRole = s.winsByRole || {};
+  const roleWinRates = {};
+  for (const [role, g] of Object.entries(gamesByRole)) {
+    const w = winsByRole[role] || 0;
+    roleWinRates[role] = g ? Math.round((w / g) * 100) : 0;
+  }
+  detailedStatsByName[name] = {
+    ...s,
+    roleWinRates
+  };
 }
 
 
+// V24: Stats pour Pie Chart - répartition des morts par source
+// V26: Stats pour Pie Chart - répartition des morts par source (détaillé)
+const deathBySource = {
+  vote: 0,
+  saboteurs: 0,
+  doctor: 0,
+  revenge: 0,
+  linked: 0,
+  other: 0
+};
+for (const e of room.matchLog) {
+  if (e.type !== "player_died") continue;
+  const src = e.source || "other";
+  if (src === "vote" || src === "tiebreak" || src === "tie_random" || src === "tiebreak_fallback") {
+    deathBySource.vote++;
+  } else if (src === "saboteurs") {
+    deathBySource.saboteurs++;
+  } else if (src === "doctor") {
+    deathBySource.doctor++;
+  } else if (src === "revenge" || src === "security") {
+    deathBySource.revenge++;
+  } else if (src === "linked" || src === "lover_suicide") {
+    deathBySource.linked++;
+  } else {
+    deathBySource.other++;
+  }
+}
+
+// V24: Durée de partie
+const gameDuration = (room.endTime && room.startTime) ? (room.endTime - room.startTime) : 0;
+
+return { winner, players, deathOrder, awards, counters, statsByName, detailedStatsByName, deathBySource, gameDuration };
+}
+
+function endGame(room, winner) {
+  room.ended = true;
+  room.endTime = Date.now(); // V24: Pour calcul durée partie
+
+  // V26: Trouver le premier éliminé
+  let firstDeadId = null;
+  for (const e of room.matchLog) {
+    if (e.type === "player_died" && e.playerId) {
+      firstDeadId = e.playerId;
+      break;
+    }
+  }
+
+  // persist stats per name FIRST (so the end report reflects the updated totals)
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+
+    const st = ensurePlayerStats(p.name);
+    st.gamesPlayed += 1;
+    
+    // V26: Incrémenter si premier éliminé
+    if (p.playerId === firstDeadId) {
+      st.firstEliminated = (st.firstEliminated || 0) + 1;
+    }
+
+    const role = p.role || "unknown";
+    st.gamesByRole[role] = (st.gamesByRole[role] || 0) + 1;
+
+    let win = false;
+    if (winner === "AMOUREUX") {
+      // only the two linked lovers win
+      win = (p.status === "alive") && !!p.linkedTo && (room.players.get(p.linkedTo)?.status === "alive");
+    } else {
+      const team = ROLES[role]?.team || "astronauts";
+      win = (winner === "ASTRONAUTES" && team === "astronauts") ||
+            (winner === "SABOTEURS" && team === "saboteurs");
+    }
+
+    if (win) st.wins += 1;
+    else st.losses += 1;
+
+    if (win) st.winsByRole[role] = (st.winsByRole[role] || 0) + 1;
+    
+    // V24: Mettre à jour temps de partie le plus court/long
+    const gameDuration = (room.endTime && room.startTime) ? (room.endTime - room.startTime) : 0;
+    if (gameDuration > 0) {
+      if (st.shortestGame === null || gameDuration < st.shortestGame) {
+        st.shortestGame = gameDuration;
+      }
+      if (st.longestGame === null || gameDuration > st.longestGame) {
+        st.longestGame = gameDuration;
+      }
+    }
+  }
+  
+  // V28: Calculer et enregistrer les stats Phase 3 basées sur matchLog
+  const playerIdToName = new Map();
+  for (const p of room.players.values()) {
+    playerIdToName.set(p.playerId, p.name);
+  }
+  
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const st = ensurePlayerStats(p.name);
+    
+    // Compter les votes de ce joueur
+    for (const e of room.matchLog) {
+      // V28 FIX: Votes sont dans "day_votes" avec objet votes: {voterId: targetId}
+      if (e.type === "day_votes" && e.votes) {
+        const votesObj = e.votes;
+        // Vérifier si ce joueur a voté dans cet événement
+        const targetId = votesObj[p.playerId];
+        if (targetId) {
+          st.totalVotes = (st.totalVotes || 0) + 1;
+          
+          // V28 FIX2: Chercher le joueur cible de manière robuste
+          let targetPlayer = room.players.get(targetId);
+          // Fallback: chercher par itération si get() échoue
+          if (!targetPlayer) {
+            for (const [pid, pl] of room.players.entries()) {
+              if (pid === targetId || String(pid) === String(targetId)) {
+                targetPlayer = pl;
+                break;
+              }
+            }
+          }
+          
+          const targetRole = targetPlayer?.role;
+          const targetTeam = ROLES[targetRole]?.team || "astronauts";
+          
+          // Debug log
+          const voterTeam = ROLES[p.role]?.team || "astronauts";
+          console.log(`[V30 Stats] Player ${p.name} (team: ${voterTeam}) voted for ${targetId} (role: ${targetRole}, team: ${targetTeam})`);
+          
+          // V30: Ne compter les votes que pour les astronautes
+          // Les saboteurs ne doivent pas avoir de "votes faux" car leur but est de tuer les innocents
+          if (voterTeam !== "saboteurs") {
+            if (targetTeam === "saboteurs") {
+              st.correctSaboteurVotes = (st.correctSaboteurVotes || 0) + 1;
+            } else {
+              st.wrongSaboteurVotes = (st.wrongSaboteurVotes || 0) + 1;
+            }
+          }
+          // Note: Les saboteurs n'ont pas de stats de votes corrects/faux
+        }
+      }
+      
+      // Stats du docteur - potion fatale
+      if (e.type === "doctor_kill" && e.by === p.playerId) {
+        const targetRole = e.targetRole || room.players.get(e.targetId)?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.doctorKillsOnSaboteurs = (st.doctorKillsOnSaboteurs || 0) + 1;
+        } else {
+          st.doctorKillsOnInnocents = (st.doctorKillsOnInnocents || 0) + 1;
+        }
+      }
+      
+      // Stats du security - vengeance
+      if (e.type === "revenge_shot" && e.by === p.playerId) {
+        const targetRole = e.targetRole || room.players.get(e.targetId)?.role;
+        const targetTeam = ROLES[targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.revengeKillsOnSaboteurs = (st.revengeKillsOnSaboteurs || 0) + 1;
+        } else {
+          st.revengeKillsOnInnocents = (st.revengeKillsOnInnocents || 0) + 1;
+        }
+      }
+      
+      // Stats du maire - départage
+      if (e.type === "captain_tiebreak" && e.captainId === p.playerId) {
+        st.mayorTiebreakerTotal = (st.mayorTiebreakerTotal || 0) + 1;
+        const targetTeam = e.targetTeam || ROLES[e.targetRole]?.team || "astronauts";
+        if (targetTeam === "saboteurs") {
+          st.mayorTiebreakerOk = (st.mayorTiebreakerOk || 0) + 1;
+        } else {
+          st.mayorTiebreakerKo = (st.mayorTiebreakerKo || 0) + 1;
+        }
+      }
+    }
+    
+    // V28: Calculer doctorMissedSaves et doctorNotSavedOpportunities
+    // Si le joueur était docteur et n'a pas utilisé la potion de vie
+    if (p.role === "doctor" && !room.doctorLifeUsed) {
+      // Compter les morts par saboteurs (opportunités manquées)
+      let missedOpportunities = 0;
+      for (const e of room.matchLog) {
+        if (e.type === "player_died" && e.source === "saboteurs") {
+          missedOpportunities++;
+        }
+      }
+      if (missedOpportunities > 0) {
+        st.doctorMissedSaves = (st.doctorMissedSaves || 0) + missedOpportunities;
+        st.doctorNotSavedOpportunities = (st.doctorNotSavedOpportunities || 0) + missedOpportunities;
+      }
+    }
+  }
+  
+  saveStats(statsDb);
+  
+  // V26: Vérifier et attribuer les badges
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    const st = ensurePlayerStats(p.name);
+    const newBadges = badges.checkAndAwardBadges(p.name, st, st.matchHistory || []);
+    
+    // Envoyer les nouveaux badges au joueur
+    if (newBadges.length > 0 && p.connected && p.socketId) {
+      const sock = io.sockets.sockets.get(p.socketId);
+      if (sock) {
+        sock.emit("newBadges", { badges: newBadges });
+      }
+    }
+  }
+
+  const report = buildEndReport(room, winner);
+  room.endReport = report;
+  setPhase(room, "GAME_OVER", { winner, report });
+  logEvent(room, "game_over", { winner });
+  logger.endGame(room.code, winner, Date.now() - room.startTime, room.players.size);
+  console.log(`[${room.code}] game_over winner=${winner}`);
+}
+
+
+// ----------------- role assignment -----------------
+function buildRolePool(room) {
+  const n = room.players.size;
+  const sabCount = countSaboteursFor(n);
+  const enabled = room.config.rolesEnabled || {};
+  const pool = [];
+  for (let i = 0; i < sabCount; i++) pool.push("saboteur");
+  const specials = [];
+  if (enabled.chameleon) specials.push("chameleon");
+  if (enabled.ai_agent) specials.push("ai_agent");
+  if (enabled.radar) specials.push("radar");
+  if (enabled.doctor) specials.push("doctor");
+  if (enabled.security) specials.push("security");
+  if (enabled.engineer) specials.push("engineer");
+  const maxSpecials = Math.max(0, n - sabCount);
+  specials.splice(maxSpecials);
+  pool.push(...specials);
+  while (pool.length < n) pool.push("astronaut");
+  return pool;
+}
+
+function assignRolesAuto(room) {
+  const players = shuffle(Array.from(room.players.values()));
+  const pool = shuffle(buildRolePool(room));
+  for (let i = 0; i < players.length; i++) players[i].role = pool[i] || "astronaut";
+  room.doctorLifeUsed = false;
+  room.doctorDeathUsed = false;
+  room.chameleonUsed = false;
+  room.afterChameleonReveal = false;
+  logEvent(room, "roles_assigned", {});
+}
+
+function resetForNewRound(room, keepStats) {
+  room.started = false;
+  room.ended = false;
+  room.aborted = false;
+  room.phase = "LOBBY";
+  room.phaseData = {};
+  room.phaseAck = new Set();
+  room.day = 0;
+  room.night = 0;
+  room.captainElected = false;
+  room.matchLog = [];
+  room.nightData = {};
+  room.doctorLifeUsed = false;
+  room.doctorDeathUsed = false;
+  room.chameleonUsed = false;
+  room.afterChameleonReveal = false;
+
+  for (const p of room.players.values()) {
+    p.ready = false;
+    p.status = "alive";
+    p.role = null;
+    p.isCaptain = false;
+    p.linkedTo = null;
+    p.linkedName = null;
+  }
+
+  if (!keepStats) {
+    const names = Array.from(room.players.values()).map(p => p.name);
+    for (const n of names) delete statsDb[n];
+    saveStats(statsDb);
+  }
+
+  setPhase(room, "LOBBY", {});
+  logEvent(room, "reset_game", { keepStats });
+}
+
+// ----------------- game progression -----------------
+function startGame(room) {
+  room.started = true;
+  room.ended = false;
+  room.aborted = false;
+  room.day = 0;
+  room.night = 0;
+  room.captainElected = false;
+  room.startTime = Date.now();  // V26: Pour calcul durée partie
+
+  // clear captain
+  for (const p of room.players.values()) p.isCaptain = false;
+
+  if (room.config.manualRoles) {
+    // Enforce exact counts based on pool
+    const pool = buildRolePool(room);
+    const remaining = {};
+    for (const r of pool) remaining[r] = (remaining[r] || 0) + 1;
+    logger.info("manual_role_pick_start", { roomCode: room.code, remaining, poolSize: pool.length });
+    setPhase(room, "MANUAL_ROLE_PICK", { remaining, picks: {} });
+  } else {
+    assignRolesAuto(room);
+    setPhase(room, "ROLE_REVEAL", {});
+  }
+}
+
+function beginCaptainElection(room) {
+  setPhase(room, "CAPTAIN_CANDIDACY", { candidacies: {} });
+}
+
+function finishCaptainCandidacy(room) {
+  const alive = alivePlayers(room).map(p => p.playerId);
+  const cand = room.phaseData.candidacies || {};
+  const candidates = alive.filter(id => cand[id] === true);
+  if (candidates.length === 0) {
+    setPhase(room, "CAPTAIN_CANDIDACY", { candidacies: {}, error: "Aucun candidat. Recommencez." });
+    return;
+  }
+  setPhase(room, "CAPTAIN_VOTE", { candidates, votes: {} });
+}
+
+function finishCaptainVote(room) {
+  const votes = room.phaseData.votes || {};
+  const candidates = room.phaseData.candidates || [];
+  const counts = {};
+  for (const voterId of Object.keys(votes)) {
+    const target = votes[voterId];
+    if (!candidates.includes(target)) continue;
+    counts[target] = (counts[target] || 0) + 1;
+  }
+  let best = [];
+  let bestN = -1;
+  for (const c of candidates) {
+    const n = counts[c] || 0;
+    if (n > bestN) { bestN = n; best = [c]; }
+    else if (n === bestN) best.push(c);
+  }
+  if (best.length !== 1) {
+    setPhase(room, "CAPTAIN_VOTE", { candidates: best, votes: {}, tie: true });
+    return;
+  }
+  for (const p of room.players.values()) p.isCaptain = false;
+  const cap = room.players.get(best[0]);
+  if (cap) cap.isCaptain = true;
+  logEvent(room, "captain_elected", { playerId: best[0] });
+  room.captainElected = true;
+
+  beginNight(room);
+}
+
+function beginNight(room) {
+  room.night += 1;
+  room.nightData = {
+    saboteurTarget: null,
+    doctorSave: null,
+    doctorKill: null,
+    aiLinked: false,
+    radarDone: false,
+    saboteurDone: false,
+    doctorDone: false,
+    chameleonDone: false
+  };
+  setPhase(room, "NIGHT_START", { engineerReminder: hasAliveRole(room, "engineer") });
+}
+
+function nextNightPhase(room) {
+  // order: chameleon (night1), ai (night1), radar, saboteurs, doctor, resolve
+  if (room.night === 1 && room.config.rolesEnabled?.chameleon && !room.chameleonUsed) {
+    const cham = getRoleHolder(room, "chameleon");
+    if (cham) { setPhase(room, "NIGHT_CHAMELEON", { actorId: cham.playerId }); return; }
+  }
+  if (room.night === 1 && room.config.rolesEnabled?.ai_agent && !room.nightData.aiLinked) {
+    const ai = getRoleHolder(room, "ai_agent");
+    if (ai) { setPhase(room, "NIGHT_AI_AGENT", { actorId: ai.playerId }); return; }
+  }
+  if (room.config.rolesEnabled?.radar && !room.nightData.radarDone) {
+    const radar = getRoleHolder(room, "radar");
+    if (radar) { setPhase(room, "NIGHT_RADAR", { actorId: radar.playerId, lastRadarResult: null }); return; }
+  }
+  const sab = getAliveByRole(room, "saboteur");
+  if (sab.length > 0 && !room.nightData.saboteurDone) {
+    setPhase(room, "NIGHT_SABOTEURS", { actorIds: sab.map(p => p.playerId), votes: {} });
+    return;
+  }
+  if (room.config.rolesEnabled?.doctor && !room.nightData.doctorDone) {
+    const doc = getRoleHolder(room, "doctor");
+    if (doc) {
+      const tId = room.nightData?.saboteurTarget || null;
+      const tName = tId ? (room.players.get(tId)?.name || null) : null;
+      setPhase(room, "NIGHT_DOCTOR", { actorId: doc.playerId, lifeUsed: room.doctorLifeUsed, deathUsed: room.doctorDeathUsed, saboteurTargetId: tId, saboteurTargetName: tName });
+      return;
+    }
+  }
+  resolveNight(room);
+}
+
+function resolveNight(room) {
+  const nd = room.nightData || {};
+  const killed = new Set();
+
+  if (nd.saboteurTarget && nd.saboteurTarget !== nd.doctorSave) killed.add(nd.saboteurTarget);
+  if (nd.doctorKill) killed.add(nd.doctorKill);
+
+  const newlyDead = [];
+  for (const pid of killed) {
+    // Distinguish sources for stats/awards.
+    let source = "night";
+    if (nd.doctorKill && pid === nd.doctorKill) source = "doctor";
+    else if (nd.saboteurTarget && pid === nd.saboteurTarget && pid !== nd.doctorSave) source = "saboteurs";
+    if (killPlayer(room, pid, source)) newlyDead.push(pid);
+  }
+// linked deaths cascade
+  const casc = applyLinkCascade(room);
+  for (const pid of casc) if (!newlyDead.includes(pid)) newlyDead.push(pid);
+
+  const deathsText = buildDeathsText(room, newlyDead);
+
+  const securityDied = newlyDead.find((pid) => room.players.get(pid)?.role === "security");
+  if (securityDied) {
+    room.pendingAfterRevenge = { context: "night", newlyDead: newlyDead.slice(), deathsText };
+    setPhase(room, "REVENGE", { actorId: securityDied, context: "night", options: alivePlayers(room).map((p) => p.playerId) });
+    return;
+  }
+
+  const winner = checkWin(room);
+  if (winner) {
+    if (winner === "ABORTED") return;
+    endGame(room, winner);
+    return;
+  }
+
+  setPhase(room, "NIGHT_RESULTS", { newlyDead, anyDeaths: newlyDead.length > 0, deathsText });
+}
+
+function beginDay(room, anyDeaths) {
+  room.day += 1;
+  setPhase(room, "DAY_WAKE", { anyDeaths: !!anyDeaths });
+}
+
+function proceedDayAfterWake(room) {
+  const deadCaptain = Array.from(room.players.values()).find(p => p.isCaptain && p.status !== "alive");
+  if (deadCaptain) {
+    // fallback if not connected
+    if (!deadCaptain.connected || deadCaptain.status === "left") {
+      const alive = alivePlayers(room);
+      if (alive.length > 0) {
+        const pick = alive[randInt(0, alive.length - 1)];
+        for (const p of room.players.values()) p.isCaptain = false;
+        pick.isCaptain = true;
+        logEvent(room, "captain_transferred_fallback", { from: deadCaptain.playerId, to: pick.playerId });
+      }
+      setPhase(room, "DAY_VOTE", { votes: {} });
+      return;
+    }
+    setPhase(room, "DAY_CAPTAIN_TRANSFER", { actorId: deadCaptain.playerId, options: alivePlayers(room).map(p => p.playerId) });
+    return;
+  }
+  setPhase(room, "DAY_VOTE", { votes: {} });
+}
+
+function finishCaptainTransfer(room, chosenId) {
+  const chosen = room.players.get(chosenId);
+  if (!chosen || chosen.status !== "alive") return;
+  for (const p of room.players.values()) p.isCaptain = false;
+  chosen.isCaptain = true;
+  logEvent(room, "captain_transferred", { to: chosenId });
+  setPhase(room, "DAY_VOTE", { votes: {} });
+}
+
+function finishDayVote(room) {
+  const votes = room.phaseData.votes || {};
+  const alive = alivePlayers(room).map(p => p.playerId);
+  const counts = {};
+  for (const voter of alive) {
+    const t = votes[voter];
+    if (!t) continue;
+    counts[t] = (counts[t] || 0) + 1;
+  }
+  let best = [];
+  let bestN = -1;
+  for (const pid of alive) {
+    const n = counts[pid] || 0;
+    if (n > bestN) { bestN = n; best = [pid]; }
+    else if (n === bestN) best.push(pid);
+  }
+  if (bestN <= 0) best = alive.slice();
+
+  // log votes for awards (e.g. Saboteur Incognito)
+  logEvent(room, "day_votes", { day: room.day, votes: JSON.parse(JSON.stringify(votes || {})), counts: JSON.parse(JSON.stringify(counts || {})) });
+
+  if (best.length !== 1) {
+    const cap = getCaptain(room);
+    if (cap && cap.status === "alive") {
+      setPhase(room, "DAY_TIEBREAK", { actorId: cap.playerId, options: best });
+      return;
+    }
+    const pick = best[randInt(0, best.length - 1)];
+    executeEjection(room, pick, "tie_random");
+    return;
+  }
+  executeEjection(room, best[0], "vote");
+}
+
+function executeEjection(room, ejectedId, reason) {
+  const p = room.players.get(ejectedId);
+  if (!p || p.status !== "alive") return;
+
+  const newlyDead = [];
+  if (killPlayer(room, ejectedId, "day", { reason })) newlyDead.push(ejectedId);
+
+  const casc = applyLinkCascade(room);
+  for (const pid of casc) if (!newlyDead.includes(pid)) newlyDead.push(pid);
+
+  const deathsText = buildDeathsText(room, newlyDead);
+
+  const securityDied = newlyDead.find((pid) => room.players.get(pid)?.role === "security");
+  if (securityDied) {
+    room.pendingAfterRevenge = { context: "day", newlyDead: newlyDead.slice(), deathsText };
+    setPhase(room, "REVENGE", { actorId: securityDied, context: "day", options: alivePlayers(room).map((p) => p.playerId) });
+    return;
+  }
+
+  const winner = checkWin(room);
+  if (winner) {
+    if (winner === "ABORTED") return;
+    endGame(room, winner);
+    return;
+  }
+
+  setPhase(room, "DAY_RESULTS", { newlyDead, anyDeaths: newlyDead.length > 0, deathsText });
+}
+
+function afterRevenge(room, context) {
+  // integrate any pending deaths + revenge results (already applied)
+  const pending = room.pendingAfterRevenge || { context, newlyDead: [], deathsText: null };
+
+  const winner = checkWin(room);
+  if (winner) {
+    room.pendingAfterRevenge = null;
+    if (winner === "ABORTED") return;
+    endGame(room, winner);
+    return;
+  }
+
+  const data = { newlyDead: pending.newlyDead || [], anyDeaths: (pending.newlyDead || []).length > 0, deathsText: pending.deathsText || null };
+  room.pendingAfterRevenge = null;
+
+  if (context === "night") setPhase(room, "NIGHT_RESULTS", data);
+  else setPhase(room, "DAY_RESULTS", data);
+}
+
+// ----------------- state for client -----------------
+
+function formatLogLine(room, e) {
+  const t = new Date(e.t).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const name = (id) => room.players.get(id)?.name || "???";
+  const captainTerm = getTerm('captain', room);
+  
+  switch (e.type) {
+    case "phase": return { kind: "info", text: `[${t}] ➜ ${getPhaseName(e.phase, room)}` };
+    case "roles_assigned": return { kind: "info", text: `[${t}] Rôles attribués.` };
+    case "captain_elected": return { kind: "info", text: `[${t}] ⭐ ${captainTerm}: ${name(e.playerId)}` };
+    case "player_died": return { kind: "info", text: `[${t}] 🚀 ${name(e.playerId)} a été éjecté.` };
+    case "player_left": return { kind: "warn", text: `[${t}] 🚪 ${name(e.playerId)} peut revenir (30s).` };
+    case "player_removed": return { kind: "warn", text: `[${t}] ⛔ ${name(e.playerId)} est sorti.` };
+    case "reconnected": return { kind: "info", text: `[${t}] ✅ ${name(e.playerId)} est revenu.` };
+    case "game_over": return { kind: "info", text: `[${t}] 🏁 Fin: ${e.winner}` };
+    default: return null;
+  }
+}
+
+function publicRoomStateFor(room, viewerId) {
+  const viewer = getPlayer(room, viewerId);
+  const required = requiredPlayersForPhase(room);
+  // Clone phaseData so we can safely redact/augment per viewer.
+  const phaseData = JSON.parse(JSON.stringify(room.phaseData || {}));
+
+  const players = Array.from(room.players.values()).map(p => {
+    const base = {
+      playerId: p.playerId,
+      name: p.name,
+      status: p.status,
+      connected: !!p.connected,
+      ready: !!p.ready,
+      isHost: room.hostPlayerId === p.playerId,
+      isCaptain: !!p.isCaptain,
+      // D9: Données de personnalisation
+      avatarId: p.avatarId || null,
+      avatarEmoji: p.avatarEmoji || null,
+      colorId: p.colorId || null,
+      colorHex: p.colorHex || null,
+      badgeId: p.badgeId || null,
+      badgeEmoji: p.badgeEmoji || null,
+      badgeName: p.badgeName || null
+    };
+    if (!room.started) return base;
+
+    if (room.ended || room.phase === "GAME_OVER") {
+      base.role = p.role;
+      base.roleLabel = getRoleLabel(p.role, room);
+      base.roleIcon = ROLES[p.role]?.icon || null;
+      return base;
+    }
+
+    if (viewer && viewer.playerId === p.playerId) {
+      base.role = p.role;
+      base.roleLabel = getRoleLabel(p.role, room);
+      base.roleIcon = ROLES[p.role]?.icon || null;
+    } else if (viewer && viewer.role === "saboteur" && p.role === "saboteur") {
+      base.role = "saboteur";
+      base.roleLabel = getRoleLabel("saboteur", room);
+      base.roleIcon = ROLES.saboteur.icon;
+    } else {
+      base.role = null;
+      base.roleLabel = null;
+      base.roleIcon = null;
+    }
+    return base;
+  });
+
+  const you = viewer ? {
+    playerId: viewer.playerId,
+    name: viewer.name,
+    status: viewer.status,
+    role: viewer.role,
+    roleLabel: viewer.role ? getRoleLabel(viewer.role, room) : null,
+    roleIcon: viewer.role ? (ROLES[viewer.role]?.icon || null) : null,
+    isCaptain: !!viewer.isCaptain,
+    captainIcon: viewer.isCaptain ? CAPTAIN_ICON : null,
+    linkedTo: viewer.linkedTo,
+    linkedName: viewer.linkedName
+  } : null;
+
+  const teams = computeTeams(room);
+  const logs = room.matchLog.slice(-30).map(e => formatLogLine(room, e)).filter(Boolean);
+
+  const privateLines = [];
+  if (viewer && room.phase === "NIGHT_RADAR" && room.phaseData?.lastRadarResult?.viewerId === viewerId) {
+    privateLines.push({ kind: "private", text: room.phaseData.lastRadarResult.text });
+  }
+  if (viewer && viewer.linkedTo) privateLines.push({ kind: "private", text: `🔗 Lié à ${viewer.linkedName || "?"}` });
+
+  // Augment/redact saboteur votes for the saboteur phase.
+  if (room.phase === "NIGHT_SABOTEURS") {
+    if (viewer && viewer.role === "saboteur" && viewer.status === "alive") {
+      const votes = phaseData.votes || {};
+      phaseData.teamVotes = Object.entries(votes)
+        .map(([sid, tid]) => {
+          const sp = room.players.get(sid);
+          const tp = room.players.get(tid);
+          return { saboteurId: sid, saboteurName: sp?.name || "?", targetId: tid, targetName: tp?.name || "?" };
+        });
+      phaseData.yourVoteId = votes[viewer.playerId] || null;
+    } else {
+      // Never expose votes to non-saboteurs.
+      delete phaseData.votes;
+      delete phaseData.teamVotes;
+      delete phaseData.yourVoteId;
+    }
+  }
+
+  // D6: Ajouter yourVoteId pour les autres phases de vote
+  if (["DAY_VOTE", "CAPTAIN_VOTE", "DAY_TIEBREAK", "REVENGE"].includes(room.phase)) {
+    const votes = room.phaseData?.votes || {};
+    if (viewer) {
+      phaseData.yourVoteId = votes[viewer.playerId] || null;
+    }
+    // Ne pas exposer les votes des autres joueurs
+    delete phaseData.votes;
+  }
+
+  return {
+    roomCode: room.code,
+    phase: room.phase,
+    phaseData,
+    started: room.started,
+    ended: room.ended,
+    aborted: room.aborted,
+    day: room.day,
+    night: room.night,
+    config: room.config,
+    themeId: room.themeId || "default",  // V26: Thème sélectionné
+    phaseStartTime: room.phaseStartTime || Date.now(),  // V26: Pour timer hôte
+    audio: room.audio,
+    // V9.3.1: Option lobby — partie sans visio
+    // IMPORTANT: doit être exposée au client sinon la checkbox se réinitialise.
+    videoDisabled: !!room.videoDisabled,
+    ack: { 
+      done: room.phaseAck.size, 
+      total: required.length,
+      pending: required.filter(pid => !room.phaseAck.has(pid))  // V26: Liste des AFK
+    },
+    teams,
+    players,
+    you,
+    logs,
+    privateLines,
+    // V27: Permissions vidéo
+    videoPermissions: room.videoPermissions ? room.videoPermissions[viewerId] : null,
+    videoPhaseMessage: room.videoPhaseMessage || null
+  };
+}
+
+// ----------------- socket server -----------------
+const app = express();
+
+// CORS pour l'app mobile Capacitor
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+// D6: Configuration de cache pour les assets statiques
+// Fonction middleware pour définir les headers de cache selon le type de fichier
+const cacheMiddleware = (req, res, next) => {
+  // Images et sons: cache longue durée (1 an)
+  if (req.url.startsWith('/images/') || req.url.startsWith('/sounds/')) {
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  } 
+  // JS/CSS: cache courte durée (1 heure)
+  else if (req.url.endsWith('.js') || req.url.endsWith('.css')) {
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+  }
+  // HTML: pas de cache (toujours frais)
+  else if (req.url.endsWith('.html') || req.url === '/') {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+  next();
+};
+
+app.use(cacheMiddleware);
+app.use(express.json()); // Pour parser le JSON des requêtes auth
+app.use(express.static(path.join(__dirname, "public")));
+app.use("/avatars", express.static(AVATARS_DIR)); // Servir les avatars
+
+// Initialiser les systèmes
+const rateLimiter = new RateLimiter();
+const BadgeSystem = require("./badge-system");
+const badges = new BadgeSystem(DATA_DIR);
+const ThemeManager = require("./theme-manager");
+const themeManager = new ThemeManager(path.join(__dirname, "themes"));
+
+// Garbage collection périodique du rate limiter
+setInterval(() => rateLimiter.gc(), 60000); // Toutes les minutes
+
+logger.info("server_start", { port: PORT, build: BUILD_ID });
+
 // ============================================================================
-// SECTION 7: ROUTES D'AUTHENTIFICATION
+// ROUTES D'AUTHENTIFICATION
 // ============================================================================
 
 // Inscription
-app.post("/api/auth/register", express.json(), async (req, res) => {
+app.post("/api/auth/register", async (req, res) => {
   try {
+    if (!bcrypt || !jwt) return res.status(500).json({ error: "Auth non configurée" });
+    
     const { email, username, password, promoCode } = req.body;
     const ip = getClientIP(req);
 
-    // Validations
     if (!email || !username || !password) {
       return res.status(400).json({ error: "Email, pseudo et mot de passe requis" });
     }
-
     if (password.length < 6) {
-      return res.status(400).json({ error: "Mot de passe trop court (min 6 caractères)" });
+      return res.status(400).json({ error: "Mot de passe trop court (min 6)" });
     }
-
     if (username.length < 2 || username.length > 20) {
       return res.status(400).json({ error: "Pseudo entre 2 et 20 caractères" });
     }
-
-    // Vérifier domaine email bloqué
     if (isBlockedEmailDomain(email)) {
-      return res.status(400).json({ error: "Ce type d'email n'est pas accepté. Utilise une vraie adresse email." });
+      return res.status(400).json({ error: "Ce type d'email n'est pas accepté" });
     }
-
-    // Vérifier limite création comptes par IP
     if (!checkAccountCreationLimit(ip)) {
-      return res.status(429).json({ error: "Trop de comptes créés depuis cette adresse. Réessaie demain." });
+      return res.status(429).json({ error: "Trop de comptes créés. Réessaie demain." });
     }
 
-    // Vérifier si email/username existe déjà
     const existingEmail = dbGet("SELECT id FROM users WHERE email = ?", [email.toLowerCase()]);
-    if (existingEmail) {
-      return res.status(400).json({ error: "Cet email est déjà utilisé" });
-    }
+    if (existingEmail) return res.status(400).json({ error: "Email déjà utilisé" });
 
     const existingUsername = dbGet("SELECT id FROM users WHERE username = ?", [username]);
-    if (existingUsername) {
-      return res.status(400).json({ error: "Ce pseudo est déjà pris" });
-    }
+    if (existingUsername) return res.status(400).json({ error: "Pseudo déjà pris" });
 
-    // Déterminer le type de compte
     let accountType = "free";
-    if (promoCode) {
-      const upperCode = promoCode.toUpperCase().trim();
-      if (ADMIN_CODES.includes(upperCode)) {
-        accountType = "admin";
-      }
+    if (promoCode && ADMIN_CODES.includes(promoCode.toUpperCase().trim())) {
+      accountType = "admin";
     }
 
-    // Hasher le mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Générer token de vérification
     const verificationToken = generateVerificationToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    // Créer l'utilisateur
     const result = dbInsert(
       `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, 
-       accountType === "admin" ? 999999 : 2]
+      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, accountType === "admin" ? 999999 : 2]
     );
 
-    // Logger la création de compte
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
-
-    // Envoyer email de vérification
     const emailResult = await sendVerificationEmail(email, username, verificationToken);
 
-    // Créer le token JWT
-    const token = jwt.sign(
-      { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType },
-      JWT_SECRET,
-      { expiresIn: "30d" }
-    );
+    const token = jwt.sign({ id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
 
     res.json({
-      success: true,
-      token,
-      user: {
-        id: result.lastInsertRowid,
-        email: email.toLowerCase(),
-        username,
-        accountType,
-        emailVerified: false,
-        videoCredits: accountType === "admin" ? 999999 : 2
-      },
-      message: emailResult.simulated 
-        ? "Compte créé ! (Email simulé en dev)"
-        : "Compte créé ! Vérifie ton email pour débloquer les parties vidéo."
+      success: true, token,
+      user: { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType, emailVerified: false, videoCredits: accountType === "admin" ? 999999 : 2 },
+      message: emailResult.simulated ? "Compte créé ! (Email simulé)" : "Compte créé ! Vérifie ton email."
     });
-
   } catch (error) {
     console.error("❌ Erreur inscription:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -670,47 +2216,31 @@ app.post("/api/auth/register", express.json(), async (req, res) => {
 });
 
 // Connexion
-app.post("/api/auth/login", express.json(), async (req, res) => {
+app.post("/api/auth/login", async (req, res) => {
   try {
+    if (!bcrypt || !jwt) return res.status(500).json({ error: "Auth non configurée" });
+    
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email et mot de passe requis" });
-    }
+    if (!email || !password) return res.status(400).json({ error: "Email et mot de passe requis" });
 
     const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
-    if (!user) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
+    if (!user) return res.status(401).json({ error: "Email ou mot de passe incorrect" });
 
     const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword) {
-      return res.status(401).json({ error: "Email ou mot de passe incorrect" });
-    }
+    if (!validPassword) return res.status(401).json({ error: "Email ou mot de passe incorrect" });
 
-    // Mettre à jour last_login
     dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [user.id]);
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, username: user.username, accountType: user.account_type },
-      JWT_SECRET,
-      { expiresIn: "30d" }
-    );
+    const token = jwt.sign({ id: user.id, email: user.email, username: user.username, accountType: user.account_type }, JWT_SECRET, { expiresIn: "30d" });
 
     res.json({
-      success: true,
-      token,
+      success: true, token,
       user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        accountType: user.account_type,
-        emailVerified: user.email_verified === 1,
-        videoCredits: user.video_credits,
-        currentAvatar: user.current_avatar
+        id: user.id, email: user.email, username: user.username,
+        accountType: user.account_type, emailVerified: user.email_verified === 1,
+        videoCredits: user.video_credits, currentAvatar: user.current_avatar
       }
     });
-
   } catch (error) {
     console.error("❌ Erreur connexion:", error);
     res.status(500).json({ error: "Erreur serveur" });
@@ -721,302 +2251,105 @@ app.post("/api/auth/login", express.json(), async (req, res) => {
 app.get("/api/auth/verify-email", async (req, res) => {
   try {
     const { token } = req.query;
+    if (!token) return res.status(400).json({ error: "Token manquant" });
 
-    if (!token) {
-      return res.status(400).json({ error: "Token manquant" });
-    }
+    const user = dbGet("SELECT * FROM users WHERE verification_token = ? AND verification_expires > datetime('now')", [token]);
+    if (!user) return res.status(400).json({ error: "Token invalide ou expiré" });
 
-    const user = dbGet(
-      "SELECT * FROM users WHERE verification_token = ? AND verification_expires > datetime('now')",
-      [token]
-    );
+    dbRun("UPDATE users SET email_verified = 1, verification_token = NULL WHERE id = ?", [user.id]);
 
-    if (!user) {
-      return res.status(400).json({ error: "Token invalide ou expiré" });
-    }
-
-    // Marquer comme vérifié
-    dbRun(
-      "UPDATE users SET email_verified = 1, verification_token = NULL, verification_expires = NULL WHERE id = ?",
-      [user.id]
-    );
-
-    res.json({
-      success: true,
-      message: "Email vérifié ! Tu as maintenant accès à 2 parties vidéo gratuites.",
-      username: user.username
-    });
-
+    res.json({ success: true, message: "Email vérifié ! 2 parties vidéo débloquées.", username: user.username });
   } catch (error) {
     console.error("❌ Erreur vérification:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Renvoyer email de vérification
-app.post("/api/auth/resend-verification", express.json(), async (req, res) => {
+// Renvoyer email
+app.post("/api/auth/resend-verification", async (req, res) => {
   try {
     const { email } = req.body;
-
     const user = dbGet("SELECT * FROM users WHERE email = ?", [email?.toLowerCase()]);
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur non trouvé" });
-    }
-
-    if (user.email_verified === 1) {
-      return res.status(400).json({ error: "Email déjà vérifié" });
-    }
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+    if (user.email_verified === 1) return res.status(400).json({ error: "Email déjà vérifié" });
 
     const verificationToken = generateVerificationToken();
-    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-
-    dbRun(
-      "UPDATE users SET verification_token = ?, verification_expires = ? WHERE id = ?",
-      [verificationToken, verificationExpires, user.id]
-    );
-
+    dbRun("UPDATE users SET verification_token = ?, verification_expires = ? WHERE id = ?",
+      [verificationToken, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), user.id]);
     await sendVerificationEmail(user.email, user.username, verificationToken);
 
-    res.json({ success: true, message: "Email de vérification renvoyé" });
-
+    res.json({ success: true, message: "Email renvoyé" });
   } catch (error) {
     console.error("❌ Erreur renvoi:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Profil utilisateur
+// Profil
 app.get("/api/auth/me", authenticateToken, (req, res) => {
   try {
     const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur non trouvé" });
-    }
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
 
     const limits = getUserLimits(user);
-
     res.json({
       user: {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        accountType: user.account_type,
-        emailVerified: user.email_verified === 1,
-        videoCredits: user.video_credits,
-        avatarsUsed: user.avatars_used,
-        currentAvatar: user.current_avatar,
-        lifetimeGames: user.lifetime_games
+        id: user.id, email: user.email, username: user.username,
+        accountType: user.account_type, emailVerified: user.email_verified === 1,
+        videoCredits: user.video_credits, avatarsUsed: user.avatars_used,
+        currentAvatar: user.current_avatar
       },
-      limits: {
-        videoCredits: limits.videoCredits,
-        avatars: limits.avatars,
-        themes: limits.themes,
-        customPrompt: limits.customPrompt
-      }
+      limits: { videoCredits: limits.videoCredits, avatars: limits.avatars, themes: limits.themes }
     });
-
   } catch (error) {
-    console.error("❌ Erreur profil:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-// Changer le mot de passe
-app.post("/api/auth/change-password", authenticateToken, express.json(), async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ error: "Mot de passe actuel et nouveau requis" });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({ error: "Le nouveau mot de passe doit faire au moins 6 caractères" });
-    }
-
-    const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur non trouvé" });
-    }
-
-    // Vérifier le mot de passe actuel
-    const validPassword = await bcrypt.compare(currentPassword, user.password);
-    if (!validPassword) {
-      return res.status(400).json({ error: "Mot de passe actuel incorrect" });
-    }
-
-    // Hasher le nouveau mot de passe
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Mettre à jour
-    dbRun("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, user.id]);
-    saveDatabase();
-
-    console.log(`🔐 Mot de passe changé pour ${user.email}`);
-
-    res.json({ success: true, message: "Mot de passe modifié avec succès !" });
-
-  } catch (error) {
-    console.error("❌ Erreur changement mot de passe:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-
-// ============================================================================
-// SECTION 8: VÉRIFICATION CRÉDITS VIDÉO
-// ============================================================================
-
-// Vérifier si l'utilisateur peut jouer en vidéo
+// Vérifier crédits vidéo
 app.get("/api/video/can-play", optionalAuth, (req, res) => {
-  const ip = getClientIP(req);
-
-  // Sans compte = pas de vidéo
   if (!req.user) {
-    return res.json({
-      canPlay: false,
-      reason: "no_account",
-      message: "Crée un compte gratuit pour accéder aux parties vidéo !",
-      videoCredits: 0
-    });
+    return res.json({ canPlay: false, reason: "no_account", message: "Crée un compte pour la vidéo", videoCredits: 0 });
   }
-
   const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
-  if (!user) {
-    return res.json({
-      canPlay: false,
-      reason: "user_not_found",
-      message: "Utilisateur non trouvé",
-      videoCredits: 0
-    });
-  }
-
-  // Email non vérifié = pas de vidéo
+  if (!user) return res.json({ canPlay: false, reason: "user_not_found", videoCredits: 0 });
   if (user.email_verified !== 1) {
-    return res.json({
-      canPlay: false,
-      reason: "email_not_verified",
-      message: "Vérifie ton email pour débloquer les parties vidéo !",
-      videoCredits: user.video_credits
-    });
+    return res.json({ canPlay: false, reason: "email_not_verified", message: "Vérifie ton email", videoCredits: user.video_credits });
   }
-
   const limits = getUserLimits(user);
-
-  // Admin ou abonné = illimité
   if (limits.videoCredits === Infinity) {
-    return res.json({
-      canPlay: true,
-      reason: "unlimited",
-      videoCredits: "∞",
-      accountType: user.account_type
-    });
+    return res.json({ canPlay: true, reason: "unlimited", videoCredits: "∞" });
   }
-
-  // Vérifier crédits restants
   if (user.video_credits <= 0) {
-    return res.json({
-      canPlay: false,
-      reason: "no_credits",
-      message: "Tu as utilisé tes 2 parties gratuites. Passe à l'abonnement pour continuer en vidéo !",
-      videoCredits: 0,
-      upgradeOptions: [
-        { type: "subscriber", price: "1.49€/mois", label: "Vidéo illimitée" },
-        { type: "pack", price: "4.99€", label: "50 parties vidéo" }
-      ]
-    });
+    return res.json({ canPlay: false, reason: "no_credits", message: "Plus de crédits vidéo", videoCredits: 0 });
   }
-
-  res.json({
-    canPlay: true,
-    reason: "has_credits",
-    videoCredits: user.video_credits,
-    accountType: user.account_type
-  });
+  res.json({ canPlay: true, reason: "has_credits", videoCredits: user.video_credits });
 });
 
-// Consommer un crédit vidéo (appelé quand une partie vidéo commence)
-app.post("/api/video/consume-credit", authenticateToken, express.json(), (req, res) => {
+// Consommer crédit vidéo
+app.post("/api/video/consume-credit", authenticateToken, (req, res) => {
   try {
-    const ip = getClientIP(req);
     const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
-
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur non trouvé" });
-    }
-
-    if (user.email_verified !== 1) {
-      return res.status(403).json({ error: "Vérifie ton email d'abord" });
-    }
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+    if (user.email_verified !== 1) return res.status(403).json({ error: "Vérifie ton email" });
 
     const limits = getUserLimits(user);
-
-    // Admin/abonné = pas de décompte
     if (limits.videoCredits === Infinity) {
-      // Logger la partie quand même
-      dbInsert("INSERT INTO games_played (user_id, ip_address, game_mode) VALUES (?, ?, ?)",
-        [user.id, ip, "video"]);
-      dbRun("UPDATE users SET lifetime_games = lifetime_games + 1, last_video_ip = ? WHERE id = ?",
-        [ip, user.id]);
-
-      return res.json({
-        success: true,
-        videoCredits: "∞",
-        message: "Bonne partie !"
-      });
+      dbRun("UPDATE users SET lifetime_games = lifetime_games + 1 WHERE id = ?", [user.id]);
+      return res.json({ success: true, videoCredits: "∞" });
     }
-
-    // Vérifier crédits
     if (user.video_credits <= 0) {
-      return res.status(403).json({ 
-        error: "Plus de crédits vidéo",
-        upgradeRequired: true
-      });
+      return res.status(403).json({ error: "Plus de crédits vidéo" });
     }
 
-    // Décompter un crédit
-    dbRun("UPDATE users SET video_credits = video_credits - 1, lifetime_games = lifetime_games + 1, last_video_ip = ? WHERE id = ?",
-      [ip, user.id]);
-
-    // Logger la partie
-    dbInsert("INSERT INTO games_played (user_id, ip_address, game_mode) VALUES (?, ?, ?)",
-      [user.id, ip, "video"]);
-
-    const newCredits = user.video_credits - 1;
-
-    res.json({
-      success: true,
-      videoCredits: newCredits,
-      message: newCredits > 0 
-        ? `Bonne partie ! Il te reste ${newCredits} partie(s) vidéo.`
-        : "Dernière partie gratuite ! Pense à t'abonner pour continuer en vidéo."
-    });
-
+    dbRun("UPDATE users SET video_credits = video_credits - 1, lifetime_games = lifetime_games + 1 WHERE id = ?", [user.id]);
+    res.json({ success: true, videoCredits: user.video_credits - 1 });
   } catch (error) {
-    console.error("❌ Erreur consommation crédit:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
 
-
-// ============================================================================
-// SECTION 9: GÉNÉRATION D'AVATARS IA
-// ============================================================================
-
-// Configuration upload photos
-const photoStorage = multer.diskStorage({
-  destination: UPLOADS_DIR,
-  filename: (req, file, cb) => {
-    const uniqueId = crypto.randomBytes(8).toString("hex");
-    cb(null, `photo_${uniqueId}${path.extname(file.originalname)}`);
-  }
-});
-
-const uploadPhoto = multer({
-  storage: photoStorage,
-  limits: { fileSize: 10 * 1024 * 1024 }
-});
-
-// Liste des thèmes disponibles
+// Liste thèmes avatars
 app.get("/api/avatars/themes", optionalAuth, (req, res) => {
   const user = req.user ? dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]) : null;
   const limits = getUserLimits(user);
@@ -1025,1575 +2358,964 @@ app.get("/api/avatars/themes", optionalAuth, (req, res) => {
   const themes = {};
   for (const [key, theme] of Object.entries(AVATAR_THEMES)) {
     themes[key] = {
-      name: theme.name,
-      icon: theme.icon,
-      premium: theme.premium,
-      available: availableThemes.includes(key) || limits.themes === "all",
-      characters: Object.entries(theme.characters).map(([charKey, char]) => ({
-        key: charKey,
-        name: char.name
-      }))
+      name: theme.name, icon: theme.icon, premium: theme.premium,
+      available: availableThemes.includes(key),
+      characters: Object.entries(theme.characters).map(([k, c]) => ({ key: k, name: c.name }))
     };
   }
-
-  res.json({ themes, userPremium: user?.account_type !== "free" });
+  res.json({ themes });
 });
 
-// Générer un avatar
-app.post("/api/avatars/generate", authenticateToken, uploadPhoto.single("photo"), async (req, res) => {
+// ============================================================================
+// ROUTES ORIGINALES DU JEU
+// ============================================================================
+
+app.get("/api/health", (req, res) => res.json({ ok: true }));
+
+app.get("/api/build", (req, res) => {
+  res.json({
+    ok: true,
+    buildId: BUILD_ID,
+    node: process.version,
+    manifest: "/sounds/audio-manifest.json"
+  });
+});
+
+app.get("/api/themes", (req, res) => {
+  res.json({
+    ok: true,
+    themes: themeManager.getAllThemes()
+  });
+});
+
+app.get("/api/assets/audio", (req, res) => {
+  res.json({
+    manifestLoaded: !!audioManifestLoaded,
+    files: listSoundFilesFromDir(),
+    indexKeys: Object.keys(soundIndex || {}),
+    mapped: AUDIO
+  });
+});
+
+// ============== DAILY.CO VIDEO ROUTES ==============
+app.post("/api/video/create-room/:roomCode", async (req, res) => {
   try {
-    const { theme, character, customPrompt } = req.body;
-    const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
-
-    if (!user) {
-      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    const { roomCode } = req.params;
+    if (!roomCode) {
+      return res.status(400).json({ ok: false, error: "roomCode required" });
     }
 
-    if (!req.file) {
-      return res.status(400).json({ error: "Photo requise" });
-    }
-
-    const limits = getUserLimits(user);
-
-    // Vérifier limite avatars
-    if (limits.avatars !== Infinity && user.avatars_used >= limits.avatars) {
-      await fsPromises.unlink(req.file.path).catch(() => {});
-      return res.status(403).json({ 
-        error: "Limite d'avatars atteinte",
-        avatarsUsed: user.avatars_used,
-        avatarsLimit: limits.avatars
-      });
-    }
-
-    // Vérifier accès au thème
-    const availableThemes = limits.themes === "all" ? Object.keys(AVATAR_THEMES) : limits.themes;
-    if (!availableThemes.includes(theme)) {
-      await fsPromises.unlink(req.file.path).catch(() => {});
-      return res.status(403).json({ error: "Thème non accessible avec ton abonnement" });
-    }
-
-    const themeConfig = AVATAR_THEMES[theme];
-    const charConfig = themeConfig?.characters?.[character];
-
-    if (!themeConfig || !charConfig) {
-      await fsPromises.unlink(req.file.path).catch(() => {});
-      return res.status(400).json({ error: "Thème ou personnage invalide" });
-    }
-
-    // Vérifier Replicate
-    if (!replicate) {
-      await fsPromises.unlink(req.file.path).catch(() => {});
-      return res.status(500).json({ error: "Service de génération non configuré" });
-    }
-
-    // Lire et convertir l'image en base64
-    const imageBuffer = await fsPromises.readFile(req.file.path);
-    const base64Image = `data:image/jpeg;base64,${imageBuffer.toString("base64")}`;
-
-    // Construire le prompt
-    let finalPrompt;
-    if (customPrompt && limits.customPrompt) {
-      finalPrompt = customPrompt;
-    } else {
-      finalPrompt = `portrait photo of a person transformed into ${charConfig.prompt}, ${themeConfig.background}, high quality, detailed, 4k`;
-    }
-
-    console.log(`🎨 Génération avatar: ${theme}/${character} pour ${user.username}`);
-
-    // Paramètres par défaut ou personnalisés (admin)
-    const instant_id = parseFloat(req.body.instant_id_strength) || 0.8;
-    const prompt_str = parseFloat(req.body.prompt_strength) || 4.5;
-    const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
-    const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
-
-    // Récupérer automatiquement la dernière version du modèle
-    let modelVersion = "fofr/face-to-many"; // Par défaut sans version = latest
-    try {
-      const model = await replicate.models.get("fofr", "face-to-many");
-      if (model.latest_version?.id) {
-        modelVersion = `fofr/face-to-many:${model.latest_version.id}`;
-        console.log(`📦 Utilisation version: ${model.latest_version.id.substring(0, 8)}...`);
-      }
-    } catch (versionError) {
-      console.log(`⚠️ Impossible de récupérer la version, utilisation du fallback`);
-    }
-
-    // Appeler Replicate avec la dernière version
-    const output = await replicate.run(modelVersion, {
-      input: {
-        image: base64Image,
-        style: "3D",
-        prompt: finalPrompt,
-        negative_prompt: "blurry, bad quality, distorted, ugly, deformed",
-        prompt_strength: prompt_str,
-        denoising_strength: denoise_str,
-        instant_id_strength: instant_id,
-        control_depth_strength: depth_str
-      }
-    });
-
-    const resultUrl = Array.isArray(output) ? output[0] : output;
-
-    if (!resultUrl) {
-      throw new Error("Pas d'image générée");
-    }
-
-    // Télécharger et sauvegarder localement
-    let localAvatarUrl = resultUrl;
-    try {
-      const protocol = resultUrl.startsWith("https") ? https : http;
-      const imageData = await new Promise((resolve, reject) => {
-        protocol.get(resultUrl, (response) => {
-          const chunks = [];
-          response.on("data", chunk => chunks.push(chunk));
-          response.on("end", () => resolve(Buffer.concat(chunks)));
-          response.on("error", reject);
-        }).on("error", reject);
-      });
-
-      const avatarFilename = `avatar_${user.id}_${Date.now()}.webp`;
-      const avatarPath = path.join(AVATARS_DIR, avatarFilename);
-
-      await sharp(imageData)
-        .resize(512, 512, { fit: "cover" })
-        .webp({ quality: 90 })
-        .toFile(avatarPath);
-
-      localAvatarUrl = `/avatars/${avatarFilename}`;
-      console.log(`💾 Avatar sauvegardé: ${localAvatarUrl}`);
-    } catch (downloadError) {
-      console.error("⚠️ Erreur sauvegarde locale:", downloadError.message);
-    }
-
-    // Mettre à jour la base de données
-    dbInsert(
-      "INSERT INTO avatars (user_id, theme, character_type, image_url) VALUES (?, ?, ?, ?)",
-      [user.id, theme, character, localAvatarUrl]
-    );
-
-    dbRun(
-      "UPDATE users SET avatars_used = avatars_used + 1, current_avatar = ? WHERE id = ?",
-      [localAvatarUrl, user.id]
-    );
-
-    // Nettoyer le fichier uploadé
-    await fsPromises.unlink(req.file.path).catch(() => {});
+    // A) Anti-concurrence + C) récupération si la room existe déjà (après redéploiement)
+    const videoRoom = await dailyManager.getOrCreateVideoRoom(roomCode);
 
     res.json({
-      success: true,
-      url: localAvatarUrl,
-      theme,
-      themeName: themeConfig.name,
-      character,
-      characterName: charConfig.name,
-      avatarsUsed: user.avatars_used + 1,
-      avatarsLimit: limits.avatars
+      ok: true,
+      roomUrl: videoRoom.roomUrl,
+      roomName: videoRoom.roomName,
+      cached: !!videoRoom.cached,
+      isFreeRoom: !!videoRoom.isFreeRoom
     });
 
   } catch (error) {
-    console.error("❌ Erreur génération avatar:", error);
-    if (req.file) {
-      await fsPromises.unlink(req.file.path).catch(() => {});
-    }
-    res.status(500).json({ error: error.message || "Erreur de génération" });
+    logger.error('[API] Error creating video room:', error);
+    res.status(500).json({ ok: false, error: error.message });
   }
 });
 
-// Liste des avatars de l'utilisateur
-app.get("/api/avatars/my-avatars", authenticateToken, (req, res) => {
+app.get("/api/video/room-info/:roomCode", (req, res) => {
   try {
-    const avatars = dbAll(
-      "SELECT * FROM avatars WHERE user_id = ? ORDER BY created_at DESC",
-      [req.user.id]
-    );
-
-    const user = dbGet("SELECT avatars_used, current_avatar FROM users WHERE id = ?", [req.user.id]);
-    const limits = getUserLimits(user);
-
+    const { roomCode } = req.params;
+    const videoRoom = dailyManager.getVideoRoom(roomCode);
+    
+    if (!videoRoom) {
+      return res.status(404).json({ ok: false, error: "Video room not found" });
+    }
+    
     res.json({
-      avatars,
-      avatarsUsed: user?.avatars_used || 0,
-      avatarsLimit: limits.avatars,
-      currentAvatar: user?.current_avatar
+      ok: true,
+      roomUrl: videoRoom.dailyRoomUrl,
+      roomName: videoRoom.dailyRoomName
     });
-
+    
   } catch (error) {
-    console.error("❌ Erreur liste avatars:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    logger.error('[API] Error getting video room info:', error);
+    res.status(500).json({ ok: false, error: error.message });
   }
 });
 
-// Définir l'avatar actif
-app.post("/api/avatars/set-current", authenticateToken, express.json(), (req, res) => {
+app.delete("/api/video/delete-room/:roomCode", async (req, res) => {
   try {
-    const { avatarUrl } = req.body;
-
-    dbRun("UPDATE users SET current_avatar = ? WHERE id = ?", [avatarUrl, req.user.id]);
-
-    res.json({ success: true, currentAvatar: avatarUrl });
-
+    const { roomCode } = req.params;
+    await dailyManager.deleteVideoRoom(roomCode);
+    
+    res.json({ ok: true });
+    
   } catch (error) {
-    console.error("❌ Erreur set avatar:", error);
-    res.status(500).json({ error: "Erreur serveur" });
+    logger.error('[API] Error deleting video room:', error);
+    res.status(500).json({ ok: false, error: error.message });
   }
 });
+// ===================================================
 
-// Supprimer un avatar
-app.delete("/api/avatars/delete", authenticateToken, express.json(), (req, res) => {
-  try {
-    // Vérifier le type de compte - les comptes gratuits ne peuvent pas supprimer leurs avatars
-    const userInfo = dbGet("SELECT account_type FROM users WHERE id = ?", [req.user.id]);
-    if (userInfo?.account_type === "free") {
-      return res.status(403).json({ 
-        error: "Les comptes gratuits ne peuvent pas supprimer leurs avatars. Passez à un compte premium pour cette fonctionnalité." 
-      });
-    }
-
-    const { avatarId, avatarUrl } = req.body;
-
-    // Trouver l'avatar par ID ou URL
-    let avatar;
-    if (avatarId) {
-      avatar = dbGet("SELECT * FROM avatars WHERE id = ? AND user_id = ?", [avatarId, req.user.id]);
-    } else if (avatarUrl) {
-      avatar = dbGet("SELECT * FROM avatars WHERE image_url = ? AND user_id = ?", [avatarUrl, req.user.id]);
-    }
-
-    if (!avatar) {
-      return res.status(404).json({ error: "Avatar non trouvé" });
-    }
-
-    // Supprimer le fichier physique si c'est un fichier local
-    if (avatar.image_url && avatar.image_url.startsWith("/avatars/")) {
-      const filename = avatar.image_url.replace("/avatars/", "");
-      const filepath = path.join(AVATARS_DIR, filename);
-      if (fs.existsSync(filepath)) {
-        fs.unlinkSync(filepath);
-        console.log(`🗑️ Fichier avatar supprimé: ${filename}`);
-      }
-    }
-
-    // Supprimer de la base de données
-    dbRun("DELETE FROM avatars WHERE id = ?", [avatar.id]);
-
-    // Si c'était l'avatar actif, le réinitialiser
-    const user = dbGet("SELECT current_avatar FROM users WHERE id = ?", [req.user.id]);
-    if (user?.current_avatar === avatar.image_url) {
-      // Récupérer le premier avatar restant ou null
-      const remainingAvatar = dbGet(
-        "SELECT image_url FROM avatars WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
-        [req.user.id]
-      );
-      dbRun("UPDATE users SET current_avatar = ? WHERE id = ?", 
-        [remainingAvatar?.image_url || null, req.user.id]);
-    }
-
-    // Décrémenter le compteur d'avatars utilisés
-    dbRun("UPDATE users SET avatars_used = MAX(0, avatars_used - 1) WHERE id = ?", [req.user.id]);
-
-    saveDatabase();
-
-    console.log(`🗑️ Avatar ${avatar.id} supprimé pour user ${req.user.id}`);
-
-    res.json({ 
-      success: true, 
-      message: "Avatar supprimé",
-      deletedId: avatar.id
-    });
-
-  } catch (error) {
-    console.error("❌ Erreur suppression avatar:", error);
-    res.status(500).json({ error: "Erreur serveur" });
-  }
-});
-
-// ============================================================================
-// SECTION 10: STATS PERSISTENCE (JEU)
-// ============================================================================
-
-function loadStats() {
-  try {
-    if (!fs.existsSync(STATS_FILE)) return {};
-    return JSON.parse(fs.readFileSync(STATS_FILE, "utf-8")) || {};
-  } catch {
-    return {};
-  }
-}
-
-function saveStatsFile(db) {
-  try {
-    fs.writeFileSync(STATS_FILE, JSON.stringify(db, null, 2), "utf-8");
-  } catch (e) {
-    console.error("[stats] save error", e);
-  }
-}
-
-const statsDb = loadStats();
-
-function ensurePlayerStats(name) {
-  if (!statsDb[name]) {
-    statsDb[name] = {
-      gamesPlayed: 0, wins: 0, losses: 0,
-      winsByRole: {}, gamesByRole: {},
-      doctorSaves: 0, doctorKills: 0,
-      radarInspects: 0, radarCorrect: 0,
-      chameleonSwaps: 0, securityRevengeShots: 0,
-      ejectedBySaboteurs: 0, ejectedByVote: 0,
-      captainElected: 0, aiAgentLinks: 0,
-      matchHistory: [],
-      shortestGame: null, longestGame: null,
-      firstEliminated: 0,
-      correctSaboteurVotes: 0, wrongSaboteurVotes: 0, totalVotes: 0,
-      doctorNotSavedOpportunities: 0,
-      doctorKillsOnSaboteurs: 0, doctorKillsOnInnocents: 0,
-      revengeKillsOnSaboteurs: 0, revengeKillsOnInnocents: 0,
-      doctorMissedSaves: 0,
-      mayorTiebreakerOk: 0, mayorTiebreakerKo: 0, mayorTiebreakerTotal: 0
-    };
-  }
-  return statsDb[name];
-}
-
-// ============================================================================
-// SECTION 11: GAME ROOMS
-// ============================================================================
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
 
 const rooms = new Map();
 
-function createPlayer(id, name, socketId) {
-  return {
-    id,
-    name,
-    socketId,
-    status: "alive",
-    role: null,
-    connected: true,
-    ready: false,
-    // Customization
-    avatarId: null,
-    avatarEmoji: "👤",
-    avatarUrl: null,
-    colorId: null,
-    colorHex: "#888888",
-    badgeId: null,
-    badgeEmoji: null,
-    badgeName: null,
-    // Stats de la partie
-    cumulativeStats: {}
-  };
-}
-
-function createRoom(code, hostId, hostName, hostSocketId, options = {}) {
-  return {
-    code,
-    hostId,
-    hostName,
-    players: new Map([[hostId, createPlayer(hostId, hostName, hostSocketId)]]),
-    state: "lobby",
-    phase: "LOBBY",  // FIX: Initialiser à "LOBBY" pour le client
-    phaseData: {},
-    round: 0,
-    day: 0,
-    night: 0,  // Ajout du compteur de nuits
-    votes: new Map(),
-    nightActions: {},
-    gameLog: [],
-    eventLog: [],
-    startedAt: null,
-    endedAt: null,
-    winner: null,
-    aborted: false,  // Ajout flag aborted
-    // Config des rôles par défaut
-    config: {
-      rolesEnabled: {
-        doctor: true,
-        security: true,
-        radar: true,
-        ai_agent: true,
-        engineer: true,
-        chameleon: true
-      },
-      manualRoles: false
-    },
-    // Options
-    theme: options.theme || "default",
-    videoEnabled: options.videoEnabled || false,
-    chatOnly: options.chatOnly || false,
-    // Timers
-    disconnectTimers: new Map(),
-    phaseTimer: null,
-    // Links (AI Agent)
-    links: [],
-    // Daily room
-    dailyRoomName: null,
-    dailyRoomUrl: null
-  };
-}
-
-function getPlayer(room, playerId) {
-  return room.players.get(playerId);
-}
-
-function getAlivePlayers(room) {
-  return Array.from(room.players.values()).filter(p => p.status === "alive");
-}
-
-function getDeadPlayers(room) {
-  return Array.from(room.players.values()).filter(p => p.status === "dead");
-}
-
-function getPlayersByTeam(room, team) {
-  return Array.from(room.players.values()).filter(p => {
-    const role = ROLES[p.role];
-    return role && role.team === team && p.status === "alive";
-  });
-}
-
-// ============================================================================
-// SECTION 12: GAME LOGIC HELPERS
-// ============================================================================
-
-function assignRoles(room) {
-  const players = Array.from(room.players.values());
-  const n = players.length;
-  const numSaboteurs = countSaboteursFor(n);
-
-  // Roles spéciaux pour les astronautes
-  const specialRoles = ["radar", "doctor"];
-  if (n >= 7) specialRoles.push("security");
-  if (n >= 8) specialRoles.push("chameleon");
-  if (n >= 9) specialRoles.push("ai_agent");
-  if (n >= 10) specialRoles.push("engineer");
-
-  // Créer le pool de rôles
-  const rolePool = [];
-  for (let i = 0; i < numSaboteurs; i++) {
-    rolePool.push("saboteur");
-  }
-  for (const role of specialRoles) {
-    rolePool.push(role);
-  }
-  while (rolePool.length < n) {
-    rolePool.push("astronaut");
-  }
-
-  // Mélanger et assigner
-  const shuffled = shuffle(rolePool);
-  players.forEach((p, i) => {
-    p.role = shuffled[i];
-    p.status = "alive";
-  });
-
-  console.log(`[${room.code}] Rôles assignés: ${shuffled.join(", ")}`);
-}
-
-function checkWinCondition(room) {
-  const alive = getAlivePlayers(room);
-  const saboteurs = alive.filter(p => ROLES[p.role]?.team === "saboteurs");
-  const astronauts = alive.filter(p => ROLES[p.role]?.team === "astronauts");
-
-  if (saboteurs.length === 0) {
-    return { winner: "astronauts", reason: "Tous les saboteurs ont été éliminés !" };
-  }
-
-  if (saboteurs.length >= astronauts.length) {
-    return { winner: "saboteurs", reason: "Les saboteurs sont majoritaires !" };
-  }
-
-  return null;
-}
-
-function killPlayer(room, playerId, cause) {
-  const player = getPlayer(room, playerId);
-  if (!player || player.status !== "alive") return false;
-
-  player.status = "dead";
-  logEvent(room, "death", { playerId, playerName: player.name, role: player.role, cause });
-  console.log(`[${room.code}] ${player.name} est mort (${cause})`);
-
-  return true;
-}
-
-function logEvent(room, type, data) {
-  room.eventLog.push({
-    type,
-    data,
-    timestamp: Date.now(),
-    round: room.round,
-    day: room.day
-  });
-}
-
 function emitRoom(room) {
-  const baseRoomData = serializeRoom(room);
-  for (const player of room.players.values()) {
-    if (player.connected && player.socketId) {
-      // Créer un état personnalisé pour ce joueur avec 'you'
-      const personalizedData = {
-        ...baseRoomData,
-        you: {
-          playerId: player.id,
-          name: player.name,
-          status: player.status || "alive",
-          role: player.role || null,
-          roleLabel: player.role || null,
-          isCaptain: !!player.isCaptain,
-          isHost: room.hostId === player.id
-        }
-      };
-      io.to(player.socketId).emit("roomState", personalizedData);
-    }
+  for (const p of room.players.values()) {
+    if (!p.connected || !p.socketId) continue;
+    const sock = io.sockets.sockets.get(p.socketId);
+    if (!sock) continue;
+    sock.emit("roomState", publicRoomStateFor(room, p.playerId));
   }
 }
 
-function serializeRoom(room) {
-  const players = Array.from(room.players.values()).map(p => ({
-    playerId: p.id,  // FIX: Le client attend "playerId" pas "id"
-    name: p.name,
-    status: p.status || "alive",
-    connected: !!p.connected,
-    ready: !!p.ready,
-    isHost: room.hostId === p.id,
-    isCaptain: !!p.isCaptain,
-    // Données de personnalisation
-    avatarId: p.avatarId || null,
-    avatarEmoji: p.avatarEmoji || null,
-    avatarUrl: p.avatarUrl || null,
-    colorId: p.colorId || null,
-    colorHex: p.colorHex || null,
-    badgeId: p.badgeId || null,
-    badgeEmoji: p.badgeEmoji || null,
-    badgeName: p.badgeName || null,
-    // Le rôle n'est visible que si la partie est terminée
-    role: room.state === "ended" ? p.role : undefined,
-    roleLabel: room.state === "ended" && p.role ? p.role : null,
-    cumulativeStats: p.cumulativeStats
-  }));
-
-  // Convertir state en started/ended pour compatibilité client
-  const started = room.state === "playing" || room.state === "ended";
-  const ended = room.state === "ended";
-
-  return {
-    roomCode: room.code,  // FIX: Le client attend "roomCode" pas "code"
-    hostId: room.hostId,
-    hostName: room.hostName,
-    phase: room.phase || "LOBBY",
-    phaseData: room.phaseData || {},
-    started: started,
-    ended: ended,
-    aborted: room.aborted || false,
-    day: room.day || 0,
-    night: room.night || 0,
-    round: room.round,
-    players,
-    themeId: room.theme || "default",  // FIX: Le client attend "themeId" pas "theme"
-    config: room.config || {},
-    videoDisabled: room.chatOnly || !room.videoEnabled,
-    videoEnabled: room.videoEnabled,
-    chatOnly: room.chatOnly,
-    winner: room.winner,
-    dailyRoomUrl: room.dailyRoomUrl,
-    startedAt: room.startedAt,
-    endedAt: room.endedAt,
-    // Champs attendus par le client
-    teams: { astronauts: [], saboteurs: [] },
-    logs: [],
-    privateLines: [],
-    ack: { done: 0, total: 0, pending: [] },
-    you: null  // Sera rempli côté client ou dans une version améliorée
-  };
+function clearTimers(room, playerId) {
+  const t = room.timers.get(playerId);
+  if (!t) return;
+  if (t.notifyTimer) clearTimeout(t.notifyTimer);
+  if (t.removeTimer) clearTimeout(t.removeTimer);
+  room.timers.delete(playerId);
 }
 
+// Prevent duplicate player names in a room (case-insensitive, accents-insensitive, ignoring punctuation/spaces)
+function normalizePlayerName(name) {
+  return String(name || "")
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+}
 
-// ============================================================================
-// SECTION 13: SOCKET.IO - CONNEXION ET ROOMS
-// ============================================================================
+function isNameTaken(room, name, exceptPlayerId = null) {
+  const needle = normalizePlayerName(name);
+  if (!needle) return false;
+  for (const p of room.players.values()) {
+    if (p.status === "left") continue;
+    // V9.3.3: Ignorer aussi les joueurs déconnectés (fermeture navigateur)
+    if (!p.connected) continue;
+    if (exceptPlayerId && p.playerId === exceptPlayerId) continue;
+    if (normalizePlayerName(p.name) === needle) return true;
+  }
+  return false;
+}
+
+function joinRoomCommon(socket, room, playerId, name, playerToken = null, customization = {}) {
+  let p = getPlayer(room, playerId);
+  const now = Date.now();
+  
+  if (!p) {
+    p = {
+      playerId,
+      name: String(name || "Joueur").trim(),
+      socketId: socket.id,
+      connected: true,
+      status: "alive",
+      ready: false,
+      role: null,
+      isCaptain: false,
+      linkedTo: null,
+      linkedName: null,
+      playerToken,           // Token pour reconnexion
+      lastSeenAt: now,       // Dernière activité
+      joinedAt: now,         // Date de première connexion
+      // D9: Données de personnalisation
+      avatarId: customization.avatarId || null,
+      avatarEmoji: customization.avatarEmoji || null,
+      colorId: customization.colorId || null,
+      colorHex: customization.colorHex || null,
+      badgeId: customization.badgeId || null,
+      badgeEmoji: customization.badgeEmoji || null,
+      badgeName: customization.badgeName || null
+    };
+    room.players.set(playerId, p);
+    
+    // Associer token -> playerId si fourni
+    if (playerToken) {
+      room.playerTokens.set(playerToken, playerId);
+    }
+    
+    logger.join(room.code, playerId, p.name, socket.id);
+  } else {
+    // Reconnexion
+    const oldSocketId = p.socketId;
+    if (name != null) p.name = String(name).trim() || p.name;
+    p.socketId = socket.id;
+    p.connected = true;
+    p.lastSeenAt = now;
+    
+    // D9: Mettre à jour les données de personnalisation si fournies
+    if (customization.avatarEmoji) p.avatarEmoji = customization.avatarEmoji;
+    if (customization.avatarId) p.avatarId = customization.avatarId;
+    if (customization.colorHex) p.colorHex = customization.colorHex;
+    if (customization.colorId) p.colorId = customization.colorId;
+    if (customization.badgeEmoji) p.badgeEmoji = customization.badgeEmoji;
+    if (customization.badgeId) p.badgeId = customization.badgeId;
+    if (customization.badgeName) p.badgeName = customization.badgeName;
+    
+    // Mettre à jour le token si fourni
+    if (playerToken && playerToken !== p.playerToken) {
+      // Supprimer l'ancien mapping
+      if (p.playerToken) {
+        room.playerTokens.delete(p.playerToken);
+      }
+      p.playerToken = playerToken;
+      room.playerTokens.set(playerToken, playerId);
+    }
+    
+    logger.reconnect(room.code, playerId, p.name, oldSocketId, socket.id);
+  }
+
+  socket.data.playerId = playerId;
+  socket.data.roomCode = room.code;
+  socket.join(room.code);
+
+  clearTimers(room, playerId);
+  logEvent(room, "reconnected", { playerId });
+  emitRoom(room);
+}
+
+function scheduleDisconnect(room, playerId) {
+  const p = getPlayer(room, playerId);
+  if (!p) return;
+
+  const notifyTimer = setTimeout(() => {
+    const p2 = getPlayer(room, playerId);
+    if (p2 && !p2.connected && p2.status !== "left") {
+      logEvent(room, "player_left", { playerId });
+      emitRoom(room);
+    }
+  }, 2000);
+
+  const removeTimer = setTimeout(() => {
+    const p3 = getPlayer(room, playerId);
+    if (!p3 || p3.connected) return;
+    p3.status = "left";
+    p3.ready = false;
+    logEvent(room, "player_removed", { playerId });
+
+    // if phase waits on this actor, fallback
+    if (room.phase === "DAY_CAPTAIN_TRANSFER" && room.phaseData?.actorId === playerId) {
+      const alive = alivePlayers(room);
+      if (alive.length > 0) {
+        const pick = alive[randInt(0, alive.length - 1)];
+        for (const pp of room.players.values()) pp.isCaptain = false;
+        pick.isCaptain = true;
+        logEvent(room, "captain_transferred_fallback", { from: playerId, to: pick.playerId });
+      }
+      setPhase(room, "DAY_VOTE", { votes: {} });
+    }
+    if (room.phase === "DAY_TIEBREAK" && room.phaseData?.actorId === playerId) {
+      const opts = room.phaseData.options || alivePlayers(room).map(pp => pp.playerId);
+      const pick = opts[randInt(0, opts.length - 1)];
+      executeEjection(room, pick, "tiebreak_fallback");
+    }
+    if (room.phase === "REVENGE" && room.phaseData?.actorId === playerId) {
+      const opts = alivePlayers(room).map(pp => pp.playerId);
+      if (opts.length > 0) {
+        const pick = opts[randInt(0, opts.length - 1)];
+        killPlayer(room, pick, "revenge_fallback");
+      }
+      afterRevenge(room, room.phaseData.context);
+    }
+
+    // recalc ack (if fewer required now)
+    handlePhaseMaybeComplete(room);
+
+    ensureMinPlayers(room);
+    emitRoom(room);
+  }, 30000);
+
+  room.timers.set(playerId, { notifyTimer, removeTimer });
+}
+
+function handlePhaseMaybeComplete(room) {
+  const required = requiredPlayersForPhase(room);
+  if (room.phaseAck.size >= required.length) handlePhaseCompletion(room);
+}
+
+function handlePhaseCompletion(room) {
+  switch (room.phase) {
+    case "MANUAL_ROLE_PICK":
+      // if all picked, go reveal
+      {
+        const alive = alivePlayers(room).map(p => p.playerId);
+        const picks = room.phaseData.picks || {};
+        const ok = alive.every(id => !!picks[id]);
+        if (ok) setPhase(room, "ROLE_REVEAL", {});
+      }
+      break;
+
+    case "ROLE_REVEAL":
+      // ROLE_REVEAL happens once at game start, and may happen again after Caméléon (re-check). Never re-run captain election.
+      if (!room.captainElected) {
+        beginCaptainElection(room);
+      } else {
+        // Resume flow (usually night) after a global role re-check.
+        if (room.phaseData?.resume === "night") {
+          if (room.phaseData?.fromChameleon) room.afterChameleonReveal = true;
+          nextNightPhase(room);
+        }
+      }
+      break;
+
+    case "CAPTAIN_CANDIDACY":
+      finishCaptainCandidacy(room);
+      break;
+
+    case "CAPTAIN_VOTE":
+      finishCaptainVote(room);
+      break;
+
+    case "NIGHT_START":
+      nextNightPhase(room);
+      break;
+
+    case "NIGHT_AI_EXCHANGE":
+      nextNightPhase(room);
+      break;
+
+    case "NIGHT_RADAR":
+      if (room.nightData?.radarDone) nextNightPhase(room);
+      break;
+
+    case "NIGHT_RESULTS":
+      beginDay(room, room.phaseData?.anyDeaths);
+      break;
+
+    case "DAY_WAKE":
+      proceedDayAfterWake(room);
+      break;
+
+    case "DAY_RESULTS":
+      beginNight(room);
+      break;
+
+    default:
+      break;
+  }
+}
 
 io.on("connection", (socket) => {
-  console.log(`🔌 Nouvelle connexion: ${socket.id}`);
+  socket.emit("serverHello", { ok: true });
 
-  // Créer une room
-  socket.on("createRoom", async (data, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+    // Rate limiting
+    if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
+      return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
+    }
+    
     try {
-      const { playerName, theme, videoEnabled, token, playerId: clientPlayerId } = data;
-
-      if (!playerName || playerName.length < 2) {
-        return cb?.({ ok: false, error: "Nom invalide" });
-      }
-
-      // Vérifier auth si token fourni
-      let user = null;
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET);
-          user = dbGet("SELECT * FROM users WHERE id = ?", [decoded.id]);
-        } catch (e) {}
-      }
-
-      // Si vidéo demandée, vérifier les droits
-      if (videoEnabled && !data.chatOnly) {
-        if (!user) {
-          return cb?.({ ok: false, error: "Compte requis pour le mode vidéo" });
-        }
-        if (user.email_verified !== 1) {
-          return cb?.({ ok: false, error: "Vérifie ton email pour le mode vidéo" });
-        }
-        const limits = getUserLimits(user);
-        if (limits.videoCredits !== Infinity && user.video_credits <= 0) {
-          return cb?.({ ok: false, error: "Plus de crédits vidéo" });
-        }
-      }
-
       const code = genRoomCode(rooms);
-      // FIX: Utiliser le playerId du client s'il est fourni, sinon en générer un
-      const playerId = clientPlayerId || crypto.randomBytes(8).toString("hex");
-
-      const room = createRoom(code, playerId, playerName, socket.id, {
-        theme: theme || "default",
-        videoEnabled: videoEnabled || false,
-        chatOnly: data.chatOnly || false
-      });
-
-      // Appliquer les données de personnalisation
-      const player = room.players.get(playerId);
-      if (player) {
-        if (data.avatarId) player.avatarId = data.avatarId;
-        if (data.avatarEmoji) player.avatarEmoji = data.avatarEmoji;
-        if (data.colorId) player.colorId = data.colorId;
-        if (data.colorHex) player.colorHex = data.colorHex;
-        if (data.badgeId) player.badgeId = data.badgeId;
-        if (data.badgeEmoji) player.badgeEmoji = data.badgeEmoji;
-        if (data.badgeName) player.badgeName = data.badgeName;
-        if (user && user.current_avatar) {
-          player.avatarUrl = user.current_avatar;
-        }
+      const room = newRoom(code, playerId);
+      
+      // Appliquer le thème choisi sur la page d'accueil
+      if (themeId && themeManager.getTheme(themeId)) {
+        room.themeId = themeId;
+        logger.info("room_theme_set", { roomCode: code, themeId });
       }
-
+      
       rooms.set(code, room);
-
-      socket.data.roomCode = code;
-      socket.data.playerId = playerId;
-      socket.join(code);
-
-      console.log(`🏠 Room ${code} créée par ${playerName}`);
-
-      // FIX: Émettre roomState pour que le client passe au lobby
-      emitRoom(room);
-
-      cb?.({
-        ok: true,
-        roomCode: code,
-        playerId,
-        room: serializeRoom(room)
-      });
-
-    } catch (error) {
-      console.error("❌ Erreur createRoom:", error);
-      cb?.({ ok: false, error: "Erreur serveur" });
+      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId });
+      
+      // D9: Préparer les données de personnalisation
+      const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+      joinRoomCommon(socket, room, playerId, name, playerToken, customization);
+      cb && cb({ ok: true, roomCode: code, host: true });
+    } catch (e) {
+      logger.error("createRoom_failed", { error: e.message, playerId });
+      cb && cb({ ok: false, error: "createRoom failed" });
     }
   });
 
-  // Rejoindre une room
-  socket.on("joinRoom", (data, cb) => {
-    try {
-      const { roomCode, playerName, token, playerId: clientPlayerId } = data;
-
-      if (!playerName || playerName.length < 2) {
-        return cb?.({ ok: false, error: "Nom invalide" });
-      }
-
-      const room = rooms.get(roomCode);
-      if (!room) {
-        return cb?.({ ok: false, error: "Room introuvable" });
-      }
-
-      if (room.state !== "lobby") {
-        return cb?.({ ok: false, error: "Partie déjà en cours" });
-      }
-
-      if (room.players.size >= 15) {
-        return cb?.({ ok: false, error: "Room pleine (max 15)" });
-      }
-
-      // Vérifier si le nom est déjà pris
-      for (const p of room.players.values()) {
-        if (p.name.toLowerCase() === playerName.toLowerCase()) {
-          return cb?.({ ok: false, error: "Ce nom est déjà pris" });
-        }
-      }
-
-      // Vérifier auth
-      let user = null;
-      if (token) {
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET);
-          user = dbGet("SELECT * FROM users WHERE id = ?", [decoded.id]);
-        } catch (e) {}
-      }
-
-      // FIX: Utiliser le playerId du client s'il est fourni
-      const playerId = clientPlayerId || crypto.randomBytes(8).toString("hex");
-      const player = createPlayer(playerId, playerName, socket.id);
-
-      // Appliquer les données de personnalisation
-      if (data.avatarId) player.avatarId = data.avatarId;
-      if (data.avatarEmoji) player.avatarEmoji = data.avatarEmoji;
-      if (data.colorId) player.colorId = data.colorId;
-      if (data.colorHex) player.colorHex = data.colorHex;
-      if (data.badgeId) player.badgeId = data.badgeId;
-      if (data.badgeEmoji) player.badgeEmoji = data.badgeEmoji;
-      if (data.badgeName) player.badgeName = data.badgeName;
-      if (user && user.current_avatar) {
-        player.avatarUrl = user.current_avatar;
-      }
-
-      room.players.set(playerId, player);
-
-      socket.data.roomCode = roomCode;
-      socket.data.playerId = playerId;
-      socket.join(roomCode);
-
-      console.log(`👤 ${playerName} a rejoint la room ${roomCode}`);
-
-      emitRoom(room);
-
-      cb?.({
-        ok: true,
-        playerId,
-        room: serializeRoom(room)
-      });
-
-    } catch (error) {
-      console.error("❌ Erreur joinRoom:", error);
-      cb?.({ ok: false, error: "Erreur serveur" });
+  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+    // Rate limiting
+    if (!rateLimiter.check(socket.id, "joinRoom", playerId)) {
+      return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
     }
+    
+    // D9: Préparer les données de personnalisation
+    const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+    
+    const code = String(roomCode || "").trim();
+    const room = rooms.get(code);
+    if (!room) {
+      logger.reject(code, "room_not_found", { playerId });
+      return cb && cb({ ok: false, error: "Room introuvable" });
+    }
+    
+    // V9.3.6: PRIORITÉ 1 - Reconnexion par nom déconnecté
+    // Si un joueur avec ce nom existe et est déconnecté, on le réutilise immédiatement
+    // Cela évite les conflits de token et simplifie la reconnexion
+    const playerByName = Array.from(room.players.values()).find(p => 
+      normalizePlayerName(p.name) === normalizePlayerName(name) && 
+      !p.connected &&
+      p.status !== "left"
+    );
+    
+    if (playerByName) {
+      // Reconnexion par nom : réutiliser l'ancien playerId
+      logger.info("reconnect_by_name", { roomCode: code, oldPlayerId: playerByName.playerId, newPlayerId: playerId, name });
+      joinRoomCommon(socket, room, playerByName.playerId, name, playerToken, customization);
+      cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerByName.playerId });
+      return;
+    }
+    
+    // V9.3.7: Empêcher les nouveaux joueurs de rejoindre une partie déjà commencée
+    // Exception: Les joueurs existants peuvent se reconnecter
+    const existingPlayer = getPlayer(room, playerId);
+    
+    // V9.3.7: Si partie commencée ET que c'est un nouveau joueur (pas dans la room)
+    if (room.started && !existingPlayer) {
+      logger.reject(code, "game_started", { playerId, name });
+      return cb && cb({ ok: false, error: "Cette partie a déjà commencé. Vous ne pouvez plus rejoindre." });
+    }
+    
+    // Vérifier si le nom est pris par un autre joueur CONNECTÉ
+    if (isNameTaken(room, name, playerId)) {
+      logger.reject(code, "name_taken", { playerId, name });
+      return cb && cb({ ok: false, error: "Ce nom est déjà utilisé dans cette mission." });
+    }
+    
+    joinRoomCommon(socket, room, playerId, name, playerToken, customization);
+    cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
 
-  // Marquer prêt
-  socket.on("setReady", (data, cb) => {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return cb?.({ ok: false });
-
-    const player = getPlayer(room, socket.data.playerId);
-    if (!player) return cb?.({ ok: false });
-
-    player.ready = data.ready !== false;
+  socket.on("reconnectRoom", ({ playerId, name, roomCode, playerToken }, cb) => {
+    const code = String(roomCode || "").trim();
+    const room = rooms.get(code);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    const p = getPlayer(room, playerId);
+    if (!p) return cb && cb({ ok: false, error: "Joueur introuvable dans la room" });
+    joinRoomCommon(socket, room, playerId, name || p.name, playerToken);
+    cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
+  });
+  
+  // D11 V4: Mettre à jour la personnalisation d'un joueur (avatar, couleur, badge)
+  socket.on("updateCustomization", ({ playerId, roomCode, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+    const code = String(roomCode || "").trim();
+    const room = rooms.get(code);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    
+    const p = getPlayer(room, playerId);
+    if (!p) return cb && cb({ ok: false, error: "Joueur introuvable" });
+    
+    // Mettre à jour les champs de personnalisation
+    if (avatarId !== undefined) p.avatarId = avatarId;
+    if (avatarEmoji !== undefined) p.avatarEmoji = avatarEmoji;
+    if (colorId !== undefined) p.colorId = colorId;
+    if (colorHex !== undefined) p.colorHex = colorHex;
+    if (badgeId !== undefined) p.badgeId = badgeId;
+    if (badgeEmoji !== undefined) p.badgeEmoji = badgeEmoji;
+    if (badgeName !== undefined) p.badgeName = badgeName;
+    
+    logger.info("customization_updated", { roomCode: code, playerId, avatarEmoji, colorHex });
+    
+    // Diffuser le nouvel état à tous les joueurs
     emitRoom(room);
-    cb?.({ ok: true });
+    cb && cb({ ok: true });
   });
-
-  // Mettre à jour la configuration des rôles (hôte uniquement)
-  socket.on("updateConfig", (data, cb) => {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return cb?.({ ok: false, error: "Room introuvable" });
-
-    // Seul l'hôte peut modifier la config
-    if (socket.data.playerId !== room.hostId) {
-      return cb?.({ ok: false, error: "Seul l'hôte peut modifier la configuration" });
+  
+  // Heartbeat pour maintenir la session vivante
+  socket.on("heartbeat", ({ playerId, roomCode }, cb) => {
+    if (!rateLimiter.check(socket.id, "heartbeat", playerId)) {
+      return cb && cb({ ok: false });
     }
-
-    // Ne pas modifier si la partie a commencé
-    if (room.state !== "lobby") {
-      return cb?.({ ok: false, error: "Impossible de modifier en cours de partie" });
-    }
-
-    // Mettre à jour la config
-    if (data.config) {
-      room.config = {
-        ...room.config,
-        ...data.config,
-        rolesEnabled: {
-          ...room.config.rolesEnabled,
-          ...(data.config.rolesEnabled || {})
-        }
-      };
-    }
-
-    console.log(`⚙️ Config mise à jour pour room ${room.code}:`, room.config);
-    emitRoom(room);
-    cb?.({ ok: true });
-  });
-
-  // Lancer la partie
-  socket.on("startGame", (data, cb) => {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return cb?.({ ok: false, error: "Room introuvable" });
-
-    if (socket.data.playerId !== room.hostId) {
-      return cb?.({ ok: false, error: "Seul l'hôte peut lancer" });
-    }
-
-    if (room.players.size < 4) {
-      return cb?.({ ok: false, error: "Minimum 4 joueurs" });
-    }
-
-    // Vérifier que tout le monde est prêt
-    for (const p of room.players.values()) {
-      if (!p.ready && p.id !== room.hostId) {
-        return cb?.({ ok: false, error: "Tous les joueurs doivent être prêts" });
+    
+    const room = rooms.get(roomCode);
+    if (room) {
+      const p = getPlayer(room, playerId);
+      if (p) {
+        p.lastSeenAt = Date.now();
+        logger.heartbeat(playerId, roomCode, p.lastSeenAt);
       }
     }
-
-    // Démarrer
-    room.state = "playing";
-    room.round = 1;
-    room.day = 1;
-    room.startedAt = Date.now();
-
-    assignRoles(room);
-
-    // Commencer par la phase de jour
-    startDayPhase(room);
-
-    console.log(`🎮 Partie démarrée dans ${room.code} avec ${room.players.size} joueurs`);
-
-    emitRoom(room);
-    cb?.({ ok: true });
+    cb && cb({ ok: true });
   });
 
-  // Chat
-  socket.on("chatMessage", (data, cb) => {
+  socket.on("setReady", ({ ready }, cb) => {
     const room = rooms.get(socket.data.roomCode);
     if (!room) return;
-
-    const player = getPlayer(room, socket.data.playerId);
-    if (!player) return;
-
-    // Émettre le message à tous les joueurs de la room
-    io.to(room.code).emit("chatMessage", {
-      playerId: player.id,
-      playerName: player.name,
-      message: data.message,
-      timestamp: Date.now()
-    });
-
-    cb?.({ ok: true });
-  });
-
-  // Vote
-  socket.on("vote", (data, cb) => {
-    const room = rooms.get(socket.data.roomCode);
-    if (!room) return cb?.({ ok: false });
-
-    const player = getPlayer(room, socket.data.playerId);
-    if (!player || player.status !== "alive") return cb?.({ ok: false });
-
-    if (room.phase !== "DAY_VOTE") {
-      return cb?.({ ok: false, error: "Ce n'est pas le moment de voter" });
-    }
-
-    const targetId = data.targetId; // peut être null pour "skip"
-    room.votes.set(player.id, targetId);
-
-    // Vérifier si tout le monde a voté
-    const alive = getAlivePlayers(room);
-    const votedCount = Array.from(room.votes.keys()).filter(id => {
-      const p = getPlayer(room, id);
-      return p && p.status === "alive";
-    }).length;
-
-    if (votedCount >= alive.length) {
-      resolveVotes(room);
-    }
-
+    const p = getPlayer(room, socket.data.playerId);
+    if (!p || p.status !== "alive") return;
+    p.ready = !!ready;
     emitRoom(room);
-    cb?.({ ok: true });
+    cb && cb({ ok: true });
   });
 
-  // Action de nuit
-  socket.on("nightAction", (data, cb) => {
+  socket.on("updateConfig", ({ config }, cb) => {
     const room = rooms.get(socket.data.roomCode);
-    if (!room) return cb?.({ ok: false });
-
-    const player = getPlayer(room, socket.data.playerId);
-    if (!player || player.status !== "alive") return cb?.({ ok: false });
-
-    // Enregistrer l'action
-    room.nightActions[player.id] = {
-      role: player.role,
-      targetId: data.targetId,
-      action: data.action
+    if (!room) return;
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok:false, error:"Only host" });
+    if (room.started) return cb && cb({ ok:false, error:"Déjà commencé" });
+    room.config = {
+      rolesEnabled: {
+        doctor: !!config?.rolesEnabled?.doctor,
+        security: !!config?.rolesEnabled?.security,
+        radar: !!config?.rolesEnabled?.radar,
+        ai_agent: !!config?.rolesEnabled?.ai_agent,
+        engineer: !!config?.rolesEnabled?.engineer,
+        chameleon: !!config?.rolesEnabled?.chameleon
+      },
+      manualRoles: !!config?.manualRoles
     };
+    emitRoom(room);
+    cb && cb({ ok:true });
+  });
+  
+  // Sélection de thème (Phase 3 - uniquement l'hôte avant le start)
+  socket.on("setTheme", ({ themeId }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut choisir le thème" });
+    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
+    
+    const theme = themeManager.getTheme(themeId);
+    if (!theme) return cb && cb({ ok: false, error: "Thème introuvable" });
+    
+    room.themeId = themeId;
+    logger.info("theme_selected", { roomCode: room.code, themeId, hostId: socket.data.playerId });
+    emitRoom(room);
+    cb && cb({ ok: true, themeId });
+  });
 
-    // Vérifier si toutes les actions nocturnes sont faites
-    const nightRoles = getAlivePlayers(room).filter(p => ROLES[p.role]?.wakeAtNight);
-    const actionsCount = Object.keys(room.nightActions).length;
+  // V9.3.1: Toggle video disabled option
+  socket.on("setVideoDisabled", ({ videoDisabled }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut modifier cette option" });
+    if (room.started) return cb && cb({ ok: false, error: "Partie déjà commencée" });
+    
+    room.videoDisabled = Boolean(videoDisabled);
+    logger.info("video_disabled_changed", { roomCode: room.code, videoDisabled: room.videoDisabled, hostId: socket.data.playerId });
+    emitRoom(room);
+    cb && cb({ ok: true, videoDisabled: room.videoDisabled });
+  });
+  
+  // Force advance (Phase 1 - S4 Mode hôte amélioré)
+  socket.on("forceAdvance", (_, cb) => {
+    if (!rateLimiter.check(socket.data.playerId, "forceAdvance", socket.data.playerId)) {
+      return cb && cb({ ok: false, error: "Trop de tentatives" });
+    }
+    
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok: false, error: "Seul l'hôte peut forcer" });
+    if (!room.started || room.ended) return cb && cb({ ok: false, error: "Partie non active" });
+    
+    // Vérifier qu'un délai minimum est écoulé (20s)
+    const phaseElapsed = Date.now() - room.phaseStartTime;
+    if (phaseElapsed < 20000) {
+      return cb && cb({ ok: false, error: "Attendez au moins 20 secondes" });
+    }
+    
+    // Identifier les joueurs en attente
+    const required = requiredPlayersForPhase(room);
+    const pending = required.filter(pid => !room.phaseAck.has(pid));
+    
+    // Logger l'événement
+    logger.forceAdvance(room.code, room.phase, socket.data.playerId, pending);
+    
+    // Auto-ack les joueurs manquants
+    for (const pid of pending) {
+      room.phaseAck.add(pid);
+    }
+    
+    // Vérifier si c'est maintenant complété
+    if (room.phaseAck.size >= required.length) {
+      handlePhaseCompletion(room);
+    }
+    
+    emitRoom(room);
+    cb && cb({ ok: true });
+  });
 
-    if (actionsCount >= nightRoles.length) {
-      resolveNightActions(room);
+  socket.on("startGame", (_, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    if (room.hostPlayerId !== socket.data.playerId) return cb && cb({ ok:false, error:"Only host" });
+    if (room.players.size < 4) return cb && cb({ ok:false, error:"Min 4 joueurs" });
+    if (alivePlayers(room).some(p => !p.ready)) return cb && cb({ ok:false, error:"Tous doivent être prêts" });
+    console.log(`[${room.code}] game_start by=${getPlayer(room, socket.data.playerId)?.name || socket.data.playerId}`);
+    startGame(room);
+    emitRoom(room);
+    cb && cb({ ok:true });
+  });
+
+  socket.on("phaseAck", (_, cb) => {
+    if (!rateLimiter.check(socket.id, "ack", socket.data.playerId)) {
+      return cb && cb({ ok: false, error: "Trop rapide" });
+    }
+    
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    const playerId = socket.data.playerId;
+    const p = getPlayer(room, playerId);
+    if (!p || p.status !== "alive") return;
+    
+    // Mettre à jour lastSeenAt
+    p.lastSeenAt = Date.now();
+
+    const done = ack(room, playerId);
+    
+    // Log avec progression
+    const required = requiredPlayersForPhase(room);
+    logger.phaseAck(room.code, room.phase, playerId, `${room.phaseAck.size}/${required.length}`);
+    
+    emitRoom(room);
+    if (done) {
+      handlePhaseCompletion(room);
+      emitRoom(room);
+    }
+    cb && cb({ ok:true });
+  });
+
+  socket.on("phaseAction", (payload, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    const playerId = socket.data.playerId;
+    const p = getPlayer(room, playerId);
+    if (!p) return;
+
+    const phase = room.phase;
+
+    const isActor = (actorId) => actorId && actorId === playerId;
+
+    // --- manual role pick ---
+    if (phase === "MANUAL_ROLE_PICK") {
+      if (p.status !== "alive") return;
+      const roleKey = payload?.roleKey;
+      const remaining = room.phaseData.remaining || {};
+      const picks = room.phaseData.picks || {};
+      if (!roleKey || !remaining[roleKey] || remaining[roleKey] <= 0) return cb && cb({ ok:false, error:"Rôle épuisé" });
+
+      // return previous pick
+      if (picks[playerId]) {
+        remaining[picks[playerId]] = (remaining[picks[playerId]] || 0) + 1;
+      }
+      picks[playerId] = roleKey;
+      remaining[roleKey] -= 1;
+
+      p.role = roleKey;
+
+      const done = ack(room, playerId);
+      emitRoom(room);
+      if (done) {
+        handlePhaseCompletion(room);
+        emitRoom(room);
+      }
+      cb && cb({ ok:true });
+      return;
     }
 
-    cb?.({ ok: true });
+    // --- captain candidacy ---
+    if (phase === "CAPTAIN_CANDIDACY") {
+      if (p.status !== "alive") return;
+      room.phaseData.candidacies[playerId] = !!payload?.candidacy;
+      const done = ack(room, playerId);
+      emitRoom(room);
+      if (done) { handlePhaseCompletion(room); emitRoom(room); }
+      cb && cb({ ok:true });
+      return;
+    }
+
+    // --- captain vote ---
+    if (phase === "CAPTAIN_VOTE") {
+      if (p.status !== "alive") return;
+      const target = payload?.vote;
+      const candidates = room.phaseData.candidates || [];
+      if (!candidates.includes(target)) return;
+      room.phaseData.votes[playerId] = target;
+      const done = ack(room, playerId);
+      emitRoom(room);
+      if (done) { handlePhaseCompletion(room); emitRoom(room); }
+      cb && cb({ ok:true });
+      return;
+    }
+
+    // --- night: chameleon ---
+    if (phase === "NIGHT_CHAMELEON") {
+      if (!isActor(room.phaseData.actorId) || p.status !== "alive") return;
+      if (room.night !== 1 || room.chameleonUsed) {
+        room.chameleonUsed = true;
+        nextNightPhase(room);
+        emitRoom(room);
+        return cb && cb({ ok:true });
+      }
+      const targetId = payload?.targetId;
+      const tP = room.players.get(targetId);
+      if (!tP || tP.status !== "alive") return;
+      // swap roles
+      const byOldRole = p.role;
+      const targetOldRole = tP.role;
+      const a = p.role;
+      p.role = tP.role;
+      tP.role = a;
+
+      room.chameleonUsed = true;
+      logEvent(room, "chameleon_swap", { by: playerId, targetId, byOldRole, targetOldRole });
+      console.log(`[${room.code}] chameleon_swap by=${p.name} target=${tP.name}`);
+      ensurePlayerStats(p.name).chameleonSwaps += 1;
+      saveStats(statsDb);
+
+      // everybody re-check role
+      setPhase(room, "ROLE_REVEAL", { notice: "Les rôles ont pu changer. Revérifiez.", resume: "night", fromChameleon: true });
+      emitRoom(room);
+      return cb && cb({ ok:true });
+    }
+
+    // --- night: ai agent ---
+    if (phase === "NIGHT_AI_AGENT") {
+      if (!isActor(room.phaseData.actorId) || p.status !== "alive") return;
+
+      // Only night 1. After that, just skip.
+      if (room.night !== 1) { room.nightData.aiLinked = true; nextNightPhase(room); emitRoom(room); return cb && cb({ ok:true }); }
+
+      if (payload?.skip) {
+        room.nightData.aiLinked = true;
+        logEvent(room, "ai_link_skip", { by: playerId });
+        console.log(`[${room.code}] ai_link_skip by=${p.name}`);
+        nextNightPhase(room);
+        emitRoom(room);
+        return cb && cb({ ok:true });
+      }
+
+      const targetId = payload?.targetId || payload?.partnerId;
+      if (!targetId || targetId === playerId) return cb && cb({ ok:false, error:"Choisis un autre joueur." });
+      const tP = room.players.get(targetId);
+      if (!tP || tP.status !== "alive") return cb && cb({ ok:false, error:"Cible invalide." });
+
+      // Link the Agent IA with the chosen player (persistent banner for both).
+      p.linkedTo = tP.playerId; p.linkedName = tP.name;
+      tP.linkedTo = p.playerId; tP.linkedName = p.name;
+
+      room.nightData.aiLinked = true;
+      logEvent(room, "ai_link", { by: playerId, targetId });
+      console.log(`[${room.code}] ai_link by=${p.name} target=${tP.name}`);
+
+      // ✅ V9: phase d'échange privé IA + lié (les 2 doivent valider pour continuer)
+      setPhase(room, "NIGHT_AI_EXCHANGE", { iaId: p.playerId, partnerId: tP.playerId });
+      emitRoom(room);
+      return cb && cb({ ok:true });
+}
+
+    // --- night: radar ---
+    if (phase === "NIGHT_RADAR") {
+      if (!isActor(room.phaseData.actorId) || p.status !== "alive") return;
+      const targetId = payload?.targetId;
+      const tP = room.players.get(targetId);
+      if (!tP || tP.status !== "alive") return;
+
+      const role = tP.role || "astronaut";
+      room.phaseData.lastRadarResult = { viewerId: playerId, targetId, roleKey: role, text: `🔍 Radar: ${tP.name} = ${getRoleLabel(role, room)}` };
+      room.phaseData.selectionDone = true;
+
+      logEvent(room, "radar_inspect", { by: playerId, targetId, role });
+      console.log(`[${room.code}] radar_inspect by=${p.name} target=${tP.name} role=${role}`);
+
+      const st = ensurePlayerStats(p.name);
+      st.radarInspects += 1;
+      if (role === "saboteur") st.radarCorrect += 1;
+      saveStats(statsDb);
+
+      // Important: stay on NIGHT_RADAR so the Radar can see the result, then ACK to continue.
+      room.nightData.radarDone = true;
+      emitRoom(room);
+      return cb && cb({ ok:true });
+    }
+
+    // --- night: saboteurs (unanimity) --- (unanimity) ---
+    if (phase === "NIGHT_SABOTEURS") {
+      if (p.status !== "alive" || p.role !== "saboteur") return;
+      const targetId = payload?.targetId;
+      const tP = room.players.get(targetId);
+      if (!tP || tP.status !== "alive") return;
+      if (targetId === playerId) return cb && cb({ ok:false, error:"Cible invalide." });
+      if (tP.role === "saboteur") return cb && cb({ ok:false, error:"Les saboteurs ne peuvent pas viser un saboteur." });
+      room.phaseData.votes[playerId] = targetId;
+
+      const sabIds = (room.phaseData.actorIds || []).filter(id => room.players.get(id)?.status === "alive");
+      const allVoted = sabIds.every(id => !!room.phaseData.votes[id]);
+      if (!allVoted) { emitRoom(room); return cb && cb({ ok:true, unanimous:false }); }
+
+      const chosen = uniq(sabIds.map(id => room.phaseData.votes[id]));
+      if (chosen.length !== 1) { emitRoom(room); return cb && cb({ ok:true, unanimous:false }); }
+
+      room.nightData.saboteurTarget = chosen[0];
+      room.nightData.saboteurDone = true;
+      nextNightPhase(room);
+      emitRoom(room);
+      return cb && cb({ ok:true, unanimous:true });
+    }
+
+    // --- night: doctor ---
+    if (phase === "NIGHT_DOCTOR") {
+      if (!isActor(room.phaseData.actorId) || p.status !== "alive") return;
+      const action = payload?.action;
+      const targetId = payload?.targetId || null;
+
+      if (action === "save") {
+        if (room.doctorLifeUsed) return cb && cb({ ok:false, error:"Potion de vie déjà utilisée." });
+        const saveTarget = room.nightData?.saboteurTarget || null;
+        room.nightData.doctorSave = saveTarget;
+        room.doctorLifeUsed = true;
+        logEvent(room, "doctor_save", { by: playerId, targetId: saveTarget, targetRole: room.players.get(saveTarget)?.role || null });
+        console.log(`[${room.code}] doctor_save by=${p.name} target=${room.players.get(saveTarget)?.name || "none"}`);
+
+        const st = ensurePlayerStats(p.name);
+        st.doctorSaves += 1;
+        saveStats(statsDb);
+      } else if (action === "kill") {
+        if (room.doctorDeathUsed) return cb && cb({ ok:false, error:"Potion de mort déjà utilisée." });
+        if (!targetId) return cb && cb({ ok:false, error:"Cible manquante." });
+        const tP = room.players.get(targetId);
+        if (!tP || tP.status !== "alive") return cb && cb({ ok:false, error:"Cible invalide." });
+        room.nightData.doctorKill = targetId;
+        room.doctorDeathUsed = true;
+        logEvent(room, "doctor_kill", { by: playerId, targetId, targetRole: tP.role || null });
+        console.log(`[${room.code}] doctor_kill by=${p.name} target=${tP.name}`);
+
+        const st = ensurePlayerStats(p.name);
+        st.doctorKills += 1;
+        saveStats(statsDb);
+      } else if (action === "none") {
+        logEvent(room, "doctor_none", { by: playerId });
+        console.log(`[${room.code}] doctor_none by=${p.name}`);
+      } else {
+        return cb && cb({ ok:false, error:"Action invalide." });
+      }
+
+      room.nightData.doctorDone = true;
+      nextNightPhase(room);
+      emitRoom(room);
+      return cb && cb({ ok:true });
+    }
+
+    // --- day: captain transfer ---
+    if (phase === "DAY_CAPTAIN_TRANSFER") {
+      if (!isActor(room.phaseData.actorId)) return;
+      const chosenId = payload?.chosenId;
+      finishCaptainTransfer(room, chosenId);
+      emitRoom(room);
+      return cb && cb({ ok:true });
+    }
+
+    // --- day: vote ---
+    if (phase === "DAY_VOTE") {
+      if (p.status !== "alive") return;
+      const target = payload?.vote;
+      const tP = room.players.get(target);
+      if (!tP || tP.status !== "alive") return;
+      room.phaseData.votes[playerId] = target;
+
+      const done = ack(room, playerId);
+      emitRoom(room);
+      if (done) { finishDayVote(room); emitRoom(room); }
+      return cb && cb({ ok:true });
+    }
+
+    // --- day: tiebreak ---
+    if (phase === "DAY_TIEBREAK") {
+      if (!isActor(room.phaseData.actorId)) return;
+      const pick = payload?.pick;
+      const opts = room.phaseData.options || [];
+      if (!opts.includes(pick)) return;
+      // V24: Log du tiebreak pour awards
+      const pickedPlayer = room.players.get(pick);
+      const pickedRole = pickedPlayer?.role || null;
+      const pickedTeam = ROLES[pickedRole]?.team || "astronauts";
+      logEvent(room, "captain_tiebreak", { captainId: room.phaseData.actorId, targetId: pick, targetRole: pickedRole, targetTeam: pickedTeam });
+      executeEjection(room, pick, "tiebreak");
+      emitRoom(room);
+      return cb && cb({ ok:true });
+    }
+
+    
+// --- revenge ---
+if (phase === "REVENGE") {
+  if (playerId !== room.phaseData.actorId) return;
+  const target = payload?.targetId;
+  const tP = room.players.get(target);
+  if (!tP || tP.status !== "alive") return;
+
+  const extraDead = [];
+  if (killPlayer(room, target, "revenge")) extraDead.push(target);
+  logEvent(room, "revenge_shot", { by: playerId, targetId: target, targetRole: tP.role || null });
+  console.log(`[${room.code}] revenge_shot by=${p.name} target=${tP.name}`);
+  ensurePlayerStats(p.name).securityRevengeShots += 1;
+  saveStats(statsDb);
+
+  const casc = applyLinkCascade(room);
+  for (const pid of casc) if (!extraDead.includes(pid)) extraDead.push(pid);
+
+  // merge with pending deaths (from the event that triggered revenge)
+  const pending = room.pendingAfterRevenge || { context: room.phaseData.context, newlyDead: [], deathsText: null };
+  const merged = [];
+  for (const pid of (pending.newlyDead || [])) if (!merged.includes(pid)) merged.push(pid);
+  for (const pid of extraDead) if (!merged.includes(pid)) merged.push(pid);
+
+  room.pendingAfterRevenge = {
+    context: room.phaseData.context,
+    newlyDead: merged,
+    deathsText: buildDeathsText(room, merged)
+  };
+
+  afterRevenge(room, room.phaseData.context);
+  emitRoom(room);
+  return cb && cb({ ok:true });
+}
+
+cb && cb({ ok:false, error:"Action invalide" });
   });
 
-  // Déconnexion
+  socket.on("quitRoom", (_, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    const playerId = socket.data.playerId;
+    const p = getPlayer(room, playerId);
+    if (!p) return;
+    p.connected = false;
+    scheduleDisconnect(room, playerId);
+    emitRoom(room);
+    cb && cb({ ok:true });
+  });
+
+  socket.on("replaySameRoom", (_, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    resetForNewRound(room, true);
+    emitRoom(room);
+    cb && cb({ ok:true });
+  });
+
+  socket.on("newGameResetStats", (_, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return;
+    resetForNewRound(room, false);
+    emitRoom(room);
+    cb && cb({ ok:true });
+  });
+
   socket.on("disconnect", () => {
     const room = rooms.get(socket.data.roomCode);
     if (!room) return;
-
-    const player = getPlayer(room, socket.data.playerId);
-    if (!player) return;
-
-    player.connected = false;
-    console.log(`📴 ${player.name} déconnecté de ${room.code}`);
-
-    // Timer de déconnexion (2 minutes pour revenir)
-    const timer = setTimeout(() => {
-      if (!player.connected) {
-        // Retirer le joueur si en lobby, sinon le marquer comme abandonné
-        if (room.state === "lobby") {
-          room.players.delete(player.id);
-          if (room.players.size === 0) {
-            rooms.delete(room.code);
-            console.log(`🗑️ Room ${room.code} supprimée (vide)`);
-          } else if (player.id === room.hostId) {
-            // Transférer l'hôte
-            const newHost = room.players.values().next().value;
-            room.hostId = newHost.id;
-            room.hostName = newHost.name;
-          }
-        }
-        emitRoom(room);
-      }
-    }, 2 * 60 * 1000);
-
-    room.disconnectTimers.set(player.id, timer);
+    const playerId = socket.data.playerId;
+    const p = getPlayer(room, playerId);
+    if (!p) return;
+    p.connected = false;
+    scheduleDisconnect(room, playerId);
     emitRoom(room);
   });
-
-  // Reconnexion
-  socket.on("reconnect", (data, cb) => {
-    const { roomCode, playerId } = data;
-    const room = rooms.get(roomCode);
-    if (!room) return cb?.({ ok: false, error: "Room introuvable" });
-
-    const player = getPlayer(room, playerId);
-    if (!player) return cb?.({ ok: false, error: "Joueur introuvable" });
-
-    // Annuler le timer de déconnexion
-    const timer = room.disconnectTimers.get(playerId);
-    if (timer) {
-      clearTimeout(timer);
-      room.disconnectTimers.delete(playerId);
-    }
-
-    player.connected = true;
-    player.socketId = socket.id;
-    socket.data.roomCode = roomCode;
-    socket.data.playerId = playerId;
-    socket.join(roomCode);
-
-    console.log(`🔄 ${player.name} reconnecté à ${roomCode}`);
-
-    emitRoom(room);
-    cb?.({ ok: true, room: serializeRoom(room) });
-  });
 });
 
-// ============================================================================
-// SECTION 14: PHASES DU JEU
-// ============================================================================
-
-function startDayPhase(room) {
-  room.phase = "DAY_DISCUSSION";
-  room.votes.clear();
-  room.phaseData = {
-    startedAt: Date.now(),
-    duration: 90000 // 90 secondes de discussion
-  };
-
-  logEvent(room, "phase_start", { phase: "DAY_DISCUSSION", day: room.day });
-
-  // Timer pour passer au vote
-  room.phaseTimer = setTimeout(() => {
-    if (room.state === "playing" && room.phase === "DAY_DISCUSSION") {
-      startVotePhase(room);
-    }
-  }, 90000);
-
-  emitRoom(room);
-}
-
-function startVotePhase(room) {
-  room.phase = "DAY_VOTE";
-  room.votes.clear();
-  room.phaseData = {
-    startedAt: Date.now(),
-    duration: 60000 // 60 secondes pour voter
-  };
-
-  logEvent(room, "phase_start", { phase: "DAY_VOTE", day: room.day });
-
-  // Timer pour forcer la résolution
-  room.phaseTimer = setTimeout(() => {
-    if (room.state === "playing" && room.phase === "DAY_VOTE") {
-      resolveVotes(room);
-    }
-  }, 60000);
-
-  emitRoom(room);
-}
-
-function resolveVotes(room) {
-  if (room.phaseTimer) {
-    clearTimeout(room.phaseTimer);
-    room.phaseTimer = null;
-  }
-
-  const votes = {};
-  let skipVotes = 0;
-
-  for (const [voterId, targetId] of room.votes) {
-    if (targetId === null) {
-      skipVotes++;
-    } else {
-      votes[targetId] = (votes[targetId] || 0) + 1;
-    }
-  }
-
-  // Trouver le joueur avec le plus de votes
-  let maxVotes = 0;
-  let eliminated = null;
-  let tied = [];
-
-  for (const [targetId, count] of Object.entries(votes)) {
-    if (count > maxVotes) {
-      maxVotes = count;
-      eliminated = targetId;
-      tied = [targetId];
-    } else if (count === maxVotes) {
-      tied.push(targetId);
-    }
-  }
-
-  // Si égalité ou skip majoritaire, personne n'est éliminé
-  if (tied.length > 1 || skipVotes >= maxVotes) {
-    logEvent(room, "vote_result", { result: "no_elimination", reason: tied.length > 1 ? "tie" : "skip_majority" });
-    room.phaseData = { result: "no_elimination", reason: tied.length > 1 ? "Égalité !" : "Majorité pour passer" };
-  } else if (eliminated) {
-    killPlayer(room, eliminated, "vote");
-    const player = getPlayer(room, eliminated);
-    room.phaseData = { 
-      result: "elimination", 
-      eliminatedId: eliminated,
-      eliminatedName: player?.name,
-      eliminatedRole: player?.role
-    };
-  }
-
-  // Vérifier condition de victoire
-  const winCondition = checkWinCondition(room);
-  if (winCondition) {
-    endGame(room, winCondition.winner, winCondition.reason);
-    return;
-  }
-
-  // Passer à la nuit après un délai
-  room.phase = "DAY_RESULT";
-  emitRoom(room);
-
-  setTimeout(() => {
-    if (room.state === "playing") {
-      startNightPhase(room);
-    }
-  }, 5000);
-}
-
-function startNightPhase(room) {
-  room.phase = "NIGHT";
-  room.nightActions = {};
-  room.phaseData = {
-    startedAt: Date.now(),
-    duration: 45000 // 45 secondes pour les actions
-  };
-
-  logEvent(room, "phase_start", { phase: "NIGHT", day: room.day });
-
-  // Timer pour forcer la résolution
-  room.phaseTimer = setTimeout(() => {
-    if (room.state === "playing" && room.phase === "NIGHT") {
-      resolveNightActions(room);
-    }
-  }, 45000);
-
-  emitRoom(room);
-}
-
-function resolveNightActions(room) {
-  if (room.phaseTimer) {
-    clearTimeout(room.phaseTimer);
-    room.phaseTimer = null;
-  }
-
-  const actions = room.nightActions;
-  let killed = null;
-  let saved = null;
-
-  // Récupérer les actions des saboteurs
-  const saboteurActions = Object.entries(actions).filter(([id, action]) => action.role === "saboteur");
-  if (saboteurActions.length > 0) {
-    // Prendre la cible du premier saboteur (ou vote majoritaire si plusieurs)
-    const targets = saboteurActions.map(([, action]) => action.targetId).filter(Boolean);
-    if (targets.length > 0) {
-      // Compter les votes des saboteurs
-      const targetCounts = {};
-      for (const t of targets) {
-        targetCounts[t] = (targetCounts[t] || 0) + 1;
-      }
-      killed = Object.entries(targetCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
-    }
-  }
-
-  // Récupérer l'action du médecin
-  const doctorAction = Object.entries(actions).find(([id, action]) => action.role === "doctor");
-  if (doctorAction) {
-    saved = doctorAction[1].targetId;
-  }
-
-  // Appliquer les résultats
-  if (killed && killed !== saved) {
-    killPlayer(room, killed, "saboteur_kill");
-    const player = getPlayer(room, killed);
-    room.phaseData = {
-      result: "death",
-      killedId: killed,
-      killedName: player?.name,
-      killedRole: player?.role
-    };
-  } else if (killed && killed === saved) {
-    room.phaseData = { result: "saved", savedId: saved };
-    logEvent(room, "doctor_save", { savedId: saved });
-  } else {
-    room.phaseData = { result: "no_death" };
-  }
-
-  // Vérifier condition de victoire
-  const winCondition = checkWinCondition(room);
-  if (winCondition) {
-    endGame(room, winCondition.winner, winCondition.reason);
-    return;
-  }
-
-  // Nouvelle journée
-  room.day++;
-  room.round++;
-  room.phase = "NIGHT_RESULT";
-  emitRoom(room);
-
-  setTimeout(() => {
-    if (room.state === "playing") {
-      startDayPhase(room);
-    }
-  }, 5000);
-}
-
-function endGame(room, winner, reason) {
-  room.state = "ended";
-  room.phase = null;
-  room.winner = winner;
-  room.endedAt = Date.now();
-  room.phaseData = { winner, reason };
-
-  if (room.phaseTimer) {
-    clearTimeout(room.phaseTimer);
-    room.phaseTimer = null;
-  }
-
-  logEvent(room, "game_end", { winner, reason, duration: room.endedAt - room.startedAt });
-
-  // Mettre à jour les stats des joueurs
-  for (const player of room.players.values()) {
-    const stats = ensurePlayerStats(player.name);
-    stats.gamesPlayed++;
-    
-    const playerTeam = ROLES[player.role]?.team;
-    if (playerTeam === winner) {
-      stats.wins++;
-    } else {
-      stats.losses++;
-    }
-
-    stats.gamesByRole[player.role] = (stats.gamesByRole[player.role] || 0) + 1;
-    if (playerTeam === winner) {
-      stats.winsByRole[player.role] = (stats.winsByRole[player.role] || 0) + 1;
-    }
-  }
-
-  saveStatsFile(statsDb);
-
-  console.log(`🏆 Partie terminée dans ${room.code}: ${winner} gagne ! (${reason})`);
-
-  emitRoom(room);
-
-  // Supprimer la room après 5 minutes
-  setTimeout(() => {
-    if (rooms.has(room.code) && room.state === "ended") {
-      rooms.delete(room.code);
-      console.log(`🗑️ Room ${room.code} nettoyée`);
-    }
-  }, 5 * 60 * 1000);
-}
-
-
-// ============================================================================
-// SECTION 15: ROUTES STATIQUES ET API DIVERSES
-// ============================================================================
-
-// Health check
-app.get("/health", (req, res) => {
-  res.json({
-    status: "ok",
-    version: BUILD_ID,
-    uptime: process.uptime(),
-    rooms: rooms.size,
-    features: [
-      "auth",
-      "email-verification",
-      "avatars-ai",
-      "multiplayer-game",
-      "video-mode",
-      "anti-fraud"
-    ]
-  });
-});
-
-// Stats globales (admin)
-app.get("/api/admin/stats", authenticateToken, (req, res) => {
-  const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
-  if (user?.account_type !== "admin") {
-    return res.status(403).json({ error: "Admin requis" });
-  }
-
-  const totalUsers = dbGet("SELECT COUNT(*) as count FROM users")?.count || 0;
-  const verifiedUsers = dbGet("SELECT COUNT(*) as count FROM users WHERE email_verified = 1")?.count || 0;
-  const totalGames = dbGet("SELECT COUNT(*) as count FROM games_played")?.count || 0;
-  const totalAvatars = dbGet("SELECT COUNT(*) as count FROM avatars")?.count || 0;
-
-  res.json({
-    users: {
-      total: totalUsers,
-      verified: verifiedUsers,
-      unverified: totalUsers - verifiedUsers
-    },
-    games: {
-      total: totalGames,
-      activeRooms: rooms.size
-    },
-    avatars: {
-      total: totalAvatars
-    }
-  });
-});
-
-// ADMIN: Upgrade un compte avec code secret
-app.post("/api/admin/upgrade", async (req, res) => {
-  const { email, secretCode } = req.body;
-
-  // Code secret pour upgrader (change-le en production !)
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
-
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ error: "Code secret invalide" });
-  }
-
-  if (!email) {
-    return res.status(400).json({ error: "Email requis" });
-  }
-
-  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
-  if (!user) {
-    return res.status(404).json({ error: "Utilisateur non trouvé" });
-  }
-
-  // Upgrader vers admin avec crédits illimités
-  dbRun(`
-    UPDATE users SET 
-      account_type = 'admin',
-      email_verified = 1,
-      video_credits = 99999,
-      avatars_used = 0
-    WHERE id = ?
-  `, [user.id]);
-
-  saveDatabase();
-
-  console.log(`👑 ADMIN: ${email} upgradé vers admin`);
-
-  res.json({
-    success: true,
-    message: `${user.username} est maintenant admin !`,
-    user: {
-      email: user.email,
-      username: user.username,
-      accountType: 'admin',
-      videoCredits: 99999
-    }
-  });
-});
-
-// ADMIN: Voir tous les utilisateurs
-app.get("/api/admin/users", (req, res) => {
-  const { secretCode } = req.query;
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
-
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ error: "Code secret invalide" });
-  }
-
-  const users = dbAll(`
-    SELECT id, email, username, account_type, email_verified, video_credits, avatars_used, created_at, last_login
-    FROM users ORDER BY created_at DESC LIMIT 100
-  `);
-
-  res.json({ users });
-});
-
-// ADMIN: Supprimer un utilisateur (pour tests)
-app.delete("/api/admin/user", (req, res) => {
-  const { secretCode, email } = req.query;
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
-
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ error: "Code secret invalide" });
-  }
-
-  if (!email) {
-    return res.status(400).json({ error: "Email requis" });
-  }
-
-  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
-  if (!user) {
-    return res.status(404).json({ error: "Utilisateur non trouvé" });
-  }
-
-  // Supprimer les avatars associés
-  dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
+server.listen(PORT, async () => {
+  console.log(`🚀 Saboteur Unified Server v2.0 listening on :${PORT}`);
+  console.log("[audio] mapped:", AUDIO);
   
-  // Supprimer le log de création (pour permettre de recréer un compte)
-  dbRun("DELETE FROM account_creation_log WHERE email = ?", [email.toLowerCase()]);
-  
-  // Supprimer l'utilisateur
-  dbRun("DELETE FROM users WHERE id = ?", [user.id]);
-  
-  saveDatabase();
-
-  console.log(`🗑️ ADMIN: Utilisateur ${email} supprimé`);
-
-  res.json({ success: true, message: `Utilisateur ${user.username} (${email}) supprimé` });
+  // Initialiser la base de données auth
+  await initAuthDatabase();
+  console.log("✅ Serveur prêt !");
 });
 
-// ADMIN: Supprimer un utilisateur (version POST, plus facile depuis console)
-app.post("/api/admin/delete-user", express.json(), (req, res) => {
-  const { secretCode, email } = req.body;
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
-
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ error: "Code secret invalide" });
-  }
-
-  if (!email) {
-    return res.status(400).json({ error: "Email requis" });
-  }
-
-  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
-  if (!user) {
-    return res.status(404).json({ error: "Utilisateur non trouvé" });
-  }
-
-  // Supprimer les avatars associés
-  dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
-  
-  // Supprimer le log de création (pour permettre de recréer un compte)
-  dbRun("DELETE FROM account_creation_log WHERE email = ?", [email.toLowerCase()]);
-  
-  // Supprimer l'utilisateur
-  dbRun("DELETE FROM users WHERE id = ?", [user.id]);
-  
-  saveDatabase();
-
-  console.log(`🗑️ ADMIN: Utilisateur ${email} supprimé`);
-
-  res.json({ success: true, message: `Utilisateur ${user.username} (${email}) supprimé` });
-});
-
-// ADMIN: Effacer les logs de création de comptes (reset limites IP)
-app.post("/api/admin/clear-ip-logs", express.json(), (req, res) => {
-  const { secretCode, ip } = req.body;
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
-
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ error: "Code secret invalide" });
-  }
-
-  if (ip) {
-    // Effacer uniquement pour une IP spécifique
-    const result = dbRun("DELETE FROM account_creation_log WHERE ip_address = ?", [ip]);
-    console.log(`🧹 ADMIN: Logs IP ${ip} effacés`);
-    res.json({ success: true, message: `Logs pour IP ${ip} effacés` });
-  } else {
-    // Effacer tous les logs
-    dbRun("DELETE FROM account_creation_log");
-    console.log(`🧹 ADMIN: Tous les logs de création effacés`);
-    res.json({ success: true, message: "Tous les logs de création effacés" });
-  }
-
-  saveDatabase();
-});
-
-// ADMIN: Voir les logs de création (debug)
-app.get("/api/admin/ip-logs", (req, res) => {
-  const { secretCode } = req.query;
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
-
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ error: "Code secret invalide" });
-  }
-
-  const logs = dbAll("SELECT * FROM account_creation_log ORDER BY created_at DESC LIMIT 100");
-  res.json({ logs });
-});
-
-// Liste des rooms actives (pour debug/admin)
-app.get("/api/rooms", (req, res) => {
-  const roomList = Array.from(rooms.values()).map(r => ({
-    code: r.code,
-    state: r.state,
-    playerCount: r.players.size,
-    theme: r.theme,
-    videoEnabled: r.videoEnabled
-  }));
-  res.json({ rooms: roomList });
-});
-
-// API: Liste des thèmes de jeu disponibles
-app.get("/api/themes", (req, res) => {
-  const themes = [
-    { id: "default", name: "Spatial", icon: "🚀", premium: false },
-    { id: "werewolf", name: "Loup-Garou", icon: "🐺", premium: false },
-    { id: "wizard-academy", name: "Académie des Sorciers", icon: "🧙", premium: true },
-    { id: "mythic-realms", name: "Royaumes Mythiques", icon: "⚔️", premium: true }
-  ];
-  // Retourner le tableau directement (format attendu par client.js)
-  res.json(themes);
-});
-
-// Récupérer son rôle (pendant la partie)
-app.get("/api/game/my-role", (req, res) => {
-  const { roomCode, playerId } = req.query;
-  const room = rooms.get(roomCode);
-  
-  if (!room) {
-    return res.status(404).json({ error: "Room introuvable" });
-  }
-
-  const player = getPlayer(room, playerId);
-  if (!player) {
-    return res.status(404).json({ error: "Joueur introuvable" });
-  }
-
-  if (room.state !== "playing" && room.state !== "ended") {
-    return res.json({ role: null, message: "Partie pas encore commencée" });
-  }
-
-  const roleInfo = ROLES[player.role];
-  
-  res.json({
-    role: player.role,
-    roleLabel: roleInfo?.label || player.role,
-    team: roleInfo?.team,
-    wakeAtNight: roleInfo?.wakeAtNight
-  });
-});
-
-// Récupérer les stats d'un joueur
-app.get("/api/stats/:playerName", (req, res) => {
-  const { playerName } = req.params;
-  const stats = statsDb[playerName];
-
-  if (!stats) {
-    return res.status(404).json({ error: "Joueur non trouvé" });
-  }
-
-  res.json({
-    playerName,
-    stats: {
-      gamesPlayed: stats.gamesPlayed,
-      wins: stats.wins,
-      losses: stats.losses,
-      winRate: stats.gamesPlayed > 0 ? Math.round((stats.wins / stats.gamesPlayed) * 100) : 0,
-      winsByRole: stats.winsByRole,
-      gamesByRole: stats.gamesByRole
-    }
-  });
-});
-
-// Page d'accueil par défaut
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// ============================================================================
-// SECTION 16: DÉMARRAGE DU SERVEUR
-// ============================================================================
-
-async function startServer() {
-  console.log(`
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                    🎮 SABOTEUR - DÉMARRAGE DU SERVEUR                      ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-  `);
-
-  // Initialiser la base de données
-  await initDatabase();
-
-  // Démarrer le serveur
-  server.listen(PORT, () => {
-    console.log(`
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                    🎮 SABOTEUR - SERVEUR UNIFIÉ V1.0                       ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  🌐 URL: ${APP_URL.padEnd(58)}║
-║  🔌 Port: ${String(PORT).padEnd(57)}║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  📦 Fonctionnalités:                                                      ║
-║     ✅ Authentification (login/register/email)                            ║
-║     ✅ Vérification email ${resend ? "(Resend)" : "(simulé)"}                                       ║
-║     ✅ Génération d'avatars IA ${replicate ? "(Replicate)" : "(non configuré)"}                         ║
-║     ✅ Jeu multijoueur temps réel (Socket.IO)                             ║
-║     ✅ Mode vidéo (2 parties gratuites)                                   ║
-║     ✅ Anti-fraude (email vérifié + limite IP)                            ║
-║     ✅ Base de données SQLite persistante                                 ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  💰 Monétisation:                                                         ║
-║     🆓 Gratuit: 2 parties vidéo + 1 avatar + 2 thèmes                     ║
-║     💎 Abo 1.49€: Vidéo illimitée + 30 avatars + 4 thèmes                ║
-║     📦 Pack 4.99€: 50 parties + 50 avatars + 6 thèmes                    ║
-║     👨‍👩‍👧‍👦 Famille 9.99€: 6 comptes + illimité + 10 thèmes                   ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  🎨 Thèmes:                                                               ║
-║     🆓 🚀 Spatial | 🆓 🐺 Loups-Garous                                     ║
-║     💎 🧙 Sorciers | 💎 ⚔️ Mythique                                        ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-    `);
-  });
-}
-
-// Gestion des erreurs non capturées
-process.on("uncaughtException", (err) => {
-  console.error("❌ Uncaught Exception:", err);
-});
-
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("❌ Unhandled Rejection:", reason);
-});
-
-// Sauvegarde périodique de la base de données
-setInterval(() => {
-  saveDatabase();
-}, 5 * 60 * 1000); // Toutes les 5 minutes
-
-// Démarrer
-startServer().catch(console.error);
-
-module.exports = { app, server, io };
