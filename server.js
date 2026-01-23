@@ -1390,10 +1390,11 @@ function createRoom(code, hostId, hostName, hostSocketId, options = {}) {
     hostName,
     players: new Map([[hostId, createPlayer(hostId, hostName, hostSocketId)]]),
     state: "lobby",
-    phase: null,
+    phase: "LOBBY",  // FIX: Initialiser à "LOBBY" pour le client
     phaseData: {},
     round: 0,
     day: 0,
+    night: 0,  // Ajout du compteur de nuits
     votes: new Map(),
     nightActions: {},
     gameLog: [],
@@ -1401,6 +1402,8 @@ function createRoom(code, hostId, hostName, hostSocketId, options = {}) {
     startedAt: null,
     endedAt: null,
     winner: null,
+    aborted: false,  // Ajout flag aborted
+    config: {},  // Ajout config vide
     // Options
     theme: options.theme || "default",
     videoEnabled: options.videoEnabled || false,
@@ -1521,41 +1524,60 @@ function emitRoom(room) {
 
 function serializeRoom(room) {
   const players = Array.from(room.players.values()).map(p => ({
-    id: p.id,
+    playerId: p.id,  // FIX: Le client attend "playerId" pas "id"
     name: p.name,
-    status: p.status,
-    connected: p.connected,
-    ready: p.ready,
-    avatarId: p.avatarId,
-    avatarEmoji: p.avatarEmoji,
-    avatarUrl: p.avatarUrl,
-    colorId: p.colorId,
-    colorHex: p.colorHex,
-    badgeId: p.badgeId,
-    badgeEmoji: p.badgeEmoji,
-    badgeName: p.badgeName,
-    // Le rôle n'est visible que si la partie est terminée ou si c'est le joueur lui-même
+    status: p.status || "alive",
+    connected: !!p.connected,
+    ready: !!p.ready,
+    isHost: room.hostId === p.id,
+    isCaptain: !!p.isCaptain,
+    // Données de personnalisation
+    avatarId: p.avatarId || null,
+    avatarEmoji: p.avatarEmoji || null,
+    avatarUrl: p.avatarUrl || null,
+    colorId: p.colorId || null,
+    colorHex: p.colorHex || null,
+    badgeId: p.badgeId || null,
+    badgeEmoji: p.badgeEmoji || null,
+    badgeName: p.badgeName || null,
+    // Le rôle n'est visible que si la partie est terminée
     role: room.state === "ended" ? p.role : undefined,
+    roleLabel: room.state === "ended" && p.role ? p.role : null,
     cumulativeStats: p.cumulativeStats
   }));
 
+  // Convertir state en started/ended pour compatibilité client
+  const started = room.state === "playing" || room.state === "ended";
+  const ended = room.state === "ended";
+
   return {
-    code: room.code,
+    roomCode: room.code,  // FIX: Le client attend "roomCode" pas "code"
     hostId: room.hostId,
     hostName: room.hostName,
-    state: room.state,
-    phase: room.phase,
-    phaseData: room.phaseData,
+    phase: room.phase || "LOBBY",
+    phaseData: room.phaseData || {},
+    started: started,
+    ended: ended,
+    aborted: room.aborted || false,
+    day: room.day || 0,
+    night: room.night || 0,
     round: room.round,
-    day: room.day,
     players,
-    theme: room.theme,
+    themeId: room.theme || "default",  // FIX: Le client attend "themeId" pas "theme"
+    config: room.config || {},
+    videoDisabled: room.chatOnly || !room.videoEnabled,
     videoEnabled: room.videoEnabled,
     chatOnly: room.chatOnly,
     winner: room.winner,
     dailyRoomUrl: room.dailyRoomUrl,
     startedAt: room.startedAt,
-    endedAt: room.endedAt
+    endedAt: room.endedAt,
+    // Champs attendus par le client
+    teams: { astronauts: [], saboteurs: [] },
+    logs: [],
+    privateLines: [],
+    ack: { done: 0, total: 0, pending: [] },
+    you: null  // Sera rempli côté client ou dans une version améliorée
   };
 }
 
@@ -1570,7 +1592,7 @@ io.on("connection", (socket) => {
   // Créer une room
   socket.on("createRoom", async (data, cb) => {
     try {
-      const { playerName, theme, videoEnabled, token } = data;
+      const { playerName, theme, videoEnabled, token, playerId: clientPlayerId } = data;
 
       if (!playerName || playerName.length < 2) {
         return cb?.({ ok: false, error: "Nom invalide" });
@@ -1600,7 +1622,8 @@ io.on("connection", (socket) => {
       }
 
       const code = genRoomCode(rooms);
-      const playerId = crypto.randomBytes(8).toString("hex");
+      // FIX: Utiliser le playerId du client s'il est fourni, sinon en générer un
+      const playerId = clientPlayerId || crypto.randomBytes(8).toString("hex");
 
       const room = createRoom(code, playerId, playerName, socket.id, {
         theme: theme || "default",
@@ -1608,10 +1631,19 @@ io.on("connection", (socket) => {
         chatOnly: data.chatOnly || false
       });
 
-      // Ajouter l'avatar si l'utilisateur est connecté
-      if (user && user.current_avatar) {
-        const player = room.players.get(playerId);
-        player.avatarUrl = user.current_avatar;
+      // Appliquer les données de personnalisation
+      const player = room.players.get(playerId);
+      if (player) {
+        if (data.avatarId) player.avatarId = data.avatarId;
+        if (data.avatarEmoji) player.avatarEmoji = data.avatarEmoji;
+        if (data.colorId) player.colorId = data.colorId;
+        if (data.colorHex) player.colorHex = data.colorHex;
+        if (data.badgeId) player.badgeId = data.badgeId;
+        if (data.badgeEmoji) player.badgeEmoji = data.badgeEmoji;
+        if (data.badgeName) player.badgeName = data.badgeName;
+        if (user && user.current_avatar) {
+          player.avatarUrl = user.current_avatar;
+        }
       }
 
       rooms.set(code, room);
@@ -1641,7 +1673,7 @@ io.on("connection", (socket) => {
   // Rejoindre une room
   socket.on("joinRoom", (data, cb) => {
     try {
-      const { roomCode, playerName, token } = data;
+      const { roomCode, playerName, token, playerId: clientPlayerId } = data;
 
       if (!playerName || playerName.length < 2) {
         return cb?.({ ok: false, error: "Nom invalide" });
@@ -1676,9 +1708,18 @@ io.on("connection", (socket) => {
         } catch (e) {}
       }
 
-      const playerId = crypto.randomBytes(8).toString("hex");
+      // FIX: Utiliser le playerId du client s'il est fourni
+      const playerId = clientPlayerId || crypto.randomBytes(8).toString("hex");
       const player = createPlayer(playerId, playerName, socket.id);
 
+      // Appliquer les données de personnalisation
+      if (data.avatarId) player.avatarId = data.avatarId;
+      if (data.avatarEmoji) player.avatarEmoji = data.avatarEmoji;
+      if (data.colorId) player.colorId = data.colorId;
+      if (data.colorHex) player.colorHex = data.colorHex;
+      if (data.badgeId) player.badgeId = data.badgeId;
+      if (data.badgeEmoji) player.badgeEmoji = data.badgeEmoji;
+      if (data.badgeName) player.badgeName = data.badgeName;
       if (user && user.current_avatar) {
         player.avatarUrl = user.current_avatar;
       }
