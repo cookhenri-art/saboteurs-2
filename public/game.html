@@ -638,11 +638,66 @@
           <span class="user-bar-credits" id="userBarCredits">Chat uniquement</span>
         </div>
         <div class="user-bar-right">
+          <select id="themeSelectHeader" class="theme-select-header" title="Changer le thème">
+            <option value="default">🚀 Spatial</option>
+            <option value="werewolf">🐺 Loup-Garou</option>
+            <option value="wizard-academy">🧙 Sorciers</option>
+            <option value="mythic-realms">🏰 Mythique</option>
+          </select>
           <button class="user-bar-btn" onclick="window.location.href='/avatar.html'" id="avatarBtn" style="display:none;">🎨 Avatar</button>
           <button class="user-bar-btn logout" onclick="logoutGame()">🚪 Déconnexion</button>
         </div>
       `;
       document.body.insertBefore(userBar, document.body.firstChild);
+      
+      // Style pour le sélecteur de thème
+      const themeSelectStyle = document.createElement('style');
+      themeSelectStyle.textContent = `
+        .theme-select-header {
+          padding: 8px 12px;
+          border-radius: 8px;
+          background: rgba(0, 0, 0, 0.6);
+          border: 2px solid var(--neon-cyan, #00ffff);
+          color: var(--neon-cyan, #00ffff);
+          font-family: inherit;
+          font-size: 0.9rem;
+          cursor: pointer;
+          outline: none;
+        }
+        .theme-select-header:hover {
+          background: rgba(0, 255, 255, 0.1);
+        }
+        .theme-select-header option {
+          background: #1a1f35;
+          color: white;
+        }
+        /* Cacher le bouton avatar en bas à droite */
+        #customizationBtn {
+          display: none !important;
+        }
+        /* Cacher le cadre THÈME (HÔTE) dans le lobby */
+        #themeSelector {
+          display: none !important;
+        }
+      `;
+      document.head.appendChild(themeSelectStyle);
+      
+      // Initialiser le sélecteur de thème avec la valeur actuelle
+      const currentThemeSelect = document.getElementById('themeSelectHeader');
+      const savedTheme = localStorage.getItem('saboteur_theme') || 'default';
+      if (currentThemeSelect) {
+        currentThemeSelect.value = savedTheme;
+        currentThemeSelect.addEventListener('change', function() {
+          const newTheme = this.value;
+          document.documentElement.setAttribute('data-theme', newTheme);
+          localStorage.setItem('saboteur_theme', newTheme);
+          console.log('[Theme] Changé vers:', newTheme);
+          // Émettre au serveur si dans un lobby
+          if (window.socket && window.state && window.state.phase === 'LOBBY') {
+            window.socket.emit('updateConfig', { themeId: newTheme });
+          }
+        });
+      }
 
       // Fonction de déconnexion
       window.logoutGame = function() {
