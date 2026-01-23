@@ -1061,8 +1061,8 @@ app.post("/api/avatars/generate", authenticateToken, uploadPhoto.single("photo")
     const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
     const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
 
-    // Appeler Replicate - utilise la dernière version automatiquement
-    const output = await replicate.run("fofr/face-to-many", {
+    // Appeler Replicate - version Latest a07f252a
+    const output = await replicate.run("fofr/face-to-many:a07f252abbbd832009640b27f063ea52d87d7a23a185ca165bec23b5adc8deaf", {
       input: {
         image: base64Image,
         style: "3D",
