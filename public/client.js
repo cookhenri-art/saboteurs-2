@@ -600,11 +600,9 @@ function renderLobby() {
         item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
       }
       
-      // V30: Préparer l'avatar (photo prioritaire sur emoji)
-      const avatarDisplay = p.customAvatar 
-        ? `<img src="${p.customAvatar}" style="width:32px; height:32px; border-radius:50%; object-fit:cover; margin-right:6px; border:2px solid ${p.colorHex || '#00ffff'};">`
-        : `<span style="font-size:1.3rem; margin-right:6px;">${p.avatarEmoji || '👤'}</span>`;
-      console.log('[D9 V30] Player', p.name, 'hasCustomAvatar:', !!p.customAvatar, 'avatarEmoji:', p.avatarEmoji);
+      // Préparer l'avatar emoji et le badge
+      const avatarEmoji = p.avatarEmoji || '👤';
+      console.log('[D9 V20] Player', p.name, 'avatarEmoji:', p.avatarEmoji, '-> displayed:', avatarEmoji);
       const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
       
       // Créer la structure gauche
@@ -630,7 +628,7 @@ function renderLobby() {
       const playerName = document.createElement("div");
       playerName.className = "player-name";
       playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
-      playerName.innerHTML = `${avatarDisplay}${escapeHtml(p.name)}${badgeDisplay}`;
+      playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
       
       // Créer les badges
       const badges = document.createElement("div");
@@ -1439,10 +1437,7 @@ function renderEnd() {
     // V25: Stats cumulées
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
-      // V30: Avatar photo prioritaire
-      const avatarDisplay = player?.customAvatar 
-        ? `<img src="${player.customAvatar}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; margin-right:8px;">`
-        : `<span style="font-size:1.3rem; margin-right:8px;">${player?.avatarEmoji || '👤'}</span>`;
+      let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       // V26: Calcul du taux de première élimination
@@ -1451,7 +1446,7 @@ function renderEnd() {
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
           <div style="font-weight:900; display:flex; align-items:center;">
-            ${avatarDisplay}
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
@@ -1464,10 +1459,7 @@ function renderEnd() {
     const detailed = rep.detailedStatsByName || {};
     const detailedHtml = Object.entries(detailed).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
-      // V30: Avatar photo prioritaire
-      const avatarDisplay = player?.customAvatar 
-        ? `<img src="${player.customAvatar}" style="width:28px; height:28px; border-radius:50%; object-fit:cover; margin-right:8px;">`
-        : `<span style="font-size:1.3rem; margin-right:8px;">${player?.avatarEmoji || '👤'}</span>`;
+      let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
@@ -1522,7 +1514,7 @@ function renderEnd() {
         <!-- BANDEAU HAUT : Nom + Stats générales (100% largeur) -->
         <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">
           <div style="font-weight:900; display:flex; align-items:center; margin-bottom:6px;">
-            ${avatarDisplay}
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9; font-size:0.85rem;">
@@ -2210,16 +2202,12 @@ $("joinBtn").onclick = () => { clearError(); showScreen("joinScreen"); };
 $("backFromCreate").onclick = () => { clearError(); showScreen("homeScreen"); };
 $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 
-// FIX: Fonction pour émettre la création de room (utilise le nom sauvegardé ou le champ)
-function emitCreateRoom() {
+function createRoomFlow() {
   clearError();
-  // Récupérer le nom depuis sessionStorage (sauvegardé par createRoomFlow) ou depuis le champ
-  let name = sessionStorage.getItem(STORAGE.name);
-  if (!name) {
-    name = mustName();
-    if (!name) return;
-    sessionStorage.setItem(STORAGE.name, name);
-  }
+  const name = mustName();
+  if (!name) return;
+  sessionStorage.setItem(STORAGE.name, name);
+  showScreen("createScreen");
 
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
@@ -2227,22 +2215,12 @@ function emitCreateRoom() {
   // D9 V20: Récupérer les données de personnalisation avec le bon thème
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   
-  // Récupérer le token d'auth si présent
-  const token = localStorage.getItem('saboteur_token');
-  
-  // Vérifier si la vidéo est désactivée
-  const disableVideoCheckbox = document.getElementById('disableVideoCheckbox');
-  const chatOnly = disableVideoCheckbox ? disableVideoCheckbox.checked : true;
-  
   socket.emit("createRoom", { 
     playerId, 
-    playerName: name,  // FIX: Le serveur attend "playerName" pas "name"
-    token,             // FIX: Le serveur attend "token" pas "playerToken"
-    theme: homeSelectedTheme,  // FIX: Le serveur attend "theme" pas "themeId"
-    videoEnabled: !chatOnly,
-    chatOnly,
+    name, 
+    playerToken, 
+    themeId: homeSelectedTheme,
     // D9: Données de personnalisation
-    customAvatar: customization.customAvatar, // V30: Avatar photo
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
     colorId: customization.colorId,
@@ -2259,21 +2237,9 @@ function emitCreateRoom() {
   });
 }
 
-// createBtn sur homeScreen: Valide le nom, sauvegarde, et crée directement la room
-function createRoomFlow() {
-  clearError();
-  const name = mustName();
-  if (!name) return;
-  sessionStorage.setItem(STORAGE.name, name);
-  showScreen("createScreen");
-  // Émettre immédiatement la création
-  emitCreateRoom();
-}
-
 // UX: the big home button creates the room directly.
 $("createBtn").onclick = createRoomFlow;
-// createRoomBtn sur createScreen: Utilise le nom déjà sauvegardé
-$("createRoomBtn").onclick = emitCreateRoom;
+$("createRoomBtn").onclick = createRoomFlow;
 
 $("joinRoomBtn").onclick = () => {
   clearError();
@@ -2288,16 +2254,12 @@ $("joinRoomBtn").onclick = () => {
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   console.log('[D9 V20] joinRoom customization:', customization);
   
-  // Récupérer le token d'auth si présent
-  const token = localStorage.getItem('saboteur_token');
-  
   socket.emit("joinRoom", { 
     playerId, 
-    playerName: name,  // FIX: Le serveur attend "playerName" pas "name"
+    name, 
     roomCode, 
-    token,             // FIX: Le serveur attend "token" pas "playerToken"
+    playerToken,
     // D9: Données de personnalisation
-    customAvatar: customization.customAvatar, // V30: Avatar photo
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
     colorId: customization.colorId,
