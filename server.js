@@ -1193,6 +1193,67 @@ app.post("/api/avatars/set-current", authenticateToken, express.json(), (req, re
   }
 });
 
+// Supprimer un avatar
+app.delete("/api/avatars/delete", authenticateToken, express.json(), (req, res) => {
+  try {
+    const { avatarId, avatarUrl } = req.body;
+
+    // Trouver l'avatar par ID ou URL
+    let avatar;
+    if (avatarId) {
+      avatar = dbGet("SELECT * FROM avatars WHERE id = ? AND user_id = ?", [avatarId, req.user.id]);
+    } else if (avatarUrl) {
+      avatar = dbGet("SELECT * FROM avatars WHERE image_url = ? AND user_id = ?", [avatarUrl, req.user.id]);
+    }
+
+    if (!avatar) {
+      return res.status(404).json({ error: "Avatar non trouvé" });
+    }
+
+    // Supprimer le fichier physique si c'est un fichier local
+    if (avatar.image_url && avatar.image_url.startsWith("/avatars/")) {
+      const filename = avatar.image_url.replace("/avatars/", "");
+      const filepath = path.join(AVATARS_DIR, filename);
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+        console.log(`🗑️ Fichier avatar supprimé: ${filename}`);
+      }
+    }
+
+    // Supprimer de la base de données
+    dbRun("DELETE FROM avatars WHERE id = ?", [avatar.id]);
+
+    // Si c'était l'avatar actif, le réinitialiser
+    const user = dbGet("SELECT current_avatar FROM users WHERE id = ?", [req.user.id]);
+    if (user?.current_avatar === avatar.image_url) {
+      // Récupérer le premier avatar restant ou null
+      const remainingAvatar = dbGet(
+        "SELECT image_url FROM avatars WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+        [req.user.id]
+      );
+      dbRun("UPDATE users SET current_avatar = ? WHERE id = ?", 
+        [remainingAvatar?.image_url || null, req.user.id]);
+    }
+
+    // Décrémenter le compteur d'avatars utilisés
+    dbRun("UPDATE users SET avatars_used = MAX(0, avatars_used - 1) WHERE id = ?", [req.user.id]);
+
+    saveDatabase();
+
+    console.log(`🗑️ Avatar ${avatar.id} supprimé pour user ${req.user.id}`);
+
+    res.json({ 
+      success: true, 
+      message: "Avatar supprimé",
+      deletedId: avatar.id
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur suppression avatar:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
 // ============================================================================
 // SECTION 10: STATS PERSISTENCE (JEU)
 // ============================================================================
