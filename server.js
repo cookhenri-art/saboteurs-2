@@ -386,6 +386,18 @@ function shuffle(arr) {
 }
 function uniq(arr) { return Array.from(new Set(arr)); }
 function countSaboteursFor(n) { return n <= 6 ? 1 : (n <= 11 ? 2 : 3); }
+
+// V32: Obtenir les emojis d'avatars par thème (copie de d9-avatars.js)
+function getThemeAvatars(themeId) {
+  const THEME_AVATARS = {
+    default: ['👨‍🚀', '👩‍🚀', '🤖', '👽', '🚀', '🛰️', '🛸', '⭐', '🌙', '🪐'],
+    werewolf: ['🐺', '👨‍🌾', '🧙‍♀️', '🏹', '🔮', '🌕', '🌲', '🦉', '🦇', '💀'],
+    'wizard-academy': ['🧙‍♂️', '🧙‍♀️', '🪄', '🧪', '🔮', '📖', '🐈‍⬛', '⚗️', '✨', '🐉'],
+    'mythic-realms': ['⚔️', '🐲', '👑', '🛡️', '🏰', '🦄', '🔥', '💎', '📜', '🪑']
+  };
+  return THEME_AVATARS[themeId] || THEME_AVATARS.default;
+}
+
 function genRoomCode(existing) {
   for (let i = 0; i < 2000; i++) {
     const code = String(randInt(0, 9999)).padStart(4, "0");
@@ -2898,6 +2910,28 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
   const now = Date.now();
   
   if (!p) {
+    // V32: Si pas d'avatar IA et que l'emoji est déjà pris, en assigner un différent
+    let avatarEmoji = customization.avatarEmoji || null;
+    const avatarUrl = customization.avatarUrl || null;
+    
+    // Seulement si pas d'avatar IA (URL ou emoji classique persistant)
+    if (!avatarUrl && avatarEmoji) {
+      const usedEmojis = Array.from(room.players.values())
+        .filter(player => player.status !== 'left')
+        .map(player => player.avatarEmoji || player.avatarUrl)
+        .filter(e => e && !String(e).startsWith('http') && !String(e).startsWith('/'));
+      
+      if (usedEmojis.includes(avatarEmoji)) {
+        // L'emoji est déjà pris, en choisir un autre du même thème
+        const themeAvatars = getThemeAvatars(room.themeId || 'default');
+        const availableEmojis = themeAvatars.filter(e => !usedEmojis.includes(e));
+        if (availableEmojis.length > 0) {
+          avatarEmoji = availableEmojis[Math.floor(Math.random() * availableEmojis.length)];
+          logger.info("avatar_reassigned", { playerId, oldEmoji: customization.avatarEmoji, newEmoji: avatarEmoji });
+        }
+      }
+    }
+    
     p = {
       playerId,
       name: String(name || "Joueur").trim(),
@@ -2914,8 +2948,8 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
       joinedAt: now,         // Date de première connexion
       // D9: Données de personnalisation
       avatarId: customization.avatarId || null,
-      avatarEmoji: customization.avatarEmoji || null,
-      avatarUrl: customization.avatarUrl || null,  // V31: Avatar IA généré
+      avatarEmoji: avatarEmoji,  // V32: Peut être réassigné
+      avatarUrl: avatarUrl,  // V31: Avatar IA généré
       colorId: customization.colorId || null,
       colorHex: customization.colorHex || null,
       badgeId: customization.badgeId || null,
