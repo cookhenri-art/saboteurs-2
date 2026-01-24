@@ -2906,16 +2906,16 @@ function isNameTaken(room, name, exceptPlayerId = null) {
   return false;
 }
 
-function joinRoomCommon(socket, room, playerId, name, playerToken = null, customization = {}) {
+function joinRoomCommon(socket, room, playerId, name, playerToken = null, customization = {}, authToken = null) {
   let p = getPlayer(room, playerId);
   const now = Date.now();
   
   if (!p) {
     // V32: Vérifier si le joueur peut diffuser de la vidéo (a un compte avec crédits)
     let canBroadcastVideo = false;
-    if (playerToken) {
+    if (authToken) {
       try {
-        const decoded = jwt.verify(playerToken, JWT_SECRET);
+        const decoded = jwt.verify(authToken, JWT_SECRET);
         // Le token utilise 'id' (pas 'userId')
         if (decoded?.id) {
           const user = dbGet("SELECT account_type, video_credits, email_verified FROM users WHERE id = ?", [decoded.id]);
@@ -3151,7 +3151,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, authToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -3178,7 +3178,8 @@ io.on("connection", (socket) => {
       
       // D9: Préparer les données de personnalisation (V31: ajout avatarUrl)
       const customization = { avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName };
-      joinRoomCommon(socket, room, playerId, name, playerToken, customization);
+      // V32: Passer authToken pour vérifier les crédits vidéo
+      joinRoomCommon(socket, room, playerId, name, playerToken, customization, authToken);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
       logger.error("createRoom_failed", { error: e.message, playerId });
@@ -3186,7 +3187,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, authToken, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "joinRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -3214,7 +3215,8 @@ io.on("connection", (socket) => {
     if (playerByName) {
       // Reconnexion par nom : réutiliser l'ancien playerId
       logger.info("reconnect_by_name", { roomCode: code, oldPlayerId: playerByName.playerId, newPlayerId: playerId, name });
-      joinRoomCommon(socket, room, playerByName.playerId, name, playerToken, customization);
+      // V32: Passer authToken pour vérifier les crédits vidéo
+      joinRoomCommon(socket, room, playerByName.playerId, name, playerToken, customization, authToken);
       cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerByName.playerId });
       return;
     }
@@ -3235,7 +3237,8 @@ io.on("connection", (socket) => {
       return cb && cb({ ok: false, error: "Ce nom est déjà utilisé dans cette mission." });
     }
     
-    joinRoomCommon(socket, room, playerId, name, playerToken, customization);
+    // V32: Passer authToken pour vérifier les crédits vidéo
+    joinRoomCommon(socket, room, playerId, name, playerToken, customization, authToken);
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
   });
 
