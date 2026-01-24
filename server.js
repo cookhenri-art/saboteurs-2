@@ -3192,7 +3192,7 @@ io.on("connection", (socket) => {
   });
   
   // D11 V4: Mettre à jour la personnalisation d'un joueur (avatar, couleur, badge)
-  socket.on("updateCustomization", ({ playerId, roomCode, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("updateCustomization", ({ playerId, roomCode, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
     if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
@@ -3203,13 +3203,14 @@ io.on("connection", (socket) => {
     // Mettre à jour les champs de personnalisation
     if (avatarId !== undefined) p.avatarId = avatarId;
     if (avatarEmoji !== undefined) p.avatarEmoji = avatarEmoji;
+    if (avatarUrl !== undefined) p.avatarUrl = avatarUrl; // V32: Support avatarUrl
     if (colorId !== undefined) p.colorId = colorId;
     if (colorHex !== undefined) p.colorHex = colorHex;
     if (badgeId !== undefined) p.badgeId = badgeId;
     if (badgeEmoji !== undefined) p.badgeEmoji = badgeEmoji;
     if (badgeName !== undefined) p.badgeName = badgeName;
     
-    logger.info("customization_updated", { roomCode: code, playerId, avatarEmoji, colorHex });
+    logger.info("customization_updated", { roomCode: code, playerId, avatarEmoji, avatarUrl, colorHex });
     
     // Diffuser le nouvel état à tous les joueurs
     emitRoom(room);
