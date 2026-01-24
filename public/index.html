@@ -785,7 +785,7 @@
           localStorage.setItem('saboteur_user', JSON.stringify(data.user));
           currentUser = data.user;
           showLoggedInState();
-          showSuccess('Compte créé ! Vérifie ton email.');
+          showSuccess('Compte créé ! 📧 Vérifie ton email (pense à regarder tes spams si tu ne le vois pas !)');
         } else {
           showError(data.error || 'Erreur');
         }
@@ -805,7 +805,7 @@
           body: JSON.stringify({ email: currentUser.email })
         });
         const data = await res.json();
-        data.success ? showSuccess('Email renvoyé !') : showError(data.error);
+        data.success ? showSuccess('Email renvoyé ! (pense à vérifier tes spams)') : showError(data.error);
       } catch (e) { showError('Erreur'); }
     }
 
