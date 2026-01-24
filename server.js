@@ -2916,16 +2916,19 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
     if (playerToken) {
       try {
         const decoded = jwt.verify(playerToken, JWT_SECRET);
-        if (decoded?.userId) {
-          const user = dbGet("SELECT account_type, video_credits, email_verified FROM users WHERE id = ?", [decoded.userId]);
+        // Le token utilise 'id' (pas 'userId')
+        if (decoded?.id) {
+          const user = dbGet("SELECT account_type, video_credits, email_verified FROM users WHERE id = ?", [decoded.id]);
           if (user && user.email_verified) {
             const limits = getUserLimits(user);
             // Peut diffuser si crédits illimités OU si a des crédits restants
             canBroadcastVideo = (limits.videoCredits === Infinity || user.video_credits > 0);
+            logger.info("video_credits_check", { playerId, canBroadcastVideo, accountType: user.account_type, videoCredits: user.video_credits, limitsVideoCredits: limits.videoCredits });
           }
         }
       } catch (e) {
         // Token invalide ou expiré, pas de broadcast vidéo
+        logger.warn("video_credits_check_failed", { playerId, error: e.message });
         canBroadcastVideo = false;
       }
     }
