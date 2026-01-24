@@ -2279,10 +2279,14 @@ function createRoomFlow() {
     } catch (e) {}
   }
   
+  // V32: Récupérer le JWT d'authentification pour vérifier les crédits vidéo
+  const authToken = localStorage.getItem('saboteur_token') || null;
+  
   socket.emit("createRoom", { 
     playerId, 
     name, 
-    playerToken, 
+    playerToken,
+    authToken,  // V32: JWT pour vérifier les crédits vidéo
     themeId: homeSelectedTheme,
     // D9: Données de personnalisation
     avatarId: customization.avatarId,
@@ -2331,11 +2335,15 @@ $("joinRoomBtn").onclick = () => {
     } catch (e) {}
   }
   
+  // V32: Récupérer le JWT d'authentification pour vérifier les crédits vidéo
+  const authToken = localStorage.getItem('saboteur_token') || null;
+  
   socket.emit("joinRoom", { 
     playerId, 
     name, 
     roomCode, 
     playerToken,
+    authToken,  // V32: JWT pour vérifier les crédits vidéo
     // D9: Données de personnalisation
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
