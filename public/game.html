@@ -628,7 +628,7 @@
       `;
       document.head.appendChild(style);
 
-      // Créer la barre utilisateur
+      // Créer la barre utilisateur (sans sélecteur de thème)
       const userBar = document.createElement('div');
       userBar.className = 'user-bar';
       userBar.innerHTML = `
@@ -638,43 +638,15 @@
           <span class="user-bar-credits" id="userBarCredits">Chat uniquement</span>
         </div>
         <div class="user-bar-right">
-          <select id="themeSelectHeader" class="theme-select-header" title="Changer le thème">
-            <option value="default">🚀 Spatial</option>
-            <option value="werewolf">🐺 Loup-Garou</option>
-            <option value="wizard-academy">🧙 Sorciers</option>
-            <option value="mythic-realms">🏰 Mythique</option>
-          </select>
           <button class="user-bar-btn" onclick="window.location.href='/avatar.html'" id="avatarBtn" style="display:none;">🎨 Avatar</button>
           <button class="user-bar-btn logout" onclick="logoutGame()">🚪 Déconnexion</button>
         </div>
       `;
       document.body.insertBefore(userBar, document.body.firstChild);
       
-      // Style pour le sélecteur de thème
-      const themeSelectStyle = document.createElement('style');
-      themeSelectStyle.textContent = `
-        .theme-select-header {
-          padding: 8px 12px;
-          border-radius: 8px;
-          background: rgba(0, 0, 0, 0.6);
-          border: 2px solid var(--neon-cyan, #00ffff);
-          color: var(--neon-cyan, #00ffff);
-          font-family: inherit;
-          font-size: 0.9rem;
-          cursor: pointer;
-          outline: none;
-        }
-        .theme-select-header:hover {
-          background: rgba(0, 255, 255, 0.1);
-        }
-        .theme-select-header option {
-          background: #1a1f35;
-          color: white;
-        }
-        .theme-select-header:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
+      // Style pour cacher les éléments
+      const hideStyle = document.createElement('style');
+      hideStyle.textContent = `
         /* Cacher le bouton avatar en bas à droite */
         #customizationBtn {
           display: none !important;
@@ -683,88 +655,25 @@
         #themeSelector {
           display: none !important;
         }
-      `;
-      document.head.appendChild(themeSelectStyle);
-      
-      // Initialiser le sélecteur de thème avec la valeur actuelle
-      const currentThemeSelect = document.getElementById('themeSelectHeader');
-      const savedTheme = localStorage.getItem('saboteur_theme') || 'default';
-      if (currentThemeSelect) {
-        currentThemeSelect.value = savedTheme;
-        currentThemeSelect.addEventListener('change', function() {
-          const newTheme = this.value;
-          
-          // 1. Mettre à jour localStorage
-          localStorage.setItem('saboteur_theme', newTheme);
-          
-          // 2. Mettre à jour homeSelectedTheme via window (exposé globalement par client.js)
-          if (typeof window.homeSelectedTheme !== 'undefined') {
-            window.homeSelectedTheme = newTheme;
-          }
-          
-          // 3. Appliquer les styles visuels via la fonction du client.js
-          if (typeof applyThemeStyles === 'function') {
-            applyThemeStyles(newTheme);
-          } else {
-            document.documentElement.setAttribute('data-theme', newTheme);
-          }
-          
-          // 4. Appliquer les traductions via la fonction du client.js
-          if (typeof applyThemeTranslations === 'function') {
-            applyThemeTranslations();
-          }
-          
-          // 5. Mettre à jour currentTheme via la fonction du client.js si elle existe
-          // Note: currentTheme est une variable locale du client.js, on ne peut pas la modifier directement
-          // Mais checkAndApplyTheme() ou applyThemeStyles() le font déjà
-          
-          // 6. Précharger les assets du thème
-          if (typeof preloadThemeAssets === 'function') {
-            preloadThemeAssets(newTheme);
-          }
-          
-          console.log('[Theme] Changé vers:', newTheme);
-          
-          // 7. Émettre au serveur avec setTheme si dans un lobby
-          if (window.socket && window.state && window.state.phase === 'LOBBY') {
-            window.socket.emit('setTheme', { themeId: newTheme }, (res) => {
-              if (res?.ok) {
-                console.log('[Theme] Serveur a accepté le thème:', newTheme);
-              } else {
-                console.log('[Theme] Erreur serveur:', res?.error);
-              }
-            });
-          }
-        });
-      }
-      
-      // Fonction pour cacher le sélecteur de thème quand la partie commence
-      window.updateThemeSelectVisibility = function() {
-        const themeSelect = document.getElementById('themeSelectHeader');
-        if (!themeSelect) return;
-        
-        const state = window.state;
-        // Cacher si started=true OU si phase n'est pas LOBBY
-        const isInGame = state && (state.started === true || (state.phase && state.phase !== 'LOBBY'));
-        
-        if (isInGame) {
-          themeSelect.style.display = 'none';
-          console.log('[Theme] Sélecteur caché - partie en cours');
-        } else {
-          themeSelect.style.display = 'block';
+        /* Cacher l'ancien sélecteur de thème de la page d'accueil game.html */
+        #homeThemeSelector {
+          display: none !important;
         }
-        
-        // Synchroniser avec le thème du serveur (pour les non-hôtes qui rejoignent)
-        if (state && state.themeId && themeSelect.value !== state.themeId) {
-          themeSelect.value = state.themeId;
+      `;
+      document.head.appendChild(hideStyle);
+      
+      // Fonction pour synchroniser le thème avec le serveur (pour les joueurs qui rejoignent)
+      window.syncThemeWithServer = function() {
+        const state = window.state;
+        if (state && state.themeId) {
           localStorage.setItem('saboteur_theme', state.themeId);
           
-          // Mettre à jour homeSelectedTheme via window (exposé globalement par client.js)
+          // Mettre à jour homeSelectedTheme via window
           if (typeof window.homeSelectedTheme !== 'undefined') {
             window.homeSelectedTheme = state.themeId;
           }
           
-          // Appliquer les styles et traductions via les fonctions du client.js
+          // Appliquer les styles et traductions
           if (typeof applyThemeStyles === 'function') {
             applyThemeStyles(state.themeId);
           } else {
@@ -778,16 +687,16 @@
         }
       };
       
-      // Appeler la fonction quand socket reçoit roomState
+      // Appeler la synchronisation quand socket reçoit roomState
       window.addEventListener('load', function() {
         // Attendre que le socket soit prêt
         const checkSocket = setInterval(function() {
           if (window.socket) {
             clearInterval(checkSocket);
             
-            // Écouter roomState pour mettre à jour la visibilité du thème
+            // Écouter roomState pour synchroniser le thème
             window.socket.on('roomState', function(state) {
-              setTimeout(window.updateThemeSelectVisibility, 100);
+              setTimeout(window.syncThemeWithServer, 100);
             });
             
             // En mode invité: intercepter les émissions pour forcer chatOnly

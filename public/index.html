@@ -370,13 +370,154 @@
 <body>
   <div class="particles" id="particles"></div>
 
-  <!-- Sélecteur de thème -->
-  <div class="theme-selector-mini">
-    <button class="theme-btn-mini active" data-theme="default" title="Spatial">🚀</button>
-    <button class="theme-btn-mini" data-theme="werewolf" title="Loup-Garou">🐺</button>
-    <button class="theme-btn-mini" data-theme="wizard-academy" title="Sorciers">🧙</button>
-    <button class="theme-btn-mini" data-theme="mythic-realms" title="Mythique">⚔️</button>
+  <!-- Sélecteur de thème amélioré -->
+  <div class="theme-selector-panel">
+    <div class="theme-selector-header">
+      <span class="theme-selector-title">🎨 CHOISIS TON UNIVERS</span>
+      <span class="theme-selector-subtitle">Ce thème sera appliqué à ta partie</span>
+    </div>
+    <div class="theme-buttons-row">
+      <button class="theme-btn-large active" data-theme="default" title="Infiltration Spatiale">
+        <span class="theme-emoji">🚀</span>
+        <span class="theme-name">Spatial</span>
+      </button>
+      <button class="theme-btn-large" data-theme="werewolf" title="Village des Loups-Garous">
+        <span class="theme-emoji">🐺</span>
+        <span class="theme-name">Loup-Garou</span>
+      </button>
+      <button class="theme-btn-large" data-theme="wizard-academy" title="Académie des Sorciers">
+        <span class="theme-emoji">🧙</span>
+        <span class="theme-name">Sorciers</span>
+      </button>
+      <button class="theme-btn-large" data-theme="mythic-realms" title="Royaumes Mythiques">
+        <span class="theme-emoji">⚔️</span>
+        <span class="theme-name">Mythique</span>
+      </button>
+    </div>
+    <div class="theme-selected-indicator" id="themeIndicator">
+      <span>✨ Thème sélectionné : </span><strong id="selectedThemeName">Spatial</strong>
+    </div>
   </div>
+
+  <style>
+    .theme-selector-panel {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.95) 100%);
+      border: 2px solid var(--neon-main, #00ffff);
+      border-radius: 15px;
+      padding: 15px 20px;
+      z-index: 1000;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+      min-width: 280px;
+    }
+    
+    .theme-selector-header {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    
+    .theme-selector-title {
+      display: block;
+      font-family: var(--font-title, 'Orbitron', sans-serif);
+      font-size: 0.9rem;
+      color: var(--neon-main, #00ffff);
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    
+    .theme-selector-subtitle {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-secondary, #8892b0);
+      opacity: 0.8;
+    }
+    
+    .theme-buttons-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 10px;
+    }
+    
+    .theme-btn-large {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 60px;
+      height: 65px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--metal-grey, #3d4663);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 8px 5px;
+    }
+    
+    .theme-btn-large:hover {
+      background: rgba(0, 255, 255, 0.1);
+      border-color: var(--neon-main, #00ffff);
+      transform: translateY(-2px);
+    }
+    
+    .theme-btn-large.active {
+      background: rgba(0, 255, 255, 0.2);
+      border-color: var(--neon-main, #00ffff);
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    }
+    
+    .theme-emoji {
+      font-size: 1.5rem;
+      margin-bottom: 2px;
+    }
+    
+    .theme-name {
+      font-size: 0.65rem;
+      color: var(--text-secondary, #8892b0);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .theme-btn-large.active .theme-name {
+      color: var(--neon-main, #00ffff);
+    }
+    
+    .theme-selected-indicator {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--neon-green, #50fa7b);
+      padding: 8px;
+      background: rgba(80, 250, 123, 0.1);
+      border-radius: 8px;
+      border: 1px solid rgba(80, 250, 123, 0.3);
+    }
+    
+    .theme-selected-indicator strong {
+      color: var(--neon-main, #00ffff);
+    }
+    
+    @media (max-width: 480px) {
+      .theme-selector-panel {
+        position: relative;
+        top: auto;
+        right: auto;
+        margin: 10px auto 20px auto;
+        width: calc(100% - 40px);
+        max-width: 320px;
+      }
+      
+      .theme-btn-large {
+        width: 55px;
+        height: 60px;
+      }
+      
+      .theme-emoji {
+        font-size: 1.3rem;
+      }
+    }
+  </style>
 
   <div class="main-container">
     <div class="header">
@@ -504,6 +645,13 @@
     let currentUser = null;
 
     // Theme
+    const themeNames = {
+      'default': 'Spatial',
+      'werewolf': 'Loup-Garou',
+      'wizard-academy': 'Sorciers',
+      'mythic-realms': 'Mythique'
+    };
+    
     function initTheme() {
       const saved = localStorage.getItem('saboteur_theme') || 'default';
       setTheme(saved);
@@ -512,13 +660,23 @@
     function setTheme(name) {
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('saboteur_theme', name);
-      document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+      
+      // Mettre à jour les boutons (ancien et nouveau format)
+      document.querySelectorAll('.theme-btn-mini, .theme-btn-large').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.theme === name);
       });
+      
+      // Mettre à jour l'indicateur
+      const indicator = document.getElementById('selectedThemeName');
+      if (indicator) {
+        indicator.textContent = themeNames[name] || name;
+      }
+      
       createParticles();
     }
 
-    document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+    // Event listeners pour les deux formats de boutons
+    document.querySelectorAll('.theme-btn-mini, .theme-btn-large').forEach(btn => {
       btn.addEventListener('click', () => setTheme(btn.dataset.theme));
     });
 
