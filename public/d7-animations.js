@@ -14,24 +14,56 @@
   // =========================================================
   
   /**
-   * Anime l'élimination d'un joueur
-   * @param {string} playerId - ID du joueur éliminé
+   * Anime l'élimination d'un ou plusieurs joueurs
+   * @param {string|string[]} playerIds - ID(s) du/des joueur(s) éliminé(s)
    * @param {Function} callback - Callback après animation
    */
-  function animateEjection(playerId, callback) {
-    log('Animating elimination for player:', playerId);
+  function animateEjection(playerIds, callback) {
+    // V32: Support pour plusieurs joueurs
+    const ids = Array.isArray(playerIds) ? playerIds : [playerIds];
+    log('Animating elimination for players:', ids);
     
-    // D11 V7: Créer un overlay d'élimination visible (ne dépend pas des éléments DOM)
-    const player = window.lastKnownState?.players?.find(p => p.playerId === playerId);
-    const playerName = player?.name || 'Joueur';
+    // Récupérer les infos de tous les joueurs éliminés
+    const players = ids.map(id => window.lastKnownState?.players?.find(p => p.playerId === id)).filter(Boolean);
     
-    // V31: Générer l'avatar du joueur éliminé
-    let avatarHtml = '';
-    if (player?.avatarUrl) {
-      avatarHtml = `<img src="${player.avatarUrl}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:4px solid #ff0055; box-shadow: 0 0 30px rgba(255, 0, 85, 0.8); margin-bottom: 15px;">`;
-    } else if (player?.avatarEmoji) {
-      avatarHtml = `<div style="font-size: 4rem; margin-bottom: 10px;">${player.avatarEmoji}</div>`;
+    if (players.length === 0) {
+      log('No players found for elimination animation');
+      return;
     }
+    
+    // V32: Générer les avatars de tous les joueurs éliminés
+    const avatarsHtml = players.map(player => {
+      const playerName = player?.name || 'Joueur';
+      let avatarHtml = '';
+      
+      // Vérifier si c'est une URL/chemin ou un emoji
+      if (player?.avatarUrl) {
+        const isImageUrl = player.avatarUrl.startsWith('http') || 
+                           player.avatarUrl.startsWith('/') || 
+                           player.avatarUrl.startsWith('data:');
+        if (isImageUrl) {
+          avatarHtml = `<img src="${player.avatarUrl}" style="width:70px; height:70px; border-radius:50%; object-fit:cover; border:3px solid #ff0055; box-shadow: 0 0 20px rgba(255, 0, 85, 0.8);">`;
+        } else {
+          avatarHtml = `<div style="font-size: 3rem;">${player.avatarUrl}</div>`;
+        }
+      } else if (player?.avatarEmoji) {
+        avatarHtml = `<div style="font-size: 3rem;">${player.avatarEmoji}</div>`;
+      } else {
+        avatarHtml = `<div style="font-size: 3rem;">👤</div>`;
+      }
+      
+      return `
+        <div style="display:flex; flex-direction:column; align-items:center; margin: 0 15px;">
+          ${avatarHtml}
+          <div style="font-size: 1rem; color: #ff0055; margin-top: 8px; font-weight: bold;">${playerName}</div>
+        </div>
+      `;
+    }).join('');
+    
+    // Texte selon le nombre de morts
+    const eliminationText = players.length > 1 
+      ? `${players.map(p => p.name).join(' et ')} ont été éliminés !`
+      : `${players[0]?.name || 'Joueur'} a été éliminé !`;
     
     const overlay = document.createElement('div');
     overlay.id = 'ejectionOverlay';
@@ -45,27 +77,31 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.8);
+      background: rgba(0, 0, 0, 0.85);
       z-index: 9999;
       animation: fadeInEjection 0.3s ease-out;
       pointer-events: none;
     `;
     
     overlay.innerHTML = `
-      ${avatarHtml}
+      <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 20px;">
+        ${avatarsHtml}
+      </div>
       <div style="
         font-size: 4rem;
         animation: ejectionBounce 0.8s ease-out;
         text-shadow: 0 0 30px rgba(255, 0, 85, 0.8), 0 0 60px rgba(255, 0, 85, 0.5);
       ">💀</div>
       <div style="
-        font-size: 1.5rem;
+        font-size: 1.3rem;
         color: #ff0055;
         font-weight: bold;
         margin-top: 20px;
         text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
         animation: fadeInText 0.5s ease-out 0.3s both;
-      ">${playerName} a été éliminé !</div>
+        text-align: center;
+        padding: 0 20px;
+      ">${eliminationText}</div>
     `;
     
     // Ajouter les styles d'animation si pas déjà présents

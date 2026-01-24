@@ -2492,16 +2492,19 @@ socket.on("roomState", (s) => {
     
     console.log('[D7] Newly dead players:', newlyDead.map(p => p.name));
     
-    newlyDead.forEach(deadPlayer => {
-      if (window.D7Animations) {
-        console.log('[D7] 💀 Triggering ejection animation for:', deadPlayer.name);
-        // D11 V4: Délai plus long pour que l'animation soit visible
-        setTimeout(() => {
-          D7Animations.animateEjection(deadPlayer.playerId);
+    // V32: Appeler animateEjection avec tous les morts en une seule fois
+    if (newlyDead.length > 0 && window.D7Animations) {
+      console.log('[D7] 💀 Triggering ejection animation for:', newlyDead.map(p => p.name));
+      setTimeout(() => {
+        // Passer tous les IDs des joueurs morts
+        const deadPlayerIds = newlyDead.map(p => p.playerId);
+        D7Animations.animateEjection(deadPlayerIds);
+        // Animer la mort pour chaque joueur individuellement (effet visuel sur leur carte)
+        newlyDead.forEach(deadPlayer => {
           D7Animations.animateDeath(deadPlayer.playerId);
-        }, 500);
-      }
-    });
+        });
+      }, 500);
+    }
   }
   
   // D7: Animation de victoire/défaite + D9: Enregistrement partie
