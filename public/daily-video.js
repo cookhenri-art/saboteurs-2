@@ -1030,6 +1030,14 @@ background: rgba(10, 14, 39, 0.95);
       this.userPref = { video: null, audio: null };
     }
 
+    // V32: Si le joueur n'a pas les crédits vidéo, désactiver complètement micro/caméra
+    const canBroadcast = window.canBroadcastVideo !== false; // true par défaut si non défini
+    if (!canBroadcast) {
+      this.allowed.video = false;
+      this.allowed.audio = false;
+      this.allowed.reason = "Crée un compte pour diffuser";
+    }
+
     // UI lock/unlock
     this.setButtonEnabled(this.camButton, this.allowed.video, this.allowed.video ? "" : "Caméra interdite: " + (this.allowed.reason || "phase"));
     this.setButtonEnabled(this.micButton, this.allowed.audio, this.allowed.audio ? "" : "Micro interdit: " + (this.allowed.reason || "phase"));
@@ -1044,7 +1052,10 @@ background: rgba(10, 14, 39, 0.95);
     }
     if (!this.allowed.audio) {
       try { await this.callFrame.setLocalAudio(false); } catch (e) { console.warn("setLocalAudio(false) failed", e); }
-      await this.deafenRemotes(true);
+      // V32: Ne pas deafen si c'est juste un problème de crédits (le joueur peut écouter)
+      if (canBroadcast) {
+        await this.deafenRemotes(true);
+      }
     } else {
       await this.deafenRemotes(false);
     }
@@ -1060,9 +1071,10 @@ background: rgba(10, 14, 39, 0.95);
     }
 
     // Message de statut (optionnel)
-    if (!this.allowed.video && this.allowed.audio) this.updateStatus("🎧 Audio only");
-    if (this.allowed.video && this.allowed.audio) this.updateStatus("✅ Vidéo + audio");
-    if (!this.allowed.video && !this.allowed.audio) this.updateStatus("😴 Phase privée");
+    if (!canBroadcast) this.updateStatus("👀 Mode spectateur");
+    else if (!this.allowed.video && this.allowed.audio) this.updateStatus("🎧 Audio only");
+    else if (this.allowed.video && this.allowed.audio) this.updateStatus("✅ Vidéo + audio");
+    else if (!this.allowed.video && !this.allowed.audio) this.updateStatus("😴 Phase privée");
 
 
     // V9.3.8: Afficher écran "Phase privée" si aucune permission

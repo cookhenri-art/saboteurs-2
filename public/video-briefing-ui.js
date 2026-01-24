@@ -84,13 +84,6 @@
         <span class="phase-badge" id="briefingPhaseBadge">DÉBAT</span>
       </div>
       <div class="video-briefing-actions">
-        <button class="video-briefing-btn btn-mic" id="briefingMicBtn" title="Micro">
-          🎤
-        </button>
-        <button class="video-briefing-btn btn-cam" id="briefingCamBtn" title="Caméra">
-          📷
-        </button>
-        <span class="actions-separator"></span>
         <button class="video-briefing-btn btn-expand" id="briefingExpandBtn" title="Plein écran">
           ⬆ Max
         </button>
@@ -162,23 +155,7 @@
       });
     }
     
-    // Microphone toggle button
-    const micBtn = document.getElementById('briefingMicBtn');
-    if (micBtn) {
-      micBtn.addEventListener('click', async () => {
-        log('Mic button clicked');
-        await toggleMicrophone();
-      });
-    }
-    
-    // Camera toggle button
-    const camBtn = document.getElementById('briefingCamBtn');
-    if (camBtn) {
-      camBtn.addEventListener('click', async () => {
-        log('Camera button clicked');
-        await toggleCamera();
-      });
-    }
+    // V32: Boutons mic/cam supprimés - utiliser les contrôles des mini-vidéos
     
     // Expand button (plein écran)
     const expandBtn2 = document.getElementById('briefingExpandBtn');
@@ -872,6 +849,13 @@
   window.showMuteToast = showMuteToast;
 
   async function toggleMicrophone() {
+    // V32: Vérifier si le joueur peut diffuser
+    if (window.canBroadcastVideo === false) {
+      log('Cannot toggle mic - no broadcast permission');
+      showMuteToast(true, "Crée un compte pour le micro");
+      return;
+    }
+    
     const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
     if (!callObj) {
       log('No callObject for mic toggle');
@@ -913,6 +897,12 @@
   }
   
   async function toggleCamera() {
+    // V32: Vérifier si le joueur peut diffuser
+    if (window.canBroadcastVideo === false) {
+      log('Cannot toggle camera - no broadcast permission');
+      return;
+    }
+    
     const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
     if (!callObj) {
       log('No callObject for camera toggle');
@@ -950,34 +940,13 @@
     }
   }
   
+  // V32: Fonctions simplifiées - boutons briefing supprimés, utiliser mini-vidéos
   function updateMicButton() {
-    const btn = document.getElementById('briefingMicBtn');
-    if (!btn) return;
-    
-    if (isMicMuted) {
-      btn.textContent = '🔇';
-      btn.classList.add('is-off');
-      btn.title = 'Activer le micro';
-    } else {
-      btn.textContent = '🎤';
-      btn.classList.remove('is-off');
-      btn.title = 'Couper le micro';
-    }
+    // Bouton briefing supprimé - contrôles sur mini-vidéos uniquement
   }
   
   function updateCamButton() {
-    const btn = document.getElementById('briefingCamBtn');
-    if (!btn) return;
-    
-    if (isCamOff) {
-      btn.textContent = '📷';
-      btn.classList.add('is-off');
-      btn.title = 'Activer la caméra';
-    } else {
-      btn.textContent = '📹';
-      btn.classList.remove('is-off');
-      btn.title = 'Couper la caméra';
-    }
+    // Bouton briefing supprimé - contrôles sur mini-vidéos uniquement
   }
   
   async function syncControlStates() {
