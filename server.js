@@ -362,11 +362,62 @@ async function sendVerificationEmail(email, username, token) {
   }
   try {
     const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
+    
+    // Template HTML avec design gradient (comme avant)
+    const htmlTemplate = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+      
+      <!-- Logo/Titre -->
+      <div style="margin-bottom: 30px;">
+        <span style="font-size: 48px;">🎮</span>
+        <h1 style="color: #00d4ff; margin: 10px 0; font-size: 28px; text-shadow: 0 0 20px rgba(0,212,255,0.5);">
+          Bienvenue sur Saboteur !
+        </h1>
+      </div>
+      
+      <!-- Message -->
+      <p style="color: #e0e0e0; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+        Salut <strong style="color: #00d4ff;">${username}</strong> ! 👋<br><br>
+        Clique sur le bouton ci-dessous pour vérifier ton email et débloquer tes <strong style="color: #4ade80;">2 parties vidéo gratuites</strong> !
+      </p>
+      
+      <!-- Bouton -->
+      <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: #000; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(74,222,128,0.4); transition: transform 0.2s;">
+        ✅ Vérifier mon email
+      </a>
+      
+      <!-- Lien alternatif -->
+      <p style="color: #888; font-size: 12px; margin-top: 30px; word-break: break-all;">
+        Ou copie ce lien :<br>
+        <a href="${verifyUrl}" style="color: #00d4ff;">${verifyUrl}</a>
+      </p>
+      
+      <!-- Footer -->
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+        <p style="color: #666; font-size: 11px; margin: 0;">
+          Ce lien expire dans 24 heures.<br>
+          🔒 Cet email sert uniquement à sécuriser ton compte. Aucun spam, aucune pub, promis !
+        </p>
+      </div>
+      
+    </div>
+  </div>
+</body>
+</html>`;
+
     await resend.emails.send({
       from: process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>",
       to: email,
       subject: "🎮 Vérifie ton compte Saboteur !",
-      html: `<h1>Bienvenue ${username}!</h1><p><a href="${verifyUrl}">Clique ici pour vérifier</a></p>`
+      html: htmlTemplate
     });
     return { success: true };
   } catch (e) {
