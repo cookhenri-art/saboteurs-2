@@ -7,6 +7,22 @@ function shouldReconnect() {
 
 /* Infiltration Spatiale — client (vanilla) V26 */
 
+// V31: Fonction utilitaire pour afficher l'avatar (IA prioritaire sur emoji)
+function getAvatarHtml(player, size = 32, marginRight = 6) {
+  if (!player) return `<span style="font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;">👤</span>`;
+  
+  const borderColor = player.colorHex || '#00ffff';
+  
+  // Priorité: avatarUrl (IA) > customAvatar (photo) > avatarEmoji
+  if (player.avatarUrl) {
+    return `<img src="${player.avatarUrl}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
+  }
+  if (player.customAvatar) {
+    return `<img src="${player.customAvatar}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
+  }
+  return `<span style="font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;">${player.avatarEmoji || '👤'}</span>`;
+}
+
 // Socket.IO: index.html ensures the client library is loaded (local first, CDN fallback).
 // If the server isn't running, we still want the UI to work and show a clear message.
 // CAPACITOR: Utiliser l'URL absolue du serveur en mode natif
@@ -600,9 +616,9 @@ function renderLobby() {
         item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
       }
       
-      // Préparer l'avatar emoji et le badge
-      const avatarEmoji = p.avatarEmoji || '👤';
-      console.log('[D9 V20] Player', p.name, 'avatarEmoji:', p.avatarEmoji, '-> displayed:', avatarEmoji);
+      // V31: Utiliser la fonction utilitaire pour l'avatar (IA prioritaire)
+      const avatarDisplay = getAvatarHtml(p, 32, 6);
+      console.log('[D9 V31] Player', p.name, 'avatarUrl:', p.avatarUrl, 'avatarEmoji:', p.avatarEmoji);
       const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
       
       // Créer la structure gauche
@@ -628,7 +644,7 @@ function renderLobby() {
       const playerName = document.createElement("div");
       playerName.className = "player-name";
       playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
-      playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
+      playerName.innerHTML = `${avatarDisplay}${escapeHtml(p.name)}${badgeDisplay}`;
       
       // Créer les badges
       const badges = document.createElement("div");
@@ -822,9 +838,16 @@ function renderGame() {
   const isCaptain = !!state.you?.isCaptain;
   const captainIconSrc = isCaptain ? getRoleImagePath("capitaine.webp") : "";
 
-  // hide legacy small icons container (kept for compatibility)
+  // V31: Afficher l'avatar du joueur actuel à côté de la zone MISSION
   const icons = $("roleIcons");
-  if (icons) icons.innerHTML = "";
+  if (icons) {
+    const me = state.players?.find(p => p.playerId === state.you?.playerId);
+    if (me) {
+      icons.innerHTML = getAvatarHtml(me, 48, 0);
+    } else {
+      icons.innerHTML = "";
+    }
+  }
 
   roleCard.innerHTML = `
     <div class="role-card-inner">
@@ -1437,7 +1460,8 @@ function renderEnd() {
     // V25: Stats cumulées
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
-      let avatarEmoji = player?.avatarEmoji || '👤';
+      // V31: Utiliser la fonction utilitaire pour l'avatar
+      const avatarDisplay = getAvatarHtml(player, 28, 8);
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       // V26: Calcul du taux de première élimination
@@ -1446,7 +1470,7 @@ function renderEnd() {
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
           <div style="font-weight:900; display:flex; align-items:center;">
-            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+            ${avatarDisplay}
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
@@ -1459,7 +1483,8 @@ function renderEnd() {
     const detailed = rep.detailedStatsByName || {};
     const detailedHtml = Object.entries(detailed).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
-      let avatarEmoji = player?.avatarEmoji || '👤';
+      // V31: Utiliser la fonction utilitaire pour l'avatar
+      const avatarDisplay = getAvatarHtml(player, 28, 8);
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
@@ -1514,7 +1539,7 @@ function renderEnd() {
         <!-- BANDEAU HAUT : Nom + Stats générales (100% largeur) -->
         <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">
           <div style="font-weight:900; display:flex; align-items:center; margin-bottom:6px;">
-            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
+            ${avatarDisplay}
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9; font-size:0.85rem;">
