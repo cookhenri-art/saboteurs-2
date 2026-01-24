@@ -3093,7 +3093,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -3118,8 +3118,8 @@ io.on("connection", (socket) => {
       rooms.set(code, room);
       logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId, videoDisabled: room.videoDisabled });
       
-      // D9: Préparer les données de personnalisation
-      const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+      // D9: Préparer les données de personnalisation (V31: ajout avatarUrl)
+      const customization = { avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName };
       joinRoomCommon(socket, room, playerId, name, playerToken, customization);
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
@@ -3128,14 +3128,14 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
+  socket.on("joinRoom", ({ playerId, name, roomCode, playerToken, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "joinRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
     }
     
-    // D9: Préparer les données de personnalisation
-    const customization = { avatarId, avatarEmoji, colorId, colorHex, badgeId, badgeEmoji, badgeName };
+    // D9: Préparer les données de personnalisation (V31: ajout avatarUrl)
+    const customization = { avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName };
     
     const code = String(roomCode || "").trim();
     const room = rooms.get(code);
