@@ -1217,7 +1217,16 @@
           // V31: Utiliser l'avatar IA si disponible, sinon l'emoji
           let avatarHtml;
           if (msg.avatarUrl) {
-            avatarHtml = `<img src="${msg.avatarUrl}" class="chat-msg-avatar-img" alt="" onerror="this.outerHTML='<span class=\\'chat-msg-avatar\\'>${msg.avatarEmoji || '👤'}</span>'">`;
+            // Vérifier si c'est une URL/chemin d'image ou un emoji
+            const isImageUrl = msg.avatarUrl.startsWith('http') || 
+                               msg.avatarUrl.startsWith('/') || 
+                               msg.avatarUrl.startsWith('data:');
+            if (isImageUrl) {
+              avatarHtml = `<img src="${msg.avatarUrl}" class="chat-msg-avatar-img" alt="" onerror="this.outerHTML='<span class=\\'chat-msg-avatar\\'>${msg.avatarEmoji || '👤'}</span>'">`;
+            } else {
+              // C'est un emoji classique stocké comme avatarUrl
+              avatarHtml = `<span class="chat-msg-avatar">${msg.avatarUrl}</span>`;
+            }
           } else {
             avatarHtml = `<span class="chat-msg-avatar">${msg.avatarEmoji || '👤'}</span>`;
           }
