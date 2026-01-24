@@ -503,6 +503,8 @@
 .video-briefing-actions {
   display: flex;
   gap: 10px;
+  /* V31: Laisser de la place pour le bandeau utilisateur (Avatar + Déconnexion) */
+  margin-right: 240px;
 }
 
 .video-briefing-btn {
