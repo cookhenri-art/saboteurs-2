@@ -822,7 +822,30 @@
         document.getElementById('displayUsername').textContent = currentUser.username;
         if (currentUser.currentAvatar) {
           const av = document.getElementById('userAvatar');
-          av.src = currentUser.currentAvatar;
+          // V31: Vérifier si c'est une URL/chemin d'image ou un emoji
+          const isImageUrl = currentUser.currentAvatar.startsWith('http') || 
+                             currentUser.currentAvatar.startsWith('/') || 
+                             currentUser.currentAvatar.startsWith('data:');
+          if (isImageUrl) {
+            av.src = currentUser.currentAvatar;
+            av.style.display = '';
+            // Supprimer l'emoji si présent
+            const emojiEl = document.getElementById('userAvatarEmoji');
+            if (emojiEl) emojiEl.remove();
+          } else {
+            // C'est un emoji classique
+            av.style.display = 'none';
+            // Créer ou mettre à jour l'élément emoji
+            let emojiEl = document.getElementById('userAvatarEmoji');
+            if (!emojiEl) {
+              emojiEl = document.createElement('span');
+              emojiEl.id = 'userAvatarEmoji';
+              emojiEl.className = 'user-avatar-emoji';
+              emojiEl.style.cssText = 'font-size: 3rem; display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: rgba(0,0,0,0.3); border: 3px solid var(--neon-cyan, #00ffff);';
+              av.parentNode.insertBefore(emojiEl, av);
+            }
+            emojiEl.textContent = currentUser.currentAvatar;
+          }
           av.classList.add('show');
         }
         const c = currentUser.videoCredits;
