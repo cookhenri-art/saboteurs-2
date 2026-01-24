@@ -22,16 +22,7 @@
     log('Animating elimination for player:', playerId);
     
     // D11 V7: Créer un overlay d'élimination visible (ne dépend pas des éléments DOM)
-    const player = window.lastKnownState?.players?.find(p => p.playerId === playerId);
-    const playerName = player?.name || 'Joueur';
-    
-    // V31: Générer l'avatar du joueur éliminé
-    let avatarHtml = '💀';
-    if (player?.avatarUrl) {
-      avatarHtml = `<img src="${player.avatarUrl}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:4px solid #ff0055; box-shadow: 0 0 30px rgba(255, 0, 85, 0.8);">`;
-    } else if (player?.avatarEmoji) {
-      avatarHtml = player.avatarEmoji;
-    }
+    const playerName = window.lastKnownState?.players?.find(p => p.playerId === playerId)?.name || 'Joueur';
     
     const overlay = document.createElement('div');
     overlay.id = 'ejectionOverlay';
@@ -53,17 +44,10 @@
     
     overlay.innerHTML = `
       <div style="
-        font-size: ${player?.avatarUrl ? '1rem' : '6rem'};
+        font-size: 6rem;
         animation: ejectionBounce 0.8s ease-out;
         text-shadow: 0 0 30px rgba(255, 0, 85, 0.8), 0 0 60px rgba(255, 0, 85, 0.5);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-      ">
-        ${avatarHtml}
-        <span style="font-size: 4rem;">💀</span>
-      </div>
+      ">💀</div>
       <div style="
         font-size: 1.5rem;
         color: #ff0055;
@@ -422,20 +406,8 @@
   /**
    * Anime l'élection du capitaine avec un effet de couronne/étoile
    */
-  function animateCaptainElection(captainPlayerId) {
-    log('Animating captain election for:', captainPlayerId);
-    
-    // V31: Trouver le joueur capitaine pour son avatar
-    const captain = window.lastKnownState?.players?.find(p => p.playerId === captainPlayerId || p.isCaptain);
-    const captainName = captain?.name || '';
-    
-    // V31: Générer l'avatar du capitaine
-    let avatarHtml = '';
-    if (captain?.avatarUrl) {
-      avatarHtml = `<img src="${captain.avatarUrl}" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:4px solid gold; box-shadow: 0 0 30px gold; margin-bottom: 20px;">`;
-    } else if (captain?.avatarEmoji) {
-      avatarHtml = `<div style="font-size: 4rem; margin-bottom: 10px;">${captain.avatarEmoji}</div>`;
-    }
+  function animateCaptainElection() {
+    log('Animating captain election');
     
     // Chercher le conteneur de phase ou créer un overlay
     const gameContent = document.querySelector('#gameContent') || document.querySelector('.game-content');
@@ -450,7 +422,6 @@
       width: 100vw;
       height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       background: rgba(0, 0, 0, 0.7);
@@ -463,13 +434,11 @@
     const captainEmoji = '⭐';
     
     overlay.innerHTML = `
-      ${avatarHtml}
       <div style="
-        font-size: 6rem;
+        font-size: 8rem;
         animation: captainBounce 1s ease-out;
         text-shadow: 0 0 30px gold, 0 0 60px gold;
       ">${captainEmoji}</div>
-      ${captainName ? `<div style="font-size: 1.3rem; color: gold; font-weight: bold; margin-top: 15px; text-shadow: 0 0 10px gold;">${captainName} est élu Capitaine !</div>` : ''}
     `;
     
     document.body.appendChild(overlay);

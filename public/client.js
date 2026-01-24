@@ -7,22 +7,6 @@ function shouldReconnect() {
 
 /* Infiltration Spatiale — client (vanilla) V26 */
 
-// V31: Fonction utilitaire pour afficher l'avatar (IA prioritaire sur emoji)
-function getAvatarHtml(player, size = 32, marginRight = 6) {
-  if (!player) return `<span style="font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;">👤</span>`;
-  
-  const borderColor = player.colorHex || '#00ffff';
-  
-  // Priorité: avatarUrl (IA) > customAvatar (photo) > avatarEmoji
-  if (player.avatarUrl) {
-    return `<img src="${player.avatarUrl}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
-  }
-  if (player.customAvatar) {
-    return `<img src="${player.customAvatar}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
-  }
-  return `<span style="font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;">${player.avatarEmoji || '👤'}</span>`;
-}
-
 // Socket.IO: index.html ensures the client library is loaded (local first, CDN fallback).
 // If the server isn't running, we still want the UI to work and show a clear message.
 // CAPACITOR: Utiliser l'URL absolue du serveur en mode natif
@@ -616,9 +600,9 @@ function renderLobby() {
         item.style.boxShadow = `0 0 8px ${p.colorHex}40`;
       }
       
-      // V31: Utiliser la fonction utilitaire pour l'avatar
-      const avatarDisplay = getAvatarHtml(p, 32, 6);
-      console.log('[D9 V31] Player', p.name, 'avatarUrl:', p.avatarUrl, 'avatarEmoji:', p.avatarEmoji);
+      // Préparer l'avatar emoji et le badge
+      const avatarEmoji = p.avatarEmoji || '👤';
+      console.log('[D9 V20] Player', p.name, 'avatarEmoji:', p.avatarEmoji, '-> displayed:', avatarEmoji);
       const badgeDisplay = p.badgeEmoji ? `<span style="margin-left:4px; font-size:0.9rem;" title="${p.badgeName || ''}">${p.badgeEmoji}</span>` : '';
       
       // Créer la structure gauche
@@ -644,7 +628,7 @@ function renderLobby() {
       const playerName = document.createElement("div");
       playerName.className = "player-name";
       playerName.style.cssText = "font-weight:700; font-size:1rem; color:white; display:flex; align-items:center;";
-      playerName.innerHTML = `${avatarDisplay}${escapeHtml(p.name)}${badgeDisplay}`;
+      playerName.innerHTML = `<span style="font-size:1.3rem; margin-right:6px;">${avatarEmoji}</span>${escapeHtml(p.name)}${badgeDisplay}`;
       
       // Créer les badges
       const badges = document.createElement("div");
@@ -839,16 +823,8 @@ function renderGame() {
   const captainIconSrc = isCaptain ? getRoleImagePath("capitaine.webp") : "";
 
   // hide legacy small icons container (kept for compatibility)
-  // V31: Afficher l'avatar du joueur actuel
   const icons = $("roleIcons");
-  if (icons) {
-    const me = state.players?.find(p => p.playerId === state.you?.playerId);
-    if (me) {
-      icons.innerHTML = getAvatarHtml(me, 48, 0);
-    } else {
-      icons.innerHTML = "";
-    }
-  }
+  if (icons) icons.innerHTML = "";
 
   roleCard.innerHTML = `
     <div class="role-card-inner">
@@ -1461,8 +1437,7 @@ function renderEnd() {
     // V25: Stats cumulées
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
-      // V31: Utiliser la fonction utilitaire pour l'avatar (stats résumé)
-      const avatarDisplay = getAvatarHtml(player, 28, 8);
+      let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       // V26: Calcul du taux de première élimination
@@ -1471,7 +1446,7 @@ function renderEnd() {
       return `<div class="player-item" style="margin:8px 0; ${colorStyle}">
         <div class="player-left">
           <div style="font-weight:900; display:flex; align-items:center;">
-            ${avatarDisplay}
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
@@ -1484,8 +1459,7 @@ function renderEnd() {
     const detailed = rep.detailedStatsByName || {};
     const detailedHtml = Object.entries(detailed).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
-      // V31: Utiliser la fonction utilitaire pour l'avatar (stats détaillées)
-      const avatarDisplay = getAvatarHtml(player, 28, 8);
+      let avatarEmoji = player?.avatarEmoji || '👤';
       const colorStyle = player?.colorHex ? `border-left: 3px solid ${player.colorHex};` : '';
       
       const roles = Object.entries(s.roleWinRates || {}).map(([rk, pct]) => {
@@ -1540,7 +1514,7 @@ function renderEnd() {
         <!-- BANDEAU HAUT : Nom + Stats générales (100% largeur) -->
         <div style="margin-bottom:14px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.15);">
           <div style="font-weight:900; display:flex; align-items:center; margin-bottom:6px;">
-            ${avatarDisplay}
+            <span style="font-size:1.3rem; margin-right:8px;">${avatarEmoji}</span>
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9; font-size:0.85rem;">
@@ -2228,16 +2202,12 @@ $("joinBtn").onclick = () => { clearError(); showScreen("joinScreen"); };
 $("backFromCreate").onclick = () => { clearError(); showScreen("homeScreen"); };
 $("backFromJoin").onclick = () => { clearError(); showScreen("homeScreen"); };
 
-// FIX: Fonction pour émettre la création de room (utilise le nom sauvegardé ou le champ)
-function emitCreateRoom() {
+function createRoomFlow() {
   clearError();
-  // Récupérer le nom depuis sessionStorage (sauvegardé par createRoomFlow) ou depuis le champ
-  let name = sessionStorage.getItem(STORAGE.name);
-  if (!name) {
-    name = mustName();
-    if (!name) return;
-    sessionStorage.setItem(STORAGE.name, name);
-  }
+  const name = mustName();
+  if (!name) return;
+  sessionStorage.setItem(STORAGE.name, name);
+  showScreen("createScreen");
 
   // Provide immediate feedback even before the first roomState arrives
   setNotice("Création de la mission…");
@@ -2245,24 +2215,27 @@ function emitCreateRoom() {
   // D9 V20: Récupérer les données de personnalisation avec le bon thème
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   
-  // Récupérer le token d'auth si présent
-  const token = localStorage.getItem('saboteur_token');
-  
-  // Vérifier si la vidéo est désactivée
-  const disableVideoCheckbox = document.getElementById('disableVideoCheckbox');
-  const chatOnly = disableVideoCheckbox ? disableVideoCheckbox.checked : true;
+  // V31: Fallback direct pour avatarUrl depuis localStorage
+  let avatarUrl = customization.avatarUrl;
+  if (!avatarUrl) {
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+  }
   
   socket.emit("createRoom", { 
     playerId, 
-    playerName: name,  // FIX: Le serveur attend "playerName" pas "name"
-    token,             // FIX: Le serveur attend "token" pas "playerToken"
-    theme: homeSelectedTheme,  // FIX: Le serveur attend "theme" pas "themeId"
-    videoEnabled: !chatOnly,
-    chatOnly,
+    name, 
+    playerToken, 
+    themeId: homeSelectedTheme,
     // D9: Données de personnalisation
-    customAvatar: customization.customAvatar, // V30: Avatar photo
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
+    avatarUrl: avatarUrl,
     colorId: customization.colorId,
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,
@@ -2277,21 +2250,9 @@ function emitCreateRoom() {
   });
 }
 
-// createBtn sur homeScreen: Valide le nom, sauvegarde, et crée directement la room
-function createRoomFlow() {
-  clearError();
-  const name = mustName();
-  if (!name) return;
-  sessionStorage.setItem(STORAGE.name, name);
-  showScreen("createScreen");
-  // Émettre immédiatement la création
-  emitCreateRoom();
-}
-
 // UX: the big home button creates the room directly.
 $("createBtn").onclick = createRoomFlow;
-// createRoomBtn sur createScreen: Utilise le nom déjà sauvegardé
-$("createRoomBtn").onclick = emitCreateRoom;
+$("createRoomBtn").onclick = createRoomFlow;
 
 $("joinRoomBtn").onclick = () => {
   clearError();
@@ -2306,18 +2267,27 @@ $("joinRoomBtn").onclick = () => {
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   console.log('[D9 V20] joinRoom customization:', customization);
   
-  // Récupérer le token d'auth si présent
-  const token = localStorage.getItem('saboteur_token');
+  // V31: Fallback direct pour avatarUrl depuis localStorage
+  let avatarUrl = customization.avatarUrl;
+  if (!avatarUrl) {
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+  }
   
   socket.emit("joinRoom", { 
     playerId, 
-    playerName: name,  // FIX: Le serveur attend "playerName" pas "name"
+    name, 
     roomCode, 
-    token,             // FIX: Le serveur attend "token" pas "playerToken"
+    playerToken,
     // D9: Données de personnalisation
-    customAvatar: customization.customAvatar, // V30: Avatar photo
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
+    avatarUrl: avatarUrl,
     colorId: customization.colorId,
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,
@@ -2364,6 +2334,12 @@ socket.on("roomState", (s) => {
   state = s;
   // D6: Stocker aussi dans window.lastKnownState pour video-tracks.js
   window.lastKnownState = s;
+  // Exposer state globalement pour game.html
+  window.state = s;
+  // Mettre à jour la visibilité du sélecteur de thème
+  if (typeof window.updateThemeSelectVisibility === 'function') {
+    window.updateThemeSelectVisibility();
+  }
   
   refreshBuildBadge();
 
@@ -2548,7 +2524,11 @@ showScreen("homeScreen");
 
 let availableThemes = [];
 let currentTheme = null;
-let homeSelectedTheme = "default"; // Thème choisi sur la page d'accueil (avant d'entrer dans une room)
+// Thème choisi sur la page d'accueil - initialiser depuis localStorage si disponible
+let homeSelectedTheme = localStorage.getItem('saboteur_theme') || "default";
+// Exposer globalement pour game.html
+window.homeSelectedTheme = homeSelectedTheme;
+console.log('[Theme] homeSelectedTheme initialisé à:', homeSelectedTheme);
 
 // Résout le chemin d'une image de rôle selon le thème actif
 function getRoleImagePath(filename) {
@@ -2659,15 +2639,19 @@ fetch('https://saboteurs-2.onrender.com/api/themes')
       console.log("[themes] Loaded themes:", availableThemes.map(t => t.id));
       console.log("[themes] Available themes count:", availableThemes.length);
       
-      // Appliquer le thème par défaut au chargement
-      const defaultTheme = availableThemes.find(t => t.id === "default");
-      if (defaultTheme) {
-        currentTheme = defaultTheme;
-        homeSelectedTheme = "default";
-        console.log("[themes] Set default theme:", currentTheme.id);
-        console.log("[themes] Default theme has roles:", Object.keys(currentTheme.roles || {}));        
+      // Utiliser le thème sauvegardé dans localStorage (défini par index.html ou sélecteur)
+      const savedThemeId = localStorage.getItem('saboteur_theme') || "default";
+      const savedTheme = availableThemes.find(t => t.id === savedThemeId);
+      const themeToApply = savedTheme || availableThemes.find(t => t.id === "default");
+      
+      if (themeToApply) {
+        currentTheme = themeToApply;
+        homeSelectedTheme = themeToApply.id;
+        window.homeSelectedTheme = themeToApply.id;
+        console.log("[themes] Applied saved theme:", currentTheme.id);
+        console.log("[themes] Theme has roles:", Object.keys(currentTheme.roles || {}));        
         // Appliquer les styles CSS
-        applyThemeStyles("default");
+        applyThemeStyles(themeToApply.id);
         
         // Appliquer les traductions
         applyThemeTranslations();
@@ -2675,7 +2659,7 @@ fetch('https://saboteurs-2.onrender.com/api/themes')
         // Rendre le sélecteur de thème sur la page d'accueil
         renderHomeThemeSelector();
       } else {
-        console.error("[themes] No default theme found!");
+        console.error("[themes] No theme found!");
       }
     } else {
       console.error("[themes] Invalid response format:", data);
