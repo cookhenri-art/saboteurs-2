@@ -756,6 +756,9 @@ function newRoom(code, hostPlayerId) {
     playerTokens: new Map(), // playerToken -> playerId (pour reconnexion robuste)
     timers: new Map(),      // playerId -> {notifyTimer, removeTimer}
     matchLog: [],
+    
+    // Chat messages
+    chatMessages: [],  // { id, playerId, playerName, message, timestamp, type: 'player'|'system' }
 
     // consumables
     doctorLifeUsed: false,
@@ -911,6 +914,9 @@ function setPhase(room, phase, data = {}) {
   const alive = alivePlayers(room).length;
   logger.phaseStart(room.code, phase, room.day, room.night, alive);
   
+  // Envoyer un message système dans le chat pour les phases importantes
+  sendSystemChatMessage(room, phase, data);
+  
   // Calculer et émettre les permissions vidéo pour cette phase
   const permissions = videoPermissions.calculateRoomPermissions(phase, room.players);
   const videoMessage = videoPermissions.getPhaseVideoMessage(phase);
@@ -923,6 +929,70 @@ function setPhase(room, phase, data = {}) {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night} video=${videoMessage}`);
   } catch {}
 
+}
+
+// Envoie un message système dans le chat
+function sendSystemChatMessage(room, phase, data) {
+  let message = null;
+  const themeId = room.themeId || "default";
+  
+  switch (phase) {
+    case "ROLE_REVEAL":
+      message = "🎭 La partie commence ! Les rôles sont distribués.";
+      break;
+    case "CAPTAIN_CANDIDACY":
+      message = "👑 Phase de candidature au poste de Capitaine.";
+      break;
+    case "CAPTAIN_VOTE":
+      message = "🗳️ Vote pour élire le Capitaine.";
+      break;
+    case "NIGHT_START":
+      message = `🌙 Nuit ${room.night} - Les rôles spéciaux agissent...`;
+      break;
+    case "DAY_DISCUSSION":
+      message = `☀️ Jour ${room.day} - Discussion ouverte.`;
+      break;
+    case "DAY_VOTE":
+      message = "🗳️ Vote du jour - Qui sera éliminé ?";
+      break;
+    case "DAY_TIEBREAK":
+      message = "⚖️ Égalité ! Le Capitaine doit départager.";
+      break;
+    case "REVENGE":
+      if (data.eliminatedName) {
+        message = `💀 ${data.eliminatedName} a été éliminé(e) et peut se venger !`;
+      }
+      break;
+    case "GAME_OVER":
+      if (data.winner) {
+        const winnerText = data.winner === "saboteurs" ? "Les Saboteurs" : "L'Équipage";
+        message = `🏆 Fin de partie ! ${winnerText} ont gagné !`;
+      }
+      break;
+    case "GAME_ABORTED":
+      message = "⚠️ Partie annulée - Pas assez de joueurs.";
+      break;
+  }
+  
+  if (message) {
+    const chatMsg = {
+      id: `sys_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      playerId: null,
+      playerName: "Système",
+      avatarEmoji: "🤖",
+      message: message,
+      timestamp: Date.now(),
+      type: "system"
+    };
+    
+    room.chatMessages.push(chatMsg);
+    if (room.chatMessages.length > 100) {
+      room.chatMessages.shift();
+    }
+    
+    // Diffuser à tous les joueurs
+    io.to(room.code).emit("chatMessage", chatMsg);
+  }
 }
 
 function requiredPlayersForPhase(room) {
@@ -2886,6 +2956,60 @@ io.on("connection", (socket) => {
     emitRoom(room);
     cb && cb({ ok: true, themeId });
   });
+
+  // ========== CHAT MODULE ==========
+  
+  // Envoyer un message de chat
+  socket.on("chatMessage", ({ message }, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    
+    const player = room.players.get(socket.data.playerId);
+    if (!player) return cb && cb({ ok: false, error: "Joueur introuvable" });
+    
+    // Validation du message
+    const trimmedMessage = (message || "").trim();
+    if (!trimmedMessage) return cb && cb({ ok: false, error: "Message vide" });
+    if (trimmedMessage.length > 500) return cb && cb({ ok: false, error: "Message trop long (max 500 caractères)" });
+    
+    // Rate limiting: max 10 messages par 10 secondes par joueur
+    if (!rateLimiter.check(socket.data.playerId, "chatMessage", socket.data.playerId)) {
+      return cb && cb({ ok: false, error: "Trop de messages, attendez un moment" });
+    }
+    
+    // Créer le message
+    const chatMsg = {
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      playerId: player.playerId,
+      playerName: player.name,
+      avatarEmoji: player.avatarEmoji || "👤",
+      message: trimmedMessage,
+      timestamp: Date.now(),
+      type: "player"
+    };
+    
+    // Stocker le message (garder les 100 derniers)
+    room.chatMessages.push(chatMsg);
+    if (room.chatMessages.length > 100) {
+      room.chatMessages.shift();
+    }
+    
+    // Diffuser à tous les joueurs de la room
+    io.to(room.code).emit("chatMessage", chatMsg);
+    
+    logger.info("chat_message", { roomCode: room.code, playerId: player.playerId, messageLength: trimmedMessage.length });
+    cb && cb({ ok: true });
+  });
+  
+  // Récupérer l'historique du chat (pour reconnexion)
+  socket.on("getChatHistory", (_, cb) => {
+    const room = rooms.get(socket.data.roomCode);
+    if (!room) return cb && cb({ ok: false, error: "Room introuvable" });
+    
+    cb && cb({ ok: true, messages: room.chatMessages });
+  });
+
+  // ========== FIN CHAT MODULE ==========
 
   // V9.3.1: Toggle video disabled option
   socket.on("setVideoDisabled", ({ videoDisabled }, cb) => {
