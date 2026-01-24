@@ -697,13 +697,9 @@
           // 1. Mettre à jour localStorage
           localStorage.setItem('saboteur_theme', newTheme);
           
-          // 2. Mettre à jour homeSelectedTheme (variable globale du client.js)
+          // 2. Mettre à jour homeSelectedTheme via window (exposé globalement par client.js)
           if (typeof window.homeSelectedTheme !== 'undefined') {
             window.homeSelectedTheme = newTheme;
-          }
-          // Aussi mettre à jour la variable locale du client.js si elle existe
-          if (typeof homeSelectedTheme !== 'undefined') {
-            homeSelectedTheme = newTheme;
           }
           
           // 3. Appliquer les styles visuels via la fonction du client.js
@@ -718,13 +714,9 @@
             applyThemeTranslations();
           }
           
-          // 5. Mettre à jour currentTheme si availableThemes existe
-          if (typeof availableThemes !== 'undefined' && Array.isArray(availableThemes)) {
-            const theme = availableThemes.find(t => t.id === newTheme);
-            if (theme && typeof currentTheme !== 'undefined') {
-              currentTheme = theme;
-            }
-          }
+          // 5. Mettre à jour currentTheme via la fonction du client.js si elle existe
+          // Note: currentTheme est une variable locale du client.js, on ne peut pas la modifier directement
+          // Mais checkAndApplyTheme() ou applyThemeStyles() le font déjà
           
           // 6. Précharger les assets du thème
           if (typeof preloadThemeAssets === 'function') {
@@ -767,15 +759,12 @@
           themeSelect.value = state.themeId;
           localStorage.setItem('saboteur_theme', state.themeId);
           
-          // Mettre à jour homeSelectedTheme
+          // Mettre à jour homeSelectedTheme via window (exposé globalement par client.js)
           if (typeof window.homeSelectedTheme !== 'undefined') {
             window.homeSelectedTheme = state.themeId;
           }
-          if (typeof homeSelectedTheme !== 'undefined') {
-            homeSelectedTheme = state.themeId;
-          }
           
-          // Appliquer les styles et traductions
+          // Appliquer les styles et traductions via les fonctions du client.js
           if (typeof applyThemeStyles === 'function') {
             applyThemeStyles(state.themeId);
           } else {
@@ -783,14 +772,6 @@
           }
           if (typeof applyThemeTranslations === 'function') {
             applyThemeTranslations();
-          }
-          
-          // Mettre à jour currentTheme
-          if (typeof availableThemes !== 'undefined' && Array.isArray(availableThemes)) {
-            const theme = availableThemes.find(t => t.id === state.themeId);
-            if (theme && typeof currentTheme !== 'undefined') {
-              currentTheme = theme;
-            }
           }
           
           console.log('[Theme] Synchronisé avec serveur:', state.themeId);
