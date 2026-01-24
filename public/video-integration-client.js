@@ -33,6 +33,10 @@ let videoRoomJoined = false;
 let isInitializingVideo = false; // Protection contre joins multiples
 let isCreatingRoom = false;      // Protection contre create-room multiples
 
+// V32: Variable globale pour bloquer les joueurs sans crédits vidéo
+// Initialisée à null (inconnu), mise à jour dès le premier roomState
+let playerCanBroadcastVideo = null;
+
 // D3: Sur mobile, l'activation vidéo doit être déclenchée par une interaction utilisateur.
 // IMPORTANT: on exige un geste utilisateur À CHAQUE chargement de page (session), pas un flag persistant.
 const VIDEO_IS_MOBILE = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.innerWidth < 768;
@@ -93,8 +97,8 @@ function prepareVideoRoom(state) {
   if (videoRoomUrl || isPreparingVideoRoom) return;
   if (!state?.started || state?.ended || state?.aborted) return;
   if (state?.videoDisabled) return;
-  // V32: Bloquer si le joueur n'a pas les crédits vidéo
-  if (state?.you?.canBroadcastVideo === false) {
+  // V32: Bloquer si le joueur n'a pas les crédits vidéo (vérifier les deux sources)
+  if (playerCanBroadcastVideo === false || state?.you?.canBroadcastVideo === false) {
     console.log('[Video] ⛔ Player has no video credits, skipping video entirely');
     return;
   }
@@ -102,9 +106,15 @@ function prepareVideoRoom(state) {
 
   isPreparingVideoRoom = true;
   const apiUrl = `/api/video/create-room/${state.roomCode}`;
-  console.log('[Video] 📡 Preparing room (no-join):', apiUrl);
+  // V32: Envoyer le playerId pour vérification côté serveur
+  const playerId = state?.you?.playerId || window.playerId || sessionStorage.getItem('is_playerId');
+  console.log('[Video] 📡 Preparing room (no-join):', apiUrl, { playerId });
 
-  fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+  fetch(apiUrl, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ playerId })
+  })
     .then(res => res.json())
     .then(data => {
       if (data?.ok && data?.roomUrl) {
@@ -132,8 +142,13 @@ function joinVideoRoomNow(state) {
     return;
   }
   // V32: Bloquer si le joueur n'a pas les crédits vidéo
-  if (state?.you?.canBroadcastVideo === false) {
-    console.log('[Video] ⛔ Player has no video credits, cannot join video');
+  // Vérifier DEUX sources : la variable globale ET le state actuel
+  const canBroadcast = playerCanBroadcastVideo !== false && state?.you?.canBroadcastVideo !== false;
+  if (!canBroadcast) {
+    console.log('[Video] ⛔ Player has no video credits, cannot join video', { 
+      globalVar: playerCanBroadcastVideo, 
+      stateVar: state?.you?.canBroadcastVideo 
+    });
     showVideoStatus('⛔ Crée un compte pour la vidéo', 'error');
     return;
   }
@@ -210,8 +225,8 @@ function initVideoForGame(state) {
     return;
   }
   
-  // V32: Bloquer si le joueur n'a pas les crédits vidéo
-  if (state?.you?.canBroadcastVideo === false) {
+  // V32: Bloquer si le joueur n'a pas les crédits vidéo (vérifier les deux sources)
+  if (playerCanBroadcastVideo === false || state?.you?.canBroadcastVideo === false) {
     console.log('[Video] ⛔ Player has no video credits, skipping video entirely');
     return;
   }
@@ -235,14 +250,17 @@ function initVideoForGame(state) {
 
   // Demander la création de la room vidéo au serveur
   const apiUrl = `/api/video/create-room/${state.roomCode}`;
-  console.log('[Video] 📡 Fetching:', apiUrl);
+  // V32: Envoyer le playerId pour vérification côté serveur
+  const playerId = state?.you?.playerId || window.playerId || sessionStorage.getItem('is_playerId');
+  console.log('[Video] 📡 Fetching:', apiUrl, { playerId });
 
   isCreatingRoom = true;
   fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
-    }
+    },
+    body: JSON.stringify({ playerId })
   })
     .then(res => {
       console.log('[Video] 📥 Response status:', res.status);
@@ -604,6 +622,12 @@ function cleanupVideo() {
   socket.on("roomState", (state) => {
     // Stocker l'état pour debug
     window.lastKnownState = state;
+    
+    // V32: Mettre à jour immédiatement le statut de broadcast vidéo
+    if (state?.you?.canBroadcastVideo !== undefined) {
+      playerCanBroadcastVideo = state.you.canBroadcastVideo;
+      console.log('[Video] V32: canBroadcastVideo updated to:', playerCanBroadcastVideo);
+    }
 
     // D4: Synchroniser avec le VideoModeController
     syncWithVideoModeController(state);
