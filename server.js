@@ -2095,6 +2095,7 @@ function publicRoomStateFor(room, viewerId) {
       ready: !!p.ready,
       isHost: room.hostPlayerId === p.playerId,
       isCaptain: !!p.isCaptain,
+      canBroadcastVideo: !!p.canBroadcastVideo, // V32: Peut diffuser vidéo
       // D9: Données de personnalisation
       avatarId: p.avatarId || null,
       avatarEmoji: p.avatarEmoji || null,
@@ -2910,6 +2911,25 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
   const now = Date.now();
   
   if (!p) {
+    // V32: Vérifier si le joueur peut diffuser de la vidéo (a un compte avec crédits)
+    let canBroadcastVideo = false;
+    if (playerToken) {
+      try {
+        const decoded = jwt.verify(playerToken, JWT_SECRET);
+        if (decoded?.userId) {
+          const user = dbGet("SELECT account_type, video_credits, email_verified FROM users WHERE id = ?", [decoded.userId]);
+          if (user && user.email_verified) {
+            const limits = getUserLimits(user);
+            // Peut diffuser si crédits illimités OU si a des crédits restants
+            canBroadcastVideo = (limits.videoCredits === Infinity || user.video_credits > 0);
+          }
+        }
+      } catch (e) {
+        // Token invalide ou expiré, pas de broadcast vidéo
+        canBroadcastVideo = false;
+      }
+    }
+    
     // V32: Si pas d'avatar IA et que l'emoji est déjà pris, en assigner un différent
     let avatarEmoji = customization.avatarEmoji || null;
     const avatarUrl = customization.avatarUrl || null;
@@ -2946,6 +2966,7 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
       playerToken,           // Token pour reconnexion
       lastSeenAt: now,       // Dernière activité
       joinedAt: now,         // Date de première connexion
+      canBroadcastVideo,     // V32: Peut diffuser vidéo (compte avec crédits)
       // D9: Données de personnalisation
       avatarId: customization.avatarId || null,
       avatarEmoji: avatarEmoji,  // V32: Peut être réassigné
