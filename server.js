@@ -2914,6 +2914,7 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
       // D9: Données de personnalisation
       avatarId: customization.avatarId || null,
       avatarEmoji: customization.avatarEmoji || null,
+      avatarUrl: customization.avatarUrl || null,  // V31: Avatar IA généré
       colorId: customization.colorId || null,
       colorHex: customization.colorHex || null,
       badgeId: customization.badgeId || null,
@@ -3303,6 +3304,7 @@ io.on("connection", (socket) => {
       playerId: player.playerId,
       playerName: player.name,
       avatarEmoji: player.avatarEmoji || "👤",
+      avatarUrl: player.avatarUrl || null,  // V31: Avatar IA
       message: trimmedMessage,
       timestamp: Date.now(),
       type: "player"
