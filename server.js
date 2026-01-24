@@ -64,7 +64,20 @@ const ACCOUNT_LIMITS = {
   admin: { videoCredits: Infinity, avatars: Infinity, themes: "all", customPrompt: true }
 };
 
-const ADMIN_CODES = ["HENRICO-DEV", "SABOTEUR-ADMIN", "DEV-UNLIMITED"];
+const ADMIN_CODES = ["HENRICO-DEV", "SABOTEUR-ADMIN", "DEV-UNLIMITED", "ADMIN-MASTER-2024"];
+
+// Codes famille (donnent accès subscriber)
+const FAMILY_CODES = ["FAMILLE2024", "SABOTEUR-PAPA", "SABOTEUR-MAMAN", "SABOTEUR-FAMILLE"];
+
+// Codes promo spéciaux
+const PROMO_CODES = {
+  "BETA-TESTER-VIP": "subscriber",   // Abonnement gratuit
+  "PACK-PREMIUM-FREE": "pack"        // Pack 50 crédits
+};
+
+// V32 Option D: Tracking des sessions utilisateurs connectés (un seul compte à la fois)
+// Map: userId -> { socketId, roomCode, playerId, connectedAt }
+const userSessions = new Map();
 
 const BLOCKED_EMAIL_DOMAINS = [
   "tempmail.com", "throwaway.email", "guerrillamail.com", "mailinator.com",
@@ -2298,8 +2311,25 @@ app.post("/api/auth/register", async (req, res) => {
     if (existingUsername) return res.status(400).json({ error: "Pseudo déjà pris" });
 
     let accountType = "free";
-    if (promoCode && ADMIN_CODES.includes(promoCode.toUpperCase().trim())) {
-      accountType = "admin";
+    let videoCredits = 2; // Par défaut pour free
+    
+    if (promoCode) {
+      const code = promoCode.toUpperCase().trim();
+      
+      if (ADMIN_CODES.includes(code)) {
+        accountType = "admin";
+        videoCredits = 999999;
+      } else if (FAMILY_CODES.includes(code)) {
+        accountType = "subscriber";
+        videoCredits = 999999; // Famille = illimité
+      } else if (PROMO_CODES[code]) {
+        accountType = PROMO_CODES[code];
+        if (accountType === "subscriber") {
+          videoCredits = 999999;
+        } else if (accountType === "pack") {
+          videoCredits = 50;
+        }
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -2309,7 +2339,7 @@ app.post("/api/auth/register", async (req, res) => {
     const result = dbInsert(
       `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, accountType === "admin" ? 999999 : 2]
+      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits]
     );
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
@@ -2319,7 +2349,7 @@ app.post("/api/auth/register", async (req, res) => {
 
     res.json({
       success: true, token,
-      user: { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType, emailVerified: false, videoCredits: accountType === "admin" ? 999999 : 2 },
+      user: { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType, emailVerified: false, videoCredits },
       message: emailResult.simulated ? "Compte créé ! (Email simulé)" : "Compte créé ! Vérifie ton email."
     });
   } catch (error) {
@@ -2863,6 +2893,78 @@ app.delete("/api/video/delete-room/:roomCode", async (req, res) => {
     res.status(500).json({ ok: false, error: error.message });
   }
 });
+
+// ===================================================
+// API ADMIN (temporaires - à supprimer en production)
+// ===================================================
+const ADMIN_SECRET = "SABOTEUR-ADMIN-2024-SECRET";
+
+// Upgrade un compte en admin
+app.post("/api/admin/upgrade", (req, res) => {
+  const { email, secretCode } = req.body;
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ ok: false, error: "Code secret invalide" });
+  }
+  if (!email) {
+    return res.status(400).json({ ok: false, error: "Email requis" });
+  }
+  
+  const user = dbGet("SELECT id, username, account_type FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ ok: false, error: "Utilisateur non trouvé" });
+  }
+  
+  dbRun("UPDATE users SET account_type = 'admin', video_credits = 999999 WHERE id = ?", [user.id]);
+  logger.info("admin_upgrade", { email, userId: user.id });
+  
+  res.json({ ok: true, message: `${user.username} est maintenant admin`, user: { id: user.id, email, username: user.username, accountType: "admin" } });
+});
+
+// Lister tous les utilisateurs
+app.get("/api/admin/users", (req, res) => {
+  const { secretCode } = req.query;
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ ok: false, error: "Code secret invalide" });
+  }
+  
+  const users = dbAll("SELECT id, email, username, account_type, email_verified, video_credits, created_at FROM users ORDER BY created_at DESC");
+  res.json({ ok: true, count: users.length, users });
+});
+
+// Supprimer un utilisateur
+app.post("/api/admin/delete-user", (req, res) => {
+  const { email, secretCode } = req.body;
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ ok: false, error: "Code secret invalide" });
+  }
+  if (!email) {
+    return res.status(400).json({ ok: false, error: "Email requis" });
+  }
+  
+  const user = dbGet("SELECT id, username FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ ok: false, error: "Utilisateur non trouvé" });
+  }
+  
+  dbRun("DELETE FROM users WHERE id = ?", [user.id]);
+  logger.info("admin_delete_user", { email, userId: user.id });
+  
+  res.json({ ok: true, message: `Utilisateur ${user.username} supprimé` });
+});
+
+// Reset les limites IP
+app.post("/api/admin/clear-ip-logs", (req, res) => {
+  const { secretCode } = req.body;
+  if (secretCode !== ADMIN_SECRET) {
+    return res.status(403).json({ ok: false, error: "Code secret invalide" });
+  }
+  
+  dbRun("DELETE FROM ip_tracking");
+  logger.info("admin_clear_ip_logs");
+  
+  res.json({ ok: true, message: "Logs IP effacés" });
+});
+
 // ===================================================
 
 const server = http.createServer(app);
@@ -2908,6 +3010,76 @@ function isNameTaken(room, name, exceptPlayerId = null) {
     if (normalizePlayerName(p.name) === needle) return true;
   }
   return false;
+}
+
+// V32 Option D: Vérifier si un compte est déjà connecté ailleurs
+// Retourne { allowed: true } ou { allowed: false, error: "message" }
+function checkUserAlreadyConnected(authToken, socketId) {
+  if (!authToken) return { allowed: true }; // Invités toujours OK
+  
+  try {
+    const decoded = jwt.verify(authToken, JWT_SECRET);
+    if (!decoded?.id) return { allowed: true };
+    
+    const userId = decoded.id;
+    const existingSession = userSessions.get(userId);
+    
+    if (existingSession && existingSession.socketId !== socketId) {
+      // Vérifier si l'ancien socket est encore actif
+      const oldSocket = io.sockets.sockets.get(existingSession.socketId);
+      if (oldSocket && oldSocket.connected) {
+        logger.warn("duplicate_session_blocked", { 
+          userId, 
+          existingSocketId: existingSession.socketId, 
+          newSocketId: socketId,
+          existingRoom: existingSession.roomCode
+        });
+        return { 
+          allowed: false, 
+          error: "Ce compte est déjà connecté dans une autre session. Déconnecte-toi d'abord." 
+        };
+      } else {
+        // L'ancien socket n'est plus actif, nettoyer
+        userSessions.delete(userId);
+      }
+    }
+    
+    return { allowed: true, userId };
+  } catch (e) {
+    // Token invalide, on laisse passer (sera traité comme invité)
+    return { allowed: true };
+  }
+}
+
+// V32 Option D: Enregistrer une session utilisateur
+function registerUserSession(authToken, socketId, roomCode, playerId) {
+  if (!authToken) return;
+  
+  try {
+    const decoded = jwt.verify(authToken, JWT_SECRET);
+    if (decoded?.id) {
+      userSessions.set(decoded.id, {
+        socketId,
+        roomCode,
+        playerId,
+        connectedAt: Date.now()
+      });
+      logger.info("user_session_registered", { userId: decoded.id, socketId, roomCode });
+    }
+  } catch (e) {
+    // Ignorer
+  }
+}
+
+// V32 Option D: Supprimer une session utilisateur
+function unregisterUserSession(socketId) {
+  for (const [userId, session] of userSessions.entries()) {
+    if (session.socketId === socketId) {
+      userSessions.delete(userId);
+      logger.info("user_session_unregistered", { userId, socketId });
+      break;
+    }
+  }
 }
 
 function joinRoomCommon(socket, room, playerId, name, playerToken = null, customization = {}, authToken = null) {
@@ -3161,6 +3333,13 @@ io.on("connection", (socket) => {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
     }
     
+    // V32 Option D: Vérifier si le compte est déjà connecté ailleurs
+    // DÉSACTIVÉ POUR LES TESTS - À ACTIVER EN PRODUCTION
+    // const sessionCheck = checkUserAlreadyConnected(authToken, socket.id);
+    // if (!sessionCheck.allowed) {
+    //   return cb && cb({ ok: false, error: sessionCheck.error });
+    // }
+    
     try {
       const code = genRoomCode(rooms);
       const room = newRoom(code, playerId);
@@ -3184,6 +3363,10 @@ io.on("connection", (socket) => {
       const customization = { avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName };
       // V32: Passer authToken pour vérifier les crédits vidéo
       joinRoomCommon(socket, room, playerId, name, playerToken, customization, authToken);
+      
+      // V32 Option D: Enregistrer la session - DÉSACTIVÉ POUR LES TESTS
+      // registerUserSession(authToken, socket.id, code, playerId);
+      
       cb && cb({ ok: true, roomCode: code, host: true });
     } catch (e) {
       logger.error("createRoom_failed", { error: e.message, playerId });
