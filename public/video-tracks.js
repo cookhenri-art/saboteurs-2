@@ -1295,10 +1295,19 @@
 
     btn.onclick = () => {
       // V27: Vérifier si le mode sans vidéo est activé AVANT d'activer la visio
+      // V32: Aussi vérifier si le joueur a les crédits vidéo
       const state = window.lastKnownState;
       if (state?.videoDisabled) {
         log('⛔ Video disabled for this game - ignoring video activation request');
         btn.textContent = "🚫 Visio désactivée";
+        btn.style.background = "rgba(100,50,50,0.7)";
+        return;
+      }
+      
+      // V32: Bloquer si pas de crédits vidéo
+      if (state?.you?.canBroadcastVideo === false) {
+        log('⛔ Player has no video credits - ignoring video activation request');
+        btn.textContent = "🚫 Crée un compte";
         btn.style.background = "rgba(100,50,50,0.7)";
         return;
       }
@@ -1309,8 +1318,8 @@
         setTimeout(() => { 
           // V27: Re-vérifier après le délai
           const currentState = window.lastKnownState;
-          if (currentState?.videoDisabled) {
-            btn.textContent = "🚫 Visio désactivée";
+          if (currentState?.videoDisabled || currentState?.you?.canBroadcastVideo === false) {
+            btn.textContent = currentState?.you?.canBroadcastVideo === false ? "🚫 Crée un compte" : "🚫 Visio désactivée";
             btn.style.background = "rgba(100,50,50,0.7)";
           } else {
             btn.textContent = "🎥 Visio activée";
@@ -1324,18 +1333,22 @@
   }
 
   // V27: Fonction pour mettre à jour l'état du bouton vidéo selon videoDisabled
+  // V32: Aussi vérifier canBroadcastVideo
   function updateVideoButtonState(btn) {
     if (!btn) return;
     
     const state = window.lastKnownState;
     const videoDisabled = state?.videoDisabled;
+    const canBroadcastVideo = state?.you?.canBroadcastVideo;
     
-    if (videoDisabled) {
-      btn.textContent = "🚫 Visio désactivée";
+    // V32: Si joueur n'a pas les crédits, traiter comme videoDisabled
+    if (videoDisabled || canBroadcastVideo === false) {
+      const message = canBroadcastVideo === false ? "🚫 Crée un compte" : "🚫 Visio désactivée";
+      btn.textContent = message;
       btn.style.background = "rgba(100,50,50,0.7)";
       btn.style.cursor = "not-allowed";
       btn.style.opacity = "0.7";
-      log('⛔ Video button disabled (videoDisabled=true)');
+      log('⛔ Video button disabled (videoDisabled=' + videoDisabled + ', canBroadcast=' + canBroadcastVideo + ')');
     } else {
       btn.textContent = "🎥 Visio activée";
       btn.style.background = "rgba(0,0,0,0.55)";
@@ -1345,15 +1358,19 @@
   }
 
   // V27: Observer les changements d'état pour mettre à jour le bouton
+  // V32: Aussi observer canBroadcastVideo
   function setupVideoDisabledWatcher() {
-    // Vérifier périodiquement si videoDisabled a changé
+    // Vérifier périodiquement si videoDisabled ou canBroadcastVideo a changé
     let lastVideoDisabled = null;
+    let lastCanBroadcast = null;
     setInterval(() => {
       const state = window.lastKnownState;
       const currentVideoDisabled = state?.videoDisabled;
+      const currentCanBroadcast = state?.you?.canBroadcastVideo;
       
-      if (currentVideoDisabled !== lastVideoDisabled) {
+      if (currentVideoDisabled !== lastVideoDisabled || currentCanBroadcast !== lastCanBroadcast) {
         lastVideoDisabled = currentVideoDisabled;
+        lastCanBroadcast = currentCanBroadcast;
         const btn = document.querySelector("#videoToggleButton");
         if (btn) {
           updateVideoButtonState(btn);

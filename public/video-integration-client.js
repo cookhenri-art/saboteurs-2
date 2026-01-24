@@ -93,6 +93,11 @@ function prepareVideoRoom(state) {
   if (videoRoomUrl || isPreparingVideoRoom) return;
   if (!state?.started || state?.ended || state?.aborted) return;
   if (state?.videoDisabled) return;
+  // V32: Bloquer si le joueur n'a pas les crédits vidéo
+  if (state?.you?.canBroadcastVideo === false) {
+    console.log('[Video] ⛔ Player has no video credits, skipping video entirely');
+    return;
+  }
   if (!state?.roomCode) return;
 
   isPreparingVideoRoom = true;
@@ -124,6 +129,12 @@ function joinVideoRoomNow(state) {
   }
   if (isInitializingVideo) {
     console.log('[Video] Join already in progress, skipping');
+    return;
+  }
+  // V32: Bloquer si le joueur n'a pas les crédits vidéo
+  if (state?.you?.canBroadcastVideo === false) {
+    console.log('[Video] ⛔ Player has no video credits, cannot join video');
+    showVideoStatus('⛔ Crée un compte pour la vidéo', 'error');
     return;
   }
   if (!videoRoomUrl) {
@@ -196,6 +207,12 @@ function initVideoForGame(state) {
   // V9.3.1: Vérifier si la vidéo est désactivée pour cette partie
   if (state.videoDisabled) {
     console.log('[Video] Video disabled for this game, skipping initialization');
+    return;
+  }
+  
+  // V32: Bloquer si le joueur n'a pas les crédits vidéo
+  if (state?.you?.canBroadcastVideo === false) {
+    console.log('[Video] ⛔ Player has no video credits, skipping video entirely');
     return;
   }
 
