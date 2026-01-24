@@ -15,8 +15,12 @@ function getAvatarHtml(player, size = 32, marginRight = 6) {
   
   // Priorité: avatarUrl (IA ou emoji classique) > customAvatar (photo) > avatarEmoji
   if (player.avatarUrl) {
-    // V31: Vérifier si c'est une URL (commence par http) ou un emoji
-    if (player.avatarUrl.startsWith('http')) {
+    // V31: Vérifier si c'est une URL/chemin d'image ou un emoji
+    // Une image commence par http, https, / ou data:
+    const isImageUrl = player.avatarUrl.startsWith('http') || 
+                       player.avatarUrl.startsWith('/') || 
+                       player.avatarUrl.startsWith('data:');
+    if (isImageUrl) {
       // Avatar IA (image)
       return `<img src="${player.avatarUrl}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
     } else {
@@ -642,7 +646,10 @@ function renderLobby() {
       
       // V31: Afficher l'avatar comme placeholder quand pas de vidéo
       if (p.avatarUrl) {
-        if (p.avatarUrl.startsWith('http')) {
+        const isImageUrl = p.avatarUrl.startsWith('http') || 
+                           p.avatarUrl.startsWith('/') || 
+                           p.avatarUrl.startsWith('data:');
+        if (isImageUrl) {
           // Avatar IA (image)
           videoSlot.innerHTML = `<img src="${p.avatarUrl}" class="video-slot-avatar" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'">`;
         } else {

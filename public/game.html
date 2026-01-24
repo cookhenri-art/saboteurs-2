@@ -804,7 +804,11 @@
           // V31: Gérer avatar IA (URL) ou avatar classique (emoji)
           if (user.currentAvatar) {
             const avatarEl = document.getElementById('userBarAvatar');
-            if (user.currentAvatar.startsWith('http')) {
+            // Vérifier si c'est une URL/chemin d'image ou un emoji
+            const isImageUrl = user.currentAvatar.startsWith('http') || 
+                               user.currentAvatar.startsWith('/') || 
+                               user.currentAvatar.startsWith('data:');
+            if (isImageUrl) {
               // Avatar IA (URL)
               avatarEl.src = user.currentAvatar;
               avatarEl.style.display = '';
