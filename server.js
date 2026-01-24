@@ -2805,21 +2805,13 @@ app.get("/api/assets/audio", (req, res) => {
 app.post("/api/video/create-room/:roomCode", async (req, res) => {
   try {
     const { roomCode } = req.params;
-    const { playerId } = req.body || {};
     
     if (!roomCode) {
       return res.status(400).json({ ok: false, error: "roomCode required" });
     }
 
-    // V32: Vérifier si le joueur a le droit de diffuser de la vidéo
-    const room = rooms.get(roomCode);
-    if (room && playerId) {
-      const player = room.players.get(playerId);
-      if (player && player.canBroadcastVideo === false) {
-        logger.warn("video_create_blocked", { roomCode, playerId, reason: "no_video_credits" });
-        return res.status(403).json({ ok: false, error: "Crée un compte pour la vidéo" });
-      }
-    }
+    // V32: Note - On ne bloque PAS ici car cette API crée la room pour TOUS les joueurs
+    // Le blocage individuel se fait côté client dans joinVideoRoomNow()
 
     // A) Anti-concurrence + C) récupération si la room existe déjà (après redéploiement)
     const videoRoom = await dailyManager.getOrCreateVideoRoom(roomCode);
