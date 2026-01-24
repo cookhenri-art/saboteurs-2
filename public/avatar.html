@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🎨 Créer mon Avatar - Saboteur</title>
   <link rel="stylesheet" href="auth-themes.css">
+  <!-- V32: Socket.IO pour synchro temps réel -->
+  <script src="/socket.io/socket.io.js"></script>
   
   <style>
     .container {
@@ -892,6 +894,9 @@
     async function init() {
       initSiteTheme();
       
+      // V32: Initialiser le socket pour la synchro temps réel
+      initSocket();
+      
       const token = localStorage.getItem('saboteur_token');
       if (!token) {
         window.location.href = '/?redirect=avatar';
@@ -925,6 +930,26 @@
 
       renderAvatarThemes();
       renderCharacters();
+    }
+    
+    // V32: Initialiser le socket (connexion au serveur)
+    function initSocket() {
+      try {
+        window.socket = io(window.location.origin, {
+          transports: ['websocket', 'polling'],
+          timeout: 10000
+        });
+        
+        window.socket.on('connect', () => {
+          console.log('[Avatar] Socket connecté');
+        });
+        
+        window.socket.on('disconnect', () => {
+          console.log('[Avatar] Socket déconnecté');
+        });
+      } catch (e) {
+        console.log('[Avatar] Erreur socket:', e);
+      }
     }
 
     function renderAvatarThemes() {
@@ -1290,12 +1315,37 @@
             localStorage.setItem('saboteur_user', JSON.stringify(user));
           }
           
+          // V32: Synchroniser avec le socket si en partie
+          syncAvatarWithSocket(emoji);
+          
           currentClassicAvatar = emoji;
           showToast(`✅ Avatar "${emoji}" sélectionné !`);
         }
       } catch (e) { 
         console.error(e);
         showToast('Erreur', true); 
+      }
+    }
+
+    // V32: Fonction pour synchroniser l'avatar avec le socket (mise à jour en temps réel)
+    function syncAvatarWithSocket(avatarUrl) {
+      const playerId = sessionStorage.getItem('is_playerId');
+      const roomCode = sessionStorage.getItem('is_roomCode');
+      
+      if (playerId && roomCode && window.socket && window.socket.connected) {
+        window.socket.emit('updateCustomization', {
+          playerId,
+          roomCode,
+          avatarUrl: avatarUrl
+        }, (response) => {
+          if (response?.ok) {
+            console.log('[Avatar] Synchro socket réussie');
+          } else {
+            console.log('[Avatar] Synchro socket échouée:', response?.error);
+          }
+        });
+      } else {
+        console.log('[Avatar] Pas de partie en cours, synchro socket ignorée');
       }
     }
 
@@ -1336,6 +1386,9 @@
         user.currentAvatar = url;
         localStorage.setItem('saboteur_user', JSON.stringify(user));
       }
+      
+      // V32: Synchroniser avec le socket si en partie
+      syncAvatarWithSocket(url);
     };
 
     // Initialiser les avatars classiques au chargement

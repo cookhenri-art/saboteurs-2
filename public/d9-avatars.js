@@ -119,20 +119,42 @@
         log('Custom avatar photo loaded');
       }
       
-      // D11 V24: Si aucun avatar n'est défini (et pas de photo), en assigner un aléatoire
-      if (!currentCustomization.avatarId && !currentCustomization.customAvatar) {
-        const defaultAvatars = AVATARS.default;
-        const randomIndex = Math.floor(Math.random() * defaultAvatars.length);
-        const randomAvatar = defaultAvatars[randomIndex];
-        currentCustomization.avatarId = randomAvatar.id;
-        currentCustomization.avatarEmoji = randomAvatar.emoji;
-        log('Assigned random avatar:', randomAvatar);
-        saveCustomization(); // Sauvegarder immédiatement
-      }
+      // V32: Ne plus assigner d'avatar aléatoire ici - sera fait dans getRandomAvatarForTheme
+      // L'avatar sera choisi au moment du join/create en fonction du thème
     } catch (e) {
       console.error('[D9-Avatars] Failed to load customization:', e);
     }
     return currentCustomization;
+  }
+
+  /**
+   * V32: Assigne un avatar aléatoire du thème, différent des joueurs existants
+   * @param {string} themeId - ID du thème
+   * @param {Array} existingPlayers - Liste des joueurs déjà dans la room (optionnel)
+   */
+  function getRandomAvatarForTheme(themeId, existingPlayers = []) {
+    const themeAvatars = AVATARS[themeId] || AVATARS.default;
+    
+    // Récupérer les emojis déjà utilisés par les autres joueurs
+    const usedEmojis = existingPlayers
+      .map(p => p.avatarEmoji || p.avatarUrl)
+      .filter(e => e && !e.startsWith('http') && !e.startsWith('/'));
+    
+    // Filtrer les avatars disponibles (non utilisés)
+    let availableAvatars = themeAvatars.filter(a => !usedEmojis.includes(a.emoji));
+    
+    // Si tous sont pris, utiliser tous les avatars du thème
+    if (availableAvatars.length === 0) {
+      availableAvatars = themeAvatars;
+    }
+    
+    // Choisir aléatoirement parmi les disponibles
+    const randomIndex = Math.floor(Math.random() * availableAvatars.length);
+    const randomAvatar = availableAvatars[randomIndex];
+    
+    log('V32: Random avatar for theme', themeId, ':', randomAvatar, '(avoided:', usedEmojis, ')');
+    
+    return randomAvatar;
   }
 
   /**
@@ -718,12 +740,13 @@
   /**
    * Obtient les données de customisation pour l'envoi au serveur
    * @param {string} overrideTheme - Thème à utiliser (optionnel)
+   * @param {Array} existingPlayers - Liste des joueurs déjà dans la room (optionnel)
    * @returns {Object}
    */
-  function getCustomizationForServer(overrideTheme = null) {
+  function getCustomizationForServer(overrideTheme = null, existingPlayers = []) {
     // D11 V20: Utiliser le thème passé en paramètre, sinon celui du document, sinon 'default'
     const theme = overrideTheme || document.documentElement.dataset.theme || 'default';
-    const avatar = getAvatar(theme);
+    let avatar = getAvatar(theme);
     const color = getColor();
     const badge = getBadge();
     
@@ -743,6 +766,16 @@
         avatarUrl = user.currentAvatar || null;
       }
     } catch (e) {}
+    
+    // V32: Si pas d'avatar IA, pas de photo, et pas d'avatar choisi, en assigner un aléatoire du thème
+    if (!avatarUrl && !customAvatar && !avatar) {
+      avatar = getRandomAvatarForTheme(theme, existingPlayers);
+      // Mettre à jour la customisation en mémoire (mais pas sauvegarder pour les invités)
+      if (avatar) {
+        currentCustomization.avatarId = avatar.id;
+        currentCustomization.avatarEmoji = avatar.emoji;
+      }
+    }
     
     log('getCustomizationForServer:', { 
       theme, 
@@ -819,6 +852,7 @@
     setAvatar,
     getAvatar,
     getAvatarById, // D11 V5: Nouvelle fonction pour récupérer avatar par ID
+    getRandomAvatarForTheme, // V32: Avatar aléatoire unique par thème
     createAvatarSelector,
     AVATARS,
     
