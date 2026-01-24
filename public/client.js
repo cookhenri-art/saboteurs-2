@@ -2467,14 +2467,14 @@ socket.on("roomState", (s) => {
   const myPlayerId = sessionStorage.getItem('is_playerId');
   
   // Si un nouveau capitaine est élu (pas de capitaine avant, ou changement de capitaine)
-  // ET que c'est MOI qui suis élu
-  if (newCaptain && newCaptain.playerId !== previousCaptainId && newCaptain.playerId === myPlayerId) {
-    console.log('[D7] ⭐ I am the new captain!');
+  // V32: Afficher l'overlay capitaine pour TOUS les joueurs (pas seulement l'élu)
+  if (newCaptain && newCaptain.playerId !== previousCaptainId) {
+    console.log('[D7] ⭐ New captain elected:', newCaptain.name);
     // Délai pour laisser le temps au rendu de se faire
     setTimeout(() => {
       if (window.D7Animations) {
-        console.log('[D7] ⭐ Triggering captain election animation for ME:', newCaptain.name);
-        D7Animations.animateCaptainElection();
+        console.log('[D7] ⭐ Triggering captain election animation for:', newCaptain.name);
+        D7Animations.animateCaptainElection(newCaptain.playerId);
       }
     }, 500);
   }
