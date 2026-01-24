@@ -2086,6 +2086,7 @@ function publicRoomStateFor(room, viewerId) {
       // D9: Données de personnalisation
       avatarId: p.avatarId || null,
       avatarEmoji: p.avatarEmoji || null,
+      avatarUrl: p.avatarUrl || null,  // V31: Avatar IA
       colorId: p.colorId || null,
       colorHex: p.colorHex || null,
       badgeId: p.badgeId || null,
