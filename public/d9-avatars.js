@@ -18,8 +18,7 @@
   // Avatars disponibles par thème
   const AVATARS = {
     default: [
-      { id: 'astronaut_1', name: 'Astronaute 1', emoji: '👨‍🚀' },
-      { id: 'astronaut_2', name: 'Astronaute 2', emoji: '👩‍🚀' },
+      { id: 'astronaut', name: 'Astronaute', emoji: '🧑‍🚀' },
       { id: 'robot_1', name: 'Robot', emoji: '🤖' },
       { id: 'alien_1', name: 'Alien', emoji: '👽' },
       { id: 'rocket', name: 'Fusée', emoji: '🚀' },
@@ -27,7 +26,8 @@
       { id: 'ufo', name: 'OVNI', emoji: '🛸' },
       { id: 'star', name: 'Étoile', emoji: '⭐' },
       { id: 'moon', name: 'Lune', emoji: '🌙' },
-      { id: 'planet', name: 'Planète', emoji: '🪐' }
+      { id: 'planet', name: 'Planète', emoji: '🪐' },
+      { id: 'comet', name: 'Comète', emoji: '☄️' }
     ],
     werewolf: [
       { id: 'wolf', name: 'Loup', emoji: '🐺' },
