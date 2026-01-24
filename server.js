@@ -257,6 +257,23 @@ function dbInsert(sql, params = []) {
   }
 }
 
+function dbAll(sql, params = []) {
+  if (!authDb) return [];
+  try {
+    const stmt = authDb.prepare(sql);
+    stmt.bind(params);
+    const results = [];
+    while (stmt.step()) {
+      results.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return results;
+  } catch (e) {
+    console.error("❌ DB All Error:", e.message);
+    return [];
+  }
+}
+
 // ============================================================================
 // SECTION AUTH: HELPERS
 // ============================================================================
@@ -2434,6 +2451,297 @@ app.get("/api/avatars/themes", optionalAuth, (req, res) => {
     };
   }
   res.json({ themes });
+});
+
+// ============== CONFIGURATION MULTER POUR UPLOAD PHOTO ==============
+let uploadPhoto = null;
+if (multer) {
+  const photoStorage = multer.diskStorage({
+    destination: UPLOADS_DIR,
+    filename: (req, file, cb) => {
+      const uniqueId = crypto.randomBytes(8).toString("hex");
+      cb(null, `photo_${uniqueId}${path.extname(file.originalname)}`);
+    }
+  });
+  uploadPhoto = multer({
+    storage: photoStorage,
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB max
+  });
+}
+
+// ============== ROUTES AVATAR GÉNÉRATION ==============
+
+// Générer un avatar IA
+app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
+  if (!uploadPhoto) {
+    return res.status(500).json({ error: "Service d'upload non configuré" });
+  }
+  uploadPhoto.single("photo")(req, res, next);
+}, async (req, res) => {
+  try {
+    const { theme, character, customPrompt } = req.body;
+    const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
+
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: "Photo requise" });
+    }
+
+    const limits = getUserLimits(user);
+
+    // Vérifier limite avatars
+    if (limits.avatars !== Infinity && user.avatars_used >= limits.avatars) {
+      await fsPromises.unlink(req.file.path).catch(() => {});
+      return res.status(403).json({ 
+        error: "Limite d'avatars atteinte",
+        avatarsUsed: user.avatars_used,
+        avatarsLimit: limits.avatars
+      });
+    }
+
+    // Vérifier accès au thème
+    const availableThemes = limits.themes === "all" ? Object.keys(AVATAR_THEMES) : limits.themes;
+    if (!availableThemes.includes(theme)) {
+      await fsPromises.unlink(req.file.path).catch(() => {});
+      return res.status(403).json({ error: "Thème non accessible avec ton abonnement" });
+    }
+
+    const themeConfig = AVATAR_THEMES[theme];
+    const charConfig = themeConfig?.characters?.[character];
+
+    if (!themeConfig || !charConfig) {
+      await fsPromises.unlink(req.file.path).catch(() => {});
+      return res.status(400).json({ error: "Thème ou personnage invalide" });
+    }
+
+    // Vérifier Replicate
+    if (!Replicate) {
+      await fsPromises.unlink(req.file.path).catch(() => {});
+      return res.status(500).json({ error: "Service de génération non configuré (Replicate manquant)" });
+    }
+
+    const replicate = new Replicate({ auth: REPLICATE_API_TOKEN });
+
+    // Lire et convertir l'image en base64
+    const imageBuffer = await fsPromises.readFile(req.file.path);
+    const base64Image = `data:image/jpeg;base64,${imageBuffer.toString("base64")}`;
+
+    // Construire le prompt
+    let finalPrompt;
+    if (customPrompt && limits.customPrompt) {
+      finalPrompt = customPrompt;
+    } else {
+      finalPrompt = `portrait photo of a person transformed into ${charConfig.prompt}, ${themeConfig.background}, high quality, detailed, 4k`;
+    }
+
+    console.log(`🎨 Génération avatar: ${theme}/${character} pour ${user.username}`);
+
+    // Paramètres
+    const instant_id = parseFloat(req.body.instant_id_strength) || 0.8;
+    const prompt_str = parseFloat(req.body.prompt_strength) || 4.5;
+    const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
+    const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
+
+    // Récupérer la dernière version du modèle
+    let modelVersion = "fofr/face-to-many";
+    try {
+      const model = await replicate.models.get("fofr", "face-to-many");
+      if (model.latest_version?.id) {
+        modelVersion = `fofr/face-to-many:${model.latest_version.id}`;
+        console.log(`📦 Utilisation version: ${model.latest_version.id.substring(0, 8)}...`);
+      }
+    } catch (versionError) {
+      console.log(`⚠️ Impossible de récupérer la version, utilisation du fallback`);
+    }
+
+    // Appeler Replicate
+    const output = await replicate.run(modelVersion, {
+      input: {
+        image: base64Image,
+        style: "3D",
+        prompt: finalPrompt,
+        negative_prompt: "blurry, bad quality, distorted, ugly, deformed",
+        prompt_strength: prompt_str,
+        denoising_strength: denoise_str,
+        instant_id_strength: instant_id,
+        control_depth_strength: depth_str
+      }
+    });
+
+    const resultUrl = Array.isArray(output) ? output[0] : output;
+
+    if (!resultUrl) {
+      throw new Error("Pas d'image générée");
+    }
+
+    // Télécharger et sauvegarder localement
+    let localAvatarUrl = resultUrl;
+    try {
+      const protocol = resultUrl.startsWith("https") ? https : http;
+      const imageData = await new Promise((resolve, reject) => {
+        protocol.get(resultUrl, (response) => {
+          const chunks = [];
+          response.on("data", chunk => chunks.push(chunk));
+          response.on("end", () => resolve(Buffer.concat(chunks)));
+          response.on("error", reject);
+        }).on("error", reject);
+      });
+
+      const avatarFilename = `avatar_${user.id}_${Date.now()}.webp`;
+      const avatarPath = path.join(AVATARS_DIR, avatarFilename);
+
+      if (sharp) {
+        await sharp(imageData)
+          .resize(512, 512, { fit: "cover" })
+          .webp({ quality: 90 })
+          .toFile(avatarPath);
+        localAvatarUrl = `/avatars/${avatarFilename}`;
+        console.log(`💾 Avatar sauvegardé: ${localAvatarUrl}`);
+      }
+    } catch (downloadError) {
+      console.error("⚠️ Erreur sauvegarde locale:", downloadError.message);
+    }
+
+    // Mettre à jour la base de données
+    dbInsert(
+      "INSERT INTO avatars (user_id, theme, character_type, image_url) VALUES (?, ?, ?, ?)",
+      [user.id, theme, character, localAvatarUrl]
+    );
+
+    dbRun(
+      "UPDATE users SET avatars_used = avatars_used + 1, current_avatar = ? WHERE id = ?",
+      [localAvatarUrl, user.id]
+    );
+
+    // Nettoyer le fichier uploadé
+    await fsPromises.unlink(req.file.path).catch(() => {});
+
+    res.json({
+      success: true,
+      url: localAvatarUrl,
+      theme,
+      themeName: themeConfig.name,
+      character,
+      characterName: charConfig.name,
+      avatarsUsed: user.avatars_used + 1,
+      avatarsLimit: limits.avatars
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur génération avatar:", error);
+    if (req.file) {
+      await fsPromises.unlink(req.file.path).catch(() => {});
+    }
+    res.status(500).json({ error: error.message || "Erreur de génération" });
+  }
+});
+
+// Liste des avatars de l'utilisateur
+app.get("/api/avatars/my-avatars", authenticateToken, (req, res) => {
+  try {
+    const avatars = dbAll(
+      "SELECT * FROM avatars WHERE user_id = ? ORDER BY created_at DESC",
+      [req.user.id]
+    );
+
+    const user = dbGet("SELECT avatars_used, current_avatar FROM users WHERE id = ?", [req.user.id]);
+    const limits = getUserLimits(user);
+
+    res.json({
+      avatars: avatars || [],
+      avatarsUsed: user?.avatars_used || 0,
+      avatarsLimit: limits.avatars,
+      currentAvatar: user?.current_avatar
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur liste avatars:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Définir l'avatar actif
+app.post("/api/avatars/set-current", authenticateToken, (req, res) => {
+  try {
+    const { avatarUrl } = req.body;
+
+    dbRun("UPDATE users SET current_avatar = ? WHERE id = ?", [avatarUrl, req.user.id]);
+
+    res.json({ success: true, currentAvatar: avatarUrl });
+
+  } catch (error) {
+    console.error("❌ Erreur set avatar:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Supprimer un avatar
+app.delete("/api/avatars/delete", authenticateToken, (req, res) => {
+  try {
+    // Vérifier le type de compte
+    const userInfo = dbGet("SELECT account_type FROM users WHERE id = ?", [req.user.id]);
+    if (userInfo?.account_type === "free") {
+      return res.status(403).json({ 
+        error: "Les comptes gratuits ne peuvent pas supprimer leurs avatars." 
+      });
+    }
+
+    const { avatarId, avatarUrl } = req.body;
+
+    // Trouver l'avatar
+    let avatar;
+    if (avatarId) {
+      avatar = dbGet("SELECT * FROM avatars WHERE id = ? AND user_id = ?", [avatarId, req.user.id]);
+    } else if (avatarUrl) {
+      avatar = dbGet("SELECT * FROM avatars WHERE image_url = ? AND user_id = ?", [avatarUrl, req.user.id]);
+    }
+
+    if (!avatar) {
+      return res.status(404).json({ error: "Avatar non trouvé" });
+    }
+
+    // Supprimer le fichier physique
+    if (avatar.image_url && avatar.image_url.startsWith("/avatars/")) {
+      const filename = avatar.image_url.replace("/avatars/", "");
+      const filepath = path.join(AVATARS_DIR, filename);
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+        console.log(`🗑️ Fichier avatar supprimé: ${filename}`);
+      }
+    }
+
+    // Supprimer de la base de données
+    dbRun("DELETE FROM avatars WHERE id = ?", [avatar.id]);
+
+    // Réinitialiser si c'était l'avatar actif
+    const user = dbGet("SELECT current_avatar FROM users WHERE id = ?", [req.user.id]);
+    if (user?.current_avatar === avatar.image_url) {
+      const remainingAvatar = dbGet(
+        "SELECT image_url FROM avatars WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+        [req.user.id]
+      );
+      dbRun("UPDATE users SET current_avatar = ? WHERE id = ?", 
+        [remainingAvatar?.image_url || null, req.user.id]);
+    }
+
+    // Décrémenter le compteur
+    dbRun("UPDATE users SET avatars_used = MAX(0, avatars_used - 1) WHERE id = ?", [req.user.id]);
+
+    console.log(`🗑️ Avatar ${avatar.id} supprimé pour user ${req.user.id}`);
+
+    res.json({ 
+      success: true, 
+      message: "Avatar supprimé",
+      deletedId: avatar.id
+    });
+
+  } catch (error) {
+    console.error("❌ Erreur suppression avatar:", error);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 // ============================================================================
