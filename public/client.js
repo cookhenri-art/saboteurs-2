@@ -2388,13 +2388,6 @@ socket.on("roomState", (s) => {
   window.lastKnownState = s;
   // Exposer state globalement pour game.html
   window.state = s;
-  
-  // V32: Récupérer si ce joueur peut diffuser de la vidéo
-  const currentPlayerId = sessionStorage.getItem('is_playerId');
-  const me = s.players?.find(p => p.playerId === currentPlayerId);
-  window.canBroadcastVideo = me?.canBroadcastVideo ?? false;
-  console.log('[V32] canBroadcastVideo:', window.canBroadcastVideo);
-  
   // Mettre à jour la visibilité du sélecteur de thème
   if (typeof window.updateThemeSelectVisibility === 'function') {
     window.updateThemeSelectVisibility();
