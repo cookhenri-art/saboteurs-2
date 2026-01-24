@@ -712,9 +712,16 @@
           if (window.socket) {
             clearInterval(checkSocket);
             
-            // Écouter roomState pour synchroniser le thème
+            // Écouter roomState pour synchroniser le thème et gérer le bouton Avatar
             window.socket.on('roomState', function(state) {
               setTimeout(window.syncThemeWithServer, 100);
+              
+              // V31: Cacher le bouton Avatar quand la partie commence (pas en LOBBY)
+              const avatarBtn = document.getElementById('avatarBtn');
+              if (avatarBtn) {
+                const isInGame = state && (state.started === true || (state.phase && state.phase !== 'LOBBY'));
+                avatarBtn.style.display = isInGame ? 'none' : '';
+              }
             });
             
             // En mode invité: intercepter les émissions pour forcer chatOnly

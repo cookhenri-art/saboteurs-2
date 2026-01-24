@@ -631,9 +631,16 @@ function renderLobby() {
       videoSlot.className = "player-video-slot";
       videoSlot.dataset.playerId = p.playerId;
       videoSlot.setAttribute("aria-label", `Video ${p.name}`);
-      videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px;";
+      videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden;";
       
-      // D11 V19: Le slot est créé vide - video-tracks.js attachera la vidéo
+      // V31: Afficher l'avatar IA comme placeholder quand pas de vidéo
+      if (p.avatarUrl) {
+        videoSlot.innerHTML = `<img src="${p.avatarUrl}" class="video-slot-avatar" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'">`;
+      } else if (p.avatarEmoji) {
+        videoSlot.innerHTML = `<span style="font-size:1.8rem;">${p.avatarEmoji}</span>`;
+      }
+      
+      // D11 V19: video-tracks.js attachera la vidéo par-dessus si disponible
       
       // Créer le conteneur d'info
       const playerInfo = document.createElement("div");
