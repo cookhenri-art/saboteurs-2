@@ -734,9 +734,20 @@
     // V30: Récupérer l'avatar photo si disponible
     const customAvatar = window.AvatarCustomizer?.getSavedAvatar() || currentCustomization.customAvatar || null;
     
+    // V31: Récupérer l'avatar IA généré (depuis localStorage user)
+    let avatarUrl = null;
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+    
     log('getCustomizationForServer:', { 
       theme, 
       hasCustomAvatar: !!customAvatar,
+      hasAvatarUrl: !!avatarUrl,
       avatarId: avatar?.id, 
       avatarEmoji: avatar?.emoji 
     });
@@ -746,6 +757,8 @@
       roomCode,
       // V30: Avatar photo prioritaire sur emoji
       customAvatar: customAvatar,
+      // V31: Avatar IA généré
+      avatarUrl: avatarUrl,
       avatarId: avatar?.id,
       avatarEmoji: customAvatar ? null : avatar?.emoji, // Pas d'emoji si photo
       colorId: color.id,

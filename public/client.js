@@ -2223,6 +2223,7 @@ function createRoomFlow() {
     // D9: Données de personnalisation
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
+    avatarUrl: customization.avatarUrl,
     colorId: customization.colorId,
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,
@@ -2262,6 +2263,7 @@ $("joinRoomBtn").onclick = () => {
     // D9: Données de personnalisation
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
+    avatarUrl: customization.avatarUrl,
     colorId: customization.colorId,
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,

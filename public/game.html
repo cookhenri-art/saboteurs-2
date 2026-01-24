@@ -625,6 +625,24 @@
         body.guest-mode { padding-top: 90px !important; }
         #topLeftButtons { top: 62px !important; }
         #topRightButtons { top: 62px !important; }
+        
+        /* Fix: Boutons vidéo Daily au-dessus du bandeau */
+        .daily-video-controls,
+        [class*="daily"] button,
+        .video-controls-overlay,
+        .call-controls,
+        iframe[allow*="camera"] + div,
+        .video-control-btn {
+          z-index: 10001 !important;
+        }
+        
+        /* Conteneur vidéo principal */
+        #videoContainer,
+        .video-container,
+        [id*="daily"],
+        .daily-iframe-container {
+          z-index: 10001 !important;
+        }
       `;
       document.head.appendChild(style);
 
@@ -1008,6 +1026,15 @@
             flex-shrink: 0;
           }
           
+          .chat-msg-avatar-img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+            border: 2px solid var(--neon-cyan, #00ffff);
+          }
+          
           .chat-msg-content {
             flex: 1;
             min-width: 0;
@@ -1154,8 +1181,17 @@
         function addMessageToUI(msg) {
           const div = document.createElement('div');
           div.className = 'chat-msg' + (msg.type === 'system' ? ' system' : '');
+          
+          // V31: Utiliser l'avatar IA si disponible, sinon l'emoji
+          let avatarHtml;
+          if (msg.avatarUrl) {
+            avatarHtml = `<img src="${msg.avatarUrl}" class="chat-msg-avatar-img" alt="" onerror="this.outerHTML='<span class=\\'chat-msg-avatar\\'>${msg.avatarEmoji || '👤'}</span>'">`;
+          } else {
+            avatarHtml = `<span class="chat-msg-avatar">${msg.avatarEmoji || '👤'}</span>`;
+          }
+          
           div.innerHTML = `
-            <span class="chat-msg-avatar">${msg.avatarEmoji || '👤'}</span>
+            ${avatarHtml}
             <div class="chat-msg-content">
               <div class="chat-msg-name">${msg.playerName || 'Anonyme'}</div>
               <div class="chat-msg-text">${escapeHtml(msg.message)}</div>
