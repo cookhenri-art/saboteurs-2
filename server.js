@@ -80,32 +80,44 @@ const AVATAR_THEMES = {
     characters: {
       astronaut: { name: "Astronaute", prompt: "wearing white NASA astronaut helmet" },
       alien: { name: "Alien", prompt: "green alien with huge black eyes" },
-      cyborg: { name: "Cyborg", prompt: "half robot face with glowing red eye" }
+      cyborg: { name: "Cyborg", prompt: "half robot face with glowing red eye" },
+      robot: { name: "Robot", prompt: "humanoid robot with metallic skin" },
+      captain: { name: "Capitaine", prompt: "space captain with futuristic uniform" }
     }
   },
   werewolf: {
     name: "Loups-Garous", icon: "🐺", premium: false,
     background: "dark medieval village at night with full moon",
     characters: {
-      werewolf: { name: "Loup-garou", prompt: "werewolf with fur and fangs" },
-      vampire: { name: "Vampire", prompt: "vampire with pale skin and fangs" },
-      witch: { name: "Sorcière", prompt: "witch with pointy hat" }
+      werewolf: { name: "Loup-garou", prompt: "werewolf with fur and fangs howling at moon" },
+      vampire: { name: "Vampire", prompt: "vampire with pale skin, fangs and red eyes" },
+      witch: { name: "Sorcière", prompt: "witch with pointy hat and black cat" },
+      hunter: { name: "Chasseur", prompt: "medieval hunter with crossbow and cloak" },
+      mayor: { name: "Maire", prompt: "medieval village mayor with fancy clothes" },
+      peasant: { name: "Paysan", prompt: "medieval peasant villager with simple clothes" }
     }
   },
   "wizard-academy": {
     name: "Académie des Sorciers", icon: "🧙", premium: true,
-    background: "magical great hall with floating candles",
+    background: "magical great hall with floating candles and enchanted ceiling",
     characters: {
-      wizard: { name: "Sorcier", prompt: "wizard with pointy hat and wand" },
-      ghost: { name: "Fantôme", prompt: "translucent ghostly apparition" }
+      wizard: { name: "Sorcier", prompt: "wizard with pointy hat and magical wand" },
+      ghost: { name: "Fantôme", prompt: "translucent ghostly apparition floating" },
+      house_elf: { name: "Elfe", prompt: "small house elf with big ears and magical eyes" },
+      goblin: { name: "Gobelin", prompt: "mischievous goblin banker with pointed ears" },
+      professor: { name: "Professeur", prompt: "old wise wizard professor with long beard and robes" }
     }
   },
   "mythic-realms": {
     name: "Royaumes Mythiques", icon: "⚔️", premium: true,
-    background: "epic fantasy dragon lair",
+    background: "epic fantasy landscape with castle and mountains",
     characters: {
-      knight: { name: "Chevalier", prompt: "knight in shining armor" },
-      dragon: { name: "Dragon", prompt: "dragonborn with scales" }
+      knight: { name: "Chevalier", prompt: "knight in shining silver armor with sword" },
+      dragon: { name: "Dragon", prompt: "powerful dragonborn warrior with scales and horns" },
+      dwarf: { name: "Nain", prompt: "dwarf warrior with long beard and battle axe" },
+      elf: { name: "Elfe", prompt: "elegant elf archer with pointed ears and bow" },
+      orc: { name: "Orque", prompt: "fierce orc warrior with green skin and tusks" },
+      mage: { name: "Mage", prompt: "powerful mage with glowing staff and mystical robes" }
     }
   }
 };
