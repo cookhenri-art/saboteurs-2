@@ -3003,7 +3003,7 @@ app.post("/api/admin/delete-user", (req, res) => {
   res.json({ ok: true, message: `Utilisateur ${user.username} supprimé` });
 });
 
-// Reset les limites IP
+// Reset les limites IP (inclut account_creation_log)
 app.post("/api/admin/clear-ip-logs", (req, res) => {
   const { secretCode } = req.body;
   if (secretCode !== ADMIN_SECRET) {
@@ -3011,9 +3011,10 @@ app.post("/api/admin/clear-ip-logs", (req, res) => {
   }
   
   dbRun("DELETE FROM ip_tracking");
+  dbRun("DELETE FROM account_creation_log");
   logger.info("admin_clear_ip_logs");
   
-  res.json({ ok: true, message: "Logs IP effacés" });
+  res.json({ ok: true, message: "Logs IP et limites création de compte effacés" });
 });
 
 // ===================================================
