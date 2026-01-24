@@ -76,7 +76,7 @@
 .video-briefing-container {
   display: none;
   position: fixed;
-  z-index: 9500;
+  z-index: 10500;
   background: var(--briefing-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
