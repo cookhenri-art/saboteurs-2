@@ -2215,6 +2215,18 @@ function createRoomFlow() {
   // D9 V20: Récupérer les données de personnalisation avec le bon thème
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   
+  // V31: Fallback direct pour avatarUrl depuis localStorage
+  let avatarUrl = customization.avatarUrl;
+  if (!avatarUrl) {
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+  }
+  
   socket.emit("createRoom", { 
     playerId, 
     name, 
@@ -2223,7 +2235,7 @@ function createRoomFlow() {
     // D9: Données de personnalisation
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
-    avatarUrl: customization.avatarUrl,
+    avatarUrl: avatarUrl,
     colorId: customization.colorId,
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,
@@ -2255,6 +2267,18 @@ $("joinRoomBtn").onclick = () => {
   const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
   console.log('[D9 V20] joinRoom customization:', customization);
   
+  // V31: Fallback direct pour avatarUrl depuis localStorage
+  let avatarUrl = customization.avatarUrl;
+  if (!avatarUrl) {
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+  }
+  
   socket.emit("joinRoom", { 
     playerId, 
     name, 
@@ -2263,7 +2287,7 @@ $("joinRoomBtn").onclick = () => {
     // D9: Données de personnalisation
     avatarId: customization.avatarId,
     avatarEmoji: customization.avatarEmoji,
-    avatarUrl: customization.avatarUrl,
+    avatarUrl: avatarUrl,
     colorId: customization.colorId,
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,
