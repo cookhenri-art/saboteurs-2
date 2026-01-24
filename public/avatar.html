@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎨 Créer mon Avatar IA - Saboteur</title>
+  <title>🎨 Créer mon Avatar - Saboteur</title>
   <link rel="stylesheet" href="auth-themes.css">
   
   <style>
@@ -402,6 +402,45 @@
       object-fit: cover;
     }
 
+    /* Avatars classiques (emojis) */
+    .classic-avatars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .classic-avatar-item {
+      aspect-ratio: 1;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--metal-grey);
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .classic-avatar-item:hover {
+      border-color: var(--neon-main);
+      transform: scale(1.1);
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .classic-avatar-item.active {
+      border-color: var(--neon-green);
+      box-shadow: 0 0 15px var(--neon-green);
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .section-divider {
+      border-top: 1px solid var(--metal-grey);
+      margin: 25px 0 15px 0;
+      padding-top: 15px;
+    }
+
     /* Bouton suppression avatar */
     .gallery-item {
       position: relative;
@@ -584,7 +623,7 @@
 
   <div class="container">
     <header class="header">
-      <h1>🎨 CRÉER MON AVATAR IA</h1>
+      <h1>🎨 CRÉER MON AVATAR</h1>
       <div class="header-buttons">
         <a href="/" class="btn btn-secondary">🏠 Accueil</a>
         <a href="/game.html" class="btn btn-primary">🎮 Jouer</a>
@@ -744,9 +783,17 @@
           <div class="progress-fill"></div>
         </div>
 
-        <h2 class="card-title" style="margin-top: 25px;">📁 MES AVATARS</h2>
+        <h2 class="card-title" style="margin-top: 25px;">📁 MES AVATARS IA</h2>
         <div class="gallery" id="gallery">
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Aucun avatar pour le moment</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Aucun avatar IA pour le moment</p>
+        </div>
+
+        <div class="section-divider">
+          <h2 class="card-title">🎭 AVATARS CLASSIQUES</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">Choisis un emoji comme avatar (sans photo)</p>
+          <div class="classic-avatars-grid" id="classicAvatarsGrid">
+            <!-- Les emojis seront ajoutés par JavaScript -->
+          </div>
         </div>
       </div>
     </div>
@@ -1170,6 +1217,132 @@
       toast.className = 'toast show' + (isError ? ' error' : '');
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
+
+    // ========================================
+    // AVATARS CLASSIQUES (EMOJIS)
+    // ========================================
+    
+    const classicAvatars = [
+      // Personnages
+      '👨‍🚀', '👩‍🚀', '🧑‍🚀', '🤖', '👽', '👾', '🦸', '🦸‍♀️', '🦹', '🦹‍♀️',
+      '🧙', '🧙‍♀️', '🧛', '🧛‍♀️', '🧟', '🧟‍♀️', '🧝', '🧝‍♀️', '🧜', '🧜‍♀️',
+      '🧞', '🧞‍♀️', '🧚', '🧚‍♀️', '👸', '🤴', '🤠', '🥷', '🎅', '🤶',
+      // Animaux
+      '🐺', '🦊', '🐱', '🦁', '🐯', '🐻', '🐼', '🐨', '🐸', '🐲',
+      '🦄', '🦅', '🦉', '🐧', '🐬', '🦈', '🐙', '🦋', '🐝', '🐞',
+      // Objets/Symboles
+      '💀', '👻', '🎃', '🤡', '💎', '🔮', '⚔️', '🛡️', '🏆', '⭐',
+      '🌟', '✨', '🔥', '❄️', '⚡', '🌈', '🌙', '☀️', '🎭', '🎪'
+    ];
+
+    let currentClassicAvatar = null;
+
+    function renderClassicAvatars() {
+      const grid = document.getElementById('classicAvatarsGrid');
+      if (!grid) return;
+      
+      // Récupérer l'avatar actuel du localStorage
+      const savedUser = localStorage.getItem('saboteur_user');
+      let savedEmoji = null;
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          // Si l'avatar actuel est un emoji (pas une URL)
+          if (user.currentAvatar && !user.currentAvatar.startsWith('http')) {
+            savedEmoji = user.currentAvatar;
+          }
+        } catch(e) {}
+      }
+      
+      grid.innerHTML = '';
+      classicAvatars.forEach(emoji => {
+        const item = document.createElement('div');
+        item.className = 'classic-avatar-item' + (emoji === savedEmoji ? ' active' : '');
+        item.textContent = emoji;
+        item.onclick = () => selectClassicAvatar(emoji);
+        grid.appendChild(item);
+      });
+    }
+
+    async function selectClassicAvatar(emoji) {
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/avatars/set-current`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: emoji }) // On envoie l'emoji comme "avatarUrl"
+        });
+        
+        if (res.ok) {
+          // Mettre à jour la sélection visuelle
+          document.querySelectorAll('.classic-avatar-item').forEach(item => {
+            item.classList.toggle('active', item.textContent === emoji);
+          });
+          // Désactiver la sélection des avatars IA
+          document.querySelectorAll('.gallery-item').forEach(item => {
+            item.classList.remove('active');
+          });
+          
+          // Mettre à jour le localStorage
+          const savedUser = localStorage.getItem('saboteur_user');
+          if (savedUser) {
+            const user = JSON.parse(savedUser);
+            user.currentAvatar = emoji;
+            localStorage.setItem('saboteur_user', JSON.stringify(user));
+          }
+          
+          currentClassicAvatar = emoji;
+          showToast(`✅ Avatar "${emoji}" sélectionné !`);
+        }
+      } catch (e) { 
+        console.error(e);
+        showToast('Erreur', true); 
+      }
+    }
+
+    // Modifier loadMyAvatars pour gérer la sélection croisée
+    const originalLoadMyAvatars = loadMyAvatars;
+    loadMyAvatars = async function() {
+      await originalLoadMyAvatars();
+      
+      // Vérifier si l'avatar actuel est un emoji (pas une URL)
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          if (user.currentAvatar && !user.currentAvatar.startsWith('http')) {
+            // C'est un emoji, s'assurer que les avatars IA ne sont pas sélectionnés
+            document.querySelectorAll('.gallery-item').forEach(item => {
+              item.classList.remove('active');
+            });
+          }
+        } catch(e) {}
+      }
+    };
+
+    // Modifier setCurrentAvatar pour désactiver les avatars classiques quand on sélectionne un avatar IA
+    const originalSetCurrentAvatar = setCurrentAvatar;
+    setCurrentAvatar = async function(url) {
+      await originalSetCurrentAvatar(url);
+      // Désactiver tous les avatars classiques
+      document.querySelectorAll('.classic-avatar-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      currentClassicAvatar = null;
+      
+      // Mettre à jour le localStorage
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        user.currentAvatar = url;
+        localStorage.setItem('saboteur_user', JSON.stringify(user));
+      }
+    };
+
+    // Initialiser les avatars classiques au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(renderClassicAvatars, 500);
+    });
 
     init();
   </script>

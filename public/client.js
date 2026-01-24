@@ -13,9 +13,16 @@ function getAvatarHtml(player, size = 32, marginRight = 6) {
   
   const borderColor = player.colorHex || '#00ffff';
   
-  // Priorité: avatarUrl (IA) > customAvatar (photo) > avatarEmoji
+  // Priorité: avatarUrl (IA ou emoji classique) > customAvatar (photo) > avatarEmoji
   if (player.avatarUrl) {
-    return `<img src="${player.avatarUrl}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
+    // V31: Vérifier si c'est une URL (commence par http) ou un emoji
+    if (player.avatarUrl.startsWith('http')) {
+      // Avatar IA (image)
+      return `<img src="${player.avatarUrl}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
+    } else {
+      // Avatar classique (emoji stocké comme avatarUrl)
+      return `<span style="font-size:${size > 24 ? '1.5rem' : '1.2rem'}; margin-right:${marginRight}px;">${player.avatarUrl}</span>`;
+    }
   }
   if (player.customAvatar) {
     return `<img src="${player.customAvatar}" style="width:${size}px; height:${size}px; border-radius:50%; object-fit:cover; margin-right:${marginRight}px; border:2px solid ${borderColor};" onerror="this.outerHTML='<span style=\\'font-size:${size > 24 ? '1.3rem' : '1rem'}; margin-right:${marginRight}px;\\'>${player.avatarEmoji || '👤'}</span>'">`;
@@ -633,9 +640,15 @@ function renderLobby() {
       videoSlot.setAttribute("aria-label", `Video ${p.name}`);
       videoSlot.style.cssText = "flex-shrink:0; width:64px; height:48px; min-width:64px; min-height:48px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); border-radius:8px; overflow:hidden;";
       
-      // V31: Afficher l'avatar IA comme placeholder quand pas de vidéo
+      // V31: Afficher l'avatar comme placeholder quand pas de vidéo
       if (p.avatarUrl) {
-        videoSlot.innerHTML = `<img src="${p.avatarUrl}" class="video-slot-avatar" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'">`;
+        if (p.avatarUrl.startsWith('http')) {
+          // Avatar IA (image)
+          videoSlot.innerHTML = `<img src="${p.avatarUrl}" class="video-slot-avatar" style="width:100%; height:100%; object-fit:cover; border-radius:8px;" onerror="this.style.display='none'">`;
+        } else {
+          // Avatar classique (emoji)
+          videoSlot.innerHTML = `<span style="font-size:2rem;">${p.avatarUrl}</span>`;
+        }
       } else if (p.avatarEmoji) {
         videoSlot.innerHTML = `<span style="font-size:1.8rem;">${p.avatarEmoji}</span>`;
       }

@@ -801,8 +801,29 @@
           document.getElementById('userBarName').textContent = user.username || 'Joueur';
           document.getElementById('avatarBtn').style.display = '';
           
+          // V31: Gérer avatar IA (URL) ou avatar classique (emoji)
           if (user.currentAvatar) {
-            document.getElementById('userBarAvatar').src = user.currentAvatar;
+            const avatarEl = document.getElementById('userBarAvatar');
+            if (user.currentAvatar.startsWith('http')) {
+              // Avatar IA (URL)
+              avatarEl.src = user.currentAvatar;
+              avatarEl.style.display = '';
+              // Supprimer l'emoji si présent
+              const emojiEl = document.getElementById('userBarAvatarEmoji');
+              if (emojiEl) emojiEl.remove();
+            } else {
+              // Avatar classique (emoji)
+              avatarEl.style.display = 'none';
+              // Créer ou mettre à jour l'élément emoji
+              let emojiEl = document.getElementById('userBarAvatarEmoji');
+              if (!emojiEl) {
+                emojiEl = document.createElement('span');
+                emojiEl.id = 'userBarAvatarEmoji';
+                emojiEl.style.cssText = 'font-size: 1.8rem; margin-right: 8px;';
+                avatarEl.parentNode.insertBefore(emojiEl, avatarEl);
+              }
+              emojiEl.textContent = user.currentAvatar;
+            }
           }
           
           // Afficher les crédits vidéo
