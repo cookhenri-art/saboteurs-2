@@ -1757,17 +1757,7 @@ function buildPhaseText(s) {
     return fallback;
   };
   
-  // Helper pour traduire les notices du serveur
-  const translateNotice = (notice) => {
-    if (!notice) return "";
-    // Détecter le texte français et le traduire
-    if (notice.includes("Les rôles ont pu changer") || notice.includes("Revérifiez")) {
-      return tr('game.phaseDesc.rolesChanged', "Les rôles ont pu changer. Revérifiez.") + " ";
-    }
-    return notice + " ";
-  };
-  
-  if (p === "ROLE_REVEAL") return translateNotice(s.phaseData?.notice) + tr('game.phaseDesc.roleReveal', "Regarde ton rôle et valide.");
+  if (p === "ROLE_REVEAL") return (s.phaseData?.notice ? s.phaseData.notice + " " : "") + tr('game.phaseDesc.roleReveal', "Regarde ton rôle et valide.");
   if (p === "CAPTAIN_CANDIDACY") return tr('game.phaseDesc.captainCandidacy', `Choisis si tu te présentes au poste de ${t('captain')}.`);
   if (p === "CAPTAIN_VOTE") return tr('game.phaseDesc.captainVote', `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`);
   if (p === "NIGHT_START") return tr('game.phaseDesc.nightStart', "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.");
