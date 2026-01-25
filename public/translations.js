@@ -2842,6 +2842,321 @@ const TRANSLATIONS = {
         de: "🤝 VERBRECHERVEREINIGUNG",
         pt: "🤝 ASSOCIAÇÃO CRIMINOSA",
         nl: "🤝 CRIMINELE VERENIGING"
+      },
+      gameAborted: {
+        fr: "Partie interrompue — pas assez de joueurs",
+        en: "Game aborted — not enough players",
+        es: "Partida interrumpida — no hay suficientes jugadores",
+        it: "Partita interrotta — non ci sono abbastanza giocatori",
+        de: "Spiel abgebrochen — nicht genug Spieler",
+        pt: "Partida interrompida — jogadores insuficientes",
+        nl: "Spel afgebroken — niet genoeg spelers"
+      },
+      tabSummary: {
+        fr: "Résumé",
+        en: "Summary",
+        es: "Resumen",
+        it: "Riepilogo",
+        de: "Zusammenfassung",
+        pt: "Resumo",
+        nl: "Samenvatting"
+      },
+      tabDetailed: {
+        fr: "Stats détaillées",
+        en: "Detailed stats",
+        es: "Estadísticas detalladas",
+        it: "Statistiche dettagliate",
+        de: "Detaillierte Statistiken",
+        pt: "Estatísticas detalhadas",
+        nl: "Gedetailleerde statistieken"
+      },
+      gameDuration: {
+        fr: "Durée de la partie",
+        en: "Game duration",
+        es: "Duración de la partida",
+        it: "Durata della partita",
+        de: "Spieldauer",
+        pt: "Duração da partida",
+        nl: "Speelduur"
+      },
+      eliminationOrder: {
+        fr: "🚀 Ordre des éjections",
+        en: "🚀 Elimination order",
+        es: "🚀 Orden de eliminaciones",
+        it: "🚀 Ordine delle eliminazioni",
+        de: "🚀 Eliminierungsreihenfolge",
+        pt: "🚀 Ordem de eliminações",
+        nl: "🚀 Eliminatievolgorde"
+      },
+      eliminationDistribution: {
+        fr: "🥧 Répartition des éliminations",
+        en: "🥧 Elimination distribution",
+        es: "🥧 Distribución de eliminaciones",
+        it: "🥧 Distribuzione delle eliminazioni",
+        de: "🥧 Verteilung der Eliminierungen",
+        pt: "🥧 Distribuição de eliminações",
+        nl: "🥧 Verdeling van eliminaties"
+      },
+      noElimination: {
+        fr: "Aucune élimination",
+        en: "No elimination",
+        es: "Sin eliminaciones",
+        it: "Nessuna eliminazione",
+        de: "Keine Eliminierung",
+        pt: "Nenhuma eliminação",
+        nl: "Geen eliminatie"
+      },
+      awards: {
+        fr: "🏆 Awards",
+        en: "🏆 Awards",
+        es: "🏆 Premios",
+        it: "🏆 Premi",
+        de: "🏆 Auszeichnungen",
+        pt: "🏆 Prêmios",
+        nl: "🏆 Awards"
+      },
+      cumulativeStats: {
+        fr: "📈 Stats cumulées (par NOM)",
+        en: "📈 Cumulative stats (by NAME)",
+        es: "📈 Estadísticas acumuladas (por NOMBRE)",
+        it: "📈 Statistiche cumulative (per NOME)",
+        de: "📈 Kumulative Statistiken (nach NAME)",
+        pt: "📈 Estatísticas cumulativas (por NOME)",
+        nl: "📈 Cumulatieve statistieken (op NAAM)"
+      },
+      detailedStats: {
+        fr: "📊 Stats détaillées (par NOM)",
+        en: "📊 Detailed stats (by NAME)",
+        es: "📊 Estadísticas detalladas (por NOMBRE)",
+        it: "📊 Statistiche dettagliate (per NOME)",
+        de: "📊 Detaillierte Statistiken (nach NAME)",
+        pt: "📊 Estatísticas detalhadas (por NOME)",
+        nl: "📊 Gedetailleerde statistieken (op NAAM)"
+      },
+      games: {
+        fr: "Parties",
+        en: "Games",
+        es: "Partidas",
+        it: "Partite",
+        de: "Spiele",
+        pt: "Partidas",
+        nl: "Spellen"
+      },
+      wins: {
+        fr: "Victoires",
+        en: "Wins",
+        es: "Victorias",
+        it: "Vittorie",
+        de: "Siege",
+        pt: "Vitórias",
+        nl: "Overwinningen"
+      },
+      losses: {
+        fr: "Défaites",
+        en: "Losses",
+        es: "Derrotas",
+        it: "Sconfitte",
+        de: "Niederlagen",
+        pt: "Derrotas",
+        nl: "Verliezen"
+      },
+      winrate: {
+        fr: "Winrate",
+        en: "Winrate",
+        es: "Winrate",
+        it: "Winrate",
+        de: "Winrate",
+        pt: "Winrate",
+        nl: "Winrate"
+      },
+      firstElim: {
+        fr: "🎯 1ère élim",
+        en: "🎯 1st elim",
+        es: "🎯 1ª elim",
+        it: "🎯 1ª elim",
+        de: "🎯 1. Elim",
+        pt: "🎯 1ª elim",
+        nl: "🎯 1e elim"
+      },
+      times: {
+        fr: "fois",
+        en: "times",
+        es: "veces",
+        it: "volte",
+        de: "mal",
+        pt: "vezes",
+        nl: "keer"
+      },
+      shortest: {
+        fr: "Courte",
+        en: "Shortest",
+        es: "Corta",
+        it: "Breve",
+        de: "Kürzeste",
+        pt: "Curta",
+        nl: "Kortste"
+      },
+      longest: {
+        fr: "Longue",
+        en: "Longest",
+        es: "Larga",
+        it: "Lunga",
+        de: "Längste",
+        pt: "Longa",
+        nl: "Langste"
+      },
+      combatVs: {
+        fr: "🎯 Combat VS",
+        en: "🎯 Combat VS",
+        es: "🎯 Combate VS",
+        it: "🎯 Combattimento VS",
+        de: "🎯 Kampf VS",
+        pt: "🎯 Combate VS",
+        nl: "🎯 Gevecht VS"
+      },
+      correctVotes: {
+        fr: "Votes corrects",
+        en: "Correct votes",
+        es: "Votos correctos",
+        it: "Voti corretti",
+        de: "Richtige Stimmen",
+        pt: "Votos corretos",
+        nl: "Correcte stemmen"
+      },
+      wrongVotes: {
+        fr: "Votes faux",
+        en: "Wrong votes",
+        es: "Votos incorrectos",
+        it: "Voti sbagliati",
+        de: "Falsche Stimmen",
+        pt: "Votos errados",
+        nl: "Foute stemmen"
+      },
+      eliminated: {
+        fr: "éliminés",
+        en: "eliminated",
+        es: "eliminados",
+        it: "eliminati",
+        de: "eliminiert",
+        pt: "eliminados",
+        nl: "geëlimineerd"
+      },
+      eliminatedErr: {
+        fr: "éliminés (err)",
+        en: "eliminated (err)",
+        es: "eliminados (err)",
+        it: "eliminati (err)",
+        de: "eliminiert (Fehler)",
+        pt: "eliminados (erro)",
+        nl: "geëlimineerd (fout)"
+      },
+      fatalPotionOk: {
+        fr: "Potion fatale ok",
+        en: "Fatal potion ok",
+        es: "Poción fatal ok",
+        it: "Pozione fatale ok",
+        de: "Tödlicher Trank ok",
+        pt: "Poção fatal ok",
+        nl: "Fatale drankje ok"
+      },
+      fatalPotionErr: {
+        fr: "Potion fatale err",
+        en: "Fatal potion err",
+        es: "Poción fatal err",
+        it: "Pozione fatale err",
+        de: "Tödlicher Trank Fehler",
+        pt: "Poção fatal erro",
+        nl: "Fatale drankje fout"
+      },
+      lifePotion: {
+        fr: "Potion vie",
+        en: "Life potion",
+        es: "Poción de vida",
+        it: "Pozione vita",
+        de: "Lebenstrank",
+        pt: "Poção de vida",
+        nl: "Levensdrankje"
+      },
+      notSaved: {
+        fr: "Non sauvés",
+        en: "Not saved",
+        es: "No salvados",
+        it: "Non salvati",
+        de: "Nicht gerettet",
+        pt: "Não salvos",
+        nl: "Niet gered"
+      },
+      captainAction: {
+        fr: "👑 Action du",
+        en: "👑 Action of",
+        es: "👑 Acción del",
+        it: "👑 Azione del",
+        de: "👑 Aktion des",
+        pt: "👑 Ação do",
+        nl: "👑 Actie van"
+      },
+      tiebreakerOk: {
+        fr: "Départage OK",
+        en: "Tiebreaker OK",
+        es: "Desempate OK",
+        it: "Spareggio OK",
+        de: "Stichentscheid OK",
+        pt: "Desempate OK",
+        nl: "Beslissing OK"
+      },
+      tiebreakerKo: {
+        fr: "Départage KO",
+        en: "Tiebreaker KO",
+        es: "Desempate KO",
+        it: "Spareggio KO",
+        de: "Stichentscheid KO",
+        pt: "Desempate KO",
+        nl: "Beslissing KO"
+      },
+      winsByRole: {
+        fr: "📈 Victoires par rôle",
+        en: "📈 Wins by role",
+        es: "📈 Victorias por rol",
+        it: "📈 Vittorie per ruolo",
+        de: "📈 Siege nach Rolle",
+        pt: "📈 Vitórias por papel",
+        nl: "📈 Overwinningen per rol"
+      },
+      vote: {
+        fr: "Vote",
+        en: "Vote",
+        es: "Voto",
+        it: "Voto",
+        de: "Abstimmung",
+        pt: "Voto",
+        nl: "Stem"
+      },
+      revenge: {
+        fr: "Vengeance",
+        en: "Revenge",
+        es: "Venganza",
+        it: "Vendetta",
+        de: "Rache",
+        pt: "Vingança",
+        nl: "Wraak"
+      },
+      linked: {
+        fr: "Liaison",
+        en: "Linked",
+        es: "Vinculado",
+        it: "Collegato",
+        de: "Verbunden",
+        pt: "Ligado",
+        nl: "Verbonden"
+      },
+      other: {
+        fr: "Autre",
+        en: "Other",
+        es: "Otro",
+        it: "Altro",
+        de: "Andere",
+        pt: "Outro",
+        nl: "Ander"
       }
     },
     

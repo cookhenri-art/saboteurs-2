@@ -1435,11 +1435,14 @@ function renderEnd() {
   }
   const title = $("winnerTitle");
   if (state.phase === "GAME_ABORTED") {
-    title.textContent = "Partie interrompue — pas assez de joueurs";
+    title.textContent = window.i18n ? window.i18n('game.endGame.gameAborted') : "Partie interrompue — pas assez de joueurs";
     $("endSummary").innerHTML = `<div style="color: var(--neon-orange); font-weight:800;">${escapeHtml(state.phaseData?.reason || "")}</div>`;
   } else {
-    title.textContent = winner === "SABOTEURS" ? `⚔️ VICTOIRE DES ${t('saboteurs').toUpperCase()}` : (winner === "AMOUREUX" ? "🤝 ASSOCIATION DE MALFAITEURS" : `👨‍🚀 VICTOIRE DES ${t('astronauts').toUpperCase()}`);
-    $("endSummary").innerHTML = `<div style="opacity:.9;">Stats persistées par NOM (serveur).</div>`;
+    const victoryOf = window.i18n ? window.i18n('game.endGame.victoryOf') : "⚔️ VICTOIRE DES";
+    const association = window.i18n ? window.i18n('game.endGame.associationOfCriminals') : "🤝 ASSOCIATION DE MALFAITEURS";
+    const statsPersisted = window.i18n ? window.i18n('game.endGame.statsPersistedByName') : "Stats persistées par NOM (serveur).";
+    title.textContent = winner === "SABOTEURS" ? `${victoryOf} ${t('saboteurs').toUpperCase()}` : (winner === "AMOUREUX" ? association : `${victoryOf} ${t('astronauts').toUpperCase()}`);
+    $("endSummary").innerHTML = `<div style="opacity:.9;">${statsPersisted}</div>`;
   }
 
 
@@ -1470,7 +1473,8 @@ function renderEnd() {
     
     // V25: Générer le Pie Chart SVG
     const pieChartHtml = (() => {
-      if (totalDeaths === 0) return '<div style="opacity:0.7;">Aucune élimination</div>';
+      const noElimText = window.i18n ? window.i18n('game.endGame.noElimination') : 'Aucune élimination';
+      if (totalDeaths === 0) return `<div style="opacity:0.7;">${noElimText}</div>`;
       
       // V26: Couleurs et labels mis à jour
       const colors = {
@@ -1483,12 +1487,12 @@ function renderEnd() {
       };
       
       const labels = {
-        vote: 'Vote',
+        vote: window.i18n ? window.i18n('game.endGame.vote') : 'Vote',
         saboteurs: t('saboteurs'),
         doctor: tRole('doctor') || 'Docteur',
-        revenge: 'Vengeance',
-        linked: 'Liaison',
-        other: 'Autre'
+        revenge: window.i18n ? window.i18n('game.endGame.revenge') : 'Vengeance',
+        linked: window.i18n ? window.i18n('game.endGame.linked') : 'Liaison',
+        other: window.i18n ? window.i18n('game.endGame.other') : 'Autre'
       };
       
       let currentAngle = 0;
@@ -1539,6 +1543,9 @@ function renderEnd() {
       `;
     })();
     
+    // V22: Helper pour les traductions endGame
+    const eg = (key, fallback) => window.i18n ? window.i18n(`game.endGame.${key}`) : fallback;
+    
     // V25: Stats cumulées
     const statsHtml = Object.entries(rep.statsByName || {}).map(([name, s]) => {
       const player = state.players.find(p => p.name === name);
@@ -1555,8 +1562,8 @@ function renderEnd() {
             ${avatarDisplay}
             ${escapeHtml(name)}
           </div>
-          <div style="opacity:.9;">Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b></div>
-          <div style="opacity:.8; font-size:0.9rem;">🎯 1ère élim: <b>${s.firstEliminated || 0}</b> fois (${firstElimPct}%)</div>
+          <div style="opacity:.9;">${eg('games', 'Parties')}: <b>${s.gamesPlayed}</b> • ${eg('wins', 'Victoires')}: <b>${s.wins}</b> • ${eg('losses', 'Défaites')}: <b>${s.losses}</b> • ${eg('winrate', 'Winrate')}: <b>${s.winRatePct}%</b></div>
+          <div style="opacity:.8; font-size:0.9rem;">${eg('firstElim', '🎯 1ère élim')}: <b>${s.firstEliminated || 0}</b> ${eg('times', 'fois')} (${firstElimPct}%)</div>
         </div>
       </div>`;
     }).join("");
@@ -1625,10 +1632,10 @@ function renderEnd() {
             ${escapeHtml(name)}
           </div>
           <div style="opacity:.9; font-size:0.85rem;">
-            Parties: <b>${s.gamesPlayed}</b> • Victoires: <b>${s.wins}</b> • Défaites: <b>${s.losses}</b> • Winrate: <b>${s.winRatePct}%</b>
+            ${eg('games', 'Parties')}: <b>${s.gamesPlayed}</b> • ${eg('wins', 'Victoires')}: <b>${s.wins}</b> • ${eg('losses', 'Défaites')}: <b>${s.losses}</b> • ${eg('winrate', 'Winrate')}: <b>${s.winRatePct}%</b>
           </div>
           <div style="opacity:.9; font-size:0.85rem;">
-            ⏱️ Courte: <b>${shortestHtml}</b> • Longue: <b>${longestHtml}</b>
+            ⏱️ ${eg('shortest', 'Courte')}: <b>${shortestHtml}</b> • ${eg('longest', 'Longue')}: <b>${longestHtml}</b>
           </div>
         </div>
         
@@ -1638,36 +1645,36 @@ function renderEnd() {
           <!-- Colonne gauche : Combat + Sécurité + Docteur -->
           <div>
             <div style="margin-bottom:12px;">
-              <div style="font-weight:900; margin-bottom:4px;">🎯 Combat VS ${saboteursLabel.toLowerCase()}</div>
-              <div>• Votes corrects: <b>${correctVotes}/${totalVotes}</b> (${pctCorrectVotes}%)</div>
-              <div>• Votes faux: <b>${wrongVotes}/${totalVotes}</b> (${pctWrongVotes}%)</div>
+              <div style="font-weight:900; margin-bottom:4px;">${eg('combatVs', '🎯 Combat VS')} ${saboteursLabel.toLowerCase()}</div>
+              <div>• ${eg('correctVotes', 'Votes corrects')}: <b>${correctVotes}/${totalVotes}</b> (${pctCorrectVotes}%)</div>
+              <div>• ${eg('wrongVotes', 'Votes faux')}: <b>${wrongVotes}/${totalVotes}</b> (${pctWrongVotes}%)</div>
             </div>
             
             <div style="margin-bottom:12px;">
               <div style="font-weight:900; margin-bottom:4px;">🔫 ${securityLabel}</div>
-              <div>• ${saboteursLabel} éliminés: <b>${revengeKillsSab}/${totalRevengeShots}</b> (${pctRevengeSab}%)</div>
-              <div>• ${astronautesLabel} éliminés (err): <b>${revengeKillsInn}/${totalRevengeShots}</b> (${pctRevengeInn}%)</div>
+              <div>• ${saboteursLabel} ${eg('eliminated', 'éliminés')}: <b>${revengeKillsSab}/${totalRevengeShots}</b> (${pctRevengeSab}%)</div>
+              <div>• ${astronautesLabel} ${eg('eliminatedErr', 'éliminés (err)')}: <b>${revengeKillsInn}/${totalRevengeShots}</b> (${pctRevengeInn}%)</div>
             </div>
             
             <div>
               <div style="font-weight:900; margin-bottom:4px;">💊 ${doctorLabel}</div>
-              <div>• Potion fatale ok: <b>${doctorKillsSab}/${totalDoctorKills}</b> (${pctFataleSab}%)</div>
-              <div>• Potion fatale err: <b>${doctorKillsInn}/${totalDoctorKills}</b> (${pctFataleInn}%)</div>
-              <div>• Potion vie: <b>${doctorSaves}/${doctorGames}</b> (${pctVieUsed}%)</div>
-              <div>• Non sauvés: <b>${doctorMissed}/${doctorNotSavedOpp}</b> (${pctNotSaved}%)</div>
+              <div>• ${eg('fatalPotionOk', 'Potion fatale ok')}: <b>${doctorKillsSab}/${totalDoctorKills}</b> (${pctFataleSab}%)</div>
+              <div>• ${eg('fatalPotionErr', 'Potion fatale err')}: <b>${doctorKillsInn}/${totalDoctorKills}</b> (${pctFataleInn}%)</div>
+              <div>• ${eg('lifePotion', 'Potion vie')}: <b>${doctorSaves}/${doctorGames}</b> (${pctVieUsed}%)</div>
+              <div>• ${eg('notSaved', 'Non sauvés')}: <b>${doctorMissed}/${doctorNotSavedOpp}</b> (${pctNotSaved}%)</div>
             </div>
           </div>
           
           <!-- Colonne droite : Actions du Maire + Victoires par rôle -->
           <div>
             <div style="margin-bottom:12px;">
-              <div style="font-weight:900; margin-bottom:4px;">👑 Action du ${captainLabel}</div>
-              <div>• Départage OK: <b>${mayorOk}/${mayorTotal}</b> (${pctMayorOk}%)</div>
-              <div>• Départage KO: <b>${mayorKo}/${mayorTotal}</b> (${pctMayorKo}%)</div>
+              <div style="font-weight:900; margin-bottom:4px;">${eg('captainAction', '👑 Action du')} ${captainLabel}</div>
+              <div>• ${eg('tiebreakerOk', 'Départage OK')}: <b>${mayorOk}/${mayorTotal}</b> (${pctMayorOk}%)</div>
+              <div>• ${eg('tiebreakerKo', 'Départage KO')}: <b>${mayorKo}/${mayorTotal}</b> (${pctMayorKo}%)</div>
             </div>
             
             <div>
-              <div style="font-weight:900; margin-bottom:6px;">📈 Victoires par rôle</div>
+              <div style="font-weight:900; margin-bottom:6px;">${eg('winsByRole', '📈 Victoires par rôle')}</div>
               ${roles || "<div>—</div>"}
             </div>
           </div>
@@ -1679,39 +1686,39 @@ function renderEnd() {
     // V25: Nouvelle structure - Éjections en premier
     $("endSummary").innerHTML += `
       <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn btn-secondary" id="tabSummaryBtn">Résumé</button>
-        <button class="btn btn-secondary" id="tabDetailedBtn">Stats détaillées</button>
+        <button class="btn btn-secondary" id="tabSummaryBtn">${eg('tabSummary', 'Résumé')}</button>
+        <button class="btn btn-secondary" id="tabDetailedBtn">${eg('tabDetailed', 'Stats détaillées')}</button>
       </div>
 
       <div id="tabSummary" style="margin-top:12px;">
         <div style="margin-bottom:14px; padding:10px; border-radius:8px; background: rgba(0,0,0,0.2); display:flex; align-items:center; gap:10px;">
           <span style="font-size:1.5rem;">⏱️</span>
-          <span>Durée de la partie: <b>${gameDurationHtml}</b></span>
+          <span>${eg('gameDuration', 'Durée de la partie')}: <b>${gameDurationHtml}</b></span>
         </div>
         
         <div style="padding:12px; border-radius:12px; border:1px solid rgba(255,165,0,0.25); background: rgba(0,0,0,0.22);">
-          <div style="font-weight:900; margin-bottom:8px;">🚀 Ordre des éjections</div>
+          <div style="font-weight:900; margin-bottom:8px;">${eg('eliminationOrder', '🚀 Ordre des éjections')}</div>
           <div style="opacity:.95;">${deaths || "—"}</div>
         </div>
         
         <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(128,0,255,0.25); background: rgba(0,0,0,0.22);">
-          <div style="font-weight:900; margin-bottom:8px;">🥧 Répartition des éliminations</div>
+          <div style="font-weight:900; margin-bottom:8px;">${eg('eliminationDistribution', '🥧 Répartition des éliminations')}</div>
           ${pieChartHtml}
         </div>
 
         <div style="margin-top:14px; padding:12px; border-radius:12px; border:1px solid rgba(0,255,255,0.25); background: rgba(0,0,0,0.25);">
-          <div style="font-weight:900; margin-bottom:8px;">🏆 Awards</div>
+          <div style="font-weight:900; margin-bottom:8px;">${eg('awards', '🏆 Awards')}</div>
           ${awardsHtml || "<div>—</div>"}
         </div>
 
         <div style="margin-top:14px;">
-          <div style="font-weight:900; margin-bottom:8px;">📈 Stats cumulées (par NOM)</div>
+          <div style="font-weight:900; margin-bottom:8px;">${eg('cumulativeStats', '📈 Stats cumulées (par NOM)')}</div>
           ${statsHtml || "<div>—</div>"}
         </div>
       </div>
 
       <div id="tabDetailed" style="margin-top:12px; display:none;">
-        <div style="font-weight:900; margin-bottom:8px;">📊 Stats détaillées (par NOM)</div>
+        <div style="font-weight:900; margin-bottom:8px;">${eg('detailedStats', '📊 Stats détaillées (par NOM)')}</div>
         ${detailedHtml || "<div>—</div>"}
       </div>
     `;
