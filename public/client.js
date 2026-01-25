@@ -279,29 +279,38 @@ function formatPhaseTitle(s) {
   const p = s.phase;
   const night = s.night || 0;
   const day = s.day || 0;
+  
+  // Helper pour traductions multilingues
+  const tr = (key, fallback) => {
+    if (typeof window.i18n === 'function') {
+      const result = window.i18n(key);
+      if (result !== key) return result;
+    }
+    return fallback;
+  };
 
   const map = {
     LOBBY: "LOBBY",
-    ROLE_REVEAL: "VÉRIFICATION DU RÔLE",
-    CAPTAIN_CANDIDACY: `CANDIDATURE ${t('captain').toUpperCase()}`,
-    CAPTAIN_VOTE: `VOTE ${t('captain').toUpperCase()}`,
-    NIGHT_START: `NUIT ${night} — DÉBUT`,
-    NIGHT_CHAMELEON: `NUIT — ${tRole('chameleon').toUpperCase()}`,
-    NIGHT_AI_AGENT: `NUIT — ${tRole('ai_agent').toUpperCase()} (LIAISON)`,
-    NIGHT_AI_EXCHANGE: `NUIT — ÉCHANGE ${tRole('ai_agent').toUpperCase()} (PRIVÉ)`,
-    NIGHT_RADAR: `NUIT — ${tRole('radar').toUpperCase()}`,
-    NIGHT_SABOTEURS: `NUIT — ${t('saboteurs').toUpperCase()} (UNANIMITÉ)`,
-    NIGHT_DOCTOR: `NUIT — ${tRole('doctor').toUpperCase()}`,
-    NIGHT_RESULTS: `RÉSULTATS NUIT ${night}`,
-    DAY_WAKE: `JOUR ${day} — RÉVEIL`,
-    DAY_CAPTAIN_TRANSFER: `JOUR ${day} — TRANSMISSION DU ${t('captain').toUpperCase()}`,
-    DAY_VOTE: `JOUR ${day} — VOTE D'ÉJECTION`,
-    DAY_TIEBREAK: `JOUR ${day} — DÉPARTAGE (${t('captain').toUpperCase()})`,
-    DAY_RESULTS: `JOUR ${day} — RÉSULTATS`,
-    REVENGE: `VENGEANCE — ${tRole('security').toUpperCase()}`,
-    GAME_OVER: "FIN DE PARTIE",
-    GAME_ABORTED: "PARTIE INTERROMPUE",
-    MANUAL_ROLE_PICK: "CHOIX MANUEL DES RÔLES"
+    ROLE_REVEAL: tr('game.phases.roleVerification', "VÉRIFICATION DU RÔLE"),
+    CAPTAIN_CANDIDACY: tr('game.phases.captainCandidacy', `CANDIDATURE ${t('captain').toUpperCase()}`),
+    CAPTAIN_VOTE: tr('game.phases.captainVote', `VOTE ${t('captain').toUpperCase()}`),
+    NIGHT_START: tr('game.phases.nightStart', `NUIT ${night} — DÉBUT`).replace('{night}', night),
+    NIGHT_CHAMELEON: tr('game.phases.nightRole', `NUIT — {role}`).replace('{role}', tRole('chameleon').toUpperCase()),
+    NIGHT_AI_AGENT: tr('game.phases.nightRoleLiaison', `NUIT — {role} (LIAISON)`).replace('{role}', tRole('ai_agent').toUpperCase()),
+    NIGHT_AI_EXCHANGE: tr('game.phases.nightExchangePrivate', `NUIT — ÉCHANGE {role} (PRIVÉ)`).replace('{role}', tRole('ai_agent').toUpperCase()),
+    NIGHT_RADAR: tr('game.phases.nightRole', `NUIT — {role}`).replace('{role}', tRole('radar').toUpperCase()),
+    NIGHT_SABOTEURS: tr('game.phases.nightSaboteurs', `NUIT — {role} (UNANIMITÉ)`).replace('{role}', t('saboteurs').toUpperCase()),
+    NIGHT_DOCTOR: tr('game.phases.nightRole', `NUIT — {role}`).replace('{role}', tRole('doctor').toUpperCase()),
+    NIGHT_RESULTS: tr('game.phases.nightResults', `RÉSULTATS NUIT {night}`).replace('{night}', night),
+    DAY_WAKE: tr('game.phases.dayWake', `JOUR {day} — RÉVEIL`).replace('{day}', day),
+    DAY_CAPTAIN_TRANSFER: tr('game.phases.dayCaptainTransfer', `JOUR {day} — TRANSMISSION DU {captain}`).replace('{day}', day).replace('{captain}', t('captain').toUpperCase()),
+    DAY_VOTE: tr('game.phases.dayVote', `JOUR {day} — VOTE D'ÉJECTION`).replace('{day}', day),
+    DAY_TIEBREAK: tr('game.phases.dayTiebreak', `JOUR {day} — DÉPARTAGE ({captain})`).replace('{day}', day).replace('{captain}', t('captain').toUpperCase()),
+    DAY_RESULTS: tr('game.phases.dayResults', `JOUR {day} — RÉSULTATS`).replace('{day}', day),
+    REVENGE: tr('game.phases.revenge', `VENGEANCE — {role}`).replace('{role}', tRole('security').toUpperCase()),
+    GAME_OVER: tr('game.phases.gameOver', "FIN DE PARTIE"),
+    GAME_ABORTED: tr('game.phases.gameAborted', "PARTIE INTERROMPUE"),
+    MANUAL_ROLE_PICK: tr('game.phases.manualRolePick', "CHOIX MANUEL DES RÔLES")
   };
   return map[p] || p;
 }
@@ -928,9 +937,10 @@ function renderGame() {
     const shouldAnimate = prevDone !== ack.done && ack.done > 0;
     ackLine.dataset.prevDone = ack.done;
     
+    const validationsText = window.i18n ? window.i18n('game.ui.validations') : "Validations";
     ackLine.innerHTML = `
       <div class="validation-counter ${shouldAnimate ? 'pulse' : ''}" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-        <span style="font-weight:600;">✅ Validations : ${ack.done}/${ack.total}</span>
+        <span style="font-weight:600;">✅ ${validationsText} : ${ack.done}/${ack.total}</span>
         <div class="validation-progress" style="flex:1;min-width:100px;height:8px;background:rgba(255,255,255,0.15);border-radius:4px;overflow:hidden;">
           <div class="validation-progress-bar" style="width:${percent}%;height:100%;background:${progressColor};border-radius:4px;transition:width 0.4s ease, background 0.4s ease;${shouldAnimate ? 'animation:progressPulse 0.5s ease;' : ''}"></div>
         </div>
@@ -998,16 +1008,19 @@ if (actorOnly.has(state.phase) && !isActorNow) {
     
     if (alreadyValidated) {
       // Déjà validé - afficher l'état coché
-      b.innerHTML = "☑ VALIDÉ";
+      const validatedText = window.i18n ? window.i18n('game.buttons.validated') : "VALIDÉ";
+      b.innerHTML = "☑ " + validatedText;
       b.classList.add('validated');
       b.disabled = true;
     } else {
       // Pas encore validé
-      b.innerHTML = "☐ VALIDER";
+      const validateText = window.i18n ? window.i18n('game.buttons.validate') : "VALIDER";
+      b.innerHTML = "☐ " + validateText;
       b.onclick = () => {
         // D6: Feedback visuel amélioré - case cochée
         b.classList.add('validated');
-        b.innerHTML = "☑ VALIDÉ";
+        const validatedText2 = window.i18n ? window.i18n('game.buttons.validated') : "VALIDÉ";
+        b.innerHTML = "☑ " + validatedText2;
         b.disabled = true;
         lockControlsNow($('controls'));
         socket.emit("phaseAck");
@@ -1102,15 +1115,18 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
     const sel = document.createElement("select");
     sel.style.width = "100%";
-    sel.appendChild(new Option("Choisir le joueur à lier avec toi", ""));
+    const choosePlayerText = window.i18n ? window.i18n('game.ui.choosePlayerToLink') : "Choisir le joueur à lier avec toi";
+    sel.appendChild(new Option(choosePlayerText, ""));
     for (const p of alive) sel.appendChild(new Option(p.name, p.playerId));
 
     const btnLink = document.createElement("button");
     btnLink.className = "btn btn-primary";
     btnLink.style.marginTop = "10px";
-    btnLink.textContent = "🔗 Lier";
+    const linkText = window.i18n ? window.i18n('game.buttons.link') : "Lier";
+    btnLink.textContent = "🔗 " + linkText;
     btnLink.onclick = () => {
-      if (!sel.value) return setError("Choisis un joueur à lier.");
+      const chooseError = window.i18n ? window.i18n('game.errors.choosePlayerToLink') : "Choisis un joueur à lier.";
+      if (!sel.value) return setError(chooseError);
       btnLink.classList.add('selected');
       lockControlsNow($("controls"));
       let responded = false;
@@ -1132,7 +1148,8 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     const btnSkip = document.createElement("button");
     btnSkip.className = "btn btn-secondary";
     btnSkip.style.marginTop = "10px";
-    btnSkip.textContent = "⏭️ Ne pas lier (optionnel)";
+    const dontLinkText = window.i18n ? window.i18n('game.buttons.dontLink') : "Ne pas lier (optionnel)";
+    btnSkip.textContent = "⏭️ " + dontLinkText;
     btnSkip.onclick = () => {
       btnSkip.classList.add('selected');
       lockControlsNow($("controls"));
@@ -1700,26 +1717,36 @@ function renderEnd() {
 
 function buildPhaseText(s) {
   const p = s.phase;
-  if (p === "ROLE_REVEAL") return (s.phaseData?.notice ? s.phaseData.notice + " " : "") + "Regarde ton rôle et valide.";
-  if (p === "CAPTAIN_CANDIDACY") return `Choisis si tu te présentes au poste de ${t('captain')}.`;
-  if (p === "CAPTAIN_VOTE") return `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`;
-  if (p === "NIGHT_START") return "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.";
-  if (p === "NIGHT_CHAMELEON") return `${tRole('chameleon')} : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).`;
-  if (p === "NIGHT_AI_AGENT") return `${tRole('ai_agent')} : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).`;
-  if (p === "NIGHT_AI_EXCHANGE") return `Échange privé entre ${tRole("ai_agent")} et son partenaire lié. Les deux doivent valider pour continuer.`;
-  if (p === "NIGHT_RADAR") return `${tRole('radar')} : inspecte un joueur et découvre son rôle.`;
-  if (p === "NIGHT_SABOTEURS") return `${t('saboteurs')} : votez UNANIMEMENT une cible.`;
-  if (p === "NIGHT_DOCTOR") return `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion de mort (tue une cible) OU rien.`;
+  
+  // Helper pour traductions
+  const tr = (key, fallback) => {
+    if (typeof window.i18n === 'function') {
+      const result = window.i18n(key);
+      if (result !== key) return result;
+    }
+    return fallback;
+  };
+  
+  if (p === "ROLE_REVEAL") return (s.phaseData?.notice ? s.phaseData.notice + " " : "") + tr('game.phaseDesc.roleReveal', "Regarde ton rôle et valide.");
+  if (p === "CAPTAIN_CANDIDACY") return tr('game.phaseDesc.captainCandidacy', `Choisis si tu te présentes au poste de ${t('captain')}.`);
+  if (p === "CAPTAIN_VOTE") return tr('game.phaseDesc.captainVote', `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`);
+  if (p === "NIGHT_START") return tr('game.phaseDesc.nightStart', "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.");
+  if (p === "NIGHT_CHAMELEON") return tr('game.phaseDesc.nightChameleon', `${tRole('chameleon')} : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).`);
+  if (p === "NIGHT_AI_AGENT") return tr('game.phaseDesc.nightAiAgent', `${tRole('ai_agent')} : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).`);
+  if (p === "NIGHT_AI_EXCHANGE") return tr('game.phaseDesc.nightAiExchange', `Échange privé entre ${tRole("ai_agent")} et son partenaire lié. Les deux doivent valider pour continuer.`);
+  if (p === "NIGHT_RADAR") return tr('game.phaseDesc.nightRadar', `${tRole('radar')} : inspecte un joueur et découvre son rôle.`);
+  if (p === "NIGHT_SABOTEURS") return tr('game.phaseDesc.nightSaboteurs', `${t('saboteurs')} : votez UNANIMEMENT une cible.`);
+  if (p === "NIGHT_DOCTOR") return tr('game.phaseDesc.nightDoctor', `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion de mort (tue une cible) OU rien.`);
 
-  if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Annonce des effets de la nuit, puis passage au jour.";
-  if (p === "DAY_WAKE") return `Réveil de la ${t('station')}. Validez pour passer à la suite.`;
-  if (p === "DAY_CAPTAIN_TRANSFER") return `Le ${t('captain').toLowerCase()} est mort : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`;
-  if (p === "DAY_VOTE") return "Votez pour éjecter un joueur.";
-  if (p === "DAY_TIEBREAK") return `Égalité : le ${t('captain').toLowerCase()} choisit l'éjecté.`;
-  if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + "Résultats du jour, puis passage à la nuit.";
-  if (p === "REVENGE") return `${tRole('security')} : tu as été éjecté, tu peux tirer sur quelqu'un.`;
-  if (p === "MANUAL_ROLE_PICK") return "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.";
-  if (p === "GAME_ABORTED") return "Partie interrompue.";
+  if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + tr('game.phaseDesc.nightResults', "Annonce des effets de la nuit, puis passage au jour.");
+  if (p === "DAY_WAKE") return tr('game.phaseDesc.dayWake', `Réveil de la ${t('station')}. Validez pour passer à la suite.`);
+  if (p === "DAY_CAPTAIN_TRANSFER") return tr('game.phaseDesc.dayCaptainTransfer', `Le ${t('captain').toLowerCase()} est mort : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`);
+  if (p === "DAY_VOTE") return tr('game.phaseDesc.dayVote', "Votez pour éjecter un joueur.");
+  if (p === "DAY_TIEBREAK") return tr('game.phaseDesc.dayTiebreak', `Égalité : le ${t('captain').toLowerCase()} choisit l'éjecté.`);
+  if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + tr('game.phaseDesc.dayResults', "Résultats du jour, puis passage à la nuit.");
+  if (p === "REVENGE") return tr('game.phaseDesc.revenge', `${tRole('security')} : tu as été éjecté, tu peux tirer sur quelqu'un.`);
+  if (p === "MANUAL_ROLE_PICK") return tr('game.phaseDesc.manualRolePick', "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.");
+  if (p === "GAME_ABORTED") return tr('game.phaseDesc.gameAborted', "Partie interrompue.");
   return "";
 }
 
@@ -1735,8 +1762,9 @@ function makeChoiceGrid(ids, verb, onPick, opts = {}) {
     const card = document.createElement("div");
     card.className = "choice-card";
     card.dataset.playerId = id;
+    const captainText = window.i18n ? window.i18n('game.ui.captain') : "Capitaine";
     card.innerHTML = `<div style="font-weight:900; font-size:1.1rem;">${escapeHtml(p.name)}</div>
-      ${p.isCaptain ? `<div style="opacity:.85; margin-top:4px;">⭐ Capitaine</div>` : ""}`;
+      ${p.isCaptain ? `<div style="opacity:.85; margin-top:4px;">⭐ ${captainText}</div>` : ""}`;
     card.onclick = () => {
       // Highlight selection
       for (const el of grid.querySelectorAll('.choice-card')) el.classList.remove('selected');

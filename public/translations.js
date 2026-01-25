@@ -1070,6 +1070,552 @@ const TRANSLATIONS = {
       }
     },
     
+    // Phase titles
+    phases: {
+      roleVerification: {
+        fr: "VÉRIFICATION DU RÔLE",
+        en: "ROLE VERIFICATION",
+        es: "VERIFICACIÓN DEL ROL",
+        it: "VERIFICA DEL RUOLO",
+        de: "ROLLENÜBERPRÜFUNG",
+        pt: "VERIFICAÇÃO DO PAPEL",
+        nl: "ROLVERIFICATIE"
+      },
+      captainCandidacy: {
+        fr: "CANDIDATURE CAPITAINE",
+        en: "CAPTAIN CANDIDACY",
+        es: "CANDIDATURA CAPITÁN",
+        it: "CANDIDATURA CAPITANO",
+        de: "KAPITÄNS-KANDIDATUR",
+        pt: "CANDIDATURA CAPITÃO",
+        nl: "KAPITEIN KANDIDATUUR"
+      },
+      captainVote: {
+        fr: "VOTE CAPITAINE",
+        en: "CAPTAIN VOTE",
+        es: "VOTO CAPITÁN",
+        it: "VOTO CAPITANO",
+        de: "KAPITÄNS-WAHL",
+        pt: "VOTO CAPITÃO",
+        nl: "KAPITEIN STEMMING"
+      },
+      nightStart: {
+        fr: "NUIT {night} — DÉBUT",
+        en: "NIGHT {night} — START",
+        es: "NOCHE {night} — INICIO",
+        it: "NOTTE {night} — INIZIO",
+        de: "NACHT {night} — START",
+        pt: "NOITE {night} — INÍCIO",
+        nl: "NACHT {night} — START"
+      },
+      nightRole: {
+        fr: "NUIT — {role}",
+        en: "NIGHT — {role}",
+        es: "NOCHE — {role}",
+        it: "NOTTE — {role}",
+        de: "NACHT — {role}",
+        pt: "NOITE — {role}",
+        nl: "NACHT — {role}"
+      },
+      nightRoleLiaison: {
+        fr: "NUIT — {role} (LIAISON)",
+        en: "NIGHT — {role} (LINK)",
+        es: "NOCHE — {role} (ENLACE)",
+        it: "NOTTE — {role} (LEGAME)",
+        de: "NACHT — {role} (VERBINDUNG)",
+        pt: "NOITE — {role} (LIGAÇÃO)",
+        nl: "NACHT — {role} (LINK)"
+      },
+      nightExchangePrivate: {
+        fr: "NUIT — ÉCHANGE {role} (PRIVÉ)",
+        en: "NIGHT — {role} EXCHANGE (PRIVATE)",
+        es: "NOCHE — INTERCAMBIO {role} (PRIVADO)",
+        it: "NOTTE — SCAMBIO {role} (PRIVATO)",
+        de: "NACHT — {role} AUSTAUSCH (PRIVAT)",
+        pt: "NOITE — TROCA {role} (PRIVADO)",
+        nl: "NACHT — {role} UITWISSELING (PRIVÉ)"
+      },
+      nightSaboteurs: {
+        fr: "NUIT — {role} (UNANIMITÉ)",
+        en: "NIGHT — {role} (UNANIMITY)",
+        es: "NOCHE — {role} (UNANIMIDAD)",
+        it: "NOTTE — {role} (UNANIMITÀ)",
+        de: "NACHT — {role} (EINSTIMMIGKEIT)",
+        pt: "NOITE — {role} (UNANIMIDADE)",
+        nl: "NACHT — {role} (UNANIMITEIT)"
+      },
+      nightResults: {
+        fr: "RÉSULTATS NUIT {night}",
+        en: "NIGHT {night} RESULTS",
+        es: "RESULTADOS NOCHE {night}",
+        it: "RISULTATI NOTTE {night}",
+        de: "NACHT {night} ERGEBNISSE",
+        pt: "RESULTADOS NOITE {night}",
+        nl: "NACHT {night} RESULTATEN"
+      },
+      dayWake: {
+        fr: "JOUR {day} — RÉVEIL",
+        en: "DAY {day} — WAKE UP",
+        es: "DÍA {day} — DESPERTAR",
+        it: "GIORNO {day} — RISVEGLIO",
+        de: "TAG {day} — AUFWACHEN",
+        pt: "DIA {day} — DESPERTAR",
+        nl: "DAG {day} — ONTWAKEN"
+      },
+      dayCaptainTransfer: {
+        fr: "JOUR {day} — TRANSMISSION DU {captain}",
+        en: "DAY {day} — {captain} TRANSFER",
+        es: "DÍA {day} — TRANSFERENCIA DEL {captain}",
+        it: "GIORNO {day} — TRASFERIMENTO {captain}",
+        de: "TAG {day} — {captain} ÜBERTRAGUNG",
+        pt: "DIA {day} — TRANSFERÊNCIA DO {captain}",
+        nl: "DAG {day} — {captain} OVERDRACHT"
+      },
+      dayVote: {
+        fr: "JOUR {day} — VOTE D'ÉJECTION",
+        en: "DAY {day} — EJECTION VOTE",
+        es: "DÍA {day} — VOTO DE EXPULSIÓN",
+        it: "GIORNO {day} — VOTO DI ESPULSIONE",
+        de: "TAG {day} — ABSTIMMUNG ZUR AUSWEISUNG",
+        pt: "DIA {day} — VOTO DE EJEÇÃO",
+        nl: "DAG {day} — UITWERPINGSSTEMMING"
+      },
+      dayTiebreak: {
+        fr: "JOUR {day} — DÉPARTAGE ({captain})",
+        en: "DAY {day} — TIEBREAK ({captain})",
+        es: "DÍA {day} — DESEMPATE ({captain})",
+        it: "GIORNO {day} — SPAREGGIO ({captain})",
+        de: "TAG {day} — STICHENTSCHEID ({captain})",
+        pt: "DIA {day} — DESEMPATE ({captain})",
+        nl: "DAG {day} — BESLISSING ({captain})"
+      },
+      dayResults: {
+        fr: "JOUR {day} — RÉSULTATS",
+        en: "DAY {day} — RESULTS",
+        es: "DÍA {day} — RESULTADOS",
+        it: "GIORNO {day} — RISULTATI",
+        de: "TAG {day} — ERGEBNISSE",
+        pt: "DIA {day} — RESULTADOS",
+        nl: "DAG {day} — RESULTATEN"
+      },
+      revenge: {
+        fr: "VENGEANCE — {role}",
+        en: "REVENGE — {role}",
+        es: "VENGANZA — {role}",
+        it: "VENDETTA — {role}",
+        de: "RACHE — {role}",
+        pt: "VINGANÇA — {role}",
+        nl: "WRAAK — {role}"
+      },
+      gameOver: {
+        fr: "FIN DE PARTIE",
+        en: "GAME OVER",
+        es: "FIN DE PARTIDA",
+        it: "FINE PARTITA",
+        de: "SPIELENDE",
+        pt: "FIM DE JOGO",
+        nl: "EINDE SPEL"
+      },
+      gameAborted: {
+        fr: "PARTIE INTERROMPUE",
+        en: "GAME ABORTED",
+        es: "PARTIDA INTERRUMPIDA",
+        it: "PARTITA INTERROTTA",
+        de: "SPIEL ABGEBROCHEN",
+        pt: "JOGO INTERROMPIDO",
+        nl: "SPEL AFGEBROKEN"
+      },
+      manualRolePick: {
+        fr: "CHOIX MANUEL DES RÔLES",
+        en: "MANUAL ROLE SELECTION",
+        es: "SELECCIÓN MANUAL DE ROLES",
+        it: "SELEZIONE MANUALE DEI RUOLI",
+        de: "MANUELLE ROLLENWAHL",
+        pt: "SELEÇÃO MANUAL DE PAPÉIS",
+        nl: "HANDMATIGE ROLSELECTIE"
+      }
+    },
+    
+    // Phase descriptions
+    phaseDesc: {
+      roleReveal: {
+        fr: "Regarde ton rôle et valide.",
+        en: "Check your role and validate.",
+        es: "Mira tu rol y valida.",
+        it: "Guarda il tuo ruolo e conferma.",
+        de: "Überprüfe deine Rolle und bestätige.",
+        pt: "Verifique seu papel e valide.",
+        nl: "Bekijk je rol en bevestig."
+      },
+      captainCandidacy: {
+        fr: "Choisis si tu te présentes au poste de capitaine.",
+        en: "Choose whether to run for captain.",
+        es: "Elige si te presentas al puesto de capitán.",
+        it: "Scegli se candidarti a capitano.",
+        de: "Entscheide, ob du für Kapitän kandidierst.",
+        pt: "Escolha se vai se candidatar a capitão.",
+        nl: "Kies of je je kandidaat stelt voor kapitein."
+      },
+      captainVote: {
+        fr: "Vote pour élire le capitaine. En cas d'égalité : revote.",
+        en: "Vote to elect the captain. In case of tie: revote.",
+        es: "Vota para elegir al capitán. En caso de empate: revota.",
+        it: "Vota per eleggere il capitano. In caso di parità: rivota.",
+        de: "Stimme für den Kapitän ab. Bei Gleichstand: erneut abstimmen.",
+        pt: "Vote para eleger o capitão. Em caso de empate: revote.",
+        nl: "Stem om de kapitein te kiezen. Bij gelijkspel: herstemming."
+      },
+      nightStart: {
+        fr: "Tout le monde ferme les yeux… puis valide pour démarrer la nuit.",
+        en: "Everyone close your eyes… then validate to start the night.",
+        es: "Todos cierran los ojos… luego validen para empezar la noche.",
+        it: "Tutti chiudono gli occhi… poi conferma per iniziare la notte.",
+        de: "Alle schließen die Augen… dann bestätigen, um die Nacht zu starten.",
+        pt: "Todos fechem os olhos… depois validem para começar a noite.",
+        nl: "Iedereen sluit de ogen… bevestig dan om de nacht te starten."
+      },
+      nightChameleon: {
+        fr: "Caméléon : choisis un joueur pour échanger les rôles (Nuit 1 uniquement).",
+        en: "Chameleon: choose a player to swap roles with (Night 1 only).",
+        es: "Camaleón: elige un jugador para intercambiar roles (solo Noche 1).",
+        it: "Camaleonte: scegli un giocatore per scambiare i ruoli (solo Notte 1).",
+        de: "Chamäleon: wähle einen Spieler zum Rollentausch (nur Nacht 1).",
+        pt: "Camaleão: escolha um jogador para trocar papéis (apenas Noite 1).",
+        nl: "Kameleon: kies een speler om rollen mee te wisselen (alleen Nacht 1)."
+      },
+      nightAiAgent: {
+        fr: "Agent IA : Nuit 1, choisis un joueur à lier avec TOI (liaison permanente).",
+        en: "AI Agent: Night 1, choose a player to link with YOU (permanent link).",
+        es: "Agente IA: Noche 1, elige un jugador para enlazar CONTIGO (enlace permanente).",
+        it: "Agente IA: Notte 1, scegli un giocatore da legare a TE (legame permanente).",
+        de: "KI-Agent: Nacht 1, wähle einen Spieler zum Verbinden mit DIR (dauerhafte Verbindung).",
+        pt: "Agente IA: Noite 1, escolha um jogador para ligar com VOCÊ (ligação permanente).",
+        nl: "AI Agent: Nacht 1, kies een speler om te linken met JOU (permanente link)."
+      },
+      nightAiExchange: {
+        fr: "Échange privé entre Agent IA et son partenaire lié. Les deux doivent valider pour continuer.",
+        en: "Private exchange between AI Agent and linked partner. Both must validate to continue.",
+        es: "Intercambio privado entre Agente IA y su compañero enlazado. Ambos deben validar para continuar.",
+        it: "Scambio privato tra Agente IA e il partner legato. Entrambi devono confermare per continuare.",
+        de: "Privater Austausch zwischen KI-Agent und verbundenem Partner. Beide müssen bestätigen.",
+        pt: "Troca privada entre Agente IA e parceiro ligado. Ambos devem validar para continuar.",
+        nl: "Privé uitwisseling tussen AI Agent en gelinkte partner. Beiden moeten bevestigen."
+      },
+      nightRadar: {
+        fr: "Officier Radar : inspecte un joueur et découvre son rôle.",
+        en: "Radar Officer: inspect a player and discover their role.",
+        es: "Oficial de Radar: inspecciona a un jugador y descubre su rol.",
+        it: "Ufficiale Radar: ispeziona un giocatore e scopri il suo ruolo.",
+        de: "Radaroffizier: untersuche einen Spieler und entdecke seine Rolle.",
+        pt: "Oficial de Radar: inspecione um jogador e descubra seu papel.",
+        nl: "Radarofficier: inspecteer een speler en ontdek hun rol."
+      },
+      nightSaboteurs: {
+        fr: "Saboteurs : votez UNANIMEMENT une cible.",
+        en: "Saboteurs: vote UNANIMOUSLY for a target.",
+        es: "Saboteadores: voten UNÁNIMEMENTE un objetivo.",
+        it: "Sabotatori: votate UNANIMEMENTE un bersaglio.",
+        de: "Saboteure: stimmt EINSTIMMIG für ein Ziel.",
+        pt: "Sabotadores: votem UNANIMEMENTE um alvo.",
+        nl: "Saboteurs: stem UNANIEM op een doelwit."
+      },
+      nightDoctor: {
+        fr: "Docteur : potion de vie (sauve la cible) OU potion de mort (tue une cible) OU rien.",
+        en: "Doctor: life potion (save target) OR death potion (kill a target) OR nothing.",
+        es: "Doctor: poción de vida (salva al objetivo) O poción de muerte (mata un objetivo) O nada.",
+        it: "Dottore: pozione di vita (salva il bersaglio) O pozione di morte (uccidi un bersaglio) O niente.",
+        de: "Arzt: Lebenstrank (Ziel retten) ODER Todestrank (Ziel töten) ODER nichts.",
+        pt: "Doutor: poção de vida (salvar alvo) OU poção de morte (matar um alvo) OU nada.",
+        nl: "Dokter: levensdrankje (red doelwit) OF doodsdrankje (dood een doelwit) OF niets."
+      },
+      nightResults: {
+        fr: "Annonce des effets de la nuit, puis passage au jour.",
+        en: "Announcement of night effects, then move to day.",
+        es: "Anuncio de los efectos de la noche, luego paso al día.",
+        it: "Annuncio degli effetti della notte, poi passaggio al giorno.",
+        de: "Bekanntgabe der Nachteffekte, dann Übergang zum Tag.",
+        pt: "Anúncio dos efeitos da noite, depois passagem para o dia.",
+        nl: "Aankondiging van nachteffecten, dan overgang naar dag."
+      },
+      dayWake: {
+        fr: "Réveil de la station. Validez pour passer à la suite.",
+        en: "Station wake up. Validate to proceed.",
+        es: "Despertar de la estación. Validen para continuar.",
+        it: "Risveglio della stazione. Conferma per procedere.",
+        de: "Station erwacht. Bestätigen, um fortzufahren.",
+        pt: "Despertar da estação. Validem para prosseguir.",
+        nl: "Station ontwaakt. Bevestig om door te gaan."
+      },
+      dayCaptainTransfer: {
+        fr: "Le capitaine est mort : il transmet le poste à un joueur vivant.",
+        en: "The captain is dead: they transfer the position to a living player.",
+        es: "El capitán ha muerto: transfiere el puesto a un jugador vivo.",
+        it: "Il capitano è morto: trasferisce la posizione a un giocatore vivo.",
+        de: "Der Kapitän ist tot: er überträgt die Position an einen lebenden Spieler.",
+        pt: "O capitão morreu: ele transfere o posto para um jogador vivo.",
+        nl: "De kapitein is dood: hij draagt de positie over aan een levende speler."
+      },
+      dayVote: {
+        fr: "Votez pour éjecter un joueur.",
+        en: "Vote to eject a player.",
+        es: "Voten para expulsar a un jugador.",
+        it: "Votate per espellere un giocatore.",
+        de: "Stimmt ab, um einen Spieler auszuweisen.",
+        pt: "Votem para ejetar um jogador.",
+        nl: "Stem om een speler uit te werpen."
+      },
+      dayTiebreak: {
+        fr: "Égalité : le capitaine choisit l'éjecté.",
+        en: "Tie: the captain chooses who to eject.",
+        es: "Empate: el capitán elige al expulsado.",
+        it: "Parità: il capitano sceglie chi espellere.",
+        de: "Gleichstand: der Kapitän wählt, wer ausgewiesen wird.",
+        pt: "Empate: o capitão escolhe o ejetado.",
+        nl: "Gelijkspel: de kapitein kiest wie wordt uitgeworpen."
+      },
+      dayResults: {
+        fr: "Résultats du jour, puis passage à la nuit.",
+        en: "Day results, then move to night.",
+        es: "Resultados del día, luego paso a la noche.",
+        it: "Risultati del giorno, poi passaggio alla notte.",
+        de: "Tagesergebnisse, dann Übergang zur Nacht.",
+        pt: "Resultados do dia, depois passagem para a noite.",
+        nl: "Dagresultaten, dan overgang naar nacht."
+      },
+      revenge: {
+        fr: "Chef de Sécurité : tu as été éjecté, tu peux tirer sur quelqu'un.",
+        en: "Security Chief: you were ejected, you can shoot someone.",
+        es: "Jefe de Seguridad: fuiste expulsado, puedes disparar a alguien.",
+        it: "Capo della Sicurezza: sei stato espulso, puoi sparare a qualcuno.",
+        de: "Sicherheitschef: du wurdest ausgewiesen, du kannst auf jemanden schießen.",
+        pt: "Chefe de Segurança: você foi ejetado, pode atirar em alguém.",
+        nl: "Beveiligingschef: je bent uitgeworpen, je kunt op iemand schieten."
+      },
+      manualRolePick: {
+        fr: "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.",
+        en: "Manual mode: each player picks their role (physical cards), then everyone validates.",
+        es: "Modo manual: cada jugador elige su rol (cartas físicas), luego todos validan.",
+        it: "Modalità manuale: ogni giocatore sceglie il suo ruolo (carte fisiche), poi tutti confermano.",
+        de: "Manueller Modus: jeder Spieler wählt seine Rolle (physische Karten), dann bestätigen alle.",
+        pt: "Modo manual: cada jogador escolhe seu papel (cartas físicas), depois todos validam.",
+        nl: "Handmatige modus: elke speler kiest hun rol (fysieke kaarten), dan bevestigt iedereen."
+      },
+      gameAborted: {
+        fr: "Partie interrompue.",
+        en: "Game aborted.",
+        es: "Partida interrumpida.",
+        it: "Partita interrotta.",
+        de: "Spiel abgebrochen.",
+        pt: "Jogo interrompido.",
+        nl: "Spel afgebroken."
+      }
+    },
+    
+    // UI elements
+    ui: {
+      validations: {
+        fr: "Validations",
+        en: "Validations",
+        es: "Validaciones",
+        it: "Convalide",
+        de: "Bestätigungen",
+        pt: "Validações",
+        nl: "Validaties"
+      },
+      mission: {
+        fr: "MISSION",
+        en: "MISSION",
+        es: "MISIÓN",
+        it: "MISSIONE",
+        de: "MISSION",
+        pt: "MISSÃO",
+        nl: "MISSIE"
+      },
+      choosePlayerToLink: {
+        fr: "Choisir le joueur à lier avec toi",
+        en: "Choose the player to link with you",
+        es: "Elegir el jugador a enlazar contigo",
+        it: "Scegli il giocatore da legare a te",
+        de: "Wähle den Spieler zum Verbinden",
+        pt: "Escolha o jogador para ligar com você",
+        nl: "Kies de speler om te linken met jou"
+      },
+      captain: {
+        fr: "Capitaine",
+        en: "Captain",
+        es: "Capitán",
+        it: "Capitano",
+        de: "Kapitän",
+        pt: "Capitão",
+        nl: "Kapitein"
+      },
+      acting: {
+        fr: "agit...",
+        en: "acting...",
+        es: "actúa...",
+        it: "agisce...",
+        de: "handelt...",
+        pt: "agindo...",
+        nl: "handelt..."
+      }
+    },
+    
+    // Buttons
+    buttons: {
+      validate: {
+        fr: "VALIDER",
+        en: "VALIDATE",
+        es: "VALIDAR",
+        it: "CONFERMA",
+        de: "BESTÄTIGEN",
+        pt: "VALIDAR",
+        nl: "BEVESTIGEN"
+      },
+      validated: {
+        fr: "VALIDÉ",
+        en: "VALIDATED",
+        es: "VALIDADO",
+        it: "CONFERMATO",
+        de: "BESTÄTIGT",
+        pt: "VALIDADO",
+        nl: "BEVESTIGD"
+      },
+      link: {
+        fr: "Lier",
+        en: "Link",
+        es: "Enlazar",
+        it: "Lega",
+        de: "Verbinden",
+        pt: "Ligar",
+        nl: "Linken"
+      },
+      dontLink: {
+        fr: "Ne pas lier (optionnel)",
+        en: "Don't link (optional)",
+        es: "No enlazar (opcional)",
+        it: "Non legare (opzionale)",
+        de: "Nicht verbinden (optional)",
+        pt: "Não ligar (opcional)",
+        nl: "Niet linken (optioneel)"
+      },
+      validateExchange: {
+        fr: "VALIDER L'ÉCHANGE",
+        en: "VALIDATE EXCHANGE",
+        es: "VALIDAR INTERCAMBIO",
+        it: "CONFERMA SCAMBIO",
+        de: "AUSTAUSCH BESTÄTIGEN",
+        pt: "VALIDAR TROCA",
+        nl: "UITWISSELING BEVESTIGEN"
+      },
+      runForCaptain: {
+        fr: "JE ME PRÉSENTE",
+        en: "I'M RUNNING",
+        es: "ME PRESENTO",
+        it: "MI CANDIDO",
+        de: "ICH KANDIDIERE",
+        pt: "EU ME CANDIDATO",
+        nl: "IK STEL ME KANDIDAAT"
+      },
+      dontRunForCaptain: {
+        fr: "JE NE ME PRÉSENTE PAS",
+        en: "I'M NOT RUNNING",
+        es: "NO ME PRESENTO",
+        it: "NON MI CANDIDO",
+        de: "ICH KANDIDIERE NICHT",
+        pt: "NÃO ME CANDIDATO",
+        nl: "IK STEL ME NIET KANDIDAAT"
+      }
+    },
+    
+    // Errors
+    errors: {
+      choosePlayerToLink: {
+        fr: "Choisis un joueur à lier.",
+        en: "Choose a player to link.",
+        es: "Elige un jugador a enlazar.",
+        it: "Scegli un giocatore da legare.",
+        de: "Wähle einen Spieler zum Verbinden.",
+        pt: "Escolha um jogador para ligar.",
+        nl: "Kies een speler om te linken."
+      }
+    },
+    
+    // Hints
+    hints: {
+      youAreDead: {
+        fr: "💀 Vous êtes mort. Vous n'agissez plus.",
+        en: "💀 You are dead. You no longer act.",
+        es: "💀 Estás muerto. Ya no actúas.",
+        it: "💀 Sei morto. Non agisci più.",
+        de: "💀 Du bist tot. Du handelst nicht mehr.",
+        pt: "💀 Você está morto. Você não age mais.",
+        nl: "💀 Je bent dood. Je handelt niet meer."
+      },
+      chameleonHint: {
+        fr: "Caméléon : Nuit 1 uniquement. Un seul usage dans toute la partie.",
+        en: "Chameleon: Night 1 only. Single use in entire game.",
+        es: "Camaleón: Solo Noche 1. Un solo uso en toda la partida.",
+        it: "Camaleonte: Solo Notte 1. Un solo uso in tutta la partita.",
+        de: "Chamäleon: Nur Nacht 1. Einmalige Verwendung im gesamten Spiel.",
+        pt: "Camaleão: Apenas Noite 1. Um único uso em todo o jogo.",
+        nl: "Kameleon: Alleen Nacht 1. Eenmalig gebruik in hele spel."
+      },
+      aiAgentHint: {
+        fr: "Nuit 1 uniquement. La liaison est entre toi (Agent IA) et le joueur choisi.",
+        en: "Night 1 only. The link is between you (AI Agent) and the chosen player.",
+        es: "Solo Noche 1. El enlace es entre tú (Agente IA) y el jugador elegido.",
+        it: "Solo Notte 1. Il legame è tra te (Agente IA) e il giocatore scelto.",
+        de: "Nur Nacht 1. Die Verbindung ist zwischen dir (KI-Agent) und dem gewählten Spieler.",
+        pt: "Apenas Noite 1. A ligação é entre você (Agente IA) e o jogador escolhido.",
+        nl: "Alleen Nacht 1. De link is tussen jou (AI Agent) en de gekozen speler."
+      },
+      radarHint: {
+        fr: "Choisis un joueur à inspecter. Ensuite, lis le résultat puis valide.",
+        en: "Choose a player to inspect. Then read the result and validate.",
+        es: "Elige un jugador a inspeccionar. Luego lee el resultado y valida.",
+        it: "Scegli un giocatore da ispezionare. Poi leggi il risultato e conferma.",
+        de: "Wähle einen Spieler zum Untersuchen. Dann lies das Ergebnis und bestätige.",
+        pt: "Escolha um jogador para inspecionar. Depois leia o resultado e valide.",
+        nl: "Kies een speler om te inspecteren. Lees dan het resultaat en bevestig."
+      },
+      saboteursHint: {
+        fr: "Vote UNANIME entre saboteurs. Impossible de viser un saboteur (ni toi-même).",
+        en: "UNANIMOUS vote among saboteurs. Cannot target a saboteur (or yourself).",
+        es: "Voto UNÁNIME entre saboteadores. No puedes apuntar a un saboteador (ni a ti mismo).",
+        it: "Voto UNANIME tra sabotatori. Non puoi mirare a un sabotatore (né a te stesso).",
+        de: "EINSTIMMIGE Abstimmung unter Saboteuren. Kann keinen Saboteur (oder dich selbst) anvisieren.",
+        pt: "Voto UNÂNIME entre sabotadores. Não pode mirar em um sabotador (nem em você).",
+        nl: "UNANIEME stemming onder saboteurs. Kan geen saboteur (of jezelf) targeten."
+      },
+      doctorHint: {
+        fr: "La potion de vie protège automatiquement la cible des saboteurs (s'il y en a une).",
+        en: "The life potion automatically protects the target from saboteurs (if there is one).",
+        es: "La poción de vida protege automáticamente al objetivo de los saboteadores (si hay uno).",
+        it: "La pozione di vita protegge automaticamente il bersaglio dai sabotatori (se ce n'è uno).",
+        de: "Der Lebenstrank schützt das Ziel automatisch vor Saboteuren (falls vorhanden).",
+        pt: "A poção de vida protege automaticamente o alvo dos sabotadores (se houver um).",
+        nl: "Het levensdrankje beschermt automatisch het doelwit tegen saboteurs (indien aanwezig)."
+      },
+      captainTransferHint: {
+        fr: "Le capitaine mort choisit sans connaître le rôle du joueur choisi.",
+        en: "The dead captain chooses without knowing the chosen player's role.",
+        es: "El capitán muerto elige sin conocer el rol del jugador elegido.",
+        it: "Il capitano morto sceglie senza conoscere il ruolo del giocatore scelto.",
+        de: "Der tote Kapitän wählt, ohne die Rolle des gewählten Spielers zu kennen.",
+        pt: "O capitão morto escolhe sem conhecer o papel do jogador escolhido.",
+        nl: "De dode kapitein kiest zonder de rol van de gekozen speler te kennen."
+      },
+      tiebreakHint: {
+        fr: "En cas d'égalité, le capitaine tranche avant toute conséquence.",
+        en: "In case of tie, the captain decides before any consequences.",
+        es: "En caso de empate, el capitán decide antes de cualquier consecuencia.",
+        it: "In caso di parità, il capitano decide prima di qualsiasi conseguenza.",
+        de: "Bei Gleichstand entscheidet der Kapitän vor jeglichen Konsequenzen.",
+        pt: "Em caso de empate, o capitão decide antes de qualquer consequência.",
+        nl: "Bij gelijkspel beslist de kapitein voor enige gevolgen."
+      }
+    },
+    
     // Lobby
     lobby: {
       title: {
