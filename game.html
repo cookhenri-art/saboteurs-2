@@ -779,8 +779,8 @@
         // V32: Décaler les boutons en haut pour ne pas chevaucher le bandeau
         const topLeftButtons = document.getElementById('topLeftButtons');
         const topRightButtons = document.getElementById('topRightButtons');
-        if (topLeftButtons) topLeftButtons.style.top = '95px';
-        if (topRightButtons) topRightButtons.style.top = '95px';
+        if (topLeftButtons) topLeftButtons.style.setProperty('top', '95px', 'important');
+        if (topRightButtons) topRightButtons.style.setProperty('top', '95px', 'important');
 
         // Générer un nom aléatoire pour l'invité
         setTimeout(function() {

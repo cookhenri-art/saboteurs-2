@@ -1062,23 +1062,51 @@
   <script>
     // PWA Install
     let deferredPrompt;
+    const installContainer = document.getElementById('installAppContainer');
+    const installBtn = document.getElementById('installAppBtn');
+    
+    // Détecter mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Vérifier si déjà installé en standalone
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
+    
+    // Afficher le bouton sur mobile (sauf si déjà installé)
+    if (isMobile && !isStandalone) {
+      installContainer.style.display = 'block';
+    }
+    
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      document.getElementById('installAppContainer').style.display = 'block';
+      // Afficher aussi sur PC si prompt disponible
+      installContainer.style.display = 'block';
     });
 
-    document.getElementById('installAppBtn')?.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log('PWA install:', outcome);
-      deferredPrompt = null;
-      document.getElementById('installAppContainer').style.display = 'none';
+    installBtn?.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        // Prompt natif disponible
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('PWA install:', outcome);
+        deferredPrompt = null;
+        if (outcome === 'accepted') {
+          installContainer.style.display = 'none';
+        }
+      } else if (isMobile) {
+        // Pas de prompt natif sur mobile - afficher instructions
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isIOS) {
+          alert('📱 Pour installer :\n\n1. Appuie sur le bouton Partager (carré avec flèche)\n2. Choisis "Sur l\'écran d\'accueil"');
+        } else {
+          alert('📱 Pour installer :\n\n1. Ouvre le menu ⋮ de ton navigateur\n2. Choisis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"');
+        }
+      }
     });
 
     window.addEventListener('appinstalled', () => {
-      document.getElementById('installAppContainer').style.display = 'none';
+      installContainer.style.display = 'none';
       deferredPrompt = null;
     });
   </script>
