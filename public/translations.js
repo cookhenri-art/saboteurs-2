@@ -975,6 +975,28 @@ const TRANSLATIONS = {
   // GAME.HTML - PAGE DE JEU
   // ============================================================================
   game: {
+    // Main title
+    mainTitle: {
+      fr: "LES SABOTEURS",
+      en: "THE SABOTEURS",
+      es: "LOS SABOTEADORES",
+      it: "I SABOTATORI",
+      de: "DIE SABOTEURE",
+      pt: "OS SABOTADORES",
+      nl: "DE SABOTEURS"
+    },
+    
+    // Main subtitle
+    mainSubtitle: {
+      fr: "Jeu de déduction sociale multijoueur",
+      en: "Multiplayer social deduction game",
+      es: "Juego de deducción social multijugador",
+      it: "Gioco di deduzione sociale multiplayer",
+      de: "Mehrspieler-Deduktionsspiel",
+      pt: "Jogo de dedução social multijogador",
+      nl: "Multiplayer sociaal deductiespel"
+    },
+    
     // Subtitle
     subtitle: {
       fr: "MISSION TEMPS RÉEL",

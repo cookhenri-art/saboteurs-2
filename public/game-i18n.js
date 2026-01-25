@@ -246,6 +246,23 @@ function translateGamePage() {
     tutorialBtn.textContent = '📖 ' + tr('game.buttons.viewTutorial');
   }
 
+  // Game title in lobby ("LES SABOTEURS")
+  const gameTitleLobby = document.getElementById('gameTitleLobby');
+  if (gameTitleLobby) {
+    gameTitleLobby.textContent = tr('game.mainTitle');
+  }
+  
+  const gameTitleLobby2 = document.getElementById('gameTitleLobby2');
+  if (gameTitleLobby2) {
+    gameTitleLobby2.textContent = tr('game.mainTitle');
+  }
+
+  // Game subtitle in lobby
+  const gameSubtitleLobby = document.getElementById('gameSubtitleLobby');
+  if (gameSubtitleLobby) {
+    gameSubtitleLobby.textContent = tr('game.mainSubtitle');
+  }
+
   // Game subtitle (MISSION TEMPS RÉEL)
   const gameSubtitle = document.getElementById('gameSubtitle');
   if (gameSubtitle) {
