@@ -1521,18 +1521,26 @@ function renderEnd() {
       let title = a.title;
       let text = a.text;
       
+      // V24: Traduire le titre
       if (window.i18n && a.titleKey) {
-        const translatedTitle = window.i18n(`game.${a.titleKey}`);
-        if (translatedTitle !== `game.${a.titleKey}`) title = translatedTitle;
+        const fullKey = `game.${a.titleKey}`;
+        const translatedTitle = window.i18n(fullKey);
+        console.log('[Awards Debug] Title:', fullKey, '->', translatedTitle);
+        if (translatedTitle && translatedTitle !== fullKey && !translatedTitle.startsWith('game.')) {
+          title = translatedTitle;
+        }
       }
       
+      // V24: Traduire le texte
       if (window.i18n && a.textKey) {
-        let translatedText = window.i18n(`game.${a.textKey}`);
-        if (translatedText !== `game.${a.textKey}`) {
+        const fullKey = `game.${a.textKey}`;
+        let translatedText = window.i18n(fullKey);
+        console.log('[Awards Debug] Text:', fullKey, '->', translatedText);
+        if (translatedText && translatedText !== fullKey && !translatedText.startsWith('game.')) {
           // Remplacer les placeholders avec les données
           if (a.data) {
             for (const [key, value] of Object.entries(a.data)) {
-              translatedText = translatedText.replace(`{${key}}`, value);
+              translatedText = translatedText.replace(new RegExp(`\\{${key}\\}`, 'g'), value || '');
             }
           }
           text = translatedText;
