@@ -910,7 +910,8 @@ function renderGame() {
   const link = $("linkBanner");
   if (state.you?.linkedTo) {
     link.style.display = "inline-block";
-    link.textContent = `🔗 Lié à ${state.you.linkedName || "?"}`;
+    const linkedToText = window.i18n ? window.i18n('game.ui.linkedTo') : "Lié à";
+    link.textContent = `🔗 ${linkedToText} ${state.you.linkedName || "?"}`;
   } else {
     link.style.display = "none";
     link.textContent = "";
@@ -1071,7 +1072,8 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     wrap.className = "btn-group";
     const yes = document.createElement("button");
     yes.className = "btn btn-primary";
-    yes.textContent = "🙋 Je me présente";
+    const runText = window.i18n ? window.i18n('game.buttons.runForCaptain') : "Je me présente";
+    yes.textContent = "🙋 " + runText;
     yes.onclick = () => {
       yes.classList.add('selected');
       lockControlsNow($("controls"));
@@ -1079,7 +1081,8 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     };
     const no = document.createElement("button");
     no.className = "btn btn-secondary";
-    no.textContent = "🙅 Je ne me présente pas";
+    const dontRunText = window.i18n ? window.i18n('game.buttons.dontRunForCaptain') : "Je ne me présente pas";
+    no.textContent = "🙅 " + dontRunText;
     no.onclick = () => {
       no.classList.add('selected');
       lockControlsNow($("controls"));
@@ -1189,24 +1192,29 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
       const pending = state.ack?.pending || [];
       const alreadyValidated = meId && !pending.includes(meId);
       
+      const validatedText = window.i18n ? window.i18n('game.buttons.validated') : "Validé";
+      const validateExchangeText = window.i18n ? window.i18n('game.buttons.validateExchange') : "Valider l'échange";
+      
       if (alreadyValidated) {
-        btn.innerHTML = "☑ Validé 🤖";
+        btn.innerHTML = "☑ " + validatedText + " 🤖";
         btn.classList.add('validated');
         btn.disabled = true;
       } else {
-        btn.innerHTML = "☐ Valider l'échange 🤖";
+        btn.innerHTML = "☐ " + validateExchangeText + " 🤖";
         btn.onclick = () => {
           btn.classList.add('validated');
-          btn.innerHTML = "☑ Validé 🤖";
+          btn.innerHTML = "☑ " + validatedText + " 🤖";
           btn.disabled = true;
           lockControlsNow($('controls'));
           socket.emit("phaseAck");
         };
       }
       controls.appendChild(btn);
-      controls.appendChild(makeHint(`Échange privé entre ${tRole('ai_agent')} et son partenaire lié. Les deux doivent valider pour continuer.`));
+      const hintText = window.i18n ? window.i18n('game.phaseDesc.nightAiExchange') : `Échange privé entre ${tRole('ai_agent')} et son partenaire lié. Les deux doivent valider pour continuer.`;
+      controls.appendChild(makeHint(hintText));
     } else {
-      controls.appendChild(makeHint(`🤖 Échange ${tRole('ai_agent')} en cours…`));
+      const exchangeInProgressText = window.i18n ? window.i18n('game.ui.aiExchangeInProgress') : `🤖 Échange ${tRole('ai_agent')} en cours…`;
+      controls.appendChild(makeHint(exchangeInProgressText));
     }
   }
 

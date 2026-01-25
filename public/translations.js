@@ -1457,6 +1457,114 @@ const TRANSLATIONS = {
         de: "handelt...",
         pt: "agindo...",
         nl: "handelt..."
+      },
+      linkedTo: {
+        fr: "Lié à",
+        en: "Linked to",
+        es: "Enlazado a",
+        it: "Legato a",
+        de: "Verbunden mit",
+        pt: "Ligado a",
+        nl: "Gelinkt aan"
+      },
+      aiExchangeInProgress: {
+        fr: "🤖 Échange Agent IA en cours…",
+        en: "🤖 AI Agent exchange in progress…",
+        es: "🤖 Intercambio Agente IA en curso…",
+        it: "🤖 Scambio Agente IA in corso…",
+        de: "🤖 KI-Agent Austausch läuft…",
+        pt: "🤖 Troca do Agente IA em andamento…",
+        nl: "🤖 AI Agent uitwisseling bezig…"
+      },
+      deciding: {
+        fr: "tranche…",
+        en: "deciding…",
+        es: "decide…",
+        it: "decide…",
+        de: "entscheidet…",
+        pt: "decide…",
+        nl: "beslist…"
+      },
+      captainTransfer: {
+        fr: "Transmission du capitaine…",
+        en: "Captain transfer…",
+        es: "Transferencia del capitán…",
+        it: "Trasferimento del capitano…",
+        de: "Kapitänsübertragung…",
+        pt: "Transferência do capitão…",
+        nl: "Kapitein overdracht…"
+      },
+      revenge: {
+        fr: "se venge…",
+        en: "takes revenge…",
+        es: "se venga…",
+        it: "si vendica…",
+        de: "rächt sich…",
+        pt: "se vinga…",
+        nl: "neemt wraak…"
+      },
+      actionInProgress: {
+        fr: "⏳ Action en cours…",
+        en: "⏳ Action in progress…",
+        es: "⏳ Acción en curso…",
+        it: "⏳ Azione in corso…",
+        de: "⏳ Aktion läuft…",
+        pt: "⏳ Ação em andamento…",
+        nl: "⏳ Actie bezig…"
+      },
+      isElectedCaptain: {
+        fr: "est élu Capitaine !",
+        en: "is elected Captain!",
+        es: "es elegido Capitán!",
+        it: "è eletto Capitano!",
+        de: "ist zum Kapitän gewählt!",
+        pt: "é eleito Capitão!",
+        nl: "is gekozen als Kapitein!"
+      },
+      choosingPartner: {
+        fr: "choisit son partenaire...",
+        en: "choosing partner...",
+        es: "eligiendo compañero...",
+        it: "sceglie il partner...",
+        de: "wählt Partner...",
+        pt: "escolhendo parceiro...",
+        nl: "kiest partner..."
+      },
+      pleaseWait: {
+        fr: "Veuillez patienter...",
+        en: "Please wait...",
+        es: "Por favor espere...",
+        it: "Attendere prego...",
+        de: "Bitte warten...",
+        pt: "Por favor aguarde...",
+        nl: "Even geduld..."
+      },
+      micDisabled: {
+        fr: "🎤 Micro désactivé",
+        en: "🎤 Mic disabled",
+        es: "🎤 Micrófono desactivado",
+        it: "🎤 Microfono disattivato",
+        de: "🎤 Mikrofon deaktiviert",
+        pt: "🎤 Microfone desativado",
+        nl: "🎤 Microfoon uitgeschakeld"
+      },
+      cameraDisabled: {
+        fr: "📹 Caméra désactivée",
+        en: "📹 Camera disabled",
+        es: "📹 Cámara desactivada",
+        it: "📹 Fotocamera disattivata",
+        de: "📹 Kamera deaktiviert",
+        pt: "📹 Câmera desativada",
+        nl: "📹 Camera uitgeschakeld"
+      },
+      saboteursCommunicate: {
+        fr: "Les saboteurs communiquent...",
+        en: "Saboteurs communicating...",
+        es: "Los saboteadores se comunican...",
+        it: "I sabotatori comunicano...",
+        de: "Saboteure kommunizieren...",
+        pt: "Sabotadores comunicando...",
+        nl: "Saboteurs communiceren..."
       }
     },
     
@@ -2441,6 +2549,71 @@ const TRANSLATIONS = {
     
     // Boutons
     buttons: {
+      // Boutons de contrôle de jeu
+      validate: {
+        fr: "VALIDER",
+        en: "VALIDATE",
+        es: "VALIDAR",
+        it: "CONFERMA",
+        de: "BESTÄTIGEN",
+        pt: "VALIDAR",
+        nl: "BEVESTIGEN"
+      },
+      validated: {
+        fr: "VALIDÉ",
+        en: "VALIDATED",
+        es: "VALIDADO",
+        it: "CONFERMATO",
+        de: "BESTÄTIGT",
+        pt: "VALIDADO",
+        nl: "BEVESTIGD"
+      },
+      link: {
+        fr: "Lier",
+        en: "Link",
+        es: "Enlazar",
+        it: "Lega",
+        de: "Verbinden",
+        pt: "Ligar",
+        nl: "Linken"
+      },
+      dontLink: {
+        fr: "Ne pas lier (optionnel)",
+        en: "Don't link (optional)",
+        es: "No enlazar (opcional)",
+        it: "Non legare (opzionale)",
+        de: "Nicht verbinden (optional)",
+        pt: "Não ligar (opcional)",
+        nl: "Niet linken (optioneel)"
+      },
+      validateExchange: {
+        fr: "VALIDER L'ÉCHANGE",
+        en: "VALIDATE EXCHANGE",
+        es: "VALIDAR INTERCAMBIO",
+        it: "CONFERMA SCAMBIO",
+        de: "AUSTAUSCH BESTÄTIGEN",
+        pt: "VALIDAR TROCA",
+        nl: "UITWISSELING BEVESTIGEN"
+      },
+      runForCaptain: {
+        fr: "JE ME PRÉSENTE",
+        en: "I'M RUNNING",
+        es: "ME PRESENTO",
+        it: "MI CANDIDO",
+        de: "ICH KANDIDIERE",
+        pt: "EU ME CANDIDATO",
+        nl: "IK STEL ME KANDIDAAT"
+      },
+      dontRunForCaptain: {
+        fr: "JE NE ME PRÉSENTE PAS",
+        en: "I'M NOT RUNNING",
+        es: "NO ME PRESENTO",
+        it: "NON MI CANDIDO",
+        de: "ICH KANDIDIERE NICHT",
+        pt: "NÃO ME CANDIDATO",
+        nl: "IK STEL ME NIET KANDIDAAT"
+      },
+      // Boutons de navigation
       rules: {
         fr: "📜 RÈGLES",
         en: "📜 RULES",
