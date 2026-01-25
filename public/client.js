@@ -419,8 +419,9 @@ function renderEjectedPanel() {
     return;
   }
   el.style.display = "block";
+  const eliminatedText = window.i18n ? window.i18n('game.ui.eliminated') : "ÉLIMINÉS";
   el.innerHTML =
-    `<div style="font-weight:900; margin-bottom:8px;">🚀 ÉJECTÉS</div>` +
+    `<div style="font-weight:900; margin-bottom:8px;">💀 ${eliminatedText}</div>` +
     `<div style="display:flex; flex-wrap:wrap; gap:8px;">` +
     ejected.map(p => `<div style="padding:8px 10px; border-radius:999px; border:1px solid rgba(255,0,102,0.45); background:rgba(255,0,102,0.12); font-weight:900;">💀 ${escapeHtml(p.name)}</div>`).join("") +
     `</div>`;
@@ -1766,6 +1767,23 @@ function buildPhaseText(s) {
     return notice + " ";
   };
   
+  // Helper pour traduire les textes de mort du serveur
+  const translateDeathsText = (text) => {
+    if (!text) return "";
+    // Pattern: "Le joueur X (Role) a été éjecté."
+    const pattern = /Le joueur ([^\(]+) \(([^\)]+)\) a été éjecté\./g;
+    const template = tr('game.messages.playerEliminated', "Le joueur {name} ({role}) a été éliminé.");
+    let result = text;
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      const name = match[1].trim();
+      const role = match[2].trim();
+      const translated = template.replace('{name}', name).replace('{role}', role);
+      result = result.replace(match[0], translated);
+    }
+    return result + " ";
+  };
+  
   if (p === "ROLE_REVEAL") return translateNotice(s.phaseData?.notice) + tr('game.phaseDesc.roleReveal', "Regarde ton rôle et valide.");
   if (p === "CAPTAIN_CANDIDACY") return tr('game.phaseDesc.captainCandidacy', `Choisis si tu te présentes au poste de ${t('captain')}.`);
   if (p === "CAPTAIN_VOTE") return tr('game.phaseDesc.captainVote', `Vote pour élire le ${t('captain').toLowerCase()}. En cas d'égalité : revote.`);
@@ -1777,12 +1795,12 @@ function buildPhaseText(s) {
   if (p === "NIGHT_SABOTEURS") return tr('game.phaseDesc.nightSaboteurs', `${t('saboteurs')} : votez UNANIMEMENT une cible.`);
   if (p === "NIGHT_DOCTOR") return tr('game.phaseDesc.nightDoctor', `${tRole('doctor')} : potion de vie (sauve automatiquement la cible des ${t('saboteurs').toLowerCase()}) OU potion de mort (tue une cible) OU rien.`);
 
-  if (p === "NIGHT_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + tr('game.phaseDesc.nightResults', "Annonce des effets de la nuit, puis passage au jour.");
+  if (p === "NIGHT_RESULTS") return translateDeathsText(s.phaseData?.deathsText) + tr('game.phaseDesc.nightResults', "Annonce des effets de la nuit, puis passage au jour.");
   if (p === "DAY_WAKE") return tr('game.phaseDesc.dayWake', `Réveil de la ${t('station')}. Validez pour passer à la suite.`);
   if (p === "DAY_CAPTAIN_TRANSFER") return tr('game.phaseDesc.dayCaptainTransfer', `Le ${t('captain').toLowerCase()} est mort : il transmet le ${t('captain').toLowerCase()} à un joueur vivant.`);
   if (p === "DAY_VOTE") return tr('game.phaseDesc.dayVote', "Votez pour éjecter un joueur.");
   if (p === "DAY_TIEBREAK") return tr('game.phaseDesc.dayTiebreak', `Égalité : le ${t('captain').toLowerCase()} choisit l'éjecté.`);
-  if (p === "DAY_RESULTS") return (s.phaseData?.deathsText ? s.phaseData.deathsText + " " : "") + tr('game.phaseDesc.dayResults', "Résultats du jour, puis passage à la nuit.");
+  if (p === "DAY_RESULTS") return translateDeathsText(s.phaseData?.deathsText) + tr('game.phaseDesc.dayResults', "Résultats du jour, puis passage à la nuit.");
   if (p === "REVENGE") return tr('game.phaseDesc.revenge', `${tRole('security')} : tu as été éjecté, tu peux tirer sur quelqu'un.`);
   if (p === "MANUAL_ROLE_PICK") return tr('game.phaseDesc.manualRolePick', "Mode manuel : chaque joueur choisit son rôle (cartes physiques), puis tout le monde valide.");
   if (p === "GAME_ABORTED") return tr('game.phaseDesc.gameAborted', "Partie interrompue.");

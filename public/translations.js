@@ -1677,6 +1677,15 @@ const TRANSLATIONS = {
         de: "MISSION",
         pt: "MISSÃO",
         nl: "MISSIE"
+      },
+      eliminated: {
+        fr: "ÉLIMINÉS",
+        en: "ELIMINATED",
+        es: "ELIMINADOS",
+        it: "ELIMINATI",
+        de: "ELIMINIERT",
+        pt: "ELIMINADOS",
+        nl: "GEËLIMINEERD"
       }
     },
     
@@ -2388,6 +2397,15 @@ const TRANSLATIONS = {
         de: "wurde eliminiert",
         pt: "foi eliminado",
         nl: "is geëlimineerd"
+      },
+      playerEliminated: {
+        fr: "Le joueur {name} ({role}) a été éliminé.",
+        en: "Player {name} ({role}) has been eliminated.",
+        es: "El jugador {name} ({role}) ha sido eliminado.",
+        it: "Il giocatore {name} ({role}) è stato eliminato.",
+        de: "Spieler {name} ({role}) wurde eliminiert.",
+        pt: "O jogador {name} ({role}) foi eliminado.",
+        nl: "Speler {name} ({role}) is geëlimineerd."
       },
       noElimination: {
         fr: "Personne n'a été éliminé",
