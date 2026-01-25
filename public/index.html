@@ -1083,10 +1083,10 @@
       let creditsText = 'partie(s) vidéo';
       try {
         if (window.t) {
-          const ut = window.t('index.auth.videoUnlimited');
-          const ct = window.t('index.auth.videoCredits');
-          if (ut && !ut.includes('index.auth')) unlimitedText = ut;
-          if (ct && !ct.includes('index.auth')) creditsText = ct;
+          const ut = window.t('index.profile.videoUnlimited');
+          const ct = window.t('index.profile.videoCredits');
+          if (ut && !ut.includes('index.profile')) unlimitedText = ut;
+          if (ct && !ct.includes('index.profile')) creditsText = ct;
         }
       } catch(e) { console.warn('Translation error:', e); }
       const el = document.getElementById('displayCredits');
