@@ -528,16 +528,92 @@ const TRANSLATIONS = {
       nl: "📜 REGELS"
     },
     
+    // Avantages compte gratuit
+    features: {
+      title: {
+        fr: "✨ AVANTAGES DU COMPTE GRATUIT",
+        en: "✨ FREE ACCOUNT BENEFITS",
+        es: "✨ VENTAJAS DE LA CUENTA GRATUITA",
+        it: "✨ VANTAGGI DELL'ACCOUNT GRATUITO",
+        de: "✨ VORTEILE DES KOSTENLOSEN KONTOS",
+        pt: "✨ VANTAGENS DA CONTA GRATUITA",
+        nl: "✨ VOORDELEN VAN HET GRATIS ACCOUNT"
+      },
+      videoGames: {
+        fr: "2 parties vidéo",
+        en: "2 video games",
+        es: "2 partidas de vídeo",
+        it: "2 partite video",
+        de: "2 Videospiele",
+        pt: "2 jogos de vídeo",
+        nl: "2 videospellen"
+      },
+      aiAvatar: {
+        fr: "1 avatar IA",
+        en: "1 AI avatar",
+        es: "1 avatar IA",
+        it: "1 avatar IA",
+        de: "1 KI-Avatar",
+        pt: "1 avatar IA",
+        nl: "1 AI-avatar"
+      },
+      themes: {
+        fr: "2 thèmes",
+        en: "2 themes",
+        es: "2 temas",
+        it: "2 temi",
+        de: "2 Themen",
+        pt: "2 temas",
+        nl: "2 thema's"
+      },
+      unlimitedChat: {
+        fr: "Chat illimité",
+        en: "Unlimited chat",
+        es: "Chat ilimitado",
+        it: "Chat illimitata",
+        de: "Unbegrenzter Chat",
+        pt: "Chat ilimitado",
+        nl: "Onbeperkte chat"
+      }
+    },
+    
     // Footer / PWA
     pwa: {
       installApp: {
-        fr: "📲 APP",
-        en: "📲 APP",
-        es: "📲 APP",
-        it: "📲 APP",
-        de: "📲 APP",
-        pt: "📲 APP",
-        nl: "📲 APP"
+        fr: "APP",
+        en: "APP",
+        es: "APP",
+        it: "APP",
+        de: "APP",
+        pt: "APP",
+        nl: "APP"
+      },
+      installMobileIOS: {
+        fr: "📱 Pour installer :\n\n1. Appuie sur le bouton Partager (carré avec flèche)\n2. Choisis \"Sur l'écran d'accueil\"",
+        en: "📱 To install:\n\n1. Tap the Share button (square with arrow)\n2. Choose \"Add to Home Screen\"",
+        es: "📱 Para instalar:\n\n1. Pulsa el botón Compartir (cuadrado con flecha)\n2. Elige \"Añadir a pantalla de inicio\"",
+        it: "📱 Per installare:\n\n1. Tocca il pulsante Condividi (quadrato con freccia)\n2. Scegli \"Aggiungi a Home\"",
+        de: "📱 Zum Installieren:\n\n1. Tippe auf die Teilen-Taste (Quadrat mit Pfeil)\n2. Wähle \"Zum Home-Bildschirm\"",
+        pt: "📱 Para instalar:\n\n1. Toque no botão Compartilhar (quadrado com seta)\n2. Escolha \"Adicionar à Tela Inicial\"",
+        nl: "📱 Om te installeren:\n\n1. Tik op de Deel-knop (vierkant met pijl)\n2. Kies \"Zet op beginscherm\""
+      },
+      installMobileAndroid: {
+        fr: "📱 Pour installer :\n\n1. Ouvre le menu ⋮ de ton navigateur\n2. Choisis \"Installer l'application\" ou \"Ajouter à l'écran d'accueil\"",
+        en: "📱 To install:\n\n1. Open your browser menu ⋮\n2. Choose \"Install app\" or \"Add to Home screen\"",
+        es: "📱 Para instalar:\n\n1. Abre el menú ⋮ de tu navegador\n2. Elige \"Instalar aplicación\" o \"Añadir a pantalla de inicio\"",
+        it: "📱 Per installare:\n\n1. Apri il menu ⋮ del browser\n2. Scegli \"Installa app\" o \"Aggiungi a Home\"",
+        de: "📱 Zum Installieren:\n\n1. Öffne das Browsermenü ⋮\n2. Wähle \"App installieren\" oder \"Zum Startbildschirm hinzufügen\"",
+        pt: "📱 Para instalar:\n\n1. Abra o menu ⋮ do seu navegador\n2. Escolha \"Instalar aplicativo\" ou \"Adicionar à tela inicial\"",
+        nl: "📱 Om te installeren:\n\n1. Open het browsermenu ⋮\n2. Kies \"App installeren\" of \"Toevoegen aan startscherm\""
+      },
+      installPC: {
+        fr: "💻 Pour installer :\n\nClique sur l'icône d'installation dans la barre d'adresse de Chrome (⊕)",
+        en: "💻 To install:\n\nClick the install icon in Chrome's address bar (⊕)",
+        es: "💻 Para instalar:\n\nHaz clic en el icono de instalación en la barra de direcciones de Chrome (⊕)",
+        it: "💻 Per installare:\n\nClicca sull'icona di installazione nella barra degli indirizzi di Chrome (⊕)",
+        de: "💻 Zum Installieren:\n\nKlicke auf das Installations-Symbol in der Adressleiste von Chrome (⊕)",
+        pt: "💻 Para instalar:\n\nClique no ícone de instalação na barra de endereços do Chrome (⊕)",
+        nl: "💻 Om te installeren:\n\nKlik op het installatiepictogram in de adresbalk van Chrome (⊕)"
       }
     }
   },

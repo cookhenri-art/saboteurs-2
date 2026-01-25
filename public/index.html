@@ -473,14 +473,15 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 60px;
+      width: 68px;
       height: 65px;
       background: rgba(0, 0, 0, 0.4);
       border: 2px solid var(--metal-grey, #3d4663);
       border-radius: 10px;
       cursor: pointer;
       transition: all 0.3s ease;
-      padding: 8px 5px;
+      padding: 8px 4px;
+      overflow: hidden;
     }
     
     .theme-btn-large:hover {
@@ -501,10 +502,15 @@
     }
     
     .theme-name {
-      font-size: 0.65rem;
+      font-size: 0.55rem;
       color: var(--text-secondary, #8892b0);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
+      text-align: center;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
     
     .theme-btn-large.active .theme-name {
@@ -700,12 +706,12 @@
       </div>
 
       <div class="features" id="featuresBox">
-        <h3>✨ AVANTAGES DU COMPTE GRATUIT</h3>
+        <h3 data-i18n="index.features.title">✨ AVANTAGES DU COMPTE GRATUIT</h3>
         <div class="feature-grid">
-          <div class="feature-item"><span class="icon">🎬</span><span>2 parties vidéo</span></div>
-          <div class="feature-item"><span class="icon">🎨</span><span>1 avatar IA</span></div>
-          <div class="feature-item"><span class="icon">🚀</span><span>2 thèmes</span></div>
-          <div class="feature-item"><span class="icon">💬</span><span>Chat illimité</span></div>
+          <div class="feature-item"><span class="icon">🎬</span><span data-i18n="index.features.videoGames">2 parties vidéo</span></div>
+          <div class="feature-item"><span class="icon">🎨</span><span data-i18n="index.features.aiAvatar">1 avatar IA</span></div>
+          <div class="feature-item"><span class="icon">🚀</span><span data-i18n="index.features.themes">2 thèmes</span></div>
+          <div class="feature-item"><span class="icon">💬</span><span data-i18n="index.features.unlimitedChat">Chat illimité</span></div>
         </div>
       </div>
     </div>
@@ -1214,13 +1220,13 @@
         // Pas de prompt natif sur mobile - afficher instructions
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
         if (isIOS) {
-          alert('📱 Pour installer :\n\n1. Appuie sur le bouton Partager (carré avec flèche)\n2. Choisis "Sur l\'écran d\'accueil"');
+          alert(t('index.pwa.installMobileIOS'));
         } else {
-          alert('📱 Pour installer :\n\n1. Ouvre le menu ⋮ de ton navigateur\n2. Choisis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"');
+          alert(t('index.pwa.installMobileAndroid'));
         }
       } else {
         // PC sans prompt
-        alert('💻 Pour installer :\n\nClique sur l\'icône d\'installation dans la barre d\'adresse de Chrome (⊕)');
+        alert(t('index.pwa.installPC'));
       }
     });
 
