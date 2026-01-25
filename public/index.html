@@ -463,8 +463,8 @@
     
     .theme-buttons-row {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 5px;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
       justify-items: center;
       margin-bottom: 8px;
     }
@@ -474,21 +474,21 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 48px;
-      height: 48px;
+      width: 90px;
+      height: 55px;
       background: rgba(0, 0, 0, 0.4);
       border: 2px solid var(--metal-grey, #3d4663);
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
-      padding: 4px 2px;
+      padding: 6px 4px;
       overflow: hidden;
     }
     
     .theme-btn-large:hover {
       background: rgba(0, 255, 255, 0.1);
       border-color: var(--neon-main, #00ffff);
-      transform: scale(1.05);
+      transform: scale(1.03);
     }
     
     .theme-btn-large.active {
@@ -498,17 +498,17 @@
     }
     
     .theme-emoji {
-      font-size: 1.2rem;
-      margin-bottom: 1px;
+      font-size: 1.4rem;
+      margin-bottom: 2px;
     }
     
     .theme-name {
-      font-size: 0.5rem;
+      font-size: 0.65rem;
       color: var(--text-secondary, #8892b0);
       text-transform: uppercase;
-      letter-spacing: 0;
+      letter-spacing: 0.5px;
       text-align: center;
-      max-width: 44px;
+      max-width: 85px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -591,8 +591,8 @@
       }
       
       .theme-buttons-row {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
       }
       
       .language-selector {
@@ -601,17 +601,18 @@
       }
       
       .theme-btn-large {
-        width: 60px;
+        width: 100%;
+        max-width: 130px;
         height: 55px;
       }
       
       .theme-emoji {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
       }
       
       .theme-name {
-        font-size: 0.55rem;
-        max-width: 56px;
+        font-size: 0.7rem;
+        max-width: 120px;
       }
     }
   </style>
