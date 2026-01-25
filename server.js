@@ -1470,9 +1470,20 @@ function buildEndReport(room, winner) {
       const label = nameRole(e.targetId, tRole);
       if (label) saves.push(label);
     }
-    if (!saves.length) return { title: "Meilleur Docteur House", text: "Aucun sauvetage." };
+    if (!saves.length) return { 
+      titleKey: "awards.bestDoctor", 
+      textKey: "awards.noSave",
+      title: "Meilleur Docteur House", 
+      text: "Aucun sauvetage." 
+    };
     const uniqSaves = Array.from(new Set(saves));
-    return { title: "Meilleur Docteur House", text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` };
+    return { 
+      titleKey: "awards.bestDoctor", 
+      textKey: "awards.saveCount",
+      data: { count: uniqSaves.length, names: uniqSaves.join(", ") },
+      title: "Meilleur Docteur House", 
+      text: `${uniqSaves.length} sauvetage(s) : ${uniqSaves.join(", ")}` 
+    };
   };
 
   const awardBoucher = () => {
@@ -1481,7 +1492,12 @@ function buildEndReport(room, winner) {
     const astronautsTerm = getTerm('astronauts', room);
     const doctorRoleLabel = getRoleLabel('doctor', room);
     
-    if (room.doctorLifeUsed) return { title: `Boucher de la ${stationTerm}`, text: "Aucun (potion de vie utilisée)." };
+    if (room.doctorLifeUsed) return { 
+      titleKey: "awards.butcher",
+      textKey: "awards.lifePotionUsed",
+      title: `Boucher de la ${stationTerm}`, 
+      text: "Aucun (potion de vie utilisée)." 
+    };
 
     const doctorIds = getDoctorActorIds();
     const doctorName = doctorIds.length ? (room.players.get(doctorIds[0])?.name || doctorRoleLabel) : doctorRoleLabel;
@@ -1507,12 +1523,27 @@ function buildEndReport(room, winner) {
       if (label) unsaved.push(label);
     }
 
-    if (!wrong.length && !unsaved.length) return { title: `Boucher de la ${stationTerm}`, text: "Aucun." };
+    if (!wrong.length && !unsaved.length) return { 
+      titleKey: "awards.butcher",
+      textKey: "awards.none",
+      title: `Boucher de la ${stationTerm}`, 
+      text: "Aucun." 
+    };
 
     const parts = [];
     if (wrong.length) parts.push(`Éjections d'${astronautsTerm.toLowerCase()} : ${Array.from(new Set(wrong)).join(", ")}`);
     if (unsaved.length) parts.push(`Non sauvés : ${Array.from(new Set(unsaved)).join(", ")}`);
-    return { title: `Boucher de la ${stationTerm}`, text: `${doctorName} — ${parts.join(" • ")}` };
+    return { 
+      titleKey: "awards.butcher",
+      textKey: "awards.butcherDetails",
+      data: { 
+        doctorName, 
+        wrongKills: Array.from(new Set(wrong)).join(", "),
+        unsaved: Array.from(new Set(unsaved)).join(", ")
+      },
+      title: `Boucher de la ${stationTerm}`, 
+      text: `${doctorName} — ${parts.join(" • ")}` 
+    };
   };
 
   const awardOeilDeLynx = () => {
@@ -1538,8 +1569,19 @@ function buildEndReport(room, winner) {
       if (label) found.push(label);
     }
     const uniqFound = Array.from(new Set(found));
-    if (!uniqFound.length) return { title: "L'œil de Lynx", text: `Aucun ${saboteurTerm} repéré puis éjecté.` };
-    return { title: "L'œil de Lynx", text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` };
+    if (!uniqFound.length) return { 
+      titleKey: "awards.lynxEye",
+      textKey: "awards.noSaboteurSpotted",
+      title: "L'œil de Lynx", 
+      text: `Aucun ${saboteurTerm} repéré puis éjecté.` 
+    };
+    return { 
+      titleKey: "awards.lynxEye",
+      textKey: "awards.saboteurSpotted",
+      data: { names: uniqFound.join(", ") },
+      title: "L'œil de Lynx", 
+      text: `${saboteurTerm.charAt(0).toUpperCase() + saboteurTerm.slice(1)}(s) repéré(s) puis éjecté(s) : ${uniqFound.join(", ")}` 
+    };
   };
 
   const awardLupin = () => {
@@ -1553,11 +1595,22 @@ function buildEndReport(room, winner) {
       if (n) names.push(n);
     }
     const uniqNames = Array.from(new Set(names));
-    if (!uniqNames.length) return { title: "Le Lupin d'Or", text: `Aucun ${saboteurTerm} volé.` };
-    return { title: "Le Lupin d'Or", text: `A volé le rôle de : ${uniqNames.join(", ")}` };
+    if (!uniqNames.length) return { 
+      titleKey: "awards.goldenLupin",
+      textKey: "awards.noSaboteurStolen",
+      title: "Le Lupin d'Or", 
+      text: `Aucun ${saboteurTerm} volé.` 
+    };
+    return { 
+      titleKey: "awards.goldenLupin",
+      textKey: "awards.stolenRole",
+      data: { names: uniqNames.join(", ") },
+      title: "Le Lupin d'Or", 
+      text: `A volé le rôle de : ${uniqNames.join(", ")}` 
+    };
   };
 
-  const awardSecurity = (teamWanted, title, emptyText) => {
+  const awardSecurity = (teamWanted, title, emptyText, titleKey, emptyTextKey) => {
     const perShooter = new Map(); // shooterId -> {count, victims[]}
     for (const e of room.matchLog) {
       if (e.type !== "revenge_shot") continue;
@@ -1577,24 +1630,56 @@ function buildEndReport(room, winner) {
     for (const [pid, o] of perShooter.entries()) {
       if (!best || o.count > best.count) best = { pid, ...o };
     }
-    if (!best) return { title, text: emptyText };
+    if (!best) return { titleKey, textKey: emptyTextKey, title, text: emptyText };
     const shooterName = room.players.get(best.pid)?.name || best.pid;
     const victims = Array.from(new Set(best.victims));
-    return { title, text: `${shooterName} — victime(s) : ${victims.join(", ")}` };
+    return { 
+      titleKey, 
+      textKey: "awards.revengeVictims",
+      data: { name: shooterName, victims: victims.join(", ") },
+      title, 
+      text: `${shooterName} — victime(s) : ${victims.join(", ")}` 
+    };
   };
 
   const awardAssociation = () => {
-    if (winner !== "AMOUREUX") return { title: "Association de Malfaiteurs", text: "—" };
+    if (winner !== "AMOUREUX") return { 
+      titleKey: "awards.criminalAssociation",
+      textKey: "awards.dash",
+      title: "Association de Malfaiteurs", 
+      text: "—" 
+    };
     const alive = alivePlayers(room);
-    if (alive.length !== 2) return { title: "Association de Malfaiteurs", text: "—" };
+    if (alive.length !== 2) return { 
+      titleKey: "awards.criminalAssociation",
+      textKey: "awards.dash",
+      title: "Association de Malfaiteurs", 
+      text: "—" 
+    };
     const a = alive[0], b = alive[1];
     const linked = a.linkedTo === b.playerId && b.linkedTo === a.playerId;
-    if (!linked) return { title: "Association de Malfaiteurs", text: "—" };
-    return { title: "Association de Malfaiteurs", text: `${a.name} 🤝 ${b.name}` };
+    if (!linked) return { 
+      titleKey: "awards.criminalAssociation",
+      textKey: "awards.dash",
+      title: "Association de Malfaiteurs", 
+      text: "—" 
+    };
+    return { 
+      titleKey: "awards.criminalAssociation",
+      textKey: "awards.linkedPlayers",
+      data: { player1: a.name, player2: b.name },
+      title: "Association de Malfaiteurs", 
+      text: `${a.name} 🤝 ${b.name}` 
+    };
   };
 
   const awardSaboteurIncognito = () => {
-    if (winner !== "SABOTEURS") return { title: "Saboteur Incognito", text: "—" };
+    if (winner !== "SABOTEURS") return { 
+      titleKey: "awards.incognitoSaboteur",
+      textKey: "awards.dash",
+      title: "Saboteur Incognito", 
+      text: "—" 
+    };
 
     // Aggregate votes AGAINST each player across all day votes.
     const votesAgainst = Object.create(null);
@@ -1607,8 +1692,19 @@ function buildEndReport(room, winner) {
     const aliveSab = alivePlayers(room).filter(p => p.role === "saboteur");
     const winners = aliveSab.filter(p => (votesAgainst[p.playerId] || 0) === 0).map(p => p.name);
     const uniq = Array.from(new Set(winners));
-    if (!uniq.length) return { title: "Saboteur Incognito", text: "Aucun." };
-    return { title: "Saboteur Incognito", text: `0 vote contre lui : ${uniq.join(", ")}` };
+    if (!uniq.length) return { 
+      titleKey: "awards.incognitoSaboteur",
+      textKey: "awards.none",
+      title: "Saboteur Incognito", 
+      text: "Aucun." 
+    };
+    return { 
+      titleKey: "awards.incognitoSaboteur",
+      textKey: "awards.zeroVotes",
+      data: { names: uniq.join(", ") },
+      title: "Saboteur Incognito", 
+      text: `0 vote contre lui : ${uniq.join(", ")}` 
+    };
   };
 
   // V24: Award Meilleur Chef de station (départage pour éliminer saboteur)
@@ -1626,10 +1722,21 @@ function buildEndReport(room, winner) {
       }
     }
     
-    if (!goodTiebreaks.length) return { title: `Meilleur ${captainTerm}`, text: `Aucun départage contre ${saboteurTerm}.` };
+    if (!goodTiebreaks.length) return { 
+      titleKey: "awards.bestCaptain",
+      textKey: "awards.noTiebreakAgainstSaboteur",
+      title: `Meilleur ${captainTerm}`, 
+      text: `Aucun départage contre ${saboteurTerm}.` 
+    };
     const captains = [...new Set(goodTiebreaks.map(t => t.captain))];
     const targets = [...new Set(goodTiebreaks.map(t => t.target))];
-    return { title: `Meilleur ${captainTerm}`, text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` };
+    return { 
+      titleKey: "awards.bestCaptain",
+      textKey: "awards.eliminated",
+      data: { captains: captains.join(", "), targets: targets.join(", ") },
+      title: `Meilleur ${captainTerm}`, 
+      text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` 
+    };
   };
 
   // V24: Award Pire Chef de station (départage pour éliminer astronaute)
@@ -1647,10 +1754,21 @@ function buildEndReport(room, winner) {
       }
     }
     
-    if (!badTiebreaks.length) return { title: `Pire ${captainTerm}`, text: `Aucun départage contre ${astronautTerm}.` };
+    if (!badTiebreaks.length) return { 
+      titleKey: "awards.worstCaptain",
+      textKey: "awards.noTiebreakAgainstAstronaut",
+      title: `Pire ${captainTerm}`, 
+      text: `Aucun départage contre ${astronautTerm}.` 
+    };
     const captains = [...new Set(badTiebreaks.map(t => t.captain))];
     const targets = [...new Set(badTiebreaks.map(t => t.target))];
-    return { title: `Pire ${captainTerm}`, text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` };
+    return { 
+      titleKey: "awards.worstCaptain",
+      textKey: "awards.eliminated",
+      data: { captains: captains.join(", "), targets: targets.join(", ") },
+      title: `Pire ${captainTerm}`, 
+      text: `${captains.join(", ")} a éliminé : ${targets.join(", ")}` 
+    };
   };
 
 
@@ -1663,8 +1781,8 @@ function buildEndReport(room, winner) {
     awardBoucher(),
     awardOeilDeLynx(),
     awardLupin(),
-    awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`),
-    awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`),
+    awardSecurity("saboteurs", `Terminator de la ${stationTerm.charAt(0).toUpperCase() + stationTerm.slice(1)}`, `Aucune vengeance sur ${saboteursTerm.toLowerCase().slice(0, -1)}.`, "awards.terminator", "awards.noRevengeOnSaboteur"),
+    awardSecurity("astronauts", "Gâchette Nerveuse", `Aucune vengeance sur ${astronautsTerm.toLowerCase().slice(0, -1)}.`, "awards.nervousTrigger", "awards.noRevengeOnAstronaut"),
     awardAssociation(),
     awardSaboteurIncognito(),
     awardBestCaptain(),
@@ -1950,18 +2068,29 @@ function buildRolePool(room) {
   const sabCount = countSaboteursFor(n);
   const enabled = room.config.rolesEnabled || {};
   const pool = [];
+  
+  // 1. Saboteurs en premier (selon nombre de joueurs)
   for (let i = 0; i < sabCount; i++) pool.push("saboteur");
+  
+  // 2-7. Rôles spéciaux par ordre de priorité:
+  // radar > doctor > chameleon > security > ai_agent > astronaut > engineer
+  const priorityOrder = ["radar", "doctor", "chameleon", "security", "ai_agent", "engineer"];
   const specials = [];
-  if (enabled.chameleon) specials.push("chameleon");
-  if (enabled.ai_agent) specials.push("ai_agent");
-  if (enabled.radar) specials.push("radar");
-  if (enabled.doctor) specials.push("doctor");
-  if (enabled.security) specials.push("security");
-  if (enabled.engineer) specials.push("engineer");
+  for (const role of priorityOrder) {
+    if (enabled[role]) specials.push(role);
+  }
+  
+  // V24: Debug log pour voir la distribution
+  console.log(`[buildRolePool] n=${n}, sabCount=${sabCount}, enabled=${JSON.stringify(enabled)}, specials before splice=${JSON.stringify(specials)}`);
+  
   const maxSpecials = Math.max(0, n - sabCount);
   specials.splice(maxSpecials);
   pool.push(...specials);
+  
+  // Astronautes pour compléter
   while (pool.length < n) pool.push("astronaut");
+  
+  console.log(`[buildRolePool] Final pool=${JSON.stringify(pool)}`);
   return pool;
 }
 
@@ -2372,7 +2501,14 @@ function publicRoomStateFor(room, viewerId) {
 
   const privateLines = [];
   if (viewer && room.phase === "NIGHT_RADAR" && room.phaseData?.lastRadarResult?.viewerId === viewerId) {
-    privateLines.push({ kind: "private", text: room.phaseData.lastRadarResult.text });
+    // V24: Envoyer les données structurées pour traduction côté client
+    privateLines.push({ 
+      kind: "private", 
+      type: "radar_result",
+      text: room.phaseData.lastRadarResult.text,
+      roleKey: room.phaseData.lastRadarResult.roleKey,
+      targetName: room.players.get(room.phaseData.lastRadarResult.targetId)?.name || "?"
+    });
   }
   if (viewer && viewer.linkedTo) privateLines.push({ kind: "private", text: `🔗 Lié à ${viewer.linkedName || "?"}` });
 
