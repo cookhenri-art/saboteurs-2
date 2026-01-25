@@ -1826,6 +1826,15 @@ select:focus-visible {
     right: 10px !important;
     top: 10px !important;
   }
+
+  /* V32: Mode invité - décaler les boutons sous le bandeau */
+  body.guest-mode #topLeftButtons {
+    top: 95px !important;
+  }
+  
+  body.guest-mode #topRightButtons {
+    top: 95px !important;
+  }
   
   #rulesBtn {
     font-size: 0.25rem !important; /* Divisé par 2 encore */
