@@ -37,37 +37,20 @@
 </head>
 
 <body>
-  <!-- Bouton RÈGLES en haut à gauche -->
+  <!-- Bouton RÈGLES en haut à gauche - décalé si bandeau invité visible -->
   <div id="topLeftButtons" style="
     position: fixed; left: 10px; top: 10px; z-index: 9999;
+    transition: top 0.3s;
   ">
     <button id="rulesBtn" class="btn btn-secondary" style="
       padding: 10px 16px; border-radius: 10px; font-weight: 800;
     ">📜 <span class="rulesBtnText">RÈGLES</span></button>
   </div>
   
-  <!-- Bouton APP en bas à gauche (séparé pour éviter conflits tactiles) -->
-  <div id="installAppContainer" style="
-    position: fixed; left: 10px; bottom: 80px; z-index: 9998;
-  ">
-    <button id="installAppBtn" type="button" style="
-      padding: 10px 14px; border-radius: 12px; font-weight: 800;
-      display: flex; align-items: center; gap: 8px;
-      background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(0,255,255,0.15) 100%);
-      border: 2px solid var(--neon-cyan, #00ffff);
-      color: var(--neon-cyan, #00ffff);
-      cursor: pointer;
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-      font-family: inherit;
-      font-size: 0.9rem;
-    ">
-      <img src="/icons/icon-192x192.webp" alt="App" style="width: 28px; height: 28px; border-radius: 6px;">
-      <span>APP</span>
-      <span style="font-size: 1.2rem;">⬇️</span>
-    </button>
-  </div>
+  <!-- Bouton APP masqué sur game.html (affiché seulement sur index.html) -->
+  <div id="installAppContainer" style="display: none;"></div>
   
-  <!-- Bouton MUTE à droite -->
+  <!-- Bouton MUTE à droite - décalé si bandeau invité visible -->
   <div id="topRightButtons" style="
     position: fixed; right: 20px; top: 20px; z-index: 9999;
   ">
@@ -792,6 +775,12 @@
         banner.className = 'guest-banner';
         banner.innerHTML = '👤 Mode Invité - Chat uniquement. <a href="/">Créer un compte</a> pour accéder aux parties vidéo !';
         document.body.insertBefore(banner, document.body.children[1]);
+
+        // V32: Décaler les boutons en haut pour ne pas chevaucher le bandeau
+        const topLeftButtons = document.getElementById('topLeftButtons');
+        const topRightButtons = document.getElementById('topRightButtons');
+        if (topLeftButtons) topLeftButtons.style.top = '50px';
+        if (topRightButtons) topRightButtons.style.top = '50px';
 
         // Générer un nom aléatoire pour l'invité
         setTimeout(function() {

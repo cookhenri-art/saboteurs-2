@@ -1271,7 +1271,14 @@
       return;
     }
 
-    // Fallback button bottom-left (mobile friendly)
+    // V32: Ne pas créer le bouton sur PC (visio se lance automatiquement)
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (!isMobile) {
+      log('PC detected - skipping video toggle button');
+      return;
+    }
+
+    // Fallback button bottom-left (mobile only, compact)
     const btn = document.createElement("button");
     btn.id = "videoToggleButton";
     btn.style.cssText = `
@@ -1279,12 +1286,12 @@
       left: 14px;
       bottom: 14px;
       z-index: 2147483647;
-      padding: 10px 12px;
-      border-radius: 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
       border: 1px solid rgba(255,255,255,0.18);
       background: rgba(0,0,0,0.55);
       color: #fff;
-      font-size: 14px;
+      font-size: 12px;
       cursor: pointer;
       backdrop-filter: blur(8px);
     `;
@@ -1314,15 +1321,15 @@
       
       if (window.VideoIntegration && typeof window.VideoIntegration.requestVideoStart === "function") {
         window.VideoIntegration.requestVideoStart();
-        btn.textContent = "🎥 Visio demandée…";
+        btn.textContent = "🎥 ...";
         setTimeout(() => { 
           // V27: Re-vérifier après le délai
           const currentState = window.lastKnownState;
           if (currentState?.videoDisabled || currentState?.you?.canBroadcastVideo === false) {
-            btn.textContent = currentState?.you?.canBroadcastVideo === false ? "🚫 Crée un compte" : "🚫 Visio désactivée";
+            btn.textContent = currentState?.you?.canBroadcastVideo === false ? "🚫 Compte" : "🚫 Off";
             btn.style.background = "rgba(100,50,50,0.7)";
           } else {
-            btn.textContent = "🎥 Visio activée";
+            btn.textContent = "🎥 Visio";
             btn.style.background = "rgba(0,100,0,0.55)";
           }
         }, 1200);
@@ -1333,7 +1340,7 @@
   }
 
   // V27: Fonction pour mettre à jour l'état du bouton vidéo selon videoDisabled
-  // V32: Aussi vérifier canBroadcastVideo
+  // V32: Aussi vérifier canBroadcastVideo + texte raccourci pour mobile
   function updateVideoButtonState(btn) {
     if (!btn) return;
     
@@ -1343,14 +1350,14 @@
     
     // V32: Si joueur n'a pas les crédits, traiter comme videoDisabled
     if (videoDisabled || canBroadcastVideo === false) {
-      const message = canBroadcastVideo === false ? "🚫 Crée un compte" : "🚫 Visio désactivée";
+      const message = canBroadcastVideo === false ? "🚫 Compte" : "🚫 Off";
       btn.textContent = message;
       btn.style.background = "rgba(100,50,50,0.7)";
       btn.style.cursor = "not-allowed";
       btn.style.opacity = "0.7";
       log('⛔ Video button disabled (videoDisabled=' + videoDisabled + ', canBroadcast=' + canBroadcastVideo + ')');
     } else {
-      btn.textContent = "🎥 Visio activée";
+      btn.textContent = "🎥 Visio";
       btn.style.background = "rgba(0,0,0,0.55)";
       btn.style.cursor = "pointer";
       btn.style.opacity = "1";
