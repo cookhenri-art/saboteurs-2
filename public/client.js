@@ -1242,22 +1242,34 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
   if (state.phase === "NIGHT_RADAR") {
     if (state.phaseData?.selectionDone) {
-// Afficher le résultat directement ici (les joueurs n'ont plus le log/tableau).
-const radarLine = (state.privateLines || []).map(x => x.text).find(t => /radar/i.test(t)) || state.privateLines?.[0]?.text || "";
-if (radarLine) {
-  const box = document.createElement("div");
-  box.style.marginTop = "10px";
-  box.style.padding = "12px";
-  box.style.borderRadius = "12px";
-  box.style.border = "1px solid rgba(0,255,255,0.25)";
-  box.style.background = "rgba(0,0,0,0.25)";
-  const radarLabel = window.i18n ? window.i18n('game.ui.radar') : "Radar";
-  box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🔎 ${radarLabel}</div>` +
-    `<div style="opacity:.95; font-weight:800;">${escapeHtml(radarLine)}</div>`;
-  controls.appendChild(box);
-}
-const readResultHint = window.i18n ? window.i18n('game.hints.readResultThenValidate') : "Lis le résultat puis valide pour continuer.";
-controls.appendChild(makeHint(readResultHint));
+      // V24: Afficher le résultat avec traduction du rôle
+      const radarResult = (state.privateLines || []).find(x => x.type === "radar_result") || 
+                          (state.privateLines || []).find(x => /radar/i.test(x.text));
+      
+      if (radarResult) {
+        const box = document.createElement("div");
+        box.style.marginTop = "10px";
+        box.style.padding = "12px";
+        box.style.borderRadius = "12px";
+        box.style.border = "1px solid rgba(0,255,255,0.25)";
+        box.style.background = "rgba(0,0,0,0.25)";
+        const radarLabel = window.i18n ? window.i18n('game.ui.radar') : "Radar";
+        
+        // V24: Utiliser roleKey si disponible pour traduire le rôle
+        let displayText;
+        if (radarResult.roleKey && radarResult.targetName) {
+          const translatedRole = tRole(radarResult.roleKey) || radarResult.roleKey;
+          displayText = `🔍 ${radarLabel}: ${radarResult.targetName} = ${translatedRole}`;
+        } else {
+          displayText = radarResult.text || "";
+        }
+        
+        box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🔎 ${radarLabel}</div>` +
+          `<div style="opacity:.95; font-weight:800;">${escapeHtml(displayText)}</div>`;
+        controls.appendChild(box);
+      }
+      const readResultHint = window.i18n ? window.i18n('game.hints.readResultThenValidate') : "Lis le résultat puis valide pour continuer.";
+      controls.appendChild(makeHint(readResultHint));
     } else {
       const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
       const inspectVerb = window.i18n ? window.i18n('game.actions.inspect') : "Inspecter";
@@ -1525,7 +1537,6 @@ function renderEnd() {
       if (window.i18n && a.titleKey) {
         const fullKey = `game.${a.titleKey}`;
         const translatedTitle = window.i18n(fullKey);
-        console.log('[Awards Debug] Title:', fullKey, '->', translatedTitle);
         if (translatedTitle && translatedTitle !== fullKey && !translatedTitle.startsWith('game.')) {
           title = translatedTitle;
         }
@@ -1535,7 +1546,6 @@ function renderEnd() {
       if (window.i18n && a.textKey) {
         const fullKey = `game.${a.textKey}`;
         let translatedText = window.i18n(fullKey);
-        console.log('[Awards Debug] Text:', fullKey, '->', translatedText);
         if (translatedText && translatedText !== fullKey && !translatedText.startsWith('game.')) {
           // Remplacer les placeholders avec les données
           if (a.data) {

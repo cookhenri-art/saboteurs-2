@@ -2080,12 +2080,17 @@ function buildRolePool(room) {
     if (enabled[role]) specials.push(role);
   }
   
+  // V24: Debug log pour voir la distribution
+  console.log(`[buildRolePool] n=${n}, sabCount=${sabCount}, enabled=${JSON.stringify(enabled)}, specials before splice=${JSON.stringify(specials)}`);
+  
   const maxSpecials = Math.max(0, n - sabCount);
   specials.splice(maxSpecials);
   pool.push(...specials);
   
   // Astronautes pour compléter
   while (pool.length < n) pool.push("astronaut");
+  
+  console.log(`[buildRolePool] Final pool=${JSON.stringify(pool)}`);
   return pool;
 }
 
@@ -2496,7 +2501,14 @@ function publicRoomStateFor(room, viewerId) {
 
   const privateLines = [];
   if (viewer && room.phase === "NIGHT_RADAR" && room.phaseData?.lastRadarResult?.viewerId === viewerId) {
-    privateLines.push({ kind: "private", text: room.phaseData.lastRadarResult.text });
+    // V24: Envoyer les données structurées pour traduction côté client
+    privateLines.push({ 
+      kind: "private", 
+      type: "radar_result",
+      text: room.phaseData.lastRadarResult.text,
+      roleKey: room.phaseData.lastRadarResult.roleKey,
+      targetName: room.players.get(room.phaseData.lastRadarResult.targetId)?.name || "?"
+    });
   }
   if (viewer && viewer.linkedTo) privateLines.push({ kind: "private", text: `🔗 Lié à ${viewer.linkedName || "?"}` });
 
