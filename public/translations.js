@@ -1034,6 +1034,15 @@ const TRANSLATIONS = {
         de: "Verteilung",
         pt: "Distribuição",
         nl: "Verdeling"
+      },
+      connectedPlayers: {
+        fr: "ÉQUIPAGE CONNECTÉ",
+        en: "CONNECTED CREW",
+        es: "TRIPULACIÓN CONECTADA",
+        it: "EQUIPAGGIO CONNESSO",
+        de: "VERBUNDENE CREW",
+        pt: "TRIPULAÇÃO CONECTADA",
+        nl: "VERBONDEN BEMANNING"
       }
     },
     
@@ -1226,6 +1235,64 @@ const TRANSLATIONS = {
         de: "Sicherheitschef",
         pt: "Chefe de Segurança",
         nl: "Beveiligingschef"
+      }
+    },
+    
+    // Descriptions courtes des rôles (pour la config)
+    roleDescriptions: {
+      doctor: {
+        fr: "Une potion de vie, une potion de mort.",
+        en: "One life potion, one death potion.",
+        es: "Una poción de vida, una poción de muerte.",
+        it: "Una pozione vita, una pozione morte.",
+        de: "Ein Lebenstrank, ein Todestrank.",
+        pt: "Uma poção de vida, uma poção de morte.",
+        nl: "Eén levensdrank, één doodsdrank."
+      },
+      security: {
+        fr: "Vengeance si tué.",
+        en: "Revenge if killed.",
+        es: "Venganza si es asesinado.",
+        it: "Vendetta se ucciso.",
+        de: "Rache wenn getötet.",
+        pt: "Vingança se morto.",
+        nl: "Wraak als gedood."
+      },
+      radar: {
+        fr: "Peut révéler un rôle.",
+        en: "Can reveal a role.",
+        es: "Puede revelar un rol.",
+        it: "Può rivelare un ruolo.",
+        de: "Kann eine Rolle aufdecken.",
+        pt: "Pode revelar um papel.",
+        nl: "Kan een rol onthullen."
+      },
+      ai_agent: {
+        fr: "Se lie à un joueur.",
+        en: "Links to a player.",
+        es: "Se vincula a un jugador.",
+        it: "Si collega a un giocatore.",
+        de: "Verbindet sich mit einem Spieler.",
+        pt: "Liga-se a um jogador.",
+        nl: "Verbindt met een speler."
+      },
+      engineer: {
+        fr: "Regarde discrètement lors des votes.",
+        en: "Watches discreetly during votes.",
+        es: "Observa discretamente durante los votos.",
+        it: "Osserva discretamente durante i voti.",
+        de: "Beobachtet diskret während der Abstimmungen.",
+        pt: "Observa discretamente durante os votos.",
+        nl: "Kijkt discreet tijdens stemmingen."
+      },
+      chameleon: {
+        fr: "Échange son rôle avec 1 joueur.",
+        en: "Swaps role with 1 player.",
+        es: "Intercambia su rol con 1 jugador.",
+        it: "Scambia il ruolo con 1 giocatore.",
+        de: "Tauscht Rolle mit 1 Spieler.",
+        pt: "Troca papel com 1 jogador.",
+        nl: "Wisselt rol met 1 speler."
       }
     },
     
@@ -3315,9 +3382,12 @@ function changeLanguage(langCode) {
   }
 }
 
-// Exposer globalement - NE PAS exposer t() car client.js l'utilise pour les thèmes
+// Exposer globalement
+// Note: window.t sera écrasé par client.js dans game.html (pour les thèmes)
+// mais reste disponible dans index.html pour les traductions
 window.TRANSLATIONS = TRANSLATIONS;
-window.i18n = i18n;  // Fonction principale pour les traductions multilingues
+window.t = t;         // Pour index.html et autres pages sans client.js
+window.i18n = i18n;   // Alias robuste pour toutes les pages
 window.getCurrentLanguage = getCurrentLanguage;
 window.setCurrentLanguage = setCurrentLanguage;
 window.translatePage = translatePage;

@@ -206,6 +206,46 @@ function translateGamePage() {
   }
 
   // ============================================
+  // CONFIG SECTIONS (LOBBY)
+  // ============================================
+  
+  // Config Rôles title
+  const configRolesTitle = document.getElementById('configRolesTitle');
+  if (configRolesTitle) {
+    configRolesTitle.textContent = tr('game.config.rolesConfig');
+  }
+
+  // Theme selector title
+  const themeSelectorTitle = document.getElementById('themeSelectorTitle');
+  if (themeSelectorTitle) {
+    themeSelectorTitle.textContent = tr('game.config.themeHost');
+  }
+
+  // Video Options title
+  const videoOptionsTitle = document.getElementById('videoOptionsTitle');
+  if (videoOptionsTitle) {
+    videoOptionsTitle.textContent = tr('game.config.videoOptions');
+  }
+
+  // Disable video label
+  const disableVideoLabel = document.getElementById('disableVideoLabel');
+  if (disableVideoLabel) {
+    disableVideoLabel.textContent = tr('game.config.disableVideo');
+  }
+
+  // Video option description
+  const videoOptionDesc = document.getElementById('videoOptionDescription');
+  if (videoOptionDesc) {
+    videoOptionDesc.textContent = tr('game.config.videoDescription');
+  }
+
+  // Connected players title
+  const connectedPlayersTitle = document.getElementById('connectedPlayersTitle');
+  if (connectedPlayersTitle) {
+    connectedPlayersTitle.textContent = tr('game.lobby.connectedPlayers');
+  }
+
+  // ============================================
   // AUDIO UNLOCK
   // ============================================
   const audioText = document.querySelector('#audioUnlockOverlay > div > div:nth-child(2)');

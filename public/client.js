@@ -780,11 +780,13 @@ function renderLobby() {
         `;
       }).join("");
     } else {
-      box.innerHTML = `<div style="opacity: 0.7; font-style: italic;">Aucun rôle spécial activé</div>`;
+      const noRolesText = window.i18n ? window.i18n('game.config.noSpecialRoles') : 'Aucun rôle spécial activé';
+      box.innerHTML = `<div style="opacity: 0.7; font-style: italic;">${noRolesText}</div>`;
     }
     
     if (cfg.manualRoles) {
-      box.innerHTML += `<hr><div style="margin-top: 8px; color: var(--neon-orange); opacity: 0.9;">• Mode manuel (cartes physiques)</div>`;
+      const manualText = window.i18n ? window.i18n('game.config.manualMode') : 'Mode manuel (cartes physiques)';
+      box.innerHTML += `<hr><div style="margin-top: 8px; color: var(--neon-orange); opacity: 0.9;">• ${manualText}</div>`;
     }
     
   } else {
@@ -796,7 +798,8 @@ function renderLobby() {
     box.appendChild(makeCheckbox("engineer", tRole('engineer'), tRoleHelp('engineer'), rolesEnabled.engineer, false, false));
     box.appendChild(makeCheckbox("chameleon", `${tRole('chameleon')} (Nuit 1)`, tRoleHelp('chameleon'), rolesEnabled.chameleon, false, false));
     box.appendChild(document.createElement("hr"));
-    box.appendChild(makeCheckbox("manualRoles", "Mode manuel (cartes physiques)", "", !!cfg.manualRoles, true, false));
+    const manualModeText = window.i18n ? window.i18n('game.config.manualMode') : 'Mode manuel (cartes physiques)';
+    box.appendChild(makeCheckbox("manualRoles", manualModeText, "", !!cfg.manualRoles, true, false));
   }
   
   
@@ -2686,6 +2689,14 @@ function tRole(roleKey, plural = false) {
 
 // Petites explications génériques des rôles (identiques pour tous les thèmes)
 function tRoleHelp(roleKey) {
+  // V33: Utiliser les traductions multilingues si disponibles
+  if (typeof window.i18n === 'function') {
+    const key = `game.roleDescriptions.${roleKey}`;
+    const translated = window.i18n(key);
+    if (translated !== key) return translated;
+  }
+  
+  // Fallback: descriptions en français
   const helps = {
     doctor: "Une potion de vie, une potion de mort.",
     security: "Vengeance si tué.",

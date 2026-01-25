@@ -963,7 +963,7 @@
           localStorage.setItem('saboteur_user', JSON.stringify(data.user));
           currentUser = data.user;
           showLoggedInState();
-          showSuccess(window.i18n ? window.i18n('index.auth.loginSuccess.message') : 'Connexion réussie !');
+          showSuccess(window.i18n ? window.i18n('index.toasts.loginSuccess') : 'Connexion réussie !');
         } else {
           showError(data.error || 'Erreur');
         }
