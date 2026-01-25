@@ -768,6 +768,14 @@
           <img class="upload-preview" id="uploadPreview">
         </div>
         <input type="file" id="photoInput" accept="image/*" style="display: none">
+        <input type="file" id="cameraPhotoInput" accept="image/*" capture="user" style="display: none">
+        
+        <!-- Bouton prendre photo avec caméra -->
+        <div style="text-align: center; margin-top: 10px;">
+          <button class="btn btn-camera" onclick="document.getElementById('cameraPhotoInput').click()" style="padding: 10px 20px;">
+            📷 Prendre une photo
+          </button>
+        </div>
 
         <h2 class="card-title" style="margin-top: 25px;">🎨 THÈME DE L'AVATAR</h2>
         <div class="theme-grid" id="avatarThemeGrid"></div>
@@ -1177,6 +1185,24 @@
 
     // Upload
     document.getElementById('photoInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById('uploadPreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.getElementById('uploadZone').classList.add('has-photo');
+        document.querySelector('#uploadZone .icon').style.display = 'none';
+        document.querySelectorAll('#uploadZone p').forEach(p => p.style.display = 'none');
+      };
+      reader.readAsDataURL(file);
+      updateGenerateButton();
+    });
+
+    // V32: Caméra pour photo IA (même logique que photoInput)
+    document.getElementById('cameraPhotoInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       uploadedFile = file;
