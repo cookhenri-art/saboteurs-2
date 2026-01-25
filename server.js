@@ -60,6 +60,7 @@ const resend = (RESEND_API_KEY && Resend) ? new Resend(RESEND_API_KEY) : null;
 const ACCOUNT_LIMITS = {
   guest: { videoCredits: 0, avatars: 0, themes: ["default", "werewolf"], customPrompt: false },
   free: { videoCredits: 2, avatars: 2, themes: ["default", "werewolf"], customPrompt: false },
+  pack: { videoCredits: 50, avatars: 50, themes: "all", customPrompt: true },  // Pack 4.99€ - accès à TOUS les thèmes (y compris futurs)
   subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true },
   admin: { videoCredits: Infinity, avatars: Infinity, themes: "all", customPrompt: true }
 };
