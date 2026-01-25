@@ -804,6 +804,9 @@
       text-align: center;
     }
   </style>
+  
+  <!-- Système de traductions -->
+  <script src="translations.js"></script>
 </head>
 <body>
   <!-- Sélecteur de thème -->
@@ -816,10 +819,10 @@
 
   <div class="container">
     <header class="header">
-      <h1>🎨 CRÉER MON AVATAR</h1>
+      <h1 data-i18n="avatar.title">🎨 CRÉATEUR D'AVATAR IA</h1>
       <div class="header-buttons">
-        <a href="/" class="btn btn-secondary">🏠 Accueil</a>
-        <a href="/game.html" class="btn btn-primary">🎮 Jouer</a>
+        <a href="/" class="btn btn-secondary">🏠 <span data-i18n="game.buttons.backToLobby">Accueil</span></a>
+        <a href="/game.html" class="btn btn-primary">🎮 <span data-i18n="index.profile.playNow">Jouer</span></a>
       </div>
     </header>
 
@@ -829,12 +832,12 @@
     <div class="main-grid">
       <!-- Controls -->
       <div class="card">
-        <h2 class="card-title">📸 TA PHOTO</h2>
+        <h2 class="card-title">📸 <span data-i18n="avatar.sections.uploadPhoto">TA PHOTO</span></h2>
         
         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
           <div class="icon">📷</div>
-          <p>Clique pour ajouter ta photo</p>
-          <p style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);">Selfie de face recommandé</p>
+          <p data-i18n="avatar.sections.uploadPhoto">Clique pour ajouter ta photo</p>
+          <p style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);" data-i18n="avatar.sections.selfieRecommended">Selfie de face recommandé</p>
           <img class="upload-preview" id="uploadPreview">
         </div>
         <input type="file" id="photoInput" accept="image/*" style="display: none">
@@ -842,43 +845,43 @@
         
         <!-- Bouton prendre photo avec caméra -->
         <div style="text-align: center; margin-top: 10px;">
-          <button class="btn btn-camera" onclick="openWebcam('ia')" style="padding: 10px 20px;">
+          <button class="btn btn-camera" onclick="openWebcam('ia')" style="padding: 10px 20px;" data-i18n="avatar.sections.takePhoto">
             📷 Prendre une photo
           </button>
         </div>
 
-        <h2 class="card-title" style="margin-top: 25px;">🎨 THÈME DE L'AVATAR</h2>
+        <h2 class="card-title" style="margin-top: 25px;" data-i18n="avatar.sections.theme">🎨 THÈME DE L'AVATAR</h2>
         <div class="theme-grid" id="avatarThemeGrid"></div>
 
-        <h2 class="card-title">👤 PERSONNAGE</h2>
+        <h2 class="card-title" data-i18n="avatar.sections.character">👤 PERSONNAGE</h2>
         <div class="character-grid" id="characterGrid"></div>
 
         <!-- Presets de rendu (comptes gratuits et premium non-admin) -->
         <div class="preset-section" id="presetSection">
-          <h2 class="card-title">🎭 STYLE DE RENDU</h2>
+          <h2 class="card-title" data-i18n="avatar.sections.style">🔥 STYLE DE RENDU</h2>
           <div class="preset-grid" id="presetGrid">
             <button class="preset-btn active" data-preset="standard" onclick="selectPreset('standard')">
               <span class="preset-icon">🎯</span>
-              <span class="preset-name">Standard</span>
-              <span class="preset-desc">Équilibré</span>
+              <span class="preset-name" data-i18n="avatar.styles.standard.name">Standard</span>
+              <span class="preset-desc" data-i18n="avatar.styles.standard.desc">Équilibré</span>
             </button>
             <button class="preset-btn" data-preset="transformed" onclick="selectPreset('transformed')">
               <span class="preset-icon">🔥</span>
-              <span class="preset-name">Transformé</span>
-              <span class="preset-desc">Plus stylisé</span>
+              <span class="preset-name" data-i18n="avatar.styles.transformed.name">Transformé</span>
+              <span class="preset-desc" data-i18n="avatar.styles.transformed.desc">Plus stylisé</span>
             </button>
             <button class="preset-btn" data-preset="artistic" onclick="selectPreset('artistic')">
               <span class="preset-icon">✨</span>
-              <span class="preset-name">Artistique</span>
-              <span class="preset-desc">Très stylisé</span>
+              <span class="preset-name" data-i18n="avatar.styles.artistic.name">Artistique</span>
+              <span class="preset-desc" data-i18n="avatar.styles.artistic.desc">Très stylisé</span>
             </button>
           </div>
         </div>
 
         <!-- Custom Prompt (Premium/Admin) -->
         <div class="custom-prompt-section" id="customPromptSection">
-          <h2 class="card-title">✨ PROMPT PERSONNALISÉ</h2>
-          <textarea id="customPrompt" placeholder="Décris ton personnage personnalisé..."></textarea>
+          <h2 class="card-title" data-i18n="avatar.sections.customPrompt">✨ PROMPT PERSONNALISÉ</h2>
+          <textarea id="customPrompt" data-i18n-placeholder="avatar.messages.customPromptPlaceholder" placeholder="Décris ton personnage personnalisé..."></textarea>
         </div>
 
         <!-- Admin Sliders -->
@@ -946,8 +949,8 @@
           </div>
         </div>
 
-        <button class="btn btn-primary generate-btn" id="generateBtn" onclick="generateAvatar()" disabled>
-          ✨ GÉNÉRER MON AVATAR
+        <button class="btn btn-primary generate-btn" id="generateBtn" onclick="generateAvatar()" disabled data-i18n="avatar.buttons.generate">
+          🎨 GÉNÉRER MON AVATAR
         </button>
 
         <div class="stats" id="userStats">
@@ -964,37 +967,37 @@
 
       <!-- Result -->
       <div class="card">
-        <h2 class="card-title">🖼️ RÉSULTAT</h2>
+        <h2 class="card-title" data-i18n="avatar.sections.result">🖼️ RÉSULTAT</h2>
         
         <div class="result-zone" id="resultZone">
           <div class="result-placeholder" id="resultPlaceholder">
             <div class="icon">🎭</div>
-            <p>Ton avatar apparaîtra ici</p>
+            <p data-i18n="avatar.messages.avatarAppears">Ton avatar apparaîtra ici</p>
           </div>
           <img class="result-image" id="resultImage">
-          <button class="download-btn" id="downloadBtn" onclick="downloadAvatar()">⬇️ Télécharger</button>
+          <button class="download-btn" id="downloadBtn" onclick="downloadAvatar()" data-i18n="avatar.buttons.download">⬇️ Télécharger</button>
         </div>
 
         <div class="progress-bar" id="progressBar">
           <div class="progress-fill"></div>
         </div>
 
-        <h2 class="card-title" style="margin-top: 25px;">📁 MES AVATARS IA</h2>
+        <h2 class="card-title" style="margin-top: 25px;" data-i18n="avatar.sections.myAvatars">📁 MES AVATARS IA</h2>
         <div class="gallery" id="gallery">
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Aucun avatar IA pour le moment</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem;" data-i18n="avatar.messages.noAvatars">Aucun avatar pour le moment</p>
         </div>
 
         <!-- V32: Section avatar perso (upload/photo) -->
         <div class="section-divider" id="customAvatarSection" style="display: none;">
-          <h2 class="card-title">📤 MON AVATAR PERSO</h2>
-          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">
+          <h2 class="card-title" data-i18n="avatar.sections.myCustomAvatar">📤 MON AVATAR PERSO</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;" data-i18n="avatar.messages.uploadInfo">
             Importe ta propre photo (1 seul avatar perso autorisé)
           </p>
           
           <div class="custom-avatar-container">
             <!-- Avatar actuel -->
             <div class="current-custom-avatar" id="currentCustomAvatar">
-              <p style="color: var(--text-muted); font-size: 0.85rem;">Aucun avatar perso</p>
+              <p style="color: var(--text-muted); font-size: 0.85rem;" data-i18n="avatar.messages.noCustomAvatar">Aucun avatar perso</p>
             </div>
             
             <!-- Zone upload/photo -->
@@ -1003,15 +1006,15 @@
               <input type="file" id="cameraInput" accept="image/*" capture="user" style="display: none;">
               
               <div class="upload-buttons">
-                <button class="btn btn-upload" onclick="document.getElementById('customAvatarInput').click()">
+                <button class="btn btn-upload" onclick="document.getElementById('customAvatarInput').click()" data-i18n="avatar.buttons.importImage">
                   📁 Importer une image
                 </button>
-                <button class="btn btn-camera" onclick="openWebcam('custom')">
+                <button class="btn btn-camera" onclick="openWebcam('custom')" data-i18n="avatar.sections.takePhoto">
                   📷 Prendre une photo
                 </button>
               </div>
               
-              <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 10px;">
+              <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 10px;" data-i18n="avatar.messages.formatInfo">
                 Formats acceptés : JPG, PNG, WebP • Max 5 Mo • Sera redimensionné en 256×256
               </p>
             </div>
@@ -1020,16 +1023,16 @@
             <div class="custom-avatar-preview" id="customAvatarPreview" style="display: none;">
               <img id="previewImg" src="" alt="Preview">
               <div class="preview-buttons">
-                <button class="btn btn-success" onclick="confirmCustomAvatar()">✅ Utiliser cet avatar</button>
-                <button class="btn btn-cancel" onclick="cancelCustomAvatar()">❌ Annuler</button>
+                <button class="btn btn-success" onclick="confirmCustomAvatar()" data-i18n="avatar.buttons.use">✅ Utiliser cet avatar</button>
+                <button class="btn btn-cancel" onclick="cancelCustomAvatar()" data-i18n="game.actions.cancel">❌ Annuler</button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="section-divider">
-          <h2 class="card-title">🎭 AVATARS CLASSIQUES</h2>
-          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;">Choisis un emoji comme avatar (sans photo)</p>
+          <h2 class="card-title" data-i18n="avatar.sections.classicAvatars">🎭 AVATARS CLASSIQUES</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;" data-i18n="avatar.messages.chooseEmoji">Choisis un emoji comme avatar (sans photo)</p>
           <div class="classic-avatars-grid" id="classicAvatarsGrid">
             <!-- Les emojis seront ajoutés par JavaScript -->
           </div>
@@ -1043,7 +1046,7 @@
 
   <!-- V32: Modal Webcam -->
   <div class="webcam-modal" id="webcamModal">
-    <p class="webcam-title">📷 Prendre une photo</p>
+    <p class="webcam-title" data-i18n="avatar.sections.takePhoto">📷 Prendre une photo</p>
     <div class="webcam-container">
       <video id="webcamVideo" class="webcam-video" autoplay playsinline></video>
       <canvas id="webcamCanvas" class="webcam-canvas"></canvas>
@@ -1712,9 +1715,10 @@
         
         if (data.ok && data.customAvatar) {
           container.innerHTML = `
-            <img src="${data.customAvatar}" alt="Mon avatar perso">
+            <img src="${data.customAvatar}" alt="Mon avatar perso" onerror="this.style.display='none'; this.nextElementSibling.querySelector('.fallback-text').style.display='block';">
             <div class="avatar-info">
               <p style="color: var(--neon-main); font-weight: 600;">Mon avatar perso</p>
+              <span class="fallback-text" style="display: none; color: var(--neon-red); font-size: 0.75rem;">⚠️ Image introuvable</span>
               <button class="btn btn-use-custom" onclick="useCustomAvatar('${data.customAvatar}')" style="margin-top: 5px; padding: 5px 10px; background: var(--neon-green); border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✅ Utiliser</button>
             </div>
             <button class="btn-delete-custom" onclick="deleteCustomAvatar()">🗑️ Supprimer</button>
@@ -1973,6 +1977,11 @@
     }
 
     init();
+    
+    // Traduire la page au chargement
+    if (typeof translatePage === 'function') {
+      translatePage();
+    }
   </script>
 </body>
 </html>

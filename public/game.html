@@ -34,6 +34,9 @@
   <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Uncial+Antiqua:wght@700&family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Système de traductions -->
+  <script src="translations.js"></script>
 </head>
 
 <body>
@@ -44,7 +47,7 @@
   ">
     <button id="rulesBtn" class="btn btn-secondary" style="
       padding: 10px 16px; border-radius: 10px; font-weight: 800;
-    ">📜 <span class="rulesBtnText">RÈGLES</span></button>
+    ">📜 <span class="rulesBtnText" data-i18n="game.buttons.rules">RÈGLES</span></button>
   </div>
   
   <!-- Bouton APP masqué sur game.html (affiché seulement sur index.html) -->
@@ -371,7 +374,7 @@
     <div style="max-width: 900px; margin: 2vh auto; max-height: 96vh; background: linear-gradient(135deg, var(--dark-panel), #0d1f3a);
       border:2px solid var(--neon-cyan); border-radius: 16px; padding: 18px; position: relative; display:flex; flex-direction:column;">
       <button id="rulesClose" class="btn btn-secondary" style="position:absolute; right:12px; top:12px; z-index:1;">✖</button>
-      <div class="panel-title" style="flex-shrink:0;">RÈGLES</div>
+      <div class="panel-title" style="flex-shrink:0;" data-i18n="index.rules.title">RÈGLES</div>
       <div id="rulesContent" style="line-height:1.45; font-size:1.05rem; flex:1; overflow-y:auto; padding-right:10px; min-height:0;"></div>
       <button id="tutorialBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%; flex-shrink:0;">📖 Voir le tutoriel rapide</button>
     </div>
@@ -773,14 +776,16 @@
         // Ajouter la bannière invité
         const banner = document.createElement('div');
         banner.className = 'guest-banner';
-        banner.innerHTML = '👤 Mode Invité - Chat uniquement. <a href="/">Créer un compte</a> pour accéder aux parties vidéo !';
+        const guestText = t('game.guest.banner');
+        const createAccountText = t('game.guest.createAccount');
+        banner.innerHTML = `${guestText} <a href="/">${createAccountText}</a>`;
         document.body.insertBefore(banner, document.body.children[1]);
 
         // V32: Décaler les boutons en haut pour ne pas chevaucher le bandeau
         const topLeftButtons = document.getElementById('topLeftButtons');
         const topRightButtons = document.getElementById('topRightButtons');
-        if (topLeftButtons) topLeftButtons.style.top = '95px';
-        if (topRightButtons) topRightButtons.style.top = '95px';
+        if (topLeftButtons) topLeftButtons.style.setProperty('top', '95px', 'important');
+        if (topRightButtons) topRightButtons.style.setProperty('top', '95px', 'important');
 
         // Générer un nom aléatoire pour l'invité
         setTimeout(function() {
@@ -1314,6 +1319,21 @@
       // ========== FIN MODULE CHAT ==========
 
     })();
+  </script>
+  
+  <!-- Initialisation des traductions -->
+  <script>
+    // Traduire la page au chargement
+    if (typeof translatePage === 'function') {
+      translatePage();
+    }
+    
+    // Écouter les changements de langue
+    window.addEventListener('languageChanged', function(e) {
+      if (typeof translatePage === 'function') {
+        translatePage(e.detail.lang);
+      }
+    });
   </script>
 </body>
 </html>
