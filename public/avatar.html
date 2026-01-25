@@ -733,6 +733,76 @@
 
     .btn-success:hover { background: #4ade80; }
     .btn-cancel:hover { background: #555; }
+
+    /* V32: Modal Webcam */
+    .webcam-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .webcam-modal.show {
+      display: flex;
+    }
+
+    .webcam-container {
+      position: relative;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .webcam-video {
+      width: 100%;
+      border-radius: 10px;
+      transform: scaleX(-1); /* Miroir */
+    }
+
+    .webcam-canvas {
+      display: none;
+    }
+
+    .webcam-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .btn-capture {
+      background: linear-gradient(135deg, var(--neon-green), #22c55e);
+      color: var(--primary-bg);
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .btn-close-webcam {
+      background: var(--metal-grey);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .webcam-title {
+      color: white;
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -772,7 +842,7 @@
         
         <!-- Bouton prendre photo avec caméra -->
         <div style="text-align: center; margin-top: 10px;">
-          <button class="btn btn-camera" onclick="document.getElementById('cameraPhotoInput').click()" style="padding: 10px 20px;">
+          <button class="btn btn-camera" onclick="openWebcam('ia')" style="padding: 10px 20px;">
             📷 Prendre une photo
           </button>
         </div>
@@ -941,7 +1011,7 @@
                 <button class="btn btn-upload" onclick="document.getElementById('customAvatarInput').click()">
                   📁 Importer une image
                 </button>
-                <button class="btn btn-camera" onclick="document.getElementById('cameraInput').click()">
+                <button class="btn btn-camera" onclick="openWebcam('custom')">
                   📷 Prendre une photo
                 </button>
               </div>
@@ -976,6 +1046,19 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <!-- V32: Modal Webcam -->
+  <div class="webcam-modal" id="webcamModal">
+    <p class="webcam-title">📷 Prendre une photo</p>
+    <div class="webcam-container">
+      <video id="webcamVideo" class="webcam-video" autoplay playsinline></video>
+      <canvas id="webcamCanvas" class="webcam-canvas"></canvas>
+    </div>
+    <div class="webcam-buttons">
+      <button class="btn-capture" onclick="captureWebcamPhoto()">📸 Capturer</button>
+      <button class="btn-close-webcam" onclick="closeWebcam()">❌ Fermer</button>
+    </div>
+  </div>
+
   <script>
     const API_URL = '';
     let currentUser = null;
@@ -983,6 +1066,10 @@
     let selectedCharacter = null;
     let uploadedFile = null;
     let lastGeneratedUrl = null;
+    
+    // V32: Webcam
+    let webcamStream = null;
+    let webcamMode = null; // 'ia' ou 'custom'
 
     const avatarThemes = {
       default: {
@@ -1792,6 +1879,109 @@
         img.onerror = reject;
         img.src = URL.createObjectURL(file);
       });
+    }
+
+    // ========================================
+    // V32: WEBCAM FUNCTIONS
+    // ========================================
+    
+    async function openWebcam(mode) {
+      webcamMode = mode;
+      
+      // Détecter si on est sur mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Sur mobile, utiliser l'input capture natif
+        if (mode === 'ia') {
+          document.getElementById('cameraPhotoInput').click();
+        } else {
+          document.getElementById('cameraInput').click();
+        }
+        return;
+      }
+      
+      // Sur PC, ouvrir le modal webcam
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false 
+        });
+        
+        const video = document.getElementById('webcamVideo');
+        video.srcObject = webcamStream;
+        
+        document.getElementById('webcamModal').classList.add('show');
+        
+      } catch (err) {
+        console.error('Erreur webcam:', err);
+        showToast('❌ Impossible d\'accéder à la caméra. Vérifie les permissions.', true);
+      }
+    }
+    
+    function closeWebcam() {
+      // Arrêter le stream
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      
+      document.getElementById('webcamModal').classList.remove('show');
+      webcamMode = null;
+    }
+    
+    function captureWebcamPhoto() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('webcamCanvas');
+      
+      // Configurer le canvas à la taille de la vidéo
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Inverser horizontalement (miroir) pour correspondre à ce que l'utilisateur voit
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
+      
+      // Convertir en blob
+      canvas.toBlob((blob) => {
+        // Créer un fichier à partir du blob
+        const file = new File([blob], 'webcam-photo.jpg', { type: 'image/jpeg' });
+        
+        if (webcamMode === 'ia') {
+          // Pour avatar IA
+          uploadedFile = file;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const preview = document.getElementById('uploadPreview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('uploadZone').classList.add('has-photo');
+            document.querySelector('#uploadZone .icon').style.display = 'none';
+            document.querySelectorAll('#uploadZone p').forEach(p => p.style.display = 'none');
+          };
+          reader.readAsDataURL(file);
+          updateGenerateButton();
+          showToast('✅ Photo capturée !');
+        } else {
+          // Pour avatar perso (custom)
+          customAvatarFile = file;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const preview = document.getElementById('customAvatarPreview');
+            const previewImg = document.getElementById('previewImg');
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('uploadPhotoZone').style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+          showToast('✅ Photo capturée !');
+        }
+        
+        closeWebcam();
+      }, 'image/jpeg', 0.9);
     }
 
     init();
