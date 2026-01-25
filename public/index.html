@@ -1066,8 +1066,18 @@
           av.classList.add('show');
         }
         const c = currentUser.videoCredits;
-        const unlimitedText = window.t ? window.t('index.auth.videoUnlimited') : 'Vidéo illimitée';
-        const creditsText = window.t ? window.t('index.auth.videoCredits') : 'partie(s) vidéo';
+        // V33: Traductions avec fallback robuste
+        let unlimitedText = 'Vidéo illimitée';
+        let creditsText = 'partie(s) vidéo';
+        try {
+          if (window.t) {
+            const ut = window.t('index.auth.videoUnlimited');
+            const ct = window.t('index.auth.videoCredits');
+            // Vérifier que ce n'est pas la clé qui est retournée
+            if (ut && !ut.includes('index.auth')) unlimitedText = ut;
+            if (ct && !ct.includes('index.auth')) creditsText = ct;
+          }
+        } catch(e) { console.warn('Translation error:', e); }
         document.getElementById('displayCredits').textContent = 
           (c === '∞' || c > 1000) ? `🎬 ${unlimitedText}` : `🎬 ${c} ${creditsText}`;
         document.getElementById('verificationBanner').classList.toggle('show', !currentUser.emailVerified);

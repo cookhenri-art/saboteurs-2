@@ -975,6 +975,57 @@ const TRANSLATIONS = {
   // GAME.HTML - PAGE DE JEU
   // ============================================================================
   game: {
+    // Subtitle
+    subtitle: {
+      fr: "MISSION TEMPS RÉEL",
+      en: "REAL-TIME MISSION",
+      es: "MISIÓN EN TIEMPO REAL",
+      it: "MISSIONE IN TEMPO REALE",
+      de: "ECHTZEIT-MISSION",
+      pt: "MISSÃO EM TEMPO REAL",
+      nl: "REAL-TIME MISSIE"
+    },
+    
+    // Theme titles (translations of theme names)
+    themeTitles: {
+      default: {
+        fr: "INFILTRATION SPATIALE",
+        en: "SPACE INFILTRATION",
+        es: "INFILTRACIÓN ESPACIAL",
+        it: "INFILTRAZIONE SPAZIALE",
+        de: "WELTRAUM-INFILTRATION",
+        pt: "INFILTRAÇÃO ESPACIAL",
+        nl: "RUIMTE INFILTRATIE"
+      },
+      werewolf: {
+        fr: "LA CHASSE AU LOUP",
+        en: "THE WOLF HUNT",
+        es: "LA CAZA DEL LOBO",
+        it: "LA CACCIA AL LUPO",
+        de: "DIE WOLFSJAGD",
+        pt: "A CAÇA AO LOBO",
+        nl: "DE WOLVENJACHT"
+      },
+      "wizard-academy": {
+        fr: "L'ACADÉMIE DES SORCIERS",
+        en: "THE WIZARD ACADEMY",
+        es: "LA ACADEMIA DE MAGOS",
+        it: "L'ACCADEMIA DEI MAGHI",
+        de: "DIE ZAUBERER-AKADEMIE",
+        pt: "A ACADEMIA DE FEITICEIROS",
+        nl: "DE TOVENAARS ACADEMIE"
+      },
+      "mythic-realms": {
+        fr: "ROYAUMES MYTHIQUES",
+        en: "MYTHIC REALMS",
+        es: "REINOS MÍTICOS",
+        it: "REGNI MITICI",
+        de: "MYTHISCHE REICHE",
+        pt: "REINOS MÍTICOS",
+        nl: "MYTHISCHE RIJKEN"
+      }
+    },
+    
     // Audio
     audio: {
       clickToActivate: {
@@ -1178,6 +1229,24 @@ const TRANSLATIONS = {
         de: "VERBUNDENE CREW",
         pt: "TRIPULAÇÃO CONECTADA",
         nl: "VERBONDEN BEMANNING"
+      },
+      createMission: {
+        fr: "CRÉER UNE MISSION",
+        en: "CREATE A MISSION",
+        es: "CREAR UNA MISIÓN",
+        it: "CREA UNA MISSIONE",
+        de: "MISSION ERSTELLEN",
+        pt: "CRIAR UMA MISSÃO",
+        nl: "MAAK EEN MISSIE"
+      },
+      joinMission: {
+        fr: "REJOINDRE UNE MISSION",
+        en: "JOIN A MISSION",
+        es: "UNIRSE A UNA MISIÓN",
+        it: "UNISCITI A UNA MISSIONE",
+        de: "MISSION BEITRETEN",
+        pt: "ENTRAR EM UMA MISSÃO",
+        nl: "NEEM DEEL AAN EEN MISSIE"
       }
     },
     
@@ -2575,6 +2644,15 @@ const TRANSLATIONS = {
         de: "🔒 Bestimmte Rollen",
         pt: "🔒 Certos Papéis",
         nl: "🔒 Bepaalde Rollen"
+      },
+      onPhases: {
+        fr: "• Jour (débat/vote)<br>• Fin de partie<br>• Révélation des rôles",
+        en: "• Day (debate/vote)<br>• End of game<br>• Role reveal",
+        es: "• Día (debate/voto)<br>• Fin de partida<br>• Revelación de roles",
+        it: "• Giorno (dibattito/voto)<br>• Fine partita<br>• Rivelazione ruoli",
+        de: "• Tag (Debatte/Abstimmung)<br>• Spielende<br>• Rollenaufdeckung",
+        pt: "• Dia (debate/voto)<br>• Fim de jogo<br>• Revelação de papéis",
+        nl: "• Dag (debat/stemming)<br>• Einde spel<br>• Rol onthulling"
       },
       saboteurNight: {
         fr: "Nuit des saboteurs",

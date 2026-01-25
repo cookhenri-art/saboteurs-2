@@ -240,6 +240,18 @@ function translateGamePage() {
     connectedPlayersTitle.textContent = tr('game.lobby.connectedPlayers');
   }
 
+  // Tutorial button
+  const tutorialBtn = document.getElementById('tutorialBtn');
+  if (tutorialBtn) {
+    tutorialBtn.textContent = '📖 ' + tr('game.buttons.viewTutorial');
+  }
+
+  // Game subtitle (MISSION TEMPS RÉEL)
+  const gameSubtitle = document.getElementById('gameSubtitle');
+  if (gameSubtitle) {
+    gameSubtitle.textContent = '⚡ ' + tr('game.subtitle') + ' ⚡';
+  }
+
   // ============================================
   // AUDIO UNLOCK
   // ============================================

@@ -2876,18 +2876,43 @@ function checkAndApplyTheme() {
 
 // Applique les traductions du thème actif sur les éléments visibles
 function applyThemeTranslations() {
-  // Titre principal (avec ID)
+  // Titre principal (avec ID) - utilise traduction multilingue si disponible
   const mainTitle = document.getElementById('mainTitle');
   if (mainTitle) {
-    mainTitle.textContent = t('title').toUpperCase();
+    const themeId = currentTheme?.id || 'default';
+    // Essayer d'abord la traduction multilingue
+    if (window.i18n) {
+      const translatedTitle = window.i18n(`game.themeTitles.${themeId}`);
+      if (translatedTitle && !translatedTitle.includes('themeTitles')) {
+        mainTitle.textContent = translatedTitle;
+      } else {
+        mainTitle.textContent = t('title').toUpperCase();
+      }
+    } else {
+      mainTitle.textContent = t('title').toUpperCase();
+    }
   }
   
-  // Titres des écrans
+  // Titres des écrans - utilise traduction multilingue si disponible
   const createTitle = document.getElementById('createMissionTitle');
-  if (createTitle) createTitle.textContent = `CRÉER UNE ${t('mission').toUpperCase()}`;
+  if (createTitle) {
+    const missionText = window.i18n ? window.i18n('game.lobby.createMission') : null;
+    if (missionText && !missionText.includes('createMission')) {
+      createTitle.textContent = missionText;
+    } else {
+      createTitle.textContent = `CRÉER UNE ${t('mission').toUpperCase()}`;
+    }
+  }
   
   const joinTitle = document.getElementById('joinMissionTitle');
-  if (joinTitle) joinTitle.textContent = `REJOINDRE UNE ${t('mission').toUpperCase()}`;
+  if (joinTitle) {
+    const joinText = window.i18n ? window.i18n('game.lobby.joinMission') : null;
+    if (joinText && !joinText.includes('joinMission')) {
+      joinTitle.textContent = joinText;
+    } else {
+      joinTitle.textContent = `REJOINDRE UNE ${t('mission').toUpperCase()}`;
+    }
+  }
   
   // Note: Les autres traductions (rôles) sont appliquées dynamiquement dans render()
 }
@@ -3119,11 +3144,11 @@ function generateTutorialContent() {
           </div>
           <div style="padding: 10px; background: rgba(128,0,128,0.1); border-left: 3px solid var(--neon-purple, var(--neon-cyan)); border-radius: 6px;">
             <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 ${tr('tutorial.videoConference.certainRoles', 'Certains Rôles')}</div>
-            <div style="color: var(--text-secondary);">• ${tr('tutorial.videoConference.saboteurNight', `Nuit des ${saboteurs.toLowerCase()}`)}<br>• ${tr('tutorial.videoConference.aiExchange', `Échange ${tRole('ai_agent')}`)}<br>• ${tr('tutorial.videoConference.specialActions', 'Actions spéciales')}</div>
+            <div style="color: var(--text-secondary);">• ${tr('tutorial.videoConference.saboteurNight', `Nuit des ${saboteurs.toLowerCase()}`)}<br>• ${tr('tutorial.videoConference.aiAgentExchange', `Échange ${tRole('ai_agent')}`)}<br>• ${tr('tutorial.videoConference.specialActions', 'Actions spéciales')}</div>
           </div>
         </div>
         <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
-          💡 <strong>${tr('common.tip', 'Astuce')} :</strong> ${tr('tutorial.videoConference.tip', 'Vous pouvez désactiver votre micro/caméra manuellement à tout moment.')}
+          💡 <strong>${tr('common.tip', 'Astuce')} :</strong> ${tr('tutorial.videoConference.tipManualControl', 'Vous pouvez désactiver votre micro/caméra manuellement à tout moment.')}
         </p>
       </div>
     </div>
