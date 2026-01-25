@@ -2763,15 +2763,34 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
       const avatarPath = path.join(AVATARS_DIR, avatarFilename);
 
       if (sharp) {
-        await sharp(imageData)
-          .resize(512, 512, { fit: "cover" })
-          .webp({ quality: 90 })
-          .toFile(avatarPath);
-        localAvatarUrl = `/avatars/${avatarFilename}`;
-        console.log(`💾 Avatar sauvegardé: ${localAvatarUrl}`);
+        try {
+          await sharp(imageData)
+            .resize(512, 512, { fit: "cover" })
+            .webp({ quality: 90 })
+            .toFile(avatarPath);
+          localAvatarUrl = `/avatars/${avatarFilename}`;
+          console.log(`💾 Avatar sauvegardé (sharp): ${localAvatarUrl}`);
+        } catch (sharpError) {
+          console.error("⚠️ Erreur sharp, sauvegarde brute:", sharpError.message);
+          // Fallback: sauvegarder le fichier brut avec extension correcte
+          const rawFilename = `avatar_${user.id}_${Date.now()}.png`;
+          const rawPath = path.join(AVATARS_DIR, rawFilename);
+          fs.writeFileSync(rawPath, imageData);
+          localAvatarUrl = `/avatars/${rawFilename}`;
+          console.log(`💾 Avatar sauvegardé (brut): ${localAvatarUrl}`);
+        }
+      } else {
+        // Pas de sharp: sauvegarder le fichier brut
+        const rawFilename = `avatar_${user.id}_${Date.now()}.png`;
+        const rawPath = path.join(AVATARS_DIR, rawFilename);
+        fs.writeFileSync(rawPath, imageData);
+        localAvatarUrl = `/avatars/${rawFilename}`;
+        console.log(`💾 Avatar sauvegardé (sans sharp): ${localAvatarUrl}`);
       }
     } catch (downloadError) {
       console.error("⚠️ Erreur sauvegarde locale:", downloadError.message);
+      // Garder l'URL Replicate comme fallback (temporaire!)
+      console.warn("⚠️ Attention: URL Replicate temporaire utilisée!");
     }
 
     // Mettre à jour la base de données
