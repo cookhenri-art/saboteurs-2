@@ -1737,13 +1737,24 @@ function renderEnd() {
   const table = $("rankingTable");
   const players = [...state.players].filter(p => p.status !== "left");
   players.sort((a,b) => (a.status === "alive" ? -1 : 1) - (b.status === "alive" ? -1 : 1) || a.name.localeCompare(b.name));
+  
+  // V22: Helper pour traductions fin de partie
+  const egBadge = (key, fb) => window.i18n ? window.i18n(`game.endGame.${key}`) : fb;
+  const survivorBadge = egBadge('survivor', 'SURVIVANT');
+  const eliminatedBadge = egBadge('eliminatedBadge', 'ÉLIMINÉ');
+  const leftBadge = egBadge('leftBadge', 'SORTI');
+  const captainBadge = window.i18n ? window.i18n('game.ui.captain').toUpperCase() : 'CAPITAINE';
+  
   table.innerHTML = players.map(p => {
-    const role = p.roleLabel || (p.status === "alive" ? "" : "");
+    // V22: Traduire le rôle
+    const roleKey = p.role || '';
+    const role = roleKey ? (tRole(roleKey) || p.roleLabel || roleKey) : (p.roleLabel || "");
+    
     return `<div class="player-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:nowrap;">
       <div class="player-left" style="flex:1; min-width:0; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
         <div style="font-weight:900;">${escapeHtml(p.name)}</div>
-        ${p.isCaptain ? `<span class="pill ok">CAPITAINE</span>` : ""}
-        ${p.status === "alive" ? `<span class="pill ok">SURVIVANT</span>` : (p.status === "dead" ? `<span class="pill bad">ÉJECTÉ</span>` : `<span class="pill warn">SORTI</span>`)}
+        ${p.isCaptain ? `<span class="pill ok">${captainBadge}</span>` : ""}
+        ${p.status === "alive" ? `<span class="pill ok">${survivorBadge}</span>` : (p.status === "dead" ? `<span class="pill bad">${eliminatedBadge}</span>` : `<span class="pill warn">${leftBadge}</span>`)}
       </div>
       <div style="opacity:.95; font-weight:800; text-align:right; flex-shrink:0; margin-left:10px;">${escapeHtml(role || "")}</div>
     </div>`;

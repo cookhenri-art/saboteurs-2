@@ -3157,6 +3157,92 @@ const TRANSLATIONS = {
         de: "Andere",
         pt: "Outro",
         nl: "Ander"
+      },
+      // V22: Badges pour tableau fin de partie
+      survivor: {
+        fr: "SURVIVANT",
+        en: "SURVIVOR",
+        es: "SUPERVIVIENTE",
+        it: "SOPRAVVISSUTO",
+        de: "ÜBERLEBEND",
+        pt: "SOBREVIVENTE",
+        nl: "OVERLEVENDE"
+      },
+      eliminatedBadge: {
+        fr: "ÉLIMINÉ",
+        en: "ELIMINATED",
+        es: "ELIMINADO",
+        it: "ELIMINATO",
+        de: "ELIMINIERT",
+        pt: "ELIMINADO",
+        nl: "GEËLIMINEERD"
+      },
+      leftBadge: {
+        fr: "SORTI",
+        en: "LEFT",
+        es: "SALIDO",
+        it: "USCITO",
+        de: "VERLASSEN",
+        pt: "SAIU",
+        nl: "VERTROKKEN"
+      }
+    },
+    
+    // V22: Messages système du chat
+    chatSystem: {
+      gameStarts: {
+        fr: "🎭 La partie commence ! Les rôles sont distribués.",
+        en: "🎭 The game begins! Roles are being distributed.",
+        es: "🎭 ¡La partida comienza! Los roles se están distribuyendo.",
+        it: "🎭 La partita inizia! I ruoli vengono distribuiti.",
+        de: "🎭 Das Spiel beginnt! Rollen werden verteilt.",
+        pt: "🎭 A partida começa! Os papéis estão sendo distribuídos.",
+        nl: "🎭 Het spel begint! Rollen worden uitgedeeld."
+      },
+      captainCandidacy: {
+        fr: "👑 Phase de candidature au poste de Capitaine.",
+        en: "👑 Captain candidacy phase.",
+        es: "👑 Fase de candidatura al puesto de Capitán.",
+        it: "👑 Fase di candidatura a Capitano.",
+        de: "👑 Kandidatur-Phase für Kapitän.",
+        pt: "👑 Fase de candidatura ao cargo de Capitão.",
+        nl: "👑 Kapitein kandidatuur fase."
+      },
+      captainVote: {
+        fr: "🗳️ Vote pour élire le Capitaine.",
+        en: "🗳️ Vote to elect the Captain.",
+        es: "🗳️ Vota para elegir al Capitán.",
+        it: "🗳️ Vota per eleggere il Capitano.",
+        de: "🗳️ Abstimmung für den Kapitän.",
+        pt: "🗳️ Votação para eleger o Capitão.",
+        nl: "🗳️ Stem om de Kapitein te kiezen."
+      },
+      nightPhase: {
+        fr: "🌙 Nuit {n} - Les rôles spéciaux agissent...",
+        en: "🌙 Night {n} - Special roles act...",
+        es: "🌙 Noche {n} - Los roles especiales actúan...",
+        it: "🌙 Notte {n} - I ruoli speciali agiscono...",
+        de: "🌙 Nacht {n} - Spezialrollen handeln...",
+        pt: "🌙 Noite {n} - Papéis especiais agem...",
+        nl: "🌙 Nacht {n} - Speciale rollen handelen..."
+      },
+      crewWins: {
+        fr: "🏆 Fin de partie ! L'Équipage a gagné !",
+        en: "🏆 Game over! The Crew wins!",
+        es: "🏆 ¡Fin de la partida! ¡La Tripulación gana!",
+        it: "🏆 Fine della partita! L'Equipaggio vince!",
+        de: "🏆 Spielende! Die Crew gewinnt!",
+        pt: "🏆 Fim da partida! A Tripulação venceu!",
+        nl: "🏆 Einde spel! De Crew wint!"
+      },
+      saboteursWins: {
+        fr: "🏆 Fin de partie ! Les Saboteurs ont gagné !",
+        en: "🏆 Game over! Saboteurs win!",
+        es: "🏆 ¡Fin de la partida! ¡Los Saboteadores ganan!",
+        it: "🏆 Fine della partita! I Sabotatori vincono!",
+        de: "🏆 Spielende! Saboteure gewinnen!",
+        pt: "🏆 Fim da partida! Os Sabotadores venceram!",
+        nl: "🏆 Einde spel! Saboteurs winnen!"
       }
     },
     

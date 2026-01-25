@@ -1216,6 +1216,33 @@
           const div = document.createElement('div');
           div.className = 'chat-msg' + (msg.type === 'system' ? ' system' : '');
           
+          // V22: Traduire les messages système
+          let messageText = msg.message;
+          if (msg.type === 'system' && typeof window.i18n === 'function') {
+            const tr = (key) => {
+              const result = window.i18n(`game.chatSystem.${key}`);
+              return result !== `game.chatSystem.${key}` ? result : null;
+            };
+            
+            // Patterns de messages système à traduire
+            if (messageText.includes('La partie commence') || messageText.includes('rôles sont distribués')) {
+              messageText = tr('gameStarts') || messageText;
+            } else if (messageText.includes('Phase de candidature') || messageText.includes('poste de Capitaine')) {
+              messageText = tr('captainCandidacy') || messageText;
+            } else if (messageText.includes('Vote pour élire le Capitaine')) {
+              messageText = tr('captainVote') || messageText;
+            } else if (messageText.match(/Nuit \d+.*rôles spéciaux/)) {
+              const nightMatch = messageText.match(/Nuit (\d+)/);
+              const nightNum = nightMatch ? nightMatch[1] : '1';
+              const template = tr('nightPhase');
+              messageText = template ? template.replace('{n}', nightNum) : messageText;
+            } else if (messageText.includes('Fin de partie') && (messageText.includes('Équipage') || messageText.includes('équipage'))) {
+              messageText = tr('crewWins') || messageText;
+            } else if (messageText.includes('Fin de partie') && (messageText.includes('Saboteur') || messageText.includes('saboteur'))) {
+              messageText = tr('saboteursWins') || messageText;
+            }
+          }
+          
           // V31: Utiliser l'avatar IA si disponible, sinon l'emoji
           let avatarHtml;
           if (msg.avatarUrl) {
@@ -1237,7 +1264,7 @@
             ${avatarHtml}
             <div class="chat-msg-content">
               <div class="chat-msg-name">${msg.playerName || 'Anonyme'}</div>
-              <div class="chat-msg-text">${escapeHtml(msg.message)}</div>
+              <div class="chat-msg-text">${escapeHtml(messageText)}</div>
               <div class="chat-msg-time">${formatTime(msg.timestamp)}</div>
             </div>
           `;

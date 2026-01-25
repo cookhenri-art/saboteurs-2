@@ -193,6 +193,16 @@ function translateGamePage() {
     startGameBtn.innerHTML = tr('game.lobby.launchMission');
   }
 
+  // V22: Boutons de fin de partie
+  const replayBtn = document.getElementById('replayBtn');
+  if (replayBtn) {
+    replayBtn.innerHTML = tr('game.buttons.replayKeepStats');
+  }
+  const newGameBtn = document.getElementById('newGameBtn');
+  if (newGameBtn) {
+    newGameBtn.innerHTML = tr('game.buttons.newGameResetStats');
+  }
+
   // Labels balance (Astronautes / Saboteurs)
   const balanceLabelLeft = document.getElementById('balanceLabelLeft');
   if (balanceLabelLeft) {
