@@ -1023,6 +1023,12 @@ function setPhase(room, phase, data = {}) {
   room.audio = computeAudioCue(room, prev);
   if (prev === "ROLE_REVEAL" && room.afterChameleonReveal) room.afterChameleonReveal = false;
   
+  // V32: Décompter les crédits vidéo quand la partie atteint le 1er jour ou se termine
+  const creditTriggerPhases = ['CAPTAIN_CANDIDACY', 'DAY_DISCUSSION', 'DAY_VOTE', 'GAME_OVER'];
+  if (creditTriggerPhases.includes(phase) && room.started) {
+    deductVideoCreditsForRoom(room);
+  }
+  
   logEvent(room, "phase", { phase });
   
   // Log structuré
@@ -1044,6 +1050,52 @@ function setPhase(room, phase, data = {}) {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night} video=${videoMessage}`);
   } catch {}
 
+}
+
+// V32: Décompter les crédits vidéo pour tous les joueurs éligibles d'une room
+function deductVideoCreditsForRoom(room) {
+  if (!room || !room.players) return;
+  
+  for (const [playerId, player] of room.players) {
+    // Skip si déjà décompté pour ce joueur dans cette partie
+    if (player.videoCreditDeducted) continue;
+    
+    // Skip si le joueur n'avait pas le droit à la vidéo
+    if (!player.canBroadcastVideo) continue;
+    
+    // Skip si pas d'userId (invité)
+    if (!player.odooUserId) continue;
+    
+    // Récupérer l'utilisateur en base
+    const user = dbGet("SELECT id, account_type, video_credits FROM users WHERE id = ?", [player.odooUserId]);
+    if (!user) continue;
+    
+    // Skip les admins (crédits illimités)
+    if (user.account_type === 'admin') {
+      player.videoCreditDeducted = true; // Marquer comme traité
+      continue;
+    }
+    
+    // Skip les subscribers (crédits illimités)
+    if (user.account_type === 'subscriber') {
+      player.videoCreditDeducted = true;
+      continue;
+    }
+    
+    // Décompter 1 crédit
+    if (user.video_credits > 0) {
+      dbRun("UPDATE users SET video_credits = video_credits - 1 WHERE id = ?", [user.id]);
+      player.videoCreditDeducted = true;
+      
+      // Mettre à jour canBroadcastVideo si plus de crédits
+      const newCredits = user.video_credits - 1;
+      if (newCredits <= 0) {
+        player.canBroadcastVideo = false;
+      }
+      
+      console.log(`🎬 [${room.code}] Crédit vidéo décompté pour ${player.name} (userId=${user.id}) - Reste: ${newCredits}`);
+    }
+  }
 }
 
 // Envoie un message système dans le chat
@@ -3262,11 +3314,14 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
   if (!p) {
     // V32: Vérifier si le joueur peut diffuser de la vidéo (a un compte avec crédits)
     let canBroadcastVideo = false;
+    let odooUserId = null;  // V32: Stocker l'ID utilisateur pour le décompte des crédits
+    
     if (authToken) {
       try {
         const decoded = jwt.verify(authToken, JWT_SECRET);
         // Le token utilise 'id' (pas 'userId')
         if (decoded?.id) {
+          odooUserId = decoded.id;  // V32: Stocker l'ID
           const user = dbGet("SELECT account_type, video_credits, email_verified FROM users WHERE id = ?", [decoded.id]);
           if (user && user.email_verified) {
             const limits = getUserLimits(user);
@@ -3319,6 +3374,8 @@ function joinRoomCommon(socket, room, playerId, name, playerToken = null, custom
       lastSeenAt: now,       // Dernière activité
       joinedAt: now,         // Date de première connexion
       canBroadcastVideo,     // V32: Peut diffuser vidéo (compte avec crédits)
+      odooUserId,            // V32: ID utilisateur pour décompte crédits
+      videoCreditDeducted: false,  // V32: Flag pour éviter double décompte
       // D9: Données de personnalisation
       avatarId: customization.avatarId || null,
       avatarEmoji: avatarEmoji,  // V32: Peut être réassigné
