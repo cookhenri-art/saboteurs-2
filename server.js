@@ -2938,13 +2938,13 @@ app.delete("/api/avatars/delete", authenticateToken, (req, res) => {
 // ============================================================================
 
 // Configuration multer pour upload d'avatars custom
+// V32.1: Stocker dans AVATARS_DIR (Render Disk) pour persistance
+const customAvatarsDir = path.join(AVATARS_DIR, 'custom');
+fs.mkdirSync(customAvatarsDir, { recursive: true });
+
 const avatarUploadStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = path.join(__dirname, 'public', 'avatars', 'custom');
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    cb(null, dir);
+    cb(null, customAvatarsDir);
   },
   filename: (req, file, cb) => {
     const uniqueName = `custom_${req.user.id}_${Date.now()}.webp`;
@@ -2988,8 +2988,13 @@ app.post("/api/avatar/upload-custom", authenticateToken, avatarUpload.single('av
     
     // Supprimer l'ancien avatar custom s'il existe
     if (user.custom_avatar) {
+      // V32.1: Chercher dans AVATARS_DIR (nouveau) et public (ancien)
+      const newPath = path.join(AVATARS_DIR, user.custom_avatar.replace('/avatars/', ''));
       const oldPath = path.join(__dirname, 'public', user.custom_avatar);
-      if (fs.existsSync(oldPath)) {
+      
+      if (fs.existsSync(newPath)) {
+        fs.unlinkSync(newPath);
+      } else if (fs.existsSync(oldPath)) {
         fs.unlinkSync(oldPath);
       }
     }
@@ -3018,10 +3023,14 @@ app.delete("/api/avatar/delete-custom", authenticateToken, (req, res) => {
     const user = dbGet("SELECT custom_avatar FROM users WHERE id = ?", [req.user.id]);
     
     if (user?.custom_avatar) {
-      // Supprimer le fichier
-      const filePath = path.join(__dirname, 'public', user.custom_avatar);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+      // V32.1: Chercher dans AVATARS_DIR (nouveau) et public (ancien)
+      const newPath = path.join(AVATARS_DIR, user.custom_avatar.replace('/avatars/', ''));
+      const oldPath = path.join(__dirname, 'public', user.custom_avatar);
+      
+      if (fs.existsSync(newPath)) {
+        fs.unlinkSync(newPath);
+      } else if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
       }
       
       // Réinitialiser dans la base
