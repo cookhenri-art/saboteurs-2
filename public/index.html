@@ -1037,5 +1037,91 @@
 
     init();
   </script>
+
+  <!-- Bouton APP en bas à gauche -->
+  <div id="installAppContainer" style="
+    position: fixed; left: 10px; bottom: 20px; z-index: 9998; display: none;
+  ">
+    <button id="installAppBtn" type="button" style="
+      padding: 10px 14px; border-radius: 12px; font-weight: 800;
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(0,255,255,0.15) 100%);
+      border: 2px solid var(--neon-cyan, #00ffff);
+      color: var(--neon-cyan, #00ffff);
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      font-family: inherit;
+      font-size: 0.9rem;
+    ">
+      <img src="/icons/icon-192x192.webp" alt="App" style="width: 28px; height: 28px; border-radius: 6px;">
+      <span>APP</span>
+      <span style="font-size: 1.2rem;">⬇️</span>
+    </button>
+  </div>
+
+  <script>
+    // PWA Install
+    console.log('[PWA] Script chargé');
+    
+    let deferredPrompt;
+    const installContainer = document.getElementById('installAppContainer');
+    const installBtn = document.getElementById('installAppBtn');
+    
+    console.log('[PWA] Container:', installContainer);
+    console.log('[PWA] Button:', installBtn);
+    
+    // Détecter mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('[PWA] isMobile:', isMobile);
+    
+    // Vérifier si déjà installé en standalone
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
+    console.log('[PWA] isStandalone:', isStandalone);
+    
+    // Afficher le bouton (mobile OU PC, sauf si déjà installé)
+    if (!isStandalone && installContainer) {
+      console.log('[PWA] Affichage du bouton');
+      installContainer.style.display = 'block';
+    }
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('[PWA] beforeinstallprompt reçu !');
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    installBtn?.addEventListener('click', async () => {
+      console.log('[PWA] Clic sur bouton, deferredPrompt:', !!deferredPrompt);
+      
+      if (deferredPrompt) {
+        // Prompt natif disponible
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('[PWA] Install outcome:', outcome);
+        deferredPrompt = null;
+        if (outcome === 'accepted') {
+          installContainer.style.display = 'none';
+        }
+      } else if (isMobile) {
+        // Pas de prompt natif sur mobile - afficher instructions
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isIOS) {
+          alert('📱 Pour installer :\n\n1. Appuie sur le bouton Partager (carré avec flèche)\n2. Choisis "Sur l\'écran d\'accueil"');
+        } else {
+          alert('📱 Pour installer :\n\n1. Ouvre le menu ⋮ de ton navigateur\n2. Choisis "Installer l\'application" ou "Ajouter à l\'écran d\'accueil"');
+        }
+      } else {
+        // PC sans prompt
+        alert('💻 Pour installer :\n\nClique sur l\'icône d\'installation dans la barre d\'adresse de Chrome (⊕)');
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] App installée !');
+      installContainer.style.display = 'none';
+      deferredPrompt = null;
+    });
+  </script>
 </body>
 </html>
