@@ -3243,6 +3243,104 @@ const TRANSLATIONS = {
         de: "🏆 Spielende! Saboteure gewinnen!",
         pt: "🏆 Fim da partida! Os Sabotadores venceram!",
         nl: "🏆 Einde spel! Saboteurs winnen!"
+      },
+      dayVote: {
+        fr: "🗳️ Vote du jour - Qui sera éliminé ?",
+        en: "🗳️ Day vote - Who will be eliminated?",
+        es: "🗳️ Votación del día - ¿Quién será eliminado?",
+        it: "🗳️ Voto del giorno - Chi verrà eliminato?",
+        de: "🗳️ Tagesabstimmung - Wer wird eliminiert?",
+        pt: "🗳️ Votação do dia - Quem será eliminado?",
+        nl: "🗳️ Dagstemming - Wie wordt geëlimineerd?"
+      },
+      tiebreaker: {
+        fr: "⚖️ Égalité ! Le Capitaine doit départager.",
+        en: "⚖️ Tie! The Captain must break the tie.",
+        es: "⚖️ ¡Empate! El Capitán debe desempatar.",
+        it: "⚖️ Pareggio! Il Capitano deve decidere.",
+        de: "⚖️ Gleichstand! Der Kapitän muss entscheiden.",
+        pt: "⚖️ Empate! O Capitão deve desempatar.",
+        nl: "⚖️ Gelijkspel! De Kapitein moet beslissen."
+      }
+    },
+    
+    // V23: Hints de jeu
+    gameHints: {
+      captainTransferHint: {
+        fr: "Le {captain} mort choisit sans connaître le rôle du joueur choisi.",
+        en: "The dead {captain} chooses without knowing the chosen player's role.",
+        es: "El {captain} muerto elige sin conocer el rol del jugador elegido.",
+        it: "Il {captain} morto sceglie senza conoscere il ruolo del giocatore scelto.",
+        de: "Der tote {captain} wählt ohne die Rolle des gewählten Spielers zu kennen.",
+        pt: "O {captain} morto escolhe sem saber o papel do jogador escolhido.",
+        nl: "De dode {captain} kiest zonder de rol van de gekozen speler te kennen."
+      },
+      tiebreakerHint: {
+        fr: "En cas d'égalité, le {captain} tranche avant toute conséquence.",
+        en: "In case of tie, the {captain} decides before any consequence.",
+        es: "En caso de empate, el {captain} decide antes de cualquier consecuencia.",
+        it: "In caso di pareggio, il {captain} decide prima di qualsiasi conseguenza.",
+        de: "Bei Gleichstand entscheidet der {captain} vor jeder Konsequenz.",
+        pt: "Em caso de empate, o {captain} decide antes de qualquer consequência.",
+        nl: "Bij gelijkspel beslist de {captain} voor elke consequentie."
+      }
+    },
+    
+    // V23: Sources d'élimination
+    deathSources: {
+      saboteurs: {
+        fr: "saboteurs",
+        en: "saboteurs",
+        es: "saboteadores",
+        it: "sabotatori",
+        de: "Saboteure",
+        pt: "sabotadores",
+        nl: "saboteurs"
+      },
+      day: {
+        fr: "vote",
+        en: "vote",
+        es: "voto",
+        it: "voto",
+        de: "Abstimmung",
+        pt: "voto",
+        nl: "stem"
+      },
+      vote: {
+        fr: "vote",
+        en: "vote",
+        es: "voto",
+        it: "voto",
+        de: "Abstimmung",
+        pt: "voto",
+        nl: "stem"
+      },
+      link: {
+        fr: "liaison",
+        en: "link",
+        es: "vínculo",
+        it: "collegamento",
+        de: "Verbindung",
+        pt: "ligação",
+        nl: "verbinding"
+      },
+      doctor: {
+        fr: "docteur",
+        en: "doctor",
+        es: "doctor",
+        it: "dottore",
+        de: "Doktor",
+        pt: "doutor",
+        nl: "dokter"
+      },
+      revenge: {
+        fr: "vengeance",
+        en: "revenge",
+        es: "venganza",
+        it: "vendetta",
+        de: "Rache",
+        pt: "vingança",
+        nl: "wraak"
       }
     },
     

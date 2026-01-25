@@ -1366,7 +1366,10 @@ controls.appendChild(makeHint(readResultHint));
   if (state.phase === "DAY_CAPTAIN_TRANSFER") {
     const alive = state.players.filter(p => p.status === "alive");
     controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Transmettre", (id) => socket.emit("phaseAction", { chosenId: id })));
-    controls.appendChild(makeHint(`Le ${t('captain').toLowerCase()} mort choisit sans connaître le rôle du joueur choisi.`));
+    // V23: Traduire le hint
+    const transferHintTemplate = window.i18n ? window.i18n('game.gameHints.captainTransferHint') : "Le {captain} mort choisit sans connaître le rôle du joueur choisi.";
+    const transferHint = transferHintTemplate.replace('{captain}', t('captain').toLowerCase());
+    controls.appendChild(makeHint(transferHint));
   }
 
   if (state.phase === "DAY_VOTE") {
@@ -1399,7 +1402,10 @@ controls.appendChild(makeHint(readResultHint));
       }
     }
     controls.appendChild(grid);
-    controls.appendChild(makeHint(`En cas d'égalité, le ${t('captain').toLowerCase()} tranche avant toute conséquence.`));
+    // V23: Traduire le hint
+    const tiebreakerHintTemplate = window.i18n ? window.i18n('game.gameHints.tiebreakerHint') : "En cas d'égalité, le {captain} tranche avant toute conséquence.";
+    const tiebreakerHint = tiebreakerHintTemplate.replace('{captain}', t('captain').toLowerCase());
+    controls.appendChild(makeHint(tiebreakerHint));
   }
 
   if (state.phase === "REVENGE") {
@@ -1448,10 +1454,26 @@ function renderEnd() {
 
   const rep = state.phaseData?.report;
   if (rep) {
+    // V23: Helper pour traduire les sources d'élimination
+    const translateSource = (source) => {
+      if (!source) return "?";
+      const key = source.toLowerCase();
+      if (window.i18n) {
+        const translated = window.i18n(`game.deathSources.${key}`);
+        if (translated !== `game.deathSources.${key}`) return translated;
+      }
+      return source;
+    };
+    
     // V25: Ordre des éjections
     const deaths = (rep.deathOrder || []).map((d, i) => {
-      const rl = d.roleLabel ? ` (${d.roleLabel})` : "";
-      return `${i + 1}. ${d.name}${rl} — ${d.source || "?"}`;
+      // V23: Traduire le rôle
+      const roleKey = d.role || '';
+      const translatedRole = roleKey ? (tRole(roleKey) || d.roleLabel || roleKey) : d.roleLabel;
+      const rl = translatedRole ? ` (${translatedRole})` : "";
+      // V23: Traduire la source
+      const translatedSource = translateSource(d.source);
+      return `${i + 1}. ${d.name}${rl} — ${translatedSource}`;
     }).join("<br>");
     
     // V25: Awards HTML

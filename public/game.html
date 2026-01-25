@@ -1231,6 +1231,10 @@
               messageText = tr('captainCandidacy') || messageText;
             } else if (messageText.includes('Vote pour élire le Capitaine')) {
               messageText = tr('captainVote') || messageText;
+            } else if (messageText.includes('Vote du jour') || messageText.includes('Qui sera éliminé')) {
+              messageText = tr('dayVote') || messageText;
+            } else if (messageText.includes('Égalité') && messageText.includes('départager')) {
+              messageText = tr('tiebreaker') || messageText;
             } else if (messageText.match(/Nuit \d+.*rôles spéciaux/)) {
               const nightMatch = messageText.match(/Nuit (\d+)/);
               const nightNum = nightMatch ? nightMatch[1] : '1';
