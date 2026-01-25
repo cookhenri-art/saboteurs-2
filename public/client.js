@@ -693,7 +693,9 @@ function renderLobby() {
       // Créer la partie droite (état prêt)
       const right = document.createElement("div");
       right.className = "player-right";
-      right.innerHTML = p.ready ? `<span class="pill ok">PRÊT</span>` : `<span class="pill warn">PAS PRÊT</span>`;
+      right.innerHTML = p.ready 
+        ? `<span class="pill ok">${window.i18n ? window.i18n('game.lobby.ready') : 'PRÊT'}</span>` 
+        : `<span class="pill warn">${window.i18n ? window.i18n('game.lobby.notReady') : 'PAS PRÊT'}</span>`;
       
       item.appendChild(left);
       item.appendChild(right);
@@ -741,7 +743,9 @@ function renderLobby() {
   // ready button
   const me = state.players.find(p => p.playerId === state.you?.playerId);
   const ready = !!me?.ready;
-  $("readyBtn").textContent = ready ? "☑ PRÊT (annuler)" : "☐ PRÊT";
+  $("readyBtn").textContent = ready 
+    ? `☑ ${window.i18n ? window.i18n('game.lobby.ready') : 'PRÊT'} (${window.i18n ? window.i18n('game.actions.cancel') : 'annuler'})` 
+    : `☐ ${window.i18n ? window.i18n('game.lobby.ready') : 'PRÊT'}`;
   $("readyBtn").onclick = () => socket.emit("setReady", { ready: !ready });
 
   // host controls

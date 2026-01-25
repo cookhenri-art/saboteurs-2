@@ -628,6 +628,82 @@ const TRANSLATIONS = {
       }
     },
     
+    // Modal changement de mot de passe
+    passwordModal: {
+      title: {
+        fr: "🔐 Changer le mot de passe",
+        en: "🔐 Change password",
+        es: "🔐 Cambiar contraseña",
+        it: "🔐 Cambia password",
+        de: "🔐 Passwort ändern",
+        pt: "🔐 Alterar senha",
+        nl: "🔐 Wachtwoord wijzigen"
+      },
+      currentPassword: {
+        fr: "MOT DE PASSE ACTUEL",
+        en: "CURRENT PASSWORD",
+        es: "CONTRASEÑA ACTUAL",
+        it: "PASSWORD ATTUALE",
+        de: "AKTUELLES PASSWORT",
+        pt: "SENHA ATUAL",
+        nl: "HUIDIG WACHTWOORD"
+      },
+      newPassword: {
+        fr: "NOUVEAU MOT DE PASSE",
+        en: "NEW PASSWORD",
+        es: "NUEVA CONTRASEÑA",
+        it: "NUOVA PASSWORD",
+        de: "NEUES PASSWORT",
+        pt: "NOVA SENHA",
+        nl: "NIEUW WACHTWOORD"
+      },
+      confirmPassword: {
+        fr: "CONFIRMER",
+        en: "CONFIRM",
+        es: "CONFIRMAR",
+        it: "CONFERMA",
+        de: "BESTÄTIGEN",
+        pt: "CONFIRMAR",
+        nl: "BEVESTIGEN"
+      },
+      minChars: {
+        fr: "Minimum 6 caractères",
+        en: "Minimum 6 characters",
+        es: "Mínimo 6 caracteres",
+        it: "Minimo 6 caratteri",
+        de: "Mindestens 6 Zeichen",
+        pt: "Mínimo 6 caracteres",
+        nl: "Minimaal 6 tekens"
+      },
+      retypePassword: {
+        fr: "Retape le nouveau mot de passe",
+        en: "Retype the new password",
+        es: "Vuelve a escribir la nueva contraseña",
+        it: "Riscrivi la nuova password",
+        de: "Neues Passwort erneut eingeben",
+        pt: "Digite novamente a nova senha",
+        nl: "Typ het nieuwe wachtwoord opnieuw"
+      },
+      validate: {
+        fr: "✅ Valider",
+        en: "✅ Validate",
+        es: "✅ Validar",
+        it: "✅ Conferma",
+        de: "✅ Bestätigen",
+        pt: "✅ Validar",
+        nl: "✅ Bevestigen"
+      },
+      cancel: {
+        fr: "✖ Annuler",
+        en: "✖ Cancel",
+        es: "✖ Cancelar",
+        it: "✖ Annulla",
+        de: "✖ Abbrechen",
+        pt: "✖ Cancelar",
+        nl: "✖ Annuleren"
+      }
+    },
+    
     // Règles
     rules: {
       title: {
@@ -1847,6 +1923,15 @@ const TRANSLATIONS = {
       pt: "superioridade numérica (paridade ou mais).",
       nl: "numerieke superioriteit (gelijkspel of meer)."
     },
+    associationTitle: {
+      fr: "Association de malfaiteurs",
+      en: "Criminal Association",
+      es: "Asociación criminal",
+      it: "Associazione criminale",
+      de: "Verbrechervereinigung",
+      pt: "Associação criminosa",
+      nl: "Criminele vereniging"
+    },
     associationWinCondition: {
       fr: "s'il ne reste que 2 joueurs vivants, liés ensemble, et de camps différents, ils gagnent ensemble.",
       en: "if only 2 players remain alive, linked together, and from different camps, they win together.",
@@ -2122,6 +2207,230 @@ const TRANSLATIONS = {
       de: "Dieses Tutorial nicht mehr anzeigen",
       pt: "Não mostrar este tutorial novamente",
       nl: "Deze tutorial niet meer tonen"
+    },
+    
+    // Page 5 - Visioconférence
+    videoConference: {
+      title: {
+        fr: "Visioconférence",
+        en: "Video Conference",
+        es: "Videoconferencia",
+        it: "Videoconferenza",
+        de: "Videokonferenz",
+        pt: "Videoconferência",
+        nl: "Videoconferentie"
+      },
+      videoControls: {
+        fr: "🎥 Contrôles Vidéo",
+        en: "🎥 Video Controls",
+        es: "🎥 Controles de Vídeo",
+        it: "🎥 Controlli Video",
+        de: "🎥 Video-Steuerung",
+        pt: "🎥 Controles de Vídeo",
+        nl: "🎥 Video Bediening"
+      },
+      micro: {
+        fr: "Micro : Cliquez pour activer/désactiver votre micro",
+        en: "Mic: Click to enable/disable your microphone",
+        es: "Micro: Haz clic para activar/desactivar tu micrófono",
+        it: "Micro: Clicca per attivare/disattivare il microfono",
+        de: "Mikro: Klicken zum Aktivieren/Deaktivieren",
+        pt: "Micro: Clique para ativar/desativar seu microfone",
+        nl: "Micro: Klik om je microfoon in/uit te schakelen"
+      },
+      camera: {
+        fr: "Caméra : Cliquez pour activer/désactiver votre caméra",
+        en: "Camera: Click to enable/disable your camera",
+        es: "Cámara: Haz clic para activar/desactivar tu cámara",
+        it: "Camera: Clicca per attivare/disattivare la telecamera",
+        de: "Kamera: Klicken zum Aktivieren/Deaktivieren",
+        pt: "Câmera: Clique para ativar/desativar sua câmera",
+        nl: "Camera: Klik om je camera in/uit te schakelen"
+      },
+      maxMode: {
+        fr: "Max : Mode plein écran (briefing étendu)",
+        en: "Max: Full screen mode (extended briefing)",
+        es: "Max: Modo pantalla completa (briefing extendido)",
+        it: "Max: Modalità schermo intero (briefing esteso)",
+        de: "Max: Vollbildmodus (erweitertes Briefing)",
+        pt: "Max: Modo tela cheia (briefing estendido)",
+        nl: "Max: Volledig scherm (uitgebreide briefing)"
+      },
+      splitMode: {
+        fr: "Split : Mode 50/50 (jeu + vidéo)",
+        en: "Split: 50/50 mode (game + video)",
+        es: "Split: Modo 50/50 (juego + vídeo)",
+        it: "Split: Modalità 50/50 (gioco + video)",
+        de: "Split: 50/50 Modus (Spiel + Video)",
+        pt: "Split: Modo 50/50 (jogo + vídeo)",
+        nl: "Split: 50/50 modus (spel + video)"
+      },
+      autoActivation: {
+        fr: "💡 Activation Automatique",
+        en: "💡 Automatic Activation",
+        es: "💡 Activación Automática",
+        it: "💡 Attivazione Automatica",
+        de: "💡 Automatische Aktivierung",
+        pt: "💡 Ativação Automática",
+        nl: "💡 Automatische Activering"
+      },
+      microCameraOn: {
+        fr: "✅ Micro + Caméra ON",
+        en: "✅ Mic + Camera ON",
+        es: "✅ Micro + Cámara ON",
+        it: "✅ Micro + Camera ON",
+        de: "✅ Mikro + Kamera AN",
+        pt: "✅ Micro + Câmera ON",
+        nl: "✅ Micro + Camera AAN"
+      },
+      dayPhases: {
+        fr: "Jour (débat/vote)",
+        en: "Day (debate/vote)",
+        es: "Día (debate/voto)",
+        it: "Giorno (dibattito/voto)",
+        de: "Tag (Debatte/Abstimmung)",
+        pt: "Dia (debate/voto)",
+        nl: "Dag (debat/stemming)"
+      },
+      endOfGame: {
+        fr: "Fin de partie",
+        en: "End of game",
+        es: "Fin de partida",
+        it: "Fine partita",
+        de: "Spielende",
+        pt: "Fim de jogo",
+        nl: "Einde spel"
+      },
+      roleReveal: {
+        fr: "Révélation des rôles",
+        en: "Role reveal",
+        es: "Revelación de roles",
+        it: "Rivelazione dei ruoli",
+        de: "Rollenaufdeckung",
+        pt: "Revelação de papéis",
+        nl: "Rol onthulling"
+      },
+      certainRoles: {
+        fr: "🔒 Certains Rôles",
+        en: "🔒 Certain Roles",
+        es: "🔒 Ciertos Roles",
+        it: "🔒 Certi Ruoli",
+        de: "🔒 Bestimmte Rollen",
+        pt: "🔒 Certos Papéis",
+        nl: "🔒 Bepaalde Rollen"
+      },
+      saboteurNight: {
+        fr: "Nuit des saboteurs",
+        en: "Saboteur night",
+        es: "Noche de saboteadores",
+        it: "Notte dei sabotatori",
+        de: "Saboteur-Nacht",
+        pt: "Noite dos sabotadores",
+        nl: "Saboteur nacht"
+      },
+      aiAgentExchange: {
+        fr: "Échange Agent IA",
+        en: "AI Agent exchange",
+        es: "Intercambio Agente IA",
+        it: "Scambio Agente IA",
+        de: "KI-Agent Austausch",
+        pt: "Troca Agente IA",
+        nl: "AI Agent uitwisseling"
+      },
+      specialActions: {
+        fr: "Actions spéciales",
+        en: "Special actions",
+        es: "Acciones especiales",
+        it: "Azioni speciali",
+        de: "Spezielle Aktionen",
+        pt: "Ações especiais",
+        nl: "Speciale acties"
+      },
+      tipManualControl: {
+        fr: "Astuce : Vous pouvez désactiver votre micro/caméra manuellement à tout moment.",
+        en: "Tip: You can disable your mic/camera manually at any time.",
+        es: "Consejo: Puedes desactivar tu micro/cámara manualmente en cualquier momento.",
+        it: "Suggerimento: Puoi disattivare micro/camera manualmente in qualsiasi momento.",
+        de: "Tipp: Du kannst Mikro/Kamera jederzeit manuell deaktivieren.",
+        pt: "Dica: Você pode desativar seu micro/câmera manualmente a qualquer momento.",
+        nl: "Tip: Je kunt je micro/camera op elk moment handmatig uitschakelen."
+      }
+    },
+    
+    // Page 6 - Visio sur Mobile
+    mobileVideo: {
+      title: {
+        fr: "Visio sur Mobile",
+        en: "Video on Mobile",
+        es: "Vídeo en Móvil",
+        it: "Video su Mobile",
+        de: "Video auf Handy",
+        pt: "Vídeo no Celular",
+        nl: "Video op Mobiel"
+      },
+      mobileActivation: {
+        fr: "📱 Activation sur Mobile",
+        en: "📱 Mobile Activation",
+        es: "📱 Activación en Móvil",
+        it: "📱 Attivazione su Mobile",
+        de: "📱 Mobile Aktivierung",
+        pt: "📱 Ativação no Celular",
+        nl: "📱 Mobiele Activering"
+      },
+      firstConnection: {
+        fr: "1ère connexion : Autoriser l'accès micro/caméra dans le navigateur",
+        en: "1st connection: Allow mic/camera access in browser",
+        es: "1ª conexión: Autorizar acceso micro/cámara en el navegador",
+        it: "1ª connessione: Autorizza accesso micro/camera nel browser",
+        de: "1. Verbindung: Mikro/Kamera-Zugriff im Browser erlauben",
+        pt: "1ª conexão: Autorizar acesso micro/câmera no navegador",
+        nl: "1e verbinding: Micro/camera toegang toestaan in browser"
+      },
+      videoEnabledButton: {
+        fr: "Bouton \"📹 Visio activée\" : En bas à gauche pour activer/désactiver",
+        en: "\"📹 Video enabled\" button: Bottom left to enable/disable",
+        es: "Botón \"📹 Vídeo activado\": Abajo a la izquierda para activar/desactivar",
+        it: "Pulsante \"📹 Video attivato\": In basso a sinistra per attivare/disattivare",
+        de: "\"📹 Video aktiviert\" Button: Unten links zum Aktivieren/Deaktivieren",
+        pt: "Botão \"📹 Vídeo ativado\": Canto inferior esquerdo para ativar/desativar",
+        nl: "\"📹 Video ingeschakeld\" knop: Linksonder om in/uit te schakelen"
+      },
+      afterRefresh: {
+        fr: "Après un refresh : Retaper sur \"Activer visio\" puis valider",
+        en: "After refresh: Tap \"Enable video\" again then confirm",
+        es: "Después de actualizar: Vuelve a pulsar \"Activar vídeo\" y confirma",
+        it: "Dopo refresh: Tocca di nuovo \"Attiva video\" poi conferma",
+        de: "Nach Refresh: \"Video aktivieren\" erneut tippen und bestätigen",
+        pt: "Após atualizar: Toque em \"Ativar vídeo\" novamente e confirme",
+        nl: "Na refresh: Tik opnieuw op \"Video activeren\" en bevestig"
+      },
+      onPC: {
+        fr: "Sur PC : La visio s'active automatiquement",
+        en: "On PC: Video activates automatically",
+        es: "En PC: El vídeo se activa automáticamente",
+        it: "Su PC: Il video si attiva automaticamente",
+        de: "Am PC: Video aktiviert sich automatisch",
+        pt: "No PC: O vídeo ativa automaticamente",
+        nl: "Op PC: Video activeert automatisch"
+      },
+      onMobile: {
+        fr: "Sur Mobile : Utiliser le bouton en bas à gauche",
+        en: "On Mobile: Use the bottom left button",
+        es: "En Móvil: Usar el botón abajo a la izquierda",
+        it: "Su Mobile: Usa il pulsante in basso a sinistra",
+        de: "Auf Handy: Button unten links verwenden",
+        pt: "No Celular: Usar o botão no canto inferior esquerdo",
+        nl: "Op Mobiel: Gebruik de knop linksonder"
+      },
+      tipVideoNotShowing: {
+        fr: "Astuce : Si la vidéo ne s'affiche pas après refresh, vérifier que le bouton \"Visio activée\" est bien actif (vert).",
+        en: "Tip: If video doesn't show after refresh, check that \"Video enabled\" button is active (green).",
+        es: "Consejo: Si el vídeo no aparece después de actualizar, verifica que el botón \"Vídeo activado\" esté activo (verde).",
+        it: "Suggerimento: Se il video non appare dopo refresh, verifica che il pulsante \"Video attivato\" sia attivo (verde).",
+        de: "Tipp: Wenn Video nach Refresh nicht erscheint, prüfe ob \"Video aktiviert\" Button aktiv ist (grün).",
+        pt: "Dica: Se o vídeo não aparecer após atualizar, verifique se o botão \"Vídeo ativado\" está ativo (verde).",
+        nl: "Tip: Als video niet verschijnt na refresh, controleer of \"Video ingeschakeld\" knop actief is (groen)."
+      }
     }
   },
 
@@ -2915,10 +3224,9 @@ function changeLanguage(langCode) {
   }
 }
 
-// Exposer globalement
+// Exposer globalement - NE PAS exposer t() car client.js l'utilise pour les thèmes
 window.TRANSLATIONS = TRANSLATIONS;
-window.t = t;
-window.i18n = i18n;
+window.i18n = i18n;  // Fonction principale pour les traductions multilingues
 window.getCurrentLanguage = getCurrentLanguage;
 window.setCurrentLanguage = setCurrentLanguage;
 window.translatePage = translatePage;
