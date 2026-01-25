@@ -4,7 +4,7 @@
  * ║                                                                           ║
  * ║  Base: saboteur reprise avatar (logique jeu complète)                     ║
  * ║  + Système d'authentification et avatars IA                               ║
- * ║  V32.2 - 25/01/2026 05:30 - Fix avatar custom persistant sur Render Disk  ║
+ * ║  V32.3 - 25/01/2026 - Traductions 7 langues + emails multilingues         ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -366,15 +366,110 @@ function optionalAuth(req, res, next) {
   next();
 }
 
-async function sendVerificationEmail(email, username, token) {
+// Traductions des emails
+const EMAIL_TRANSLATIONS = {
+  verification: {
+    subject: {
+      fr: "🎮 Vérifie ton compte Saboteur !",
+      en: "🎮 Verify your Saboteur account!",
+      es: "🎮 ¡Verifica tu cuenta de Saboteur!",
+      it: "🎮 Verifica il tuo account Saboteur!",
+      de: "🎮 Bestätige dein Saboteur-Konto!",
+      pt: "🎮 Verifique sua conta Saboteur!",
+      nl: "🎮 Verifieer je Saboteur-account!"
+    },
+    title: {
+      fr: "Bienvenue sur Saboteur !",
+      en: "Welcome to Saboteur!",
+      es: "¡Bienvenido a Saboteur!",
+      it: "Benvenuto su Saboteur!",
+      de: "Willkommen bei Saboteur!",
+      pt: "Bem-vindo ao Saboteur!",
+      nl: "Welkom bij Saboteur!"
+    },
+    hello: {
+      fr: "Salut",
+      en: "Hello",
+      es: "Hola",
+      it: "Ciao",
+      de: "Hallo",
+      pt: "Olá",
+      nl: "Hallo"
+    },
+    message: {
+      fr: "Clique sur le bouton ci-dessous pour vérifier ton email et débloquer tes",
+      en: "Click the button below to verify your email and unlock your",
+      es: "Haz clic en el botón de abajo para verificar tu email y desbloquear tus",
+      it: "Clicca il pulsante qui sotto per verificare la tua email e sbloccare le tue",
+      de: "Klicke auf den Button unten, um deine E-Mail zu bestätigen und deine",
+      pt: "Clique no botão abaixo para verificar seu email e desbloquear suas",
+      nl: "Klik op de onderstaande knop om je e-mail te verifiëren en je"
+    },
+    freeGames: {
+      fr: "2 parties vidéo gratuites",
+      en: "2 free video games",
+      es: "2 partidas de vídeo gratis",
+      it: "2 partite video gratuite",
+      de: "2 kostenlosen Videospiele freizuschalten",
+      pt: "2 jogos de vídeo gratuitos",
+      nl: "2 gratis videospellen te ontgrendelen"
+    },
+    button: {
+      fr: "✅ Vérifier mon email",
+      en: "✅ Verify my email",
+      es: "✅ Verificar mi email",
+      it: "✅ Verifica la mia email",
+      de: "✅ Meine E-Mail bestätigen",
+      pt: "✅ Verificar meu email",
+      nl: "✅ Mijn e-mail verifiëren"
+    },
+    copyLink: {
+      fr: "Ou copie ce lien :",
+      en: "Or copy this link:",
+      es: "O copia este enlace:",
+      it: "Oppure copia questo link:",
+      de: "Oder kopiere diesen Link:",
+      pt: "Ou copie este link:",
+      nl: "Of kopieer deze link:"
+    },
+    expires: {
+      fr: "Ce lien expire dans 24 heures.",
+      en: "This link expires in 24 hours.",
+      es: "Este enlace caduca en 24 horas.",
+      it: "Questo link scade tra 24 ore.",
+      de: "Dieser Link läuft in 24 Stunden ab.",
+      pt: "Este link expira em 24 horas.",
+      nl: "Deze link verloopt over 24 uur."
+    },
+    noSpam: {
+      fr: "Cet email sert uniquement à sécuriser ton compte. Aucun spam, aucune pub, promis !",
+      en: "This email is only used to secure your account. No spam, no ads, promise!",
+      es: "Este correo solo sirve para proteger tu cuenta. ¡Sin spam ni publicidad, prometido!",
+      it: "Questa email serve solo a proteggere il tuo account. Niente spam, niente pubblicità, promesso!",
+      de: "Diese E-Mail dient nur zur Sicherung deines Kontos. Kein Spam, keine Werbung, versprochen!",
+      pt: "Este email serve apenas para proteger sua conta. Sem spam, sem anúncios, prometido!",
+      nl: "Deze e-mail dient alleen om je account te beveiligen. Geen spam, geen reclame, beloofd!"
+    }
+  }
+};
+
+// Fonction helper pour obtenir la traduction email
+function getEmailText(section, key, lang = 'fr') {
+  const translations = EMAIL_TRANSLATIONS[section];
+  if (!translations || !translations[key]) return key;
+  return translations[key][lang] || translations[key]['fr'] || key;
+}
+
+async function sendVerificationEmail(email, username, token, lang = 'fr') {
   if (!resend) {
     console.log(`📧 [DEV] Lien vérification: ${APP_URL}/verify-email.html?token=${token}`);
     return { success: true, simulated: true };
   }
   try {
     const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
+    const t = (key) => getEmailText('verification', key, lang);
     
-    // Template HTML avec design gradient (comme avant)
+    // Template HTML avec design gradient multilingue
     const htmlTemplate = `
 <!DOCTYPE html>
 <html>
@@ -390,32 +485,32 @@ async function sendVerificationEmail(email, username, token) {
       <div style="margin-bottom: 30px;">
         <span style="font-size: 48px;">🎮</span>
         <h1 style="color: #00d4ff; margin: 10px 0; font-size: 28px; text-shadow: 0 0 20px rgba(0,212,255,0.5);">
-          Bienvenue sur Saboteur !
+          ${t('title')}
         </h1>
       </div>
       
       <!-- Message -->
       <p style="color: #e0e0e0; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-        Salut <strong style="color: #00d4ff;">${username}</strong> ! 👋<br><br>
-        Clique sur le bouton ci-dessous pour vérifier ton email et débloquer tes <strong style="color: #4ade80;">2 parties vidéo gratuites</strong> !
+        ${t('hello')} <strong style="color: #00d4ff;">${username}</strong> ! 👋<br><br>
+        ${t('message')} <strong style="color: #4ade80;">${t('freeGames')}</strong> !
       </p>
       
       <!-- Bouton -->
       <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: #000; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(74,222,128,0.4); transition: transform 0.2s;">
-        ✅ Vérifier mon email
+        ${t('button')}
       </a>
       
       <!-- Lien alternatif -->
       <p style="color: #888; font-size: 12px; margin-top: 30px; word-break: break-all;">
-        Ou copie ce lien :<br>
+        ${t('copyLink')}<br>
         <a href="${verifyUrl}" style="color: #00d4ff;">${verifyUrl}</a>
       </p>
       
       <!-- Footer -->
       <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
         <p style="color: #666; font-size: 11px; margin: 0;">
-          Ce lien expire dans 24 heures.<br>
-          🔒 Cet email sert uniquement à sécuriser ton compte. Aucun spam, aucune pub, promis !
+          ${t('expires')}<br>
+          🔒 ${t('noSpam')}
         </p>
       </div>
       
@@ -427,9 +522,10 @@ async function sendVerificationEmail(email, username, token) {
     await resend.emails.send({
       from: process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>",
       to: email,
-      subject: "🎮 Vérifie ton compte Saboteur !",
+      subject: t('subject'),
       html: htmlTemplate
     });
+    console.log(`📧 Email de vérification envoyé à ${email} (${lang})`);
     return { success: true };
   } catch (e) {
     console.error("❌ Erreur email:", e);
@@ -2399,7 +2495,8 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     if (!bcrypt || !jwt) return res.status(500).json({ error: "Auth non configurée" });
     
-    const { email, username, password, promoCode } = req.body;
+    const { email, username, password, promoCode, lang } = req.body;
+    const userLang = lang || 'fr'; // Langue par défaut français
     const ip = getClientIP(req);
 
     if (!email || !username || !password) {
@@ -2457,7 +2554,7 @@ app.post("/api/auth/register", async (req, res) => {
     );
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
-    const emailResult = await sendVerificationEmail(email, username, verificationToken);
+    const emailResult = await sendVerificationEmail(email, username, verificationToken, userLang);
 
     const token = jwt.sign({ id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
 
@@ -2525,7 +2622,8 @@ app.get("/api/auth/verify-email", async (req, res) => {
 // Renvoyer email
 app.post("/api/auth/resend-verification", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, lang } = req.body;
+    const userLang = lang || 'fr';
     const user = dbGet("SELECT * FROM users WHERE email = ?", [email?.toLowerCase()]);
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
     if (user.email_verified === 1) return res.status(400).json({ error: "Email déjà vérifié" });
@@ -2533,7 +2631,7 @@ app.post("/api/auth/resend-verification", async (req, res) => {
     const verificationToken = generateVerificationToken();
     dbRun("UPDATE users SET verification_token = ?, verification_expires = ? WHERE id = ?",
       [verificationToken, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), user.id]);
-    await sendVerificationEmail(user.email, user.username, verificationToken);
+    await sendVerificationEmail(user.email, user.username, verificationToken, userLang);
 
     res.json({ success: true, message: "Email renvoyé" });
   } catch (error) {
