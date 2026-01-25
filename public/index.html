@@ -462,9 +462,10 @@
     }
     
     .theme-buttons-row {
-      display: flex;
-      gap: 6px;
-      justify-content: center;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      justify-items: center;
       margin-bottom: 8px;
     }
     
@@ -473,44 +474,45 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      width: 50px;
-      height: 50px;
+      width: 48px;
+      height: 48px;
       background: rgba(0, 0, 0, 0.4);
       border: 2px solid var(--metal-grey, #3d4663);
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
-      padding: 8px 4px;
+      padding: 4px 2px;
       overflow: hidden;
     }
     
     .theme-btn-large:hover {
       background: rgba(0, 255, 255, 0.1);
       border-color: var(--neon-main, #00ffff);
-      transform: translateY(-2px);
+      transform: scale(1.05);
     }
     
     .theme-btn-large.active {
       background: rgba(0, 255, 255, 0.2);
       border-color: var(--neon-main, #00ffff);
-      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
     }
     
     .theme-emoji {
-      font-size: 1.5rem;
-      margin-bottom: 2px;
+      font-size: 1.2rem;
+      margin-bottom: 1px;
     }
     
     .theme-name {
-      font-size: 0.55rem;
+      font-size: 0.5rem;
       color: var(--text-secondary, #8892b0);
       text-transform: uppercase;
-      letter-spacing: 0.3px;
+      letter-spacing: 0;
       text-align: center;
-      max-width: 100%;
+      max-width: 44px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+      line-height: 1.1;
     }
     
     .theme-btn-large.active .theme-name {
@@ -519,9 +521,9 @@
     
     .theme-selected-indicator {
       text-align: center;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       color: var(--neon-green, #50fa7b);
-      padding: 6px;
+      padding: 5px;
       background: rgba(80, 250, 123, 0.1);
       border-radius: 6px;
       border: 1px solid rgba(80, 250, 123, 0.3);
@@ -583,21 +585,33 @@
         top: auto;
         right: auto;
         margin: 10px auto 20px auto;
-        width: calc(100% - 40px);
+        width: calc(100% - 30px);
         max-width: 320px;
+        padding: 12px;
+      }
+      
+      .theme-buttons-row {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
       }
       
       .language-selector {
         grid-template-columns: repeat(7, 1fr);
+        gap: 4px;
       }
       
       .theme-btn-large {
-        width: 55px;
-        height: 60px;
+        width: 60px;
+        height: 55px;
       }
       
       .theme-emoji {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
+      }
+      
+      .theme-name {
+        font-size: 0.55rem;
+        max-width: 56px;
       }
     }
   </style>
