@@ -1,8 +1,9 @@
 /**
  * ╔═══════════════════════════════════════════════════════════════════════════╗
- * ║            🌍 SABOTEUR - SYSTÈME DE TRADUCTIONS V1.0                      ║
+ * ║            🌍 SABOTEUR - SYSTÈME DE TRADUCTIONS V2.0                      ║
  * ║                                                                           ║
  * ║  Langues supportées : FR, EN, ES, IT, DE, PT, NL                         ║
+ * ║  V2.0 : Ajout game.html, règles, tutoriel, chat complets                 ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -18,6 +19,84 @@ const TRANSLATIONS = {
     de: { name: "Deutsch", flag: "🇩🇪" },
     pt: { name: "Português", flag: "🇵🇹" },
     nl: { name: "Nederlands", flag: "🇳🇱" }
+  },
+
+  // ============================================================================
+  // COMMUN / GLOBAL
+  // ============================================================================
+  common: {
+    guest: {
+      fr: "Invité",
+      en: "Guest",
+      es: "Invitado",
+      it: "Ospite",
+      de: "Gast",
+      pt: "Convidado",
+      nl: "Gast"
+    },
+    chatOnly: {
+      fr: "Chat uniquement",
+      en: "Chat only",
+      es: "Solo chat",
+      it: "Solo chat",
+      de: "Nur Chat",
+      pt: "Apenas chat",
+      nl: "Alleen chat"
+    },
+    disconnect: {
+      fr: "Déconnexion",
+      en: "Disconnect",
+      es: "Desconectar",
+      it: "Disconnetti",
+      de: "Abmelden",
+      pt: "Desconectar",
+      nl: "Uitloggen"
+    },
+    back: {
+      fr: "Retour",
+      en: "Back",
+      es: "Volver",
+      it: "Indietro",
+      de: "Zurück",
+      pt: "Voltar",
+      nl: "Terug"
+    },
+    connection: {
+      fr: "Connexion",
+      en: "Connection",
+      es: "Conexión",
+      it: "Connessione",
+      de: "Verbindung",
+      pt: "Conexão",
+      nl: "Verbinding"
+    },
+    next: {
+      fr: "Suivant →",
+      en: "Next →",
+      es: "Siguiente →",
+      it: "Avanti →",
+      de: "Weiter →",
+      pt: "Próximo →",
+      nl: "Volgende →"
+    },
+    previous: {
+      fr: "← Précédent",
+      en: "← Previous",
+      es: "← Anterior",
+      it: "← Precedente",
+      de: "← Zurück",
+      pt: "← Anterior",
+      nl: "← Vorige"
+    },
+    start: {
+      fr: "Commencer ! 🚀",
+      en: "Start! 🚀",
+      es: "¡Comenzar! 🚀",
+      it: "Inizia! 🚀",
+      de: "Starten! 🚀",
+      pt: "Começar! 🚀",
+      nl: "Starten! 🚀"
+    }
   },
 
   // ============================================================================
@@ -42,6 +121,24 @@ const TRANSLATIONS = {
       de: "SOZIALES DEDUKTIONSSPIEL",
       pt: "JOGO DE DEDUÇÃO SOCIAL",
       nl: "SOCIAAL DEDUCTIESPEL"
+    },
+    subtitleSmall: {
+      fr: "Jeu de déduction sociale multijoueur",
+      en: "Multiplayer social deduction game",
+      es: "Juego de deducción social multijugador",
+      it: "Gioco di deduzione sociale multiplayer",
+      de: "Multiplayer-Sozialdeduktionsspiel",
+      pt: "Jogo de dedução social multiplayer",
+      nl: "Multiplayer sociaal deductiespel"
+    },
+    missionRealtime: {
+      fr: "⚡ MISSION TEMPS RÉEL ⚡",
+      en: "⚡ REAL-TIME MISSION ⚡",
+      es: "⚡ MISIÓN EN TIEMPO REAL ⚡",
+      it: "⚡ MISSIONE IN TEMPO REALE ⚡",
+      de: "⚡ ECHTZEIT-MISSION ⚡",
+      pt: "⚡ MISSÃO EM TEMPO REAL ⚡",
+      nl: "⚡ REAL-TIME MISSIE ⚡"
     },
     
     // Sélecteur de thème
@@ -72,6 +169,15 @@ const TRANSLATIONS = {
         de: "Ausgewähltes Thema",
         pt: "Tema selecionado",
         nl: "Geselecteerd thema"
+      },
+      chooseTheme: {
+        fr: "🎨 CHOIX DU THÈME",
+        en: "🎨 CHOOSE THEME",
+        es: "🎨 ELEGIR TEMA",
+        it: "🎨 SCEGLI TEMA",
+        de: "🎨 THEMA WÄHLEN",
+        pt: "🎨 ESCOLHER TEMA",
+        nl: "🎨 KIES THEMA"
       }
     },
     
@@ -345,6 +451,15 @@ const TRANSLATIONS = {
         pt: "NOME DO JOGADOR",
         nl: "SPELERNAAM"
       },
+      playerNamePlaceholder: {
+        fr: "Entrez votre nom",
+        en: "Enter your name",
+        es: "Ingresa tu nombre",
+        it: "Inserisci il tuo nome",
+        de: "Gib deinen Namen ein",
+        pt: "Digite seu nome",
+        nl: "Voer je naam in"
+      },
       createGame: {
         fr: "🚀 CRÉER UNE MISSION",
         en: "🚀 CREATE A MISSION",
@@ -380,6 +495,24 @@ const TRANSLATIONS = {
         de: "Z.B.: 1234",
         pt: "Ex: 1234",
         nl: "Bijv: 1234"
+      },
+      roomNumber: {
+        fr: "Numéro de salle",
+        en: "Room number",
+        es: "Número de sala",
+        it: "Numero stanza",
+        de: "Raumnummer",
+        pt: "Número da sala",
+        nl: "Kamernummer"
+      },
+      generateCode: {
+        fr: "Générer Code Mission",
+        en: "Generate Mission Code",
+        es: "Generar Código de Misión",
+        it: "Genera Codice Missione",
+        de: "Missionscode generieren",
+        pt: "Gerar Código de Missão",
+        nl: "Missiecode genereren"
       }
     },
     
@@ -622,6 +755,28 @@ const TRANSLATIONS = {
   // GAME.HTML - PAGE DE JEU
   // ============================================================================
   game: {
+    // Audio
+    audio: {
+      clickToActivate: {
+        fr: "CLIQUEZ POUR ACTIVER LE SON",
+        en: "CLICK TO ACTIVATE SOUND",
+        es: "HAZ CLIC PARA ACTIVAR EL SONIDO",
+        it: "CLICCA PER ATTIVARE L'AUDIO",
+        de: "KLICKEN SIE, UM DEN TON ZU AKTIVIEREN",
+        pt: "CLIQUE PARA ATIVAR O SOM",
+        nl: "KLIK OM GELUID TE ACTIVEREN"
+      },
+      activateAudio: {
+        fr: "🎵 ACTIVER L'AUDIO",
+        en: "🎵 ACTIVATE AUDIO",
+        es: "🎵 ACTIVAR AUDIO",
+        it: "🎵 ATTIVA AUDIO",
+        de: "🎵 AUDIO AKTIVIEREN",
+        pt: "🎵 ATIVAR ÁUDIO",
+        nl: "🎵 AUDIO ACTIVEREN"
+      }
+    },
+    
     // Lobby
     lobby: {
       title: {
@@ -641,6 +796,15 @@ const TRANSLATIONS = {
         de: "Spielcode",
         pt: "Código do jogo",
         nl: "Spelcode"
+      },
+      missionCode: {
+        fr: "CODE MISSION",
+        en: "MISSION CODE",
+        es: "CÓDIGO DE MISIÓN",
+        it: "CODICE MISSIONE",
+        de: "MISSIONSCODE",
+        pt: "CÓDIGO DA MISSÃO",
+        nl: "MISSIECODE"
       },
       copyCode: {
         fr: "Copier",
@@ -669,23 +833,32 @@ const TRANSLATIONS = {
         pt: "Jogadores",
         nl: "Spelers"
       },
+      crewMembers: {
+        fr: "MEMBRES D'ÉQUIPAGE",
+        en: "CREW MEMBERS",
+        es: "MIEMBROS DE LA TRIPULACIÓN",
+        it: "MEMBRI DELL'EQUIPAGGIO",
+        de: "CREW-MITGLIEDER",
+        pt: "MEMBROS DA TRIPULAÇÃO",
+        nl: "BEMANNINGSLEDEN"
+      },
       ready: {
-        fr: "Prêt",
-        en: "Ready",
-        es: "Listo",
-        it: "Pronto",
-        de: "Bereit",
-        pt: "Pronto",
-        nl: "Klaar"
+        fr: "PRÊT",
+        en: "READY",
+        es: "LISTO",
+        it: "PRONTO",
+        de: "BEREIT",
+        pt: "PRONTO",
+        nl: "KLAAR"
       },
       notReady: {
-        fr: "Pas prêt",
-        en: "Not ready",
-        es: "No listo",
-        it: "Non pronto",
-        de: "Nicht bereit",
-        pt: "Não pronto",
-        nl: "Niet klaar"
+        fr: "PAS PRÊT",
+        en: "NOT READY",
+        es: "NO LISTO",
+        it: "NON PRONTO",
+        de: "NICHT BEREIT",
+        pt: "NÃO PRONTO",
+        nl: "NIET KLAAR"
       },
       startGame: {
         fr: "🚀 LANCER LA PARTIE",
@@ -695,6 +868,15 @@ const TRANSLATIONS = {
         de: "🚀 SPIEL STARTEN",
         pt: "🚀 INICIAR JOGO",
         nl: "🚀 SPEL STARTEN"
+      },
+      launchMission: {
+        fr: "🚀 Lancer Mission",
+        en: "🚀 Launch Mission",
+        es: "🚀 Iniciar Misión",
+        it: "🚀 Avvia Missione",
+        de: "🚀 Mission starten",
+        pt: "🚀 Iniciar Missão",
+        nl: "🚀 Missie starten"
       },
       waitingForPlayers: {
         fr: "En attente de joueurs...",
@@ -731,6 +913,109 @@ const TRANSLATIONS = {
         de: "Gastgeber",
         pt: "Anfitrião",
         nl: "Gastheer"
+      },
+      connectedCrew: {
+        fr: "ÉQUIPAGE CONNECTÉ",
+        en: "CONNECTED CREW",
+        es: "TRIPULACIÓN CONECTADA",
+        it: "EQUIPAGGIO CONNESSO",
+        de: "VERBUNDENE CREW",
+        pt: "TRIPULAÇÃO CONECTADA",
+        nl: "VERBONDEN CREW"
+      },
+      mission: {
+        fr: "MISSION",
+        en: "MISSION",
+        es: "MISIÓN",
+        it: "MISSIONE",
+        de: "MISSION",
+        pt: "MISSÃO",
+        nl: "MISSIE"
+      },
+      missionBalanced: {
+        fr: "MISSION ÉQUILIBRÉE",
+        en: "MISSION BALANCED",
+        es: "MISIÓN EQUILIBRADA",
+        it: "MISSIONE BILANCIATA",
+        de: "MISSION AUSBALANCIERT",
+        pt: "MISSÃO EQUILIBRADA",
+        nl: "MISSIE GEBALANCEERD"
+      },
+      distribution: {
+        fr: "Répartition",
+        en: "Distribution",
+        es: "Distribución",
+        it: "Distribuzione",
+        de: "Verteilung",
+        pt: "Distribuição",
+        nl: "Verdeling"
+      }
+    },
+    
+    // Config
+    config: {
+      rolesConfig: {
+        fr: "CONFIG RÔLES (HÔTE)",
+        en: "ROLES CONFIG (HOST)",
+        es: "CONFIG. ROLES (ANFITRIÓN)",
+        it: "CONFIG. RUOLI (HOST)",
+        de: "ROLLEN-KONFIG (GASTGEBER)",
+        pt: "CONFIG. PAPÉIS (ANFITRIÃO)",
+        nl: "ROLLEN CONFIG (GASTHEER)"
+      },
+      themeHost: {
+        fr: "🎨 THÈME (HÔTE)",
+        en: "🎨 THEME (HOST)",
+        es: "🎨 TEMA (ANFITRIÓN)",
+        it: "🎨 TEMA (HOST)",
+        de: "🎨 THEMA (GASTGEBER)",
+        pt: "🎨 TEMA (ANFITRIÃO)",
+        nl: "🎨 THEMA (GASTHEER)"
+      },
+      videoOptions: {
+        fr: "📹 OPTIONS VIDÉO (HÔTE)",
+        en: "📹 VIDEO OPTIONS (HOST)",
+        es: "📹 OPCIONES DE VÍDEO (ANFITRIÓN)",
+        it: "📹 OPZIONI VIDEO (HOST)",
+        de: "📹 VIDEO-OPTIONEN (GASTGEBER)",
+        pt: "📹 OPÇÕES DE VÍDEO (ANFITRIÃO)",
+        nl: "📹 VIDEO-OPTIES (GASTHEER)"
+      },
+      disableVideo: {
+        fr: "Désactiver la vidéo pour cette partie",
+        en: "Disable video for this game",
+        es: "Desactivar el vídeo para esta partida",
+        it: "Disattiva il video per questa partita",
+        de: "Video für dieses Spiel deaktivieren",
+        pt: "Desativar vídeo para este jogo",
+        nl: "Video uitschakelen voor dit spel"
+      },
+      videoDescription: {
+        fr: "Ce mode est idéal pour des parties avec cartes, sans maître du jeu. L'application remplacera ce dernier. L'hôte peut cocher le mode manuel dans la configuration des rôles, pour que chaque joueur renseigne sa carte de rôle reçue.",
+        en: "This mode is ideal for card games without a game master. The app will replace them. The host can check manual mode in the roles configuration so each player enters their received role card.",
+        es: "Este modo es ideal para partidas con cartas, sin director de juego. La aplicación lo reemplazará. El anfitrión puede marcar el modo manual en la configuración de roles para que cada jugador ingrese su carta de rol recibida.",
+        it: "Questa modalità è ideale per partite con carte, senza master. L'app lo sostituirà. L'host può selezionare la modalità manuale nella configurazione dei ruoli per far inserire a ogni giocatore la propria carta ruolo.",
+        de: "Dieser Modus ist ideal für Kartenspiele ohne Spielleiter. Die App ersetzt ihn. Der Gastgeber kann den manuellen Modus in der Rollenkonfiguration aktivieren, damit jeder Spieler seine erhaltene Rollenkarte eingibt.",
+        pt: "Este modo é ideal para jogos com cartas, sem mestre de jogo. O aplicativo o substituirá. O anfitrião pode marcar o modo manual na configuração de papéis para que cada jogador insira sua carta de papel recebida.",
+        nl: "Deze modus is ideaal voor kaartspellen zonder spelleider. De app vervangt hen. De gastheer kan de handmatige modus aanvinken in de rollenconfiguratie zodat elke speler zijn ontvangen rolkaart invoert."
+      },
+      noSpecialRoles: {
+        fr: "Aucun rôle spécial activé",
+        en: "No special roles enabled",
+        es: "Sin roles especiales activados",
+        it: "Nessun ruolo speciale attivato",
+        de: "Keine Spezialrollen aktiviert",
+        pt: "Nenhum papel especial ativado",
+        nl: "Geen speciale rollen geactiveerd"
+      },
+      manualMode: {
+        fr: "Mode manuel (cartes physiques)",
+        en: "Manual mode (physical cards)",
+        es: "Modo manual (cartas físicas)",
+        it: "Modalità manuale (carte fisiche)",
+        de: "Manueller Modus (physische Karten)",
+        pt: "Modo manual (cartas físicas)",
+        nl: "Handmatige modus (fysieke kaarten)"
       }
     },
     
@@ -801,7 +1086,7 @@ const TRANSLATIONS = {
       }
     },
     
-    // Rôles (thème spatial par défaut)
+    // Rôles (générique - les thèmes override)
     roles: {
       crewmate: {
         fr: "Équipier",
@@ -905,6 +1190,69 @@ const TRANSLATIONS = {
         de: "Ziel auswählen",
         pt: "Selecionar um alvo",
         nl: "Selecteer een doelwit"
+      },
+      chooseRole: {
+        fr: "Choisis ton rôle (mode cartes physiques). Ton choix vaut validation.",
+        en: "Choose your role (physical cards mode). Your choice is final.",
+        es: "Elige tu rol (modo cartas físicas). Tu elección es definitiva.",
+        it: "Scegli il tuo ruolo (modalità carte fisiche). La tua scelta è definitiva.",
+        de: "Wähle deine Rolle (physische Karten-Modus). Deine Wahl ist endgültig.",
+        pt: "Escolha seu papel (modo cartas físicas). Sua escolha é definitiva.",
+        nl: "Kies je rol (fysieke kaarten modus). Je keuze is definitief."
+      },
+      choosePlayer: {
+        fr: "Choisis un joueur",
+        en: "Choose a player",
+        es: "Elige un jugador",
+        it: "Scegli un giocatore",
+        de: "Wähle einen Spieler",
+        pt: "Escolha um jogador",
+        nl: "Kies een speler"
+      },
+      choosePlayerToLink: {
+        fr: "Choisis un joueur à lier.",
+        en: "Choose a player to link.",
+        es: "Elige un jugador para vincular.",
+        it: "Scegli un giocatore da collegare.",
+        de: "Wähle einen Spieler zum Verbinden.",
+        pt: "Escolha um jogador para vincular.",
+        nl: "Kies een speler om te koppelen."
+      },
+      chooseTargetToKill: {
+        fr: "Choisis une cible à tuer.",
+        en: "Choose a target to kill.",
+        es: "Elige un objetivo para matar.",
+        it: "Scegli un bersaglio da uccidere.",
+        de: "Wähle ein Ziel zum Töten.",
+        pt: "Escolha um alvo para matar.",
+        nl: "Kies een doelwit om te doden."
+      },
+      choosePlayerToInspect: {
+        fr: "Choisis un joueur à inspecter. Ensuite, lis le résultat puis valide.",
+        en: "Choose a player to inspect. Then read the result and confirm.",
+        es: "Elige un jugador para inspeccionar. Luego lee el resultado y confirma.",
+        it: "Scegli un giocatore da ispezionare. Poi leggi il risultato e conferma.",
+        de: "Wähle einen Spieler zur Inspektion. Lies dann das Ergebnis und bestätige.",
+        pt: "Escolha um jogador para inspecionar. Depois leia o resultado e confirme.",
+        nl: "Kies een speler om te inspecteren. Lees dan het resultaat en bevestig."
+      },
+      doctorAction: {
+        fr: "Action du docteur :",
+        en: "Doctor's action:",
+        es: "Acción del médico:",
+        it: "Azione del dottore:",
+        de: "Aktion des Arztes:",
+        pt: "Ação do médico:",
+        nl: "Actie van de dokter:"
+      },
+      actionNotRegistered: {
+        fr: "Action non prise en compte (connexion instable?). Réessaie.",
+        en: "Action not registered (unstable connection?). Try again.",
+        es: "Acción no registrada (¿conexión inestable?). Inténtalo de nuevo.",
+        it: "Azione non registrata (connessione instabile?). Riprova.",
+        de: "Aktion nicht registriert (instabile Verbindung?). Versuche es erneut.",
+        pt: "Ação não registrada (conexão instável?). Tente novamente.",
+        nl: "Actie niet geregistreerd (instabiele verbinding?). Probeer opnieuw."
       }
     },
     
@@ -1000,6 +1348,24 @@ const TRANSLATIONS = {
         pt: "Você está morto",
         nl: "Je bent dood"
       },
+      youHaveBeenEliminated: {
+        fr: "💀 Vous avez été éliminé",
+        en: "💀 You have been eliminated",
+        es: "💀 Has sido eliminado",
+        it: "💀 Sei stato eliminato",
+        de: "💀 Du wurdest eliminiert",
+        pt: "💀 Você foi eliminado",
+        nl: "💀 Je bent geëlimineerd"
+      },
+      youAreDeadNoAction: {
+        fr: "💀 Vous êtes mort. Vous n'agissez plus.",
+        en: "💀 You are dead. You can no longer act.",
+        es: "💀 Estás muerto. Ya no puedes actuar.",
+        it: "💀 Sei morto. Non puoi più agire.",
+        de: "💀 Du bist tot. Du kannst nicht mehr handeln.",
+        pt: "💀 Você está morto. Não pode mais agir.",
+        nl: "💀 Je bent dood. Je kunt niet meer handelen."
+      },
       spectating: {
         fr: "Mode spectateur",
         en: "Spectator mode",
@@ -1008,19 +1374,64 @@ const TRANSLATIONS = {
         de: "Zuschauermodus",
         pt: "Modo espectador",
         nl: "Toeschouwermodus"
+      },
+      gameInterrupted: {
+        fr: "Partie interrompue — pas assez de joueurs",
+        en: "Game interrupted — not enough players",
+        es: "Partida interrumpida — no hay suficientes jugadores",
+        it: "Partita interrotta — non abbastanza giocatori",
+        de: "Spiel unterbrochen — nicht genug Spieler",
+        pt: "Jogo interrompido — jogadores insuficientes",
+        nl: "Spel onderbroken — niet genoeg spelers"
+      },
+      gameAborted: {
+        fr: "Partie interrompue.",
+        en: "Game interrupted.",
+        es: "Partida interrumpida.",
+        it: "Partita interrotta.",
+        de: "Spiel unterbrochen.",
+        pt: "Jogo interrompido.",
+        nl: "Spel onderbroken."
+      },
+      voteToEject: {
+        fr: "Votez pour éjecter un joueur.",
+        en: "Vote to eject a player.",
+        es: "Vota para expulsar a un jugador.",
+        it: "Vota per espellere un giocatore.",
+        de: "Stimme ab, um einen Spieler auszuwerfen.",
+        pt: "Vote para ejetar um jogador.",
+        nl: "Stem om een speler te verwijderen."
+      },
+      radarResult: {
+        fr: "🔎 Radar",
+        en: "🔎 Radar",
+        es: "🔎 Radar",
+        it: "🔎 Radar",
+        de: "🔎 Radar",
+        pt: "🔎 Radar",
+        nl: "🔎 Radar"
+      },
+      saboteurVotes: {
+        fr: "🗳️ Votes des saboteurs",
+        en: "🗳️ Saboteurs' votes",
+        es: "🗳️ Votos de los saboteadores",
+        it: "🗳️ Voti dei sabotatori",
+        de: "🗳️ Stimmen der Saboteure",
+        pt: "🗳️ Votos dos sabotadores",
+        nl: "🗳️ Stemmen van de saboteurs"
       }
     },
     
     // Chat
     chat: {
       placeholder: {
-        fr: "Écrire un message...",
-        en: "Write a message...",
-        es: "Escribe un mensaje...",
-        it: "Scrivi un messaggio...",
-        de: "Nachricht schreiben...",
-        pt: "Escreva uma mensagem...",
-        nl: "Schrijf een bericht..."
+        fr: "Écris ton message...",
+        en: "Write your message...",
+        es: "Escribe tu mensaje...",
+        it: "Scrivi il tuo messaggio...",
+        de: "Schreibe deine Nachricht...",
+        pt: "Escreva sua mensagem...",
+        nl: "Schrijf je bericht..."
       },
       send: {
         fr: "Envoyer",
@@ -1030,6 +1441,77 @@ const TRANSLATIONS = {
         de: "Senden",
         pt: "Enviar",
         nl: "Verzenden"
+      },
+      title: {
+        fr: "Chat",
+        en: "Chat",
+        es: "Chat",
+        it: "Chat",
+        de: "Chat",
+        pt: "Chat",
+        nl: "Chat"
+      }
+    },
+    
+    // Vidéo
+    video: {
+      visioDiscussion: {
+        fr: "📹 VISIO (discussion)",
+        en: "📹 VIDEO (discussion)",
+        es: "📹 VIDEO (discusión)",
+        it: "📹 VIDEO (discussione)",
+        de: "📹 VIDEO (Diskussion)",
+        pt: "📹 VÍDEO (discussão)",
+        nl: "📹 VIDEO (discussie)"
+      },
+      openWindow: {
+        fr: "Ouvrir en fenêtre",
+        en: "Open in window",
+        es: "Abrir en ventana",
+        it: "Apri in finestra",
+        de: "In Fenster öffnen",
+        pt: "Abrir em janela",
+        nl: "Openen in venster"
+      },
+      hideVideo: {
+        fr: "Masquer la visio",
+        en: "Hide video",
+        es: "Ocultar video",
+        it: "Nascondi video",
+        de: "Video ausblenden",
+        pt: "Ocultar vídeo",
+        nl: "Video verbergen"
+      }
+    },
+    
+    // Contrôles hôte
+    hostControls: {
+      title: {
+        fr: "⚡ CONTRÔLES HÔTE",
+        en: "⚡ HOST CONTROLS",
+        es: "⚡ CONTROLES DEL ANFITRIÓN",
+        it: "⚡ CONTROLLI HOST",
+        de: "⚡ GASTGEBER-STEUERUNG",
+        pt: "⚡ CONTROLES DO ANFITRIÃO",
+        nl: "⚡ GASTHEER BESTURING"
+      },
+      phaseActiveSince: {
+        fr: "Phase active depuis :",
+        en: "Phase active since:",
+        es: "Fase activa desde:",
+        it: "Fase attiva da:",
+        de: "Phase aktiv seit:",
+        pt: "Fase ativa desde:",
+        nl: "Fase actief sinds:"
+      },
+      forceAdvance: {
+        fr: "⏭️ Forcer la suite (20s min)",
+        en: "⏭️ Force advance (20s min)",
+        es: "⏭️ Forzar avance (20s mín)",
+        it: "⏭️ Forza avanzamento (20s min)",
+        de: "⏭️ Weiter erzwingen (20s min)",
+        pt: "⏭️ Forçar avanço (20s mín)",
+        nl: "⏭️ Doorgaan forceren (20s min)"
       }
     },
     
@@ -1088,6 +1570,73 @@ const TRANSLATIONS = {
         de: "🏠 ZURÜCK ZUR LOBBY",
         pt: "🏠 VOLTAR AO LOBBY",
         nl: "🏠 TERUG NAAR LOBBY"
+      },
+      replayKeepStats: {
+        fr: "🔁 Rejouer dans cette chambre (garder les stats)",
+        en: "🔁 Replay in this room (keep stats)",
+        es: "🔁 Volver a jugar en esta sala (mantener stats)",
+        it: "🔁 Rigioca in questa stanza (mantieni statistiche)",
+        de: "🔁 In diesem Raum erneut spielen (Statistiken behalten)",
+        pt: "🔁 Jogar novamente nesta sala (manter stats)",
+        nl: "🔁 Opnieuw spelen in deze kamer (statistieken behouden)"
+      },
+      newGameResetStats: {
+        fr: "🆕 Nouvelle partie (réinitialiser les stats)",
+        en: "🆕 New game (reset stats)",
+        es: "🆕 Nueva partida (reiniciar stats)",
+        it: "🆕 Nuova partita (reset statistiche)",
+        de: "🆕 Neues Spiel (Statistiken zurücksetzen)",
+        pt: "🆕 Novo jogo (resetar stats)",
+        nl: "🆕 Nieuw spel (statistieken resetten)"
+      },
+      viewTutorial: {
+        fr: "📖 Voir le tutoriel rapide",
+        en: "📖 View quick tutorial",
+        es: "📖 Ver tutorial rápido",
+        it: "📖 Vedi tutorial rapido",
+        de: "📖 Kurzes Tutorial ansehen",
+        pt: "📖 Ver tutorial rápido",
+        nl: "📖 Snelle tutorial bekijken"
+      }
+    },
+    
+    // Fin de partie
+    endGame: {
+      badgesUnlocked: {
+        fr: "🏆 BADGES DÉBLOQUÉS",
+        en: "🏆 BADGES UNLOCKED",
+        es: "🏆 INSIGNIAS DESBLOQUEADAS",
+        it: "🏆 BADGE SBLOCCATI",
+        de: "🏆 ABZEICHEN FREIGESCHALTET",
+        pt: "🏆 MEDALHAS DESBLOQUEADAS",
+        nl: "🏆 BADGES ONTGRENDELD"
+      },
+      statsPersistedByName: {
+        fr: "Stats persistées par NOM (serveur).",
+        en: "Stats persisted by NAME (server).",
+        es: "Stats guardadas por NOMBRE (servidor).",
+        it: "Statistiche salvate per NOME (server).",
+        de: "Statistiken gespeichert nach NAME (Server).",
+        pt: "Stats persistidas por NOME (servidor).",
+        nl: "Stats opgeslagen op NAAM (server)."
+      },
+      victoryOf: {
+        fr: "⚔️ VICTOIRE DES",
+        en: "⚔️ VICTORY OF THE",
+        es: "⚔️ VICTORIA DE LOS",
+        it: "⚔️ VITTORIA DEI",
+        de: "⚔️ SIEG DER",
+        pt: "⚔️ VITÓRIA DOS",
+        nl: "⚔️ OVERWINNING VAN DE"
+      },
+      associationOfCriminals: {
+        fr: "🤝 ASSOCIATION DE MALFAITEURS",
+        en: "🤝 CRIMINAL ASSOCIATION",
+        es: "🤝 ASOCIACIÓN DE MALHECHORES",
+        it: "🤝 ASSOCIAZIONE CRIMINALE",
+        de: "🤝 VERBRECHERVEREINIGUNG",
+        pt: "🤝 ASSOCIAÇÃO CRIMINOSA",
+        nl: "🤝 CRIMINELE VERENIGING"
       }
     },
     
@@ -1111,6 +1660,468 @@ const TRANSLATIONS = {
         pt: "Criar conta",
         nl: "Account aanmaken"
       }
+    }
+  },
+
+  // ============================================================================
+  // RÈGLES DU JEU (MODAL)
+  // ============================================================================
+  rules: {
+    rolesTitle: {
+      fr: "Rôles",
+      en: "Roles",
+      es: "Roles",
+      it: "Ruoli",
+      de: "Rollen",
+      pt: "Papéis",
+      nl: "Rollen"
+    },
+    astronautDesc: {
+      fr: "aucun pouvoir.",
+      en: "no power.",
+      es: "sin poder.",
+      it: "nessun potere.",
+      de: "keine Fähigkeit.",
+      pt: "sem poder.",
+      nl: "geen kracht."
+    },
+    saboteurDesc: {
+      fr: "vote unanimement une cible la nuit.",
+      en: "unanimously votes a target at night.",
+      es: "vota unánimemente un objetivo por la noche.",
+      it: "vota unanimemente un bersaglio di notte.",
+      de: "stimmt nachts einstimmig für ein Ziel.",
+      pt: "vota unanimemente um alvo à noite.",
+      nl: "stemt 's nachts unaniem voor een doelwit."
+    },
+    radarDesc: {
+      fr: "inspecte un joueur et découvre son rôle.",
+      en: "inspects a player and discovers their role.",
+      es: "inspecciona a un jugador y descubre su rol.",
+      it: "ispeziona un giocatore e scopre il suo ruolo.",
+      de: "inspiziert einen Spieler und entdeckt seine Rolle.",
+      pt: "inspeciona um jogador e descobre seu papel.",
+      nl: "inspecteert een speler en ontdekt zijn rol."
+    },
+    doctorDesc: {
+      fr: "1 potion de vie (sauve la cible des saboteurs) et 1 potion de mort (éjecte une cible) sur toute la partie.",
+      en: "1 life potion (saves the target from saboteurs) and 1 death potion (ejects a target) for the whole game.",
+      es: "1 poción de vida (salva al objetivo de los saboteadores) y 1 poción de muerte (expulsa a un objetivo) durante toda la partida.",
+      it: "1 pozione vita (salva il bersaglio dai sabotatori) e 1 pozione morte (espelle un bersaglio) per tutta la partita.",
+      de: "1 Lebenstrank (rettet das Ziel vor Saboteuren) und 1 Todestrank (wirft ein Ziel raus) für das ganze Spiel.",
+      pt: "1 poção de vida (salva o alvo dos sabotadores) e 1 poção de morte (ejeta um alvo) durante todo o jogo.",
+      nl: "1 levensdrank (redt het doelwit van saboteurs) en 1 doodsdrank (verwijdert een doelwit) voor het hele spel."
+    },
+    chameleonDesc: {
+      fr: "Nuit 1 : échange son rôle avec un joueur (1 seule fois). Ensuite, tout le monde revérifie son rôle.",
+      en: "Night 1: swaps their role with a player (once only). Then everyone rechecks their role.",
+      es: "Noche 1: intercambia su rol con un jugador (solo una vez). Luego todos revisan su rol.",
+      it: "Notte 1: scambia il suo ruolo con un giocatore (una sola volta). Poi tutti ricontrollano il loro ruolo.",
+      de: "Nacht 1: tauscht seine Rolle mit einem Spieler (nur einmal). Dann überprüft jeder seine Rolle erneut.",
+      pt: "Noite 1: troca seu papel com um jogador (apenas uma vez). Depois todos verificam seu papel novamente.",
+      nl: "Nacht 1: wisselt zijn rol met een speler (slechts één keer). Daarna controleert iedereen zijn rol opnieuw."
+    },
+    securityDesc: {
+      fr: "si éjecté, tire une dernière fois (vengeance).",
+      en: "if ejected, shoots one last time (revenge).",
+      es: "si es expulsado, dispara una última vez (venganza).",
+      it: "se espulso, spara un'ultima volta (vendetta).",
+      de: "wenn rausgeworfen, schießt ein letztes Mal (Rache).",
+      pt: "se ejetado, atira uma última vez (vingança).",
+      nl: "indien verwijderd, schiet nog één keer (wraak)."
+    },
+    aiAgentDesc: {
+      fr: "Nuit 1 : lie 2 joueurs. Si l'un est éjecté, l'autre l'est aussi.",
+      en: "Night 1: links 2 players. If one is ejected, the other is too.",
+      es: "Noche 1: vincula 2 jugadores. Si uno es expulsado, el otro también.",
+      it: "Notte 1: collega 2 giocatori. Se uno viene espulso, anche l'altro.",
+      de: "Nacht 1: verbindet 2 Spieler. Wenn einer rausgeworfen wird, der andere auch.",
+      pt: "Noite 1: vincula 2 jogadores. Se um for ejetado, o outro também.",
+      nl: "Nacht 1: koppelt 2 spelers. Als één wordt verwijderd, de ander ook."
+    },
+    captainTitle: {
+      fr: "Chef de station",
+      en: "Station Chief",
+      es: "Jefe de estación",
+      it: "Capo stazione",
+      de: "Stationschef",
+      pt: "Chefe de estação",
+      nl: "Stationschef"
+    },
+    captainElectionRequired: {
+      fr: "Élection obligatoire",
+      en: "Mandatory election",
+      es: "Elección obligatoria",
+      it: "Elezione obbligatoria",
+      de: "Pflichtwahl",
+      pt: "Eleição obrigatória",
+      nl: "Verplichte verkiezing"
+    },
+    atStartOfMission: {
+      fr: "au début de la mission.",
+      en: "at the start of the mission.",
+      es: "al inicio de la misión.",
+      it: "all'inizio della missione.",
+      de: "zu Beginn der Mission.",
+      pt: "no início da missão.",
+      nl: "aan het begin van de missie."
+    },
+    captainTiebreaker: {
+      fr: "En cas d'égalité au vote du jour, le chef de station <b>tranche</b> (sa voix compte double pour départager).",
+      en: "In case of a tie in the day vote, the station chief <b>decides</b> (their vote counts double to break ties).",
+      es: "En caso de empate en la votación del día, el jefe de estación <b>decide</b> (su voto cuenta doble para desempatar).",
+      it: "In caso di pareggio nel voto diurno, il capo stazione <b>decide</b> (il suo voto conta doppio per spareggiare).",
+      de: "Bei Stimmengleichheit in der Tagesabstimmung <b>entscheidet</b> der Stationschef (seine Stimme zählt doppelt).",
+      pt: "Em caso de empate na votação do dia, o chefe de estação <b>decide</b> (seu voto conta em dobro para desempatar).",
+      nl: "Bij gelijkspel in de dagstemming <b>beslist</b> de stationschef (zijn stem telt dubbel om te beslissen)."
+    },
+    captainTransfer: {
+      fr: "Dès que le chef de station est éjecté, il <b>transmet</b> le rôle à un survivant <b>sans connaître son rôle</b>.",
+      en: "As soon as the station chief is ejected, they <b>transfer</b> the role to a survivor <b>without knowing their role</b>.",
+      es: "En cuanto el jefe de estación es expulsado, <b>transfiere</b> el rol a un sobreviviente <b>sin conocer su rol</b>.",
+      it: "Non appena il capo stazione viene espulso, <b>trasferisce</b> il ruolo a un sopravvissuto <b>senza conoscere il suo ruolo</b>.",
+      de: "Sobald der Stationschef rausgeworfen wird, <b>überträgt</b> er die Rolle an einen Überlebenden <b>ohne dessen Rolle zu kennen</b>.",
+      pt: "Assim que o chefe de estação é ejetado, ele <b>transfere</b> o papel para um sobrevivente <b>sem conhecer seu papel</b>.",
+      nl: "Zodra de stationschef wordt verwijderd, <b>draagt</b> hij de rol over aan een overlevende <b>zonder diens rol te kennen</b>."
+    },
+    nightOrderTitle: {
+      fr: "Ordre de nuit",
+      en: "Night order",
+      es: "Orden nocturno",
+      it: "Ordine notturno",
+      de: "Nachtordnung",
+      pt: "Ordem noturna",
+      nl: "Nachtvolgorde"
+    },
+    nightN1: {
+      fr: "(Nuit 1)",
+      en: "(Night 1)",
+      es: "(Noche 1)",
+      it: "(Notte 1)",
+      de: "(Nacht 1)",
+      pt: "(Noite 1)",
+      nl: "(Nacht 1)"
+    },
+    unanimity: {
+      fr: "(unanimité)",
+      en: "(unanimity)",
+      es: "(unanimidad)",
+      it: "(unanimità)",
+      de: "(Einstimmigkeit)",
+      pt: "(unanimidade)",
+      nl: "(unanimiteit)"
+    },
+    resolutionVengeanceLink: {
+      fr: "Résolution + vengeance + liaison",
+      en: "Resolution + revenge + link",
+      es: "Resolución + venganza + vínculo",
+      it: "Risoluzione + vendetta + collegamento",
+      de: "Auflösung + Rache + Verbindung",
+      pt: "Resolução + vingança + vínculo",
+      nl: "Resolutie + wraak + koppeling"
+    },
+    victoryTitle: {
+      fr: "Victoire",
+      en: "Victory",
+      es: "Victoria",
+      it: "Vittoria",
+      de: "Sieg",
+      pt: "Vitória",
+      nl: "Overwinning"
+    },
+    astronautsWinCondition: {
+      fr: "tous les saboteurs sont éjectés.",
+      en: "all saboteurs are ejected.",
+      es: "todos los saboteadores son expulsados.",
+      it: "tutti i sabotatori sono espulsi.",
+      de: "alle Saboteure sind rausgeworfen.",
+      pt: "todos os sabotadores são ejetados.",
+      nl: "alle saboteurs zijn verwijderd."
+    },
+    saboteursWinCondition: {
+      fr: "supériorité numérique (parité ou plus).",
+      en: "numerical superiority (parity or more).",
+      es: "superioridad numérica (paridad o más).",
+      it: "superiorità numerica (parità o più).",
+      de: "numerische Überlegenheit (Gleichstand oder mehr).",
+      pt: "superioridade numérica (paridade ou mais).",
+      nl: "numerieke superioriteit (gelijkspel of meer)."
+    },
+    associationWinCondition: {
+      fr: "s'il ne reste que 2 joueurs vivants, liés ensemble, et de camps différents, ils gagnent ensemble.",
+      en: "if only 2 players remain alive, linked together, and from different camps, they win together.",
+      es: "si solo quedan 2 jugadores vivos, vinculados, y de diferentes bandos, ganan juntos.",
+      it: "se rimangono solo 2 giocatori vivi, collegati, e di campi diversi, vincono insieme.",
+      de: "wenn nur noch 2 Spieler leben, verbunden sind, und aus verschiedenen Lagern kommen, gewinnen sie zusammen.",
+      pt: "se apenas 2 jogadores permanecerem vivos, vinculados, e de campos diferentes, eles ganham juntos.",
+      nl: "als slechts 2 spelers overblijven, gekoppeld zijn, en van verschillende kampen zijn, winnen ze samen."
+    },
+    saboteurCountTitle: {
+      fr: "Nombre de saboteurs",
+      en: "Number of saboteurs",
+      es: "Número de saboteadores",
+      it: "Numero di sabotatori",
+      de: "Anzahl der Saboteure",
+      pt: "Número de sabotadores",
+      nl: "Aantal saboteurs"
+    },
+    saboteurCountAuto: {
+      fr: "Le nombre de saboteurs est automatique :",
+      en: "The number of saboteurs is automatic:",
+      es: "El número de saboteadores es automático:",
+      it: "Il numero di sabotatori è automatico:",
+      de: "Die Anzahl der Saboteure ist automatisch:",
+      pt: "O número de sabotadores é automático:",
+      nl: "Het aantal saboteurs is automatisch:"
+    },
+    players06: {
+      fr: "0–6 joueurs",
+      en: "0–6 players",
+      es: "0–6 jugadores",
+      it: "0–6 giocatori",
+      de: "0–6 Spieler",
+      pt: "0–6 jogadores",
+      nl: "0–6 spelers"
+    },
+    players711: {
+      fr: "7–11 joueurs",
+      en: "7–11 players",
+      es: "7–11 jugadores",
+      it: "7–11 giocatori",
+      de: "7–11 Spieler",
+      pt: "7–11 jogadores",
+      nl: "7–11 spelers"
+    },
+    players12plus: {
+      fr: "12+ joueurs",
+      en: "12+ players",
+      es: "12+ jugadores",
+      it: "12+ giocatori",
+      de: "12+ Spieler",
+      pt: "12+ jogadores",
+      nl: "12+ spelers"
+    },
+    oneSaboteur: {
+      fr: "1 saboteur",
+      en: "1 saboteur",
+      es: "1 saboteador",
+      it: "1 sabotatore",
+      de: "1 Saboteur",
+      pt: "1 sabotador",
+      nl: "1 saboteur"
+    },
+    twoSaboteurs: {
+      fr: "2 saboteurs",
+      en: "2 saboteurs",
+      es: "2 saboteadores",
+      it: "2 sabotatori",
+      de: "2 Saboteure",
+      pt: "2 sabotadores",
+      nl: "2 saboteurs"
+    },
+    threeSaboteurs: {
+      fr: "3 saboteurs",
+      en: "3 saboteurs",
+      es: "3 saboteadores",
+      it: "3 sabotatori",
+      de: "3 Saboteure",
+      pt: "3 sabotadores",
+      nl: "3 saboteurs"
+    }
+  },
+
+  // ============================================================================
+  // TUTORIEL
+  // ============================================================================
+  tutorial: {
+    welcome: {
+      fr: "Bienvenue !",
+      en: "Welcome!",
+      es: "¡Bienvenido!",
+      it: "Benvenuto!",
+      de: "Willkommen!",
+      pt: "Bem-vindo!",
+      nl: "Welkom!"
+    },
+    gameDescription: {
+      fr: "<strong>Les Saboteurs</strong> est un jeu de déduction sociale où des <span style=\"color: var(--neon-red);\">saboteurs</span> tentent d'éliminer les <span style=\"color: var(--neon-cyan);\">astronautes</span> sans être découverts.",
+      en: "<strong>The Saboteurs</strong> is a social deduction game where <span style=\"color: var(--neon-red);\">saboteurs</span> try to eliminate the <span style=\"color: var(--neon-cyan);\">astronauts</span> without being discovered.",
+      es: "<strong>Los Saboteadores</strong> es un juego de deducción social donde los <span style=\"color: var(--neon-red);\">saboteadores</span> intentan eliminar a los <span style=\"color: var(--neon-cyan);\">astronautas</span> sin ser descubiertos.",
+      it: "<strong>I Sabotatori</strong> è un gioco di deduzione sociale dove i <span style=\"color: var(--neon-red);\">sabotatori</span> cercano di eliminare gli <span style=\"color: var(--neon-cyan);\">astronauti</span> senza essere scoperti.",
+      de: "<strong>Die Saboteure</strong> ist ein soziales Deduktionsspiel, bei dem <span style=\"color: var(--neon-red);\">Saboteure</span> versuchen, die <span style=\"color: var(--neon-cyan);\">Astronauten</span> zu eliminieren, ohne entdeckt zu werden.",
+      pt: "<strong>Os Sabotadores</strong> é um jogo de dedução social onde os <span style=\"color: var(--neon-red);\">sabotadores</span> tentam eliminar os <span style=\"color: var(--neon-cyan);\">astronautas</span> sem serem descobertos.",
+      nl: "<strong>De Saboteurs</strong> is een sociaal deductiespel waar <span style=\"color: var(--neon-red);\">saboteurs</span> proberen de <span style=\"color: var(--neon-cyan);\">astronauten</span> te elimineren zonder ontdekt te worden."
+    },
+    phaseAlternation: {
+      fr: "Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).",
+      en: "The game alternates between <strong>night phases</strong> (secret actions) and <strong>day phases</strong> (discussions and votes).",
+      es: "El juego alterna entre <strong>fases de noche</strong> (acciones secretas) y <strong>fases de día</strong> (discusiones y votos).",
+      it: "Il gioco alterna tra <strong>fasi notturne</strong> (azioni segrete) e <strong>fasi diurne</strong> (discussioni e voti).",
+      de: "Das Spiel wechselt zwischen <strong>Nachtphasen</strong> (geheime Aktionen) und <strong>Tagphasen</strong> (Diskussionen und Abstimmungen).",
+      pt: "O jogo alterna entre <strong>fases de noite</strong> (ações secretas) e <strong>fases de dia</strong> (discussões e votos).",
+      nl: "Het spel wisselt af tussen <strong>nachtfasen</strong> (geheime acties) en <strong>dagfasen</strong> (discussies en stemmingen)."
+    },
+    nightPhase: {
+      fr: "Phase de nuit",
+      en: "Night phase",
+      es: "Fase de noche",
+      it: "Fase notturna",
+      de: "Nachtphase",
+      pt: "Fase de noite",
+      nl: "Nachtfase"
+    },
+    nightSaboteurs: {
+      fr: "<strong style=\"color: var(--neon-red);\">Saboteurs</strong> : choisissent une victime (unanimité requise)",
+      en: "<strong style=\"color: var(--neon-red);\">Saboteurs</strong>: choose a victim (unanimity required)",
+      es: "<strong style=\"color: var(--neon-red);\">Saboteadores</strong>: eligen una víctima (se requiere unanimidad)",
+      it: "<strong style=\"color: var(--neon-red);\">Sabotatori</strong>: scelgono una vittima (unanimità richiesta)",
+      de: "<strong style=\"color: var(--neon-red);\">Saboteure</strong>: wählen ein Opfer (Einstimmigkeit erforderlich)",
+      pt: "<strong style=\"color: var(--neon-red);\">Sabotadores</strong>: escolhem uma vítima (unanimidade necessária)",
+      nl: "<strong style=\"color: var(--neon-red);\">Saboteurs</strong>: kiezen een slachtoffer (unanimiteit vereist)"
+    },
+    nightRadar: {
+      fr: "<strong style=\"color: var(--neon-cyan);\">Officier Radar</strong> : inspecte un joueur (saboteur ou non ?)",
+      en: "<strong style=\"color: var(--neon-cyan);\">Radar Officer</strong>: inspects a player (saboteur or not?)",
+      es: "<strong style=\"color: var(--neon-cyan);\">Oficial de Radar</strong>: inspecciona a un jugador (¿saboteador o no?)",
+      it: "<strong style=\"color: var(--neon-cyan);\">Ufficiale Radar</strong>: ispeziona un giocatore (sabotatore o no?)",
+      de: "<strong style=\"color: var(--neon-cyan);\">Radaroffizier</strong>: inspiziert einen Spieler (Saboteur oder nicht?)",
+      pt: "<strong style=\"color: var(--neon-cyan);\">Oficial de Radar</strong>: inspeciona um jogador (sabotador ou não?)",
+      nl: "<strong style=\"color: var(--neon-cyan);\">Radarofficier</strong>: inspecteert een speler (saboteur of niet?)"
+    },
+    nightDoctor: {
+      fr: "<strong style=\"color: var(--neon-green);\">Docteur Bio</strong> : peut sauver OU tuer (1 vie + 1 mort max)",
+      en: "<strong style=\"color: var(--neon-green);\">Bio Doctor</strong>: can save OR kill (1 life + 1 death max)",
+      es: "<strong style=\"color: var(--neon-green);\">Doctor Bio</strong>: puede salvar O matar (1 vida + 1 muerte máx)",
+      it: "<strong style=\"color: var(--neon-green);\">Dottore Bio</strong>: può salvare O uccidere (1 vita + 1 morte max)",
+      de: "<strong style=\"color: var(--neon-green);\">Bio-Arzt</strong>: kann retten ODER töten (max 1 Leben + 1 Tod)",
+      pt: "<strong style=\"color: var(--neon-green);\">Doutor Bio</strong>: pode salvar OU matar (1 vida + 1 morte máx)",
+      nl: "<strong style=\"color: var(--neon-green);\">Bio Dokter</strong>: kan redden OF doden (max 1 leven + 1 dood)"
+    },
+    nightSpecial: {
+      fr: "<strong style=\"color: var(--neon-orange);\">Rôles spéciaux</strong> : Caméléon, Agent IA, etc.",
+      en: "<strong style=\"color: var(--neon-orange);\">Special roles</strong>: Chameleon, AI Agent, etc.",
+      es: "<strong style=\"color: var(--neon-orange);\">Roles especiales</strong>: Camaleón, Agente IA, etc.",
+      it: "<strong style=\"color: var(--neon-orange);\">Ruoli speciali</strong>: Camaleonte, Agente IA, ecc.",
+      de: "<strong style=\"color: var(--neon-orange);\">Spezialrollen</strong>: Chamäleon, KI-Agent, usw.",
+      pt: "<strong style=\"color: var(--neon-orange);\">Papéis especiais</strong>: Camaleão, Agente IA, etc.",
+      nl: "<strong style=\"color: var(--neon-orange);\">Speciale rollen</strong>: Kameleon, AI-agent, enz."
+    },
+    dayPhase: {
+      fr: "Phase de jour",
+      en: "Day phase",
+      es: "Fase de día",
+      it: "Fase diurna",
+      de: "Tagphase",
+      pt: "Fase de dia",
+      nl: "Dagfase"
+    },
+    dayResults: {
+      fr: "Les résultats de la nuit sont révélés (qui est mort ?)",
+      en: "The night results are revealed (who died?)",
+      es: "Se revelan los resultados de la noche (¿quién murió?)",
+      it: "I risultati della notte vengono rivelati (chi è morto?)",
+      de: "Die Nachtergebnisse werden enthüllt (wer ist gestorben?)",
+      pt: "Os resultados da noite são revelados (quem morreu?)",
+      nl: "De nachtresultaten worden onthuld (wie is er gestorven?)"
+    },
+    dayDiscussion: {
+      fr: "Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong>",
+      en: "All living players <strong>discuss</strong> and <strong>debate</strong>",
+      es: "Todos los jugadores vivos <strong>discuten</strong> y <strong>debaten</strong>",
+      it: "Tutti i giocatori vivi <strong>discutono</strong> e <strong>dibattono</strong>",
+      de: "Alle lebenden Spieler <strong>diskutieren</strong> und <strong>debattieren</strong>",
+      pt: "Todos os jogadores vivos <strong>discutem</strong> e <strong>debatem</strong>",
+      nl: "Alle levende spelers <strong>discussiëren</strong> en <strong>debatteren</strong>"
+    },
+    dayVote: {
+      fr: "Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect",
+      en: "An <strong>ejection vote</strong> takes place to eliminate a suspect",
+      es: "Una <strong>votación de expulsión</strong> tiene lugar para eliminar a un sospechoso",
+      it: "Si tiene una <strong>votazione di espulsione</strong> per eliminare un sospetto",
+      de: "Eine <strong>Auswurfabstimmung</strong> findet statt, um einen Verdächtigen zu eliminieren",
+      pt: "Uma <strong>votação de ejeção</strong> acontece para eliminar um suspeito",
+      nl: "Er vindt een <strong>uitwerpstemming</strong> plaats om een verdachte te elimineren"
+    },
+    dayCaptain: {
+      fr: "Le <strong>Capitaine</strong> tranche en cas d'égalité",
+      en: "The <strong>Captain</strong> decides in case of a tie",
+      es: "El <strong>Capitán</strong> decide en caso de empate",
+      it: "Il <strong>Capitano</strong> decide in caso di pareggio",
+      de: "Der <strong>Kapitän</strong> entscheidet bei Stimmengleichheit",
+      pt: "O <strong>Capitão</strong> decide em caso de empate",
+      nl: "De <strong>Kapitein</strong> beslist bij gelijkspel"
+    },
+    dayTip: {
+      fr: "<strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !",
+      en: "<strong>Tip:</strong> Observe behaviors, look for contradictions, and trust your instincts!",
+      es: "<strong>Consejo:</strong> ¡Observa los comportamientos, busca contradicciones y confía en tu instinto!",
+      it: "<strong>Suggerimento:</strong> Osserva i comportamenti, cerca le contraddizioni e fidati del tuo istinto!",
+      de: "<strong>Tipp:</strong> Beobachte das Verhalten, suche nach Widersprüchen und vertraue deinem Instinkt!",
+      pt: "<strong>Dica:</strong> Observe os comportamentos, procure contradições e confie em seus instintos!",
+      nl: "<strong>Tip:</strong> Observeer gedragingen, zoek naar tegenstrijdigheden en vertrouw op je instinct!"
+    },
+    victoryConditions: {
+      fr: "Conditions de victoire",
+      en: "Victory conditions",
+      es: "Condiciones de victoria",
+      it: "Condizioni di vittoria",
+      de: "Siegbedingungen",
+      pt: "Condições de vitória",
+      nl: "Overwinningsvoorwaarden"
+    },
+    astronautsWin: {
+      fr: "Astronautes gagnent",
+      en: "Astronauts win",
+      es: "Astronautas ganan",
+      it: "Astronauti vincono",
+      de: "Astronauten gewinnen",
+      pt: "Astronautas vencem",
+      nl: "Astronauten winnen"
+    },
+    astronautsWinDesc: {
+      fr: "Tous les saboteurs sont éliminés",
+      en: "All saboteurs are eliminated",
+      es: "Todos los saboteadores son eliminados",
+      it: "Tutti i sabotatori sono eliminati",
+      de: "Alle Saboteure sind eliminiert",
+      pt: "Todos os sabotadores são eliminados",
+      nl: "Alle saboteurs zijn geëlimineerd"
+    },
+    saboteursWin: {
+      fr: "Saboteurs gagnent",
+      en: "Saboteurs win",
+      es: "Saboteadores ganan",
+      it: "Sabotatori vincono",
+      de: "Saboteure gewinnen",
+      pt: "Sabotadores vencem",
+      nl: "Saboteurs winnen"
+    },
+    saboteursWinDesc: {
+      fr: "Nombre de saboteurs ≥ astronautes",
+      en: "Number of saboteurs ≥ astronauts",
+      es: "Número de saboteadores ≥ astronautas",
+      it: "Numero di sabotatori ≥ astronauti",
+      de: "Anzahl Saboteure ≥ Astronauten",
+      pt: "Número de sabotadores ≥ astronautas",
+      nl: "Aantal saboteurs ≥ astronauten"
+    },
+    readyToPlay: {
+      fr: "Prêt à jouer ? Créez ou rejoignez une mission ! 🚀",
+      en: "Ready to play? Create or join a mission! 🚀",
+      es: "¿Listo para jugar? ¡Crea o únete a una misión! 🚀",
+      it: "Pronto a giocare? Crea o unisciti a una missione! 🚀",
+      de: "Bereit zu spielen? Erstelle oder tritt einer Mission bei! 🚀",
+      pt: "Pronto para jogar? Crie ou entre em uma missão! 🚀",
+      nl: "Klaar om te spelen? Maak of neem deel aan een missie! 🚀"
+    },
+    dontShowAgain: {
+      fr: "Ne plus afficher ce tutoriel",
+      en: "Don't show this tutorial again",
+      es: "No mostrar este tutorial de nuevo",
+      it: "Non mostrare più questo tutorial",
+      de: "Dieses Tutorial nicht mehr anzeigen",
+      pt: "Não mostrar este tutorial novamente",
+      nl: "Deze tutorial niet meer tonen"
     }
   },
 
@@ -1771,7 +2782,7 @@ function setCurrentLanguage(langCode) {
 }
 
 /**
- * Récupère une traduction
+ * Récupère une traduction (fonction principale)
  * @param {string} path - Chemin de la traduction (ex: "index.auth.login")
  * @param {string} [lang] - Code langue (optionnel, utilise la langue courante)
  * @returns {string} Texte traduit
@@ -1810,6 +2821,14 @@ function t(path, lang = null) {
 }
 
 /**
+ * Alias de t() pour éviter conflits avec client.js
+ * Utiliser i18n() dans client.js pour les traductions UI
+ */
+function i18n(path, lang = null) {
+  return t(path, lang);
+}
+
+/**
  * Traduit tous les éléments avec l'attribut data-i18n
  * @param {string} [lang] - Code langue (optionnel)
  */
@@ -1823,6 +2842,16 @@ function translatePage(lang = null) {
     
     if (translation && translation !== key) {
       el.textContent = translation;
+    }
+  });
+  
+  // innerHTML avec data-i18n-html (pour le HTML)
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    const translation = t(key, currentLang);
+    
+    if (translation && translation !== key) {
+      el.innerHTML = translation;
     }
   });
   
@@ -1886,7 +2915,18 @@ function changeLanguage(langCode) {
   }
 }
 
-// Export pour utilisation dans d'autres fichiers
+// Exposer globalement
+window.TRANSLATIONS = TRANSLATIONS;
+window.t = t;
+window.i18n = i18n;
+window.getCurrentLanguage = getCurrentLanguage;
+window.setCurrentLanguage = setCurrentLanguage;
+window.translatePage = translatePage;
+window.createLanguageSelector = createLanguageSelector;
+window.changeLanguage = changeLanguage;
+window.detectBrowserLanguage = detectBrowserLanguage;
+
+// Export pour utilisation dans d'autres fichiers (Node.js)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { TRANSLATIONS, t, getCurrentLanguage, setCurrentLanguage, translatePage, createLanguageSelector, changeLanguage, detectBrowserLanguage };
+  module.exports = { TRANSLATIONS, t, i18n, getCurrentLanguage, setCurrentLanguage, translatePage, createLanguageSelector, changeLanguage, detectBrowserLanguage };
 }

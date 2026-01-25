@@ -2086,6 +2086,12 @@ if (audioUnlockBtn) {
 
 // ---------- Rules modal ----------
 function buildRulesHtml(cfg) {
+  // V33: Utiliser la version traduite si disponible
+  if (typeof window.buildTranslatedRulesHtml === 'function') {
+    return window.buildTranslatedRulesHtml(cfg);
+  }
+  
+  // Fallback: version française
   const enabled = cfg?.rolesEnabled || {};
   const on = (k) => !!enabled[k];
 
@@ -3669,6 +3675,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
+  });
+
+  // V33: Recharger les règles quand la langue change
+  window.addEventListener('languageChanged', () => {
+    const rulesContent = document.getElementById('rulesContent');
+    if (rulesContent && rulesContent.innerHTML) {
+      const cfg = state?.config || {};
+      rulesContent.innerHTML = buildRulesHtml(cfg);
+    }
+    console.log('[i18n] Language changed, rules reloaded');
   });
 });
 
