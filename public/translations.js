@@ -420,6 +420,15 @@ const TRANSLATIONS = {
         pt: "jogo(s) de vídeo",
         nl: "videospel(len)"
       },
+      videoUnlimited: {
+        fr: "Vidéo illimitée",
+        en: "Unlimited video",
+        es: "Vídeo ilimitado",
+        it: "Video illimitato",
+        de: "Unbegrenztes Video",
+        pt: "Vídeo ilimitado",
+        nl: "Onbeperkte video"
+      },
       verifyEmail: {
         fr: "📧 Vérifie ton email pour activer ton compte",
         en: "📧 Verify your email to activate your account",
@@ -2091,6 +2100,52 @@ const TRANSLATIONS = {
       pt: "<strong style=\"color: var(--neon-orange);\">Papéis especiais</strong>: Camaleão, Agente IA, etc.",
       nl: "<strong style=\"color: var(--neon-orange);\">Speciale rollen</strong>: Kameleon, AI-agent, enz."
     },
+    // Actions séparées pour tutoriel (sans noms de rôles)
+    nightSaboteursAction: {
+      fr: "choisissent une victime (unanimité requise)",
+      en: "choose a victim (unanimity required)",
+      es: "eligen una víctima (se requiere unanimidad)",
+      it: "scelgono una vittima (unanimità richiesta)",
+      de: "wählen ein Opfer (Einstimmigkeit erforderlich)",
+      pt: "escolhem uma vítima (unanimidade necessária)",
+      nl: "kiezen een slachtoffer (unanimiteit vereist)"
+    },
+    nightRadarAction: {
+      fr: "inspecte un joueur (saboteur ou non ?)",
+      en: "inspects a player (saboteur or not?)",
+      es: "inspecciona a un jugador (¿saboteador o no?)",
+      it: "ispeziona un giocatore (sabotatore o no?)",
+      de: "inspiziert einen Spieler (Saboteur oder nicht?)",
+      pt: "inspeciona um jogador (sabotador ou não?)",
+      nl: "inspecteert een speler (saboteur of niet?)"
+    },
+    nightDoctorAction: {
+      fr: "peut sauver OU tuer (1 vie + 1 mort max)",
+      en: "can save OR kill (1 life + 1 death max)",
+      es: "puede salvar O matar (1 vida + 1 muerte máx)",
+      it: "può salvare O uccidere (1 vita + 1 morte max)",
+      de: "kann retten ODER töten (max 1 Leben + 1 Tod)",
+      pt: "pode salvar OU matar (1 vida + 1 morte máx)",
+      nl: "kan redden OF doden (max 1 leven + 1 dood)"
+    },
+    specialRolesLabel: {
+      fr: "Rôles spéciaux",
+      en: "Special roles",
+      es: "Roles especiales",
+      it: "Ruoli speciali",
+      de: "Spezialrollen",
+      pt: "Papéis especiais",
+      nl: "Speciale rollen"
+    },
+    win: {
+      fr: "gagnent",
+      en: "win",
+      es: "ganan",
+      it: "vincono",
+      de: "gewinnen",
+      pt: "ganham",
+      nl: "winnen"
+    },
     dayPhase: {
       fr: "Phase de jour",
       en: "Day phase",
@@ -2711,6 +2766,42 @@ const TRANSLATIONS = {
         de: "Kein eigener Avatar",
         pt: "Nenhum avatar personalizado",
         nl: "Geen eigen avatar"
+      },
+      myCustomAvatarLabel: {
+        fr: "Mon avatar perso",
+        en: "My custom avatar",
+        es: "Mi avatar personalizado",
+        it: "Il mio avatar personalizzato",
+        de: "Mein eigener Avatar",
+        pt: "Meu avatar personalizado",
+        nl: "Mijn eigen avatar"
+      },
+      imageNotFound: {
+        fr: "⚠️ Image introuvable",
+        en: "⚠️ Image not found",
+        es: "⚠️ Imagen no encontrada",
+        it: "⚠️ Immagine non trovata",
+        de: "⚠️ Bild nicht gefunden",
+        pt: "⚠️ Imagem não encontrada",
+        nl: "⚠️ Afbeelding niet gevonden"
+      },
+      confirmDeleteAvatar: {
+        fr: "Supprimer cet avatar ?",
+        en: "Delete this avatar?",
+        es: "¿Eliminar este avatar?",
+        it: "Eliminare questo avatar?",
+        de: "Diesen Avatar löschen?",
+        pt: "Excluir este avatar?",
+        nl: "Deze avatar verwijderen?"
+      },
+      confirmDeleteCustom: {
+        fr: "Supprimer ton avatar perso ?",
+        en: "Delete your custom avatar?",
+        es: "¿Eliminar tu avatar personalizado?",
+        it: "Eliminare il tuo avatar personalizzato?",
+        de: "Deinen eigenen Avatar löschen?",
+        pt: "Excluir seu avatar personalizado?",
+        nl: "Je eigen avatar verwijderen?"
       },
       quotaInfo: {
         fr: "avatars utilisés sur",

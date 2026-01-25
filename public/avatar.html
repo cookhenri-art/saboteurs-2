@@ -1443,7 +1443,8 @@
     }
 
     async function deleteAvatar(url, id) {
-      if (!confirm('Supprimer cet avatar ?')) return;
+      const confirmText = window.i18n ? window.i18n('avatar.messages.confirmDeleteAvatar') : 'Supprimer cet avatar ?';
+      if (!confirm(confirmText)) return;
       
       try {
         const token = localStorage.getItem('saboteur_token');
@@ -1714,18 +1715,23 @@
         const data = await res.json();
         
         if (data.ok && data.customAvatar) {
+          const myAvatarText = window.i18n ? window.i18n('avatar.messages.myCustomAvatarLabel') : 'Mon avatar perso';
+          const useText = window.i18n ? window.i18n('avatar.buttons.use') : '✅ Utiliser';
+          const deleteText = window.i18n ? window.i18n('avatar.buttons.delete') : '🗑️ Supprimer';
+          const imageNotFoundText = window.i18n ? window.i18n('avatar.messages.imageNotFound') : '⚠️ Image introuvable';
           container.innerHTML = `
-            <img src="${data.customAvatar}" alt="Mon avatar perso" onerror="this.style.display='none'; this.nextElementSibling.querySelector('.fallback-text').style.display='block';">
+            <img src="${data.customAvatar}" alt="${myAvatarText}" onerror="this.style.display='none'; this.nextElementSibling.querySelector('.fallback-text').style.display='block';">
             <div class="avatar-info">
-              <p style="color: var(--neon-main); font-weight: 600;">Mon avatar perso</p>
-              <span class="fallback-text" style="display: none; color: var(--neon-red); font-size: 0.75rem;">⚠️ Image introuvable</span>
-              <button class="btn btn-use-custom" onclick="useCustomAvatar('${data.customAvatar}')" style="margin-top: 5px; padding: 5px 10px; background: var(--neon-green); border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">✅ Utiliser</button>
+              <p style="color: var(--neon-main); font-weight: 600;">${myAvatarText}</p>
+              <span class="fallback-text" style="display: none; color: var(--neon-red); font-size: 0.75rem;">${imageNotFoundText}</span>
+              <button class="btn btn-use-custom" onclick="useCustomAvatar('${data.customAvatar}')" style="margin-top: 5px; padding: 5px 10px; background: var(--neon-green); border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">${useText}</button>
             </div>
-            <button class="btn-delete-custom" onclick="deleteCustomAvatar()">🗑️ Supprimer</button>
+            <button class="btn-delete-custom" onclick="deleteCustomAvatar()">${deleteText}</button>
           `;
           document.getElementById('uploadPhotoZone').style.display = 'none';
         } else {
-          container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">Aucun avatar perso</p>`;
+          const noAvatarText = window.i18n ? window.i18n('avatar.messages.noCustomAvatar') : 'Aucun avatar perso';
+          container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">${noAvatarText}</p>`;
           document.getElementById('uploadPhotoZone').style.display = 'block';
         }
       } catch(e) {
@@ -1821,7 +1827,8 @@
     }
     
     async function deleteCustomAvatar() {
-      if (!confirm('Supprimer ton avatar perso ?')) return;
+      const confirmText = window.i18n ? window.i18n('avatar.messages.confirmDeleteCustom') : 'Supprimer ton avatar perso ?';
+      if (!confirm(confirmText)) return;
       
       const token = localStorage.getItem('saboteur_token');
       if (!token) return;

@@ -124,6 +124,11 @@ window.buildTranslatedRulesHtml = function(cfg) {
         <li>${tr('rules.players711')} : <b>2</b> ${saboteurs.toLowerCase()}</li>
         <li>${tr('rules.players12plus')} : <b>3</b> ${saboteurs.toLowerCase()}</li>
       </ul>
+      
+      <button onclick="document.getElementById('rulesModal').style.display='none'; document.getElementById('tutorialModal').style.display='block'; window.showTutorialScreen && window.showTutorialScreen(1);" 
+        style="width:100%; margin-top:20px; padding:15px; background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-green) 100%); border:none; border-radius:10px; color:#000; font-weight:900; font-size:1.1rem; cursor:pointer;">
+        ${tr('game.buttons.viewTutorial')}
+      </button>
     </div>
   `;
 };
@@ -133,6 +138,37 @@ function translateGamePage() {
   const tr = window.tr;
   const lang = localStorage.getItem('saboteur_language') || 'fr';
   console.log('[game-i18n] Translating to:', lang);
+
+  // ============================================
+  // USER BAR (bandeau haut) - Traduire Invité et Chat uniquement
+  // ============================================
+  const userBarName = document.querySelector('.user-bar-name');
+  if (userBarName) {
+    const text = userBarName.textContent.trim();
+    // Traduire "Invité" dans toutes les langues possibles
+    const guestWords = ['Invité', 'Guest', 'Invitado', 'Ospite', 'Gast', 'Convidado'];
+    if (guestWords.some(w => text.includes(w))) {
+      userBarName.textContent = tr('common.guest');
+    }
+  }
+
+  const chatOnlyBadge = document.querySelector('.user-bar-credits');
+  if (chatOnlyBadge) {
+    const text = chatOnlyBadge.textContent.trim();
+    const chatOnlyWords = ['Chat uniquement', 'Chat only', 'Solo chat', 'Nur Chat', 'Apenas chat', 'Alleen chat'];
+    if (chatOnlyWords.some(w => text.includes(w))) {
+      chatOnlyBadge.textContent = tr('common.chatOnly');
+    }
+  }
+
+  const logoutBtn = document.querySelector('.user-bar-btn');
+  if (logoutBtn) {
+    const text = logoutBtn.textContent.trim();
+    const disconnectWords = ['Déconnexion', 'Disconnect', 'Desconectar', 'Disconnetti', 'Abmelden', 'Sair', 'Uitloggen'];
+    if (disconnectWords.some(w => text.includes(w))) {
+      logoutBtn.innerHTML = `<span style="color: var(--neon-red);">■</span> ${tr('common.disconnect')}`;
+    }
+  }
 
   // ============================================
   // LOBBY SCREEN
@@ -285,6 +321,9 @@ function translateGamePage() {
 // Traduire les écrans du tutoriel
 function translateTutorial() {
   const tr = window.tr;
+  
+  // Utiliser les noms de rôles thématiques si disponibles
+  const tRole = window.tRole || ((key) => key);
 
   // Écran 1 - Bienvenue
   const screen1 = document.querySelector('[data-screen="1"]');
@@ -297,17 +336,26 @@ function translateTutorial() {
     if (paras[1]) paras[1].innerHTML = tr('tutorial.phaseAlternation');
   }
 
-  // Écran 2 - Phase de nuit
+  // Écran 2 - Phase de nuit - Reconstruire avec noms thématiques
   const screen2 = document.querySelector('[data-screen="2"]');
   if (screen2) {
     const title = screen2.querySelector('h2');
     if (title) title.textContent = tr('tutorial.nightPhase');
     
-    const items = screen2.querySelectorAll('li');
-    if (items[0]) items[0].innerHTML = tr('tutorial.nightSaboteurs');
-    if (items[1]) items[1].innerHTML = tr('tutorial.nightRadar');
-    if (items[2]) items[2].innerHTML = tr('tutorial.nightDoctor');
-    if (items[3]) items[3].innerHTML = tr('tutorial.nightSpecial');
+    const ul = screen2.querySelector('ul');
+    if (ul) {
+      // Reconstruire les items avec noms thématiques + descriptions traduites
+      const saboteurName = tRole('saboteur');
+      const radarName = tRole('radar');
+      const doctorName = tRole('doctor');
+      
+      ul.innerHTML = `
+        <li><strong style="color: var(--neon-red);">${saboteurName}s</strong> : ${tr('tutorial.nightSaboteursAction')}</li>
+        <li><strong style="color: var(--neon-cyan);">${radarName}</strong> : ${tr('tutorial.nightRadarAction')}</li>
+        <li><strong style="color: var(--neon-green);">${doctorName}</strong> : ${tr('tutorial.nightDoctorAction')}</li>
+        <li><strong style="color: var(--neon-orange);">${tr('tutorial.specialRolesLabel')}</strong> : ${tRole('chameleon')}, ${tRole('ai_agent')}, etc.</li>
+      `;
+    }
   }
 
   // Écran 3 - Phase de jour
@@ -332,18 +380,21 @@ function translateTutorial() {
     const title = screen4.querySelector('h2');
     if (title) title.textContent = tr('tutorial.victoryConditions');
     
-    // Cartes
+    // Utiliser noms thématiques pour les cartes
+    const astronautName = tRole('astronaut');
+    const saboteurName = tRole('saboteur');
+    
     const cards = screen4.querySelectorAll('div[style*="border-radius: 12px"]');
     if (cards[0]) {
       const t1 = cards[0].querySelector('div[style*="font-weight"]');
       const d1 = cards[0].querySelector('div[style*="0.95rem"]');
-      if (t1) t1.textContent = tr('tutorial.astronautsWin');
+      if (t1) t1.textContent = `${astronautName}s ${tr('tutorial.win')}`;
       if (d1) d1.textContent = tr('tutorial.astronautsWinDesc');
     }
     if (cards[1]) {
       const t2 = cards[1].querySelector('div[style*="font-weight"]');
       const d2 = cards[1].querySelector('div[style*="0.95rem"]');
-      if (t2) t2.textContent = tr('tutorial.saboteursWin');
+      if (t2) t2.textContent = `${saboteurName}s ${tr('tutorial.win')}`;
       if (d2) d2.textContent = tr('tutorial.saboteursWinDesc');
     }
     
@@ -351,7 +402,7 @@ function translateTutorial() {
     if (ready) ready.textContent = tr('tutorial.readyToPlay');
   }
 
-  // Écrans 5 et 6 sont générés par client.js, on les traduit via l'événement
+  // Écrans 5 et 6 sont générés dynamiquement par client.js
 }
 
 // Initialisation
