@@ -888,6 +888,7 @@
       // Mettre à jour l'indicateur
       const indicator = document.getElementById('selectedThemeName');
       if (indicator) {
+        const themeNames = getThemeNames();
         indicator.textContent = themeNames[name] || name;
       }
       
