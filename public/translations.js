@@ -22,6 +22,132 @@ const TRANSLATIONS = {
   },
 
   // ============================================================================
+  // NOMS DES RÔLES PAR THÈME ET PAR LANGUE
+  // Priorité: thème → langue (ex: Loup-Garou + Allemand = Werwolf)
+  // ============================================================================
+  themeRoles: {
+    // ====== THÈME SPATIAL (default) ======
+    default: {
+      saboteur: {
+        fr: "Saboteur", en: "Saboteur", es: "Saboteador", it: "Sabotatore", de: "Saboteur", pt: "Sabotador", nl: "Saboteur",
+        fr_plural: "Saboteurs", en_plural: "Saboteurs", es_plural: "Saboteadores", it_plural: "Sabotatori", de_plural: "Saboteure", pt_plural: "Sabotadores", nl_plural: "Saboteurs"
+      },
+      astronaut: {
+        fr: "Astronaute", en: "Astronaut", es: "Astronauta", it: "Astronauta", de: "Astronaut", pt: "Astronauta", nl: "Astronaut",
+        fr_plural: "Astronautes", en_plural: "Astronauts", es_plural: "Astronautas", it_plural: "Astronauti", de_plural: "Astronauten", pt_plural: "Astronautas", nl_plural: "Astronauten"
+      },
+      doctor: {
+        fr: "Docteur Bio", en: "Bio Doctor", es: "Doctor Bio", it: "Dottore Bio", de: "Bio-Arzt", pt: "Doutor Bio", nl: "Bio Dokter"
+      },
+      security: {
+        fr: "Chef de Sécurité", en: "Security Chief", es: "Jefe de Seguridad", it: "Capo della Sicurezza", de: "Sicherheitschef", pt: "Chefe de Segurança", nl: "Beveiligingschef"
+      },
+      radar: {
+        fr: "Officier Radar", en: "Radar Officer", es: "Oficial de Radar", it: "Ufficiale Radar", de: "Radaroffizier", pt: "Oficial de Radar", nl: "Radarofficier"
+      },
+      ai_agent: {
+        fr: "Agent IA", en: "AI Agent", es: "Agente IA", it: "Agente IA", de: "KI-Agent", pt: "Agente IA", nl: "AI-agent"
+      },
+      engineer: {
+        fr: "Ingénieur", en: "Engineer", es: "Ingeniero", it: "Ingegnere", de: "Ingenieur", pt: "Engenheiro", nl: "Ingenieur"
+      },
+      chameleon: {
+        fr: "Caméléon", en: "Chameleon", es: "Camaleón", it: "Camaleonte", de: "Chamäleon", pt: "Camaleão", nl: "Kameleon"
+      }
+    },
+    
+    // ====== THÈME LOUP-GAROU (werewolf) ======
+    werewolf: {
+      saboteur: {
+        fr: "Loup-Garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf",
+        fr_plural: "Loups-Garous", en_plural: "Werewolves", es_plural: "Hombres Lobo", it_plural: "Lupi Mannari", de_plural: "Werwölfe", pt_plural: "Lobisomens", nl_plural: "Weerwolven"
+      },
+      astronaut: {
+        fr: "Villageois", en: "Villager", es: "Aldeano", it: "Villico", de: "Dorfbewohner", pt: "Aldeão", nl: "Dorpeling",
+        fr_plural: "Villageois", en_plural: "Villagers", es_plural: "Aldeanos", it_plural: "Villici", de_plural: "Dorfbewohner", pt_plural: "Aldeões", nl_plural: "Dorpelingen"
+      },
+      doctor: {
+        fr: "Sorcière", en: "Witch", es: "Bruja", it: "Strega", de: "Hexe", pt: "Bruxa", nl: "Heks"
+      },
+      security: {
+        fr: "Chasseur", en: "Hunter", es: "Cazador", it: "Cacciatore", de: "Jäger", pt: "Caçador", nl: "Jager"
+      },
+      radar: {
+        fr: "Voyante", en: "Seer", es: "Vidente", it: "Veggente", de: "Seherin", pt: "Vidente", nl: "Ziener"
+      },
+      ai_agent: {
+        fr: "L'Amoureux", en: "Cupid", es: "Cupido", it: "Cupido", de: "Amor", pt: "Cupido", nl: "Cupido"
+      },
+      engineer: {
+        fr: "Petit Garçon", en: "Little Boy", es: "Niño Pequeño", it: "Ragazzino", de: "Kleiner Junge", pt: "Menino", nl: "Kleine Jongen"
+      },
+      chameleon: {
+        fr: "Transformiste", en: "Shapeshifter", es: "Metamorfo", it: "Mutaforma", de: "Gestaltwandler", pt: "Metamorfo", nl: "Gedaanteverwisselaar"
+      }
+    },
+    
+    // ====== THÈME SORCIERS (wizard-academy) ======
+    "wizard-academy": {
+      saboteur: {
+        fr: "Mage Noir", en: "Dark Wizard", es: "Mago Oscuro", it: "Mago Oscuro", de: "Schwarzmagier", pt: "Mago Negro", nl: "Zwarte Magiër",
+        fr_plural: "Mages Noirs", en_plural: "Dark Wizards", es_plural: "Magos Oscuros", it_plural: "Maghi Oscuri", de_plural: "Schwarzmagier", pt_plural: "Magos Negros", nl_plural: "Zwarte Magiërs"
+      },
+      astronaut: {
+        fr: "Élève", en: "Student", es: "Estudiante", it: "Studente", de: "Schüler", pt: "Estudante", nl: "Leerling",
+        fr_plural: "Élèves", en_plural: "Students", es_plural: "Estudiantes", it_plural: "Studenti", de_plural: "Schüler", pt_plural: "Estudantes", nl_plural: "Leerlingen"
+      },
+      doctor: {
+        fr: "Alchimiste", en: "Alchemist", es: "Alquimista", it: "Alchimista", de: "Alchemist", pt: "Alquimista", nl: "Alchemist"
+      },
+      security: {
+        fr: "Duelliste", en: "Duelist", es: "Duelista", it: "Duellante", de: "Duellant", pt: "Duelista", nl: "Duellist"
+      },
+      radar: {
+        fr: "Oracle", en: "Oracle", es: "Oráculo", it: "Oracolo", de: "Orakel", pt: "Oráculo", nl: "Orakel"
+      },
+      ai_agent: {
+        fr: "Lien Mystique", en: "Mystic Bond", es: "Vínculo Místico", it: "Legame Mistico", de: "Mystische Bindung", pt: "Vínculo Místico", nl: "Mystieke Band"
+      },
+      engineer: {
+        fr: "Espion", en: "Spy", es: "Espía", it: "Spia", de: "Spion", pt: "Espião", nl: "Spion"
+      },
+      chameleon: {
+        fr: "Métamorphe", en: "Metamorph", es: "Metamorfo", it: "Metamorfo", de: "Metamorph", pt: "Metamorfo", nl: "Metamorf"
+      }
+    },
+    
+    // ====== THÈME MYTHIQUE (mythic-realms) ======
+    "mythic-realms": {
+      saboteur: {
+        fr: "Titan", en: "Titan", es: "Titán", it: "Titano", de: "Titan", pt: "Titã", nl: "Titaan",
+        fr_plural: "Titans", en_plural: "Titans", es_plural: "Titanes", it_plural: "Titani", de_plural: "Titanen", pt_plural: "Titãs", nl_plural: "Titanen"
+      },
+      astronaut: {
+        fr: "Héros", en: "Hero", es: "Héroe", it: "Eroe", de: "Held", pt: "Herói", nl: "Held",
+        fr_plural: "Héros", en_plural: "Heroes", es_plural: "Héroes", it_plural: "Eroi", de_plural: "Helden", pt_plural: "Heróis", nl_plural: "Helden"
+      },
+      doctor: {
+        fr: "Guérisseur", en: "Healer", es: "Curandero", it: "Guaritore", de: "Heiler", pt: "Curandeiro", nl: "Genezer"
+      },
+      security: {
+        fr: "Vengeur", en: "Avenger", es: "Vengador", it: "Vendicatore", de: "Rächer", pt: "Vingador", nl: "Wreker"
+      },
+      radar: {
+        fr: "Prophète", en: "Prophet", es: "Profeta", it: "Profeta", de: "Prophet", pt: "Profeta", nl: "Profeet"
+      },
+      ai_agent: {
+        fr: "Destin", en: "Fate", es: "Destino", it: "Destino", de: "Schicksal", pt: "Destino", nl: "Lot"
+      },
+      engineer: {
+        fr: "Éclaireur", en: "Scout", es: "Explorador", it: "Esploratore", de: "Späher", pt: "Batedor", nl: "Verkenner"
+      },
+      chameleon: {
+        fr: "Polymorphe", en: "Polymorph", es: "Polimorfo", it: "Polimorfo", de: "Polymorph", pt: "Polimorfo", nl: "Polymorf"
+      }
+    }
+  },
+
+  // ============================================================================
   // COMMUN / GLOBAL
   // ============================================================================
   common: {
@@ -60,6 +186,15 @@ const TRANSLATIONS = {
       de: "Zurück",
       pt: "Voltar",
       nl: "Terug"
+    },
+    tip: {
+      fr: "Astuce",
+      en: "Tip",
+      es: "Consejo",
+      it: "Suggerimento",
+      de: "Tipp",
+      pt: "Dica",
+      nl: "Tip"
     },
     connection: {
       fr: "Connexion",

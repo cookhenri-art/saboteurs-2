@@ -963,7 +963,7 @@
           localStorage.setItem('saboteur_user', JSON.stringify(data.user));
           currentUser = data.user;
           showLoggedInState();
-          showSuccess(window.i18n ? window.i18n('index.toasts.loginSuccess') : 'Connexion réussie !');
+          showSuccess(window.t ? window.t('index.toasts.loginSuccess') : 'Connexion réussie !');
         } else {
           showError(data.error || 'Erreur');
         }
@@ -1066,8 +1066,8 @@
           av.classList.add('show');
         }
         const c = currentUser.videoCredits;
-        const unlimitedText = window.i18n ? window.i18n('index.auth.videoUnlimited') : 'Vidéo illimitée';
-        const creditsText = window.i18n ? window.i18n('index.auth.videoCredits') : 'partie(s) vidéo';
+        const unlimitedText = window.t ? window.t('index.auth.videoUnlimited') : 'Vidéo illimitée';
+        const creditsText = window.t ? window.t('index.auth.videoCredits') : 'partie(s) vidéo';
         document.getElementById('displayCredits').textContent = 
           (c === '∞' || c > 1000) ? `🎬 ${unlimitedText}` : `🎬 ${c} ${creditsText}`;
         document.getElementById('verificationBanner').classList.toggle('show', !currentUser.emailVerified);

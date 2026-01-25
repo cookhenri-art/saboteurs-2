@@ -2653,18 +2653,38 @@ function t(key) {
 }
 
 /**
- * Traduit un nom de rôle selon le thème actif
+ * Traduit un nom de rôle selon le thème actif ET la langue
+ * Priorité: 1) Traduction multilingue du thème 2) Nom du thème 3) Défaut
  * @param {string} roleKey - La clé du rôle (saboteur, astronaut, radar, doctor, etc.)
  * @param {boolean} plural - Si true, retourne la forme plurielle si disponible
  * @returns {string} - Le nom traduit du rôle
  */
 function tRole(roleKey, plural = false) {
+  const themeId = currentTheme?.id || 'default';
+  const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+  
   // Debug
   if (!currentTheme) {
     console.warn("[tRole] currentTheme is null! Themes not loaded yet. Using defaults for:", roleKey);
   }
   
-  // Fallback complet si pas de thème chargé
+  // 1) Essayer d'abord la traduction multilingue par thème
+  if (window.TRANSLATIONS?.themeRoles?.[themeId]?.[roleKey]) {
+    const roleTranslations = window.TRANSLATIONS.themeRoles[themeId][roleKey];
+    
+    // Forme plurielle
+    if (plural) {
+      const pluralKey = lang + '_plural';
+      if (roleTranslations[pluralKey]) return roleTranslations[pluralKey];
+      if (roleTranslations['fr_plural']) return roleTranslations['fr_plural']; // Fallback FR pluriel
+    }
+    
+    // Forme singulière
+    if (roleTranslations[lang]) return roleTranslations[lang];
+    if (roleTranslations.fr) return roleTranslations.fr; // Fallback FR
+  }
+  
+  // 2) Fallback: utiliser le nom du thème (comportement original)
   const defaults = {
     saboteur: plural ? "Saboteurs" : "Saboteur",
     astronaut: plural ? "Astronautes" : "Astronaute",
@@ -3020,19 +3040,27 @@ function generateTutorialContent() {
   const astronauts = t('astronauts');
   const saboteurs = t('saboteurs');
   
+  // Fonction helper pour les traductions (avec fallback)
+  const tr = (key, fallback) => {
+    if (typeof window.i18n === 'function') {
+      const result = window.i18n(key);
+      if (result !== key) return result;
+    }
+    return fallback;
+  };
+  
   return `
     <!-- Écran 1 -->
     <div class="tutorial-screen" data-screen="1" style="display:block;">
       <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🚀</div>
-        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Bienvenue !</h2>
+        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">${tr('tutorial.welcome', 'Bienvenue !')}</h2>
       </div>
       <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary);">
-        <strong>Les Saboteurs</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">${saboteurs.toLowerCase()}</span> 
-        tentent d'éliminer les <span style="color: var(--neon-cyan);">${astronauts.toLowerCase()}</span> sans être découverts.
+        <strong>Les Saboteurs</strong> ${tr('tutorial.gameDescriptionShort', `est un jeu de déduction sociale où des <span style="color: var(--neon-red);">${saboteurs.toLowerCase()}</span> tentent d'éliminer les <span style="color: var(--neon-cyan);">${astronauts.toLowerCase()}</span> sans être découverts.`)}
       </p>
       <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary);">
-        Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).
+        ${tr('tutorial.phaseAlternationShort', `Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).`)}
       </p>
     </div>
 
@@ -3040,13 +3068,13 @@ function generateTutorialContent() {
     <div class="tutorial-screen" data-screen="2" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🌙</div>
-        <h2 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.8rem; margin: 0;">Phase de nuit</h2>
+        <h2 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.8rem; margin: 0;">${tr('tutorial.nightPhase', 'Phase de nuit')}</h2>
       </div>
       <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
-        <li><strong style="color: var(--neon-red);">${saboteurs}</strong> : choisissent une victime (unanimité requise)</li>
-        <li><strong style="color: var(--neon-cyan);">${tRole('radar')}</strong> : inspecte un joueur (${saboteurs.toLowerCase()[0] + saboteurs.toLowerCase().slice(1, -1)} ou non ?)</li>
-        <li><strong style="color: var(--neon-green);">${tRole('doctor')}</strong> : peut sauver OU tuer (1 vie + 1 mort max)</li>
-        <li><strong style="color: var(--neon-orange);">Rôles spéciaux</strong> : ${tRole('chameleon')}, ${tRole('ai_agent')}, etc.</li>
+        <li><strong style="color: var(--neon-red);">${saboteurs}</strong> : ${tr('tutorial.nightSaboteursAction', 'choisissent une victime (unanimité requise)')}</li>
+        <li><strong style="color: var(--neon-cyan);">${tRole('radar')}</strong> : ${tr('tutorial.nightRadarAction', 'inspecte un joueur (saboteur ou non ?)')}</li>
+        <li><strong style="color: var(--neon-green);">${tRole('doctor')}</strong> : ${tr('tutorial.nightDoctorAction', 'peut sauver OU tuer (1 vie + 1 mort max)')}</li>
+        <li><strong style="color: var(--neon-orange);">${tr('tutorial.specialRolesLabel', 'Rôles spéciaux')}</strong> : ${tRole('chameleon')}, ${tRole('ai_agent')}, etc.</li>
       </ul>
     </div>
 
@@ -3054,98 +3082,98 @@ function generateTutorialContent() {
     <div class="tutorial-screen" data-screen="3" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">☀️</div>
-        <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">Phase de jour</h2>
+        <h2 style="color: var(--neon-orange); font-size: 1.8rem; margin: 0;">${tr('tutorial.dayPhase', 'Phase de jour')}</h2>
       </div>
       <ul style="font-size: 1.05rem; line-height: 1.8; color: var(--text-primary); padding-left: 25px;">
-        <li>Les résultats de la nuit sont révélés (qui est mort ?)</li>
-        <li>Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong></li>
-        <li>Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect</li>
-        <li>Le <strong>${t('captain')}</strong> tranche en cas d'égalité</li>
+        <li>${tr('tutorial.dayResults', 'Les résultats de la nuit sont révélés (qui est mort ?)')}</li>
+        <li>${tr('tutorial.dayDiscussion', 'Tous les joueurs vivants <strong>discutent</strong> et <strong>débattent</strong>')}</li>
+        <li>${tr('tutorial.dayVote', "Un <strong>vote d'éjection</strong> a lieu pour éliminer un suspect")}</li>
+        <li>${tr('tutorial.dayCaptain', `Le <strong>${t('captain')}</strong> tranche en cas d'égalité`)}</li>
       </ul>
       <p style="margin-top: 15px; padding: 12px; background: rgba(255,165,0,0.15); border-left: 3px solid var(--neon-orange); border-radius: 8px; color: var(--text-secondary);">
-        <strong>Astuce :</strong> Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !
+        <strong>${tr('common.tip', 'Astuce')} :</strong> ${tr('tutorial.dayTipText', "Observez les comportements, cherchez les contradictions, et faites confiance à votre instinct !")}
       </p>
     </div>
 
-    <!-- Écran 4 -->
+    <!-- Écran 4 - Visioconférence -->
     <div class="tutorial-screen" data-screen="4" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🎥</div>
-        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Visioconférence</h2>
+        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">${tr('tutorial.videoConference.title', 'Visioconférence')}</h2>
       </div>
       <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">📹 Contrôles Vidéo</h3>
+        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">📹 ${tr('tutorial.videoConference.videoControls', 'Contrôles Vidéo')}</h3>
         <ul style="font-size: 1rem; line-height: 1.7; color: var(--text-primary); padding-left: 20px;">
-          <li><strong>🎤 Micro</strong> : Cliquez pour activer/désactiver votre micro</li>
-          <li><strong>📷 Caméra</strong> : Cliquez pour activer/désactiver votre caméra</li>
-          <li><strong>⬆ Max</strong> : Mode plein écran (briefing étendu)</li>
-          <li><strong>⬕ Split</strong> : Mode 50/50 (jeu + vidéo)</li>
+          <li><strong>🎤 ${tr('tutorial.videoConference.micro', 'Micro')}</strong> : ${tr('tutorial.videoConference.microDesc', 'Cliquez pour activer/désactiver votre micro')}</li>
+          <li><strong>📷 ${tr('tutorial.videoConference.camera', 'Caméra')}</strong> : ${tr('tutorial.videoConference.cameraDesc', 'Cliquez pour activer/désactiver votre caméra')}</li>
+          <li><strong>⬆ Max</strong> : ${tr('tutorial.videoConference.maxMode', 'Mode plein écran (briefing étendu)')}</li>
+          <li><strong>⬕ Split</strong> : ${tr('tutorial.videoConference.splitMode', 'Mode 50/50 (jeu + vidéo)')}</li>
         </ul>
       </div>
       <div>
-        <h3 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.2rem; margin-bottom: 10px;">🔊 Activation Automatique</h3>
+        <h3 style="color: var(--neon-purple, var(--neon-cyan)); font-size: 1.2rem; margin-bottom: 10px;">🔊 ${tr('tutorial.videoConference.autoActivation', 'Activation Automatique')}</h3>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.95rem;">
           <div style="padding: 10px; background: rgba(0,255,0,0.1); border-left: 3px solid var(--neon-green); border-radius: 6px;">
-            <div style="color: var(--neon-green); font-weight: 700; margin-bottom: 5px;">✅ Micro + Caméra ON</div>
-            <div style="color: var(--text-secondary);">• Jour (débat/vote)<br>• Fin de partie<br>• Révélation des rôles</div>
+            <div style="color: var(--neon-green); font-weight: 700; margin-bottom: 5px;">✅ ${tr('tutorial.videoConference.microCameraOn', 'Micro + Caméra ON')}</div>
+            <div style="color: var(--text-secondary);">${tr('tutorial.videoConference.onPhases', '• Jour (débat/vote)<br>• Fin de partie<br>• Révélation des rôles')}</div>
           </div>
           <div style="padding: 10px; background: rgba(128,0,128,0.1); border-left: 3px solid var(--neon-purple, var(--neon-cyan)); border-radius: 6px;">
-            <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 Certains Rôles</div>
-            <div style="color: var(--text-secondary);">• Nuit des ${saboteurs.toLowerCase()}<br>• Échange ${tRole('ai_agent')}<br>• Actions spéciales</div>
+            <div style="color: var(--neon-purple, var(--neon-cyan)); font-weight: 700; margin-bottom: 5px;">🔒 ${tr('tutorial.videoConference.certainRoles', 'Certains Rôles')}</div>
+            <div style="color: var(--text-secondary);">• ${tr('tutorial.videoConference.saboteurNight', `Nuit des ${saboteurs.toLowerCase()}`)}<br>• ${tr('tutorial.videoConference.aiExchange', `Échange ${tRole('ai_agent')}`)}<br>• ${tr('tutorial.videoConference.specialActions', 'Actions spéciales')}</div>
           </div>
         </div>
         <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
-          💡 <strong>Astuce :</strong> Vous pouvez désactiver votre micro/caméra manuellement à tout moment.
+          💡 <strong>${tr('common.tip', 'Astuce')} :</strong> ${tr('tutorial.videoConference.tip', 'Vous pouvez désactiver votre micro/caméra manuellement à tout moment.')}
         </p>
       </div>
     </div>
 
-    <!-- Écran 5 -->
+    <!-- Écran 5 - Visio sur Mobile -->
     <div class="tutorial-screen" data-screen="5" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">📱</div>
-        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">Visio sur Mobile</h2>
+        <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">${tr('tutorial.mobileVideo.title', 'Visio sur Mobile')}</h2>
       </div>
       <div style="margin-bottom: 20px;">
-        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">🎥 Activation sur Mobile</h3>
+        <h3 style="color: var(--neon-orange); font-size: 1.2rem; margin-bottom: 10px;">${tr('tutorial.mobileVideo.mobileActivation', '🎥 Activation sur Mobile')}</h3>
         <ul style="font-size: 1rem; line-height: 1.7; color: var(--text-primary); padding-left: 20px;">
-          <li><strong>1ère connexion</strong> : Autoriser l'accès micro/caméra dans le navigateur</li>
-          <li><strong>Bouton "📹 Visio activée"</strong> : En bas à gauche pour activer/désactiver</li>
-          <li><strong>Après un refresh</strong> : Retaper sur "Activer visio" puis valider</li>
+          <li><strong>${tr('tutorial.mobileVideo.firstConnection', '1ère connexion')}</strong> : ${tr('tutorial.mobileVideo.firstConnectionDesc', "Autoriser l'accès micro/caméra dans le navigateur")}</li>
+          <li><strong>${tr('tutorial.mobileVideo.videoEnabledButton', 'Bouton "📹 Visio activée"')}</strong> : ${tr('tutorial.mobileVideo.videoEnabledButtonDesc', 'En bas à gauche pour activer/désactiver')}</li>
+          <li><strong>${tr('tutorial.mobileVideo.afterRefresh', 'Après un refresh')}</strong> : ${tr('tutorial.mobileVideo.afterRefreshDesc', 'Retaper sur "Activer visio" puis valider')}</li>
         </ul>
       </div>
       <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
         <div style="font-size: 1.8rem; text-align: center; margin-bottom: 10px;">📱 👆</div>
         <div style="text-align: center; color: var(--text-primary); font-size: 1rem; line-height: 1.6;">
-          <strong>Sur PC</strong> : La visio s'active automatiquement<br>
-          <strong>Sur Mobile</strong> : Utiliser le bouton en bas à gauche
+          <strong>${tr('tutorial.mobileVideo.onPC', 'Sur PC')}</strong> : ${tr('tutorial.mobileVideo.onPCDesc', "La visio s'active automatiquement")}<br>
+          <strong>${tr('tutorial.mobileVideo.onMobile', 'Sur Mobile')}</strong> : ${tr('tutorial.mobileVideo.onMobileDesc', 'Utiliser le bouton en bas à gauche')}
         </div>
       </div>
       <p style="margin-top: 12px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 6px; font-size: 0.9rem; color: var(--text-secondary);">
-        💡 <strong>Astuce :</strong> Si la vidéo ne s'affiche pas après refresh, vérifier que le bouton "Visio activée" est bien actif (vert).
+        💡 <strong>${tr('common.tip', 'Astuce')} :</strong> ${tr('tutorial.mobileVideo.tipVideoNotShowing', 'Si la vidéo ne s\'affiche pas après refresh, vérifier que le bouton "Visio activée" est bien actif (vert).')}
       </p>
     </div>
 
-    <!-- Écran 6 -->
+    <!-- Écran 6 - Conditions de victoire -->
     <div class="tutorial-screen" data-screen="6" style="display:none;">
       <div style="text-align:center; margin-bottom: 25px;">
         <div style="font-size: 4rem; margin-bottom: 10px;">🏆</div>
-        <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">Conditions de victoire</h2>
+        <h2 style="color: var(--neon-green); font-size: 1.8rem; margin: 0;">${tr('tutorial.victoryConditions', 'Conditions de victoire')}</h2>
       </div>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
         <div style="padding: 15px; background: rgba(0,255,255,0.1); border: 2px solid var(--neon-cyan); border-radius: 12px;">
           <div style="font-size: 2rem; margin-bottom: 8px;">👨‍🚀</div>
-          <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">${astronauts} gagnent</div>
-          <div style="font-size: 0.95rem; color: var(--text-secondary);">Tous les ${saboteurs.toLowerCase()} sont éjectés</div>
+          <div style="color: var(--neon-cyan); font-weight: 800; margin-bottom: 5px;">${astronauts} ${tr('tutorial.win', 'gagnent')}</div>
+          <div style="font-size: 0.95rem; color: var(--text-secondary);">${tr('tutorial.astronautsWinDesc', `Tous les ${saboteurs.toLowerCase()} sont éjectés`)}</div>
         </div>
         <div style="padding: 15px; background: rgba(255,7,58,0.1); border: 2px solid var(--neon-red); border-radius: 12px;">
           <div style="font-size: 2rem; margin-bottom: 8px;">⚔️</div>
-          <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">${saboteurs} gagnent</div>
-          <div style="font-size: 0.95rem; color: var(--text-secondary);">Nombre de ${saboteurs.toLowerCase()} ≥ ${astronauts.toLowerCase()}</div>
+          <div style="color: var(--neon-red); font-weight: 800; margin-bottom: 5px;">${saboteurs} ${tr('tutorial.win', 'gagnent')}</div>
+          <div style="font-size: 0.95rem; color: var(--text-secondary);">${tr('tutorial.saboteursWinDesc', `Nombre de ${saboteurs.toLowerCase()} ≥ ${astronauts.toLowerCase()}`)}</div>
         </div>
       </div>
       <p style="text-align: center; font-size: 1.1rem; color: var(--neon-green); font-weight: 800;">
-        Prêt à jouer ? Créez ou rejoignez une ${t('mission')} ! 🚀
+        ${tr('tutorial.readyToPlay', `Prêt à jouer ? Créez ou rejoignez une ${t('mission')} !`)} 🚀
       </p>
     </div>
   `;

@@ -124,11 +124,6 @@ window.buildTranslatedRulesHtml = function(cfg) {
         <li>${tr('rules.players711')} : <b>2</b> ${saboteurs.toLowerCase()}</li>
         <li>${tr('rules.players12plus')} : <b>3</b> ${saboteurs.toLowerCase()}</li>
       </ul>
-      
-      <button onclick="document.getElementById('rulesModal').style.display='none'; document.getElementById('tutorialModal').style.display='block'; window.showTutorialScreen && window.showTutorialScreen(1);" 
-        style="width:100%; margin-top:20px; padding:15px; background: linear-gradient(135deg, var(--neon-cyan) 0%, var(--neon-green) 100%); border:none; border-radius:10px; color:#000; font-weight:900; font-size:1.1rem; cursor:pointer;">
-        ${tr('game.buttons.viewTutorial')}
-      </button>
     </div>
   `;
 };
