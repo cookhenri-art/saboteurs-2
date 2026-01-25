@@ -3426,6 +3426,264 @@ const TRANSLATIONS = {
       }
     },
     
+    // V24: Awards (récompenses de fin de partie)
+    awards: {
+      // Titres
+      bestDoctor: {
+        fr: "Meilleur Docteur House",
+        en: "Best Doctor House",
+        es: "Mejor Doctor House",
+        it: "Miglior Dottor House",
+        de: "Bester Doktor House",
+        pt: "Melhor Doutor House",
+        nl: "Beste Dokter House"
+      },
+      butcher: {
+        fr: "Boucher de la Station",
+        en: "Station Butcher",
+        es: "Carnicero de la Estación",
+        it: "Macellaio della Stazione",
+        de: "Metzger der Station",
+        pt: "Açougueiro da Estação",
+        nl: "Slager van het Station"
+      },
+      lynxEye: {
+        fr: "L'œil de Lynx",
+        en: "Lynx Eye",
+        es: "Ojo de Lince",
+        it: "Occhio di Lince",
+        de: "Luchsauge",
+        pt: "Olho de Lince",
+        nl: "Lynx Oog"
+      },
+      goldenLupin: {
+        fr: "Le Lupin d'Or",
+        en: "Golden Lupin",
+        es: "Lupin de Oro",
+        it: "Lupin d'Oro",
+        de: "Goldener Lupin",
+        pt: "Lupin de Ouro",
+        nl: "Gouden Lupin"
+      },
+      terminator: {
+        fr: "Terminator de la Station",
+        en: "Station Terminator",
+        es: "Terminator de la Estación",
+        it: "Terminator della Stazione",
+        de: "Terminator der Station",
+        pt: "Terminator da Estação",
+        nl: "Terminator van het Station"
+      },
+      nervousTrigger: {
+        fr: "Gâchette Nerveuse",
+        en: "Nervous Trigger",
+        es: "Gatillo Nervioso",
+        it: "Grilletto Nervoso",
+        de: "Nervöser Abzug",
+        pt: "Gatilho Nervoso",
+        nl: "Nerveuze Trekker"
+      },
+      criminalAssociation: {
+        fr: "Association de Malfaiteurs",
+        en: "Criminal Association",
+        es: "Asociación Criminal",
+        it: "Associazione Criminale",
+        de: "Verbrechervereinigung",
+        pt: "Associação Criminosa",
+        nl: "Criminele Vereniging"
+      },
+      incognitoSaboteur: {
+        fr: "Saboteur Incognito",
+        en: "Incognito Saboteur",
+        es: "Saboteador Incógnito",
+        it: "Sabotatore Incognito",
+        de: "Inkognito Saboteur",
+        pt: "Sabotador Incógnito",
+        nl: "Incognito Saboteur"
+      },
+      bestCaptain: {
+        fr: "Meilleur Capitaine",
+        en: "Best Captain",
+        es: "Mejor Capitán",
+        it: "Miglior Capitano",
+        de: "Bester Kapitän",
+        pt: "Melhor Capitão",
+        nl: "Beste Kapitein"
+      },
+      worstCaptain: {
+        fr: "Pire Capitaine",
+        en: "Worst Captain",
+        es: "Peor Capitán",
+        it: "Peggior Capitano",
+        de: "Schlechtester Kapitän",
+        pt: "Pior Capitão",
+        nl: "Slechtste Kapitein"
+      },
+      // Textes génériques
+      none: {
+        fr: "Aucun.",
+        en: "None.",
+        es: "Ninguno.",
+        it: "Nessuno.",
+        de: "Keiner.",
+        pt: "Nenhum.",
+        nl: "Geen."
+      },
+      dash: {
+        fr: "—",
+        en: "—",
+        es: "—",
+        it: "—",
+        de: "—",
+        pt: "—",
+        nl: "—"
+      },
+      noSave: {
+        fr: "Aucun sauvetage.",
+        en: "No rescue.",
+        es: "Ningún rescate.",
+        it: "Nessun salvataggio.",
+        de: "Keine Rettung.",
+        pt: "Nenhum resgate.",
+        nl: "Geen redding."
+      },
+      saveCount: {
+        fr: "{count} sauvetage(s) : {names}",
+        en: "{count} rescue(s): {names}",
+        es: "{count} rescate(s): {names}",
+        it: "{count} salvataggio(i): {names}",
+        de: "{count} Rettung(en): {names}",
+        pt: "{count} resgate(s): {names}",
+        nl: "{count} redding(en): {names}"
+      },
+      lifePotionUsed: {
+        fr: "Aucun (potion de vie utilisée).",
+        en: "None (life potion used).",
+        es: "Ninguno (poción de vida usada).",
+        it: "Nessuno (pozione vita usata).",
+        de: "Keiner (Lebenstrank verwendet).",
+        pt: "Nenhum (poção de vida usada).",
+        nl: "Geen (levensdrank gebruikt)."
+      },
+      butcherDetails: {
+        fr: "{doctorName} — Erreurs : {wrongKills} • Non sauvés : {unsaved}",
+        en: "{doctorName} — Errors: {wrongKills} • Not saved: {unsaved}",
+        es: "{doctorName} — Errores: {wrongKills} • No salvados: {unsaved}",
+        it: "{doctorName} — Errori: {wrongKills} • Non salvati: {unsaved}",
+        de: "{doctorName} — Fehler: {wrongKills} • Nicht gerettet: {unsaved}",
+        pt: "{doctorName} — Erros: {wrongKills} • Não salvos: {unsaved}",
+        nl: "{doctorName} — Fouten: {wrongKills} • Niet gered: {unsaved}"
+      },
+      noSaboteurSpotted: {
+        fr: "Aucun saboteur repéré puis éjecté.",
+        en: "No saboteur spotted then ejected.",
+        es: "Ningún saboteador detectado y expulsado.",
+        it: "Nessun sabotatore individuato poi espulso.",
+        de: "Kein Saboteur entdeckt und ausgeworfen.",
+        pt: "Nenhum sabotador detectado e ejetado.",
+        nl: "Geen saboteur gespot dan uitgeworpen."
+      },
+      saboteurSpotted: {
+        fr: "Saboteur(s) repéré(s) puis éjecté(s) : {names}",
+        en: "Saboteur(s) spotted then ejected: {names}",
+        es: "Saboteador(es) detectado(s) y expulsado(s): {names}",
+        it: "Sabotatore(i) individuato(i) poi espulso(i): {names}",
+        de: "Saboteur(e) entdeckt und ausgeworfen: {names}",
+        pt: "Sabotador(es) detectado(s) e ejetado(s): {names}",
+        nl: "Saboteur(s) gespot dan uitgeworpen: {names}"
+      },
+      noSaboteurStolen: {
+        fr: "Aucun saboteur volé.",
+        en: "No saboteur stolen.",
+        es: "Ningún saboteador robado.",
+        it: "Nessun sabotatore rubato.",
+        de: "Kein Saboteur gestohlen.",
+        pt: "Nenhum sabotador roubado.",
+        nl: "Geen saboteur gestolen."
+      },
+      stolenRole: {
+        fr: "A volé le rôle de : {names}",
+        en: "Stole role from: {names}",
+        es: "Robó el rol de: {names}",
+        it: "Ha rubato il ruolo di: {names}",
+        de: "Hat Rolle gestohlen von: {names}",
+        pt: "Roubou o papel de: {names}",
+        nl: "Stal rol van: {names}"
+      },
+      noRevengeOnSaboteur: {
+        fr: "Aucune vengeance sur saboteur.",
+        en: "No revenge on saboteur.",
+        es: "Sin venganza contra saboteador.",
+        it: "Nessuna vendetta su sabotatore.",
+        de: "Keine Rache an Saboteur.",
+        pt: "Sem vingança contra sabotador.",
+        nl: "Geen wraak op saboteur."
+      },
+      noRevengeOnAstronaut: {
+        fr: "Aucune vengeance sur astronaute.",
+        en: "No revenge on astronaut.",
+        es: "Sin venganza contra astronauta.",
+        it: "Nessuna vendetta su astronauta.",
+        de: "Keine Rache an Astronaut.",
+        pt: "Sem vingança contra astronauta.",
+        nl: "Geen wraak op astronaut."
+      },
+      revengeVictims: {
+        fr: "{name} — victime(s) : {victims}",
+        en: "{name} — victim(s): {victims}",
+        es: "{name} — víctima(s): {victims}",
+        it: "{name} — vittima(e): {victims}",
+        de: "{name} — Opfer: {victims}",
+        pt: "{name} — vítima(s): {victims}",
+        nl: "{name} — slachtoffer(s): {victims}"
+      },
+      linkedPlayers: {
+        fr: "{player1} 🤝 {player2}",
+        en: "{player1} 🤝 {player2}",
+        es: "{player1} 🤝 {player2}",
+        it: "{player1} 🤝 {player2}",
+        de: "{player1} 🤝 {player2}",
+        pt: "{player1} 🤝 {player2}",
+        nl: "{player1} 🤝 {player2}"
+      },
+      zeroVotes: {
+        fr: "0 vote contre lui : {names}",
+        en: "0 votes against: {names}",
+        es: "0 votos en contra: {names}",
+        it: "0 voti contro: {names}",
+        de: "0 Stimmen gegen: {names}",
+        pt: "0 votos contra: {names}",
+        nl: "0 stemmen tegen: {names}"
+      },
+      noTiebreakAgainstSaboteur: {
+        fr: "Aucun départage contre saboteur.",
+        en: "No tiebreak against saboteur.",
+        es: "Sin desempate contra saboteador.",
+        it: "Nessun spareggio contro sabotatore.",
+        de: "Kein Stichentscheid gegen Saboteur.",
+        pt: "Sem desempate contra sabotador.",
+        nl: "Geen tiebreak tegen saboteur."
+      },
+      noTiebreakAgainstAstronaut: {
+        fr: "Aucun départage contre astronaute.",
+        en: "No tiebreak against astronaut.",
+        es: "Sin desempate contra astronauta.",
+        it: "Nessun spareggio contro astronauta.",
+        de: "Kein Stichentscheid gegen Astronaut.",
+        pt: "Sem desempate contra astronauta.",
+        nl: "Geen tiebreak tegen astronaut."
+      },
+      eliminated: {
+        fr: "{captains} a éliminé : {targets}",
+        en: "{captains} eliminated: {targets}",
+        es: "{captains} eliminó: {targets}",
+        it: "{captains} ha eliminato: {targets}",
+        de: "{captains} hat eliminiert: {targets}",
+        pt: "{captains} eliminou: {targets}",
+        nl: "{captains} elimineerde: {targets}"
+      }
+    },
+    
     // Invité
     guest: {
       banner: {

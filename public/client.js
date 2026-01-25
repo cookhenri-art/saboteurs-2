@@ -1516,8 +1516,33 @@ function renderEnd() {
       return `${i + 1}. ${d.name}${rl} — ${translatedSource}`;
     }).join("<br>");
     
-    // V25: Awards HTML
-    const awardsHtml = (rep.awards || []).map(a => `<div style="margin:6px 0;"><b>${escapeHtml(a.title)}</b> : ${escapeHtml(a.text)}</div>`).join("");
+    // V24: Awards HTML avec traduction
+    const translateAward = (a) => {
+      let title = a.title;
+      let text = a.text;
+      
+      if (window.i18n && a.titleKey) {
+        const translatedTitle = window.i18n(`game.${a.titleKey}`);
+        if (translatedTitle !== `game.${a.titleKey}`) title = translatedTitle;
+      }
+      
+      if (window.i18n && a.textKey) {
+        let translatedText = window.i18n(`game.${a.textKey}`);
+        if (translatedText !== `game.${a.textKey}`) {
+          // Remplacer les placeholders avec les données
+          if (a.data) {
+            for (const [key, value] of Object.entries(a.data)) {
+              translatedText = translatedText.replace(`{${key}}`, value);
+            }
+          }
+          text = translatedText;
+        }
+      }
+      
+      return `<div style="margin:6px 0;"><b>${escapeHtml(title)}</b> : ${escapeHtml(text)}</div>`;
+    };
+    
+    const awardsHtml = (rep.awards || []).map(a => translateAward(a)).join("");
     
     // V25: Durée de partie formatée
     const formatDuration = (ms) => {
