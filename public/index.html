@@ -655,9 +655,47 @@
     function initTheme() {
       const saved = localStorage.getItem('saboteur_theme') || 'default';
       setTheme(saved);
+      updateThemeAccess();
+    }
+
+    // V32: Thèmes premium (nécessitent un compte pack/subscriber/admin)
+    const PREMIUM_THEMES = ['wizard-academy', 'mythic-realms'];
+    const BASIC_THEMES = ['default', 'werewolf'];
+
+    function canAccessPremiumThemes() {
+      const user = JSON.parse(localStorage.getItem('saboteur_user') || 'null');
+      if (!user) return false;
+      const allowedTypes = ['pack', 'subscriber', 'admin'];
+      return allowedTypes.includes(user.accountType);
+    }
+
+    function updateThemeAccess() {
+      const canAccess = canAccessPremiumThemes();
+      document.querySelectorAll('.theme-btn-large').forEach(btn => {
+        const theme = btn.dataset.theme;
+        if (PREMIUM_THEMES.includes(theme)) {
+          if (canAccess) {
+            btn.classList.remove('locked');
+            btn.style.opacity = '1';
+            btn.title = btn.title.replace(' (Premium)', '');
+          } else {
+            btn.classList.add('locked');
+            btn.style.opacity = '0.5';
+            if (!btn.title.includes('Premium')) {
+              btn.title += ' (Premium)';
+            }
+          }
+        }
+      });
     }
 
     function setTheme(name) {
+      // V32: Bloquer les thèmes premium si pas accès
+      if (PREMIUM_THEMES.includes(name) && !canAccessPremiumThemes()) {
+        showError('Ce thème nécessite un compte Premium ou Pack');
+        name = 'default'; // Revenir au thème par défaut
+      }
+      
       document.documentElement.setAttribute('data-theme', name);
       localStorage.setItem('saboteur_theme', name);
       
@@ -818,6 +856,9 @@
       document.getElementById('userInfo').classList.add('show');
       document.getElementById('homeScreen').classList.add('show');
 
+      // V32: Mettre à jour l'accès aux thèmes
+      updateThemeAccess();
+
       if (currentUser) {
         document.getElementById('displayUsername').textContent = currentUser.username;
         if (currentUser.currentAvatar) {
@@ -865,17 +906,33 @@
       document.getElementById('verificationBanner').classList.remove('show');
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelector('.tab[data-tab="login"]').classList.add('active');
+      
+      // V32: Mettre à jour l'accès aux thèmes (bloqués pour non-connectés)
+      updateThemeAccess();
     }
 
     // Navigation
     function playAsGuest() {
       localStorage.removeItem('saboteur_token');
       localStorage.removeItem('saboteur_user');
-      window.location.href = '/game.html?mode=guest';
+      // V32: Forcer un thème basique pour les invités
+      let theme = localStorage.getItem('saboteur_theme') || 'default';
+      if (PREMIUM_THEMES.includes(theme)) {
+        theme = 'default';
+        localStorage.setItem('saboteur_theme', theme);
+      }
+      window.location.href = '/game.html?mode=guest&theme=' + theme;
     }
 
     function goToGame() { 
-      const theme = localStorage.getItem('saboteur_theme') || 'default';
+      let theme = localStorage.getItem('saboteur_theme') || 'default';
+      // V32: Vérifier l'accès aux thèmes premium
+      if (PREMIUM_THEMES.includes(theme) && !canAccessPremiumThemes()) {
+        showError('Ce thème nécessite un compte Premium ou Pack');
+        theme = 'default';
+        localStorage.setItem('saboteur_theme', theme);
+        setTheme(theme);
+      }
       window.location.href = '/game.html?theme=' + theme; 
     }
     function goToAvatars() { window.location.href = '/avatar.html'; }
