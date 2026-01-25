@@ -492,6 +492,9 @@
     // Emoji de capitaine selon le thème
     const captainEmoji = '⭐';
     
+    // V33: Traduction du texte "est élu Capitaine"
+    const electedText = window.i18n ? window.i18n('game.ui.isElectedCaptain') : 'est élu Capitaine !';
+    
     overlay.innerHTML = `
       ${avatarHtml}
       <div style="
@@ -499,7 +502,7 @@
         animation: captainBounce 1s ease-out;
         text-shadow: 0 0 30px gold, 0 0 60px gold;
       ">${captainEmoji}</div>
-      ${captainName ? `<div style="font-size: 1.3rem; color: gold; font-weight: bold; margin-top: 15px; text-shadow: 0 0 10px gold;">${captainName} est élu Capitaine !</div>` : ''}
+      ${captainName ? `<div style="font-size: 1.3rem; color: gold; font-weight: bold; margin-top: 15px; text-shadow: 0 0 10px gold;">${captainName} ${electedText}</div>` : ''}
     `;
     
     document.body.appendChild(overlay);
