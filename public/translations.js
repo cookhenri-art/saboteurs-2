@@ -1323,6 +1323,15 @@ const TRANSLATIONS = {
         pt: "Verifique seu papel e valide.",
         nl: "Bekijk je rol en bevestig."
       },
+      rolesChanged: {
+        fr: "Les rôles ont pu changer. Revérifiez.",
+        en: "Roles may have changed. Please re-check.",
+        es: "Los roles pueden haber cambiado. Verifica de nuevo.",
+        it: "I ruoli potrebbero essere cambiati. Ricontrolla.",
+        de: "Rollen könnten sich geändert haben. Bitte erneut prüfen.",
+        pt: "Os papéis podem ter mudado. Verifique novamente.",
+        nl: "Rollen kunnen zijn veranderd. Controleer opnieuw."
+      },
       captainCandidacy: {
         fr: "Choisis si tu te présentes au poste de capitaine.",
         en: "Choose whether to run for captain.",
@@ -1659,6 +1668,15 @@ const TRANSLATIONS = {
         de: "Radar",
         pt: "Radar",
         nl: "Radar"
+      },
+      missionLabel: {
+        fr: "MISSION",
+        en: "MISSION",
+        es: "MISIÓN",
+        it: "MISSIONE",
+        de: "MISSION",
+        pt: "MISSÃO",
+        nl: "MISSIE"
       }
     },
     

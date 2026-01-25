@@ -175,6 +175,12 @@ function translateGamePage() {
     missionCodeLabel.textContent = tr('game.lobby.missionCode');
   }
 
+  // V20: Mission label in HUD (above room code)
+  const missionLabel = document.getElementById('missionLabel');
+  if (missionLabel) {
+    missionLabel.textContent = tr('game.ui.missionLabel');
+  }
+
   // Membres d'équipage
   const crewMembersLabel = document.getElementById('crewMembersLabel');
   if (crewMembersLabel) {
