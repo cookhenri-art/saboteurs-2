@@ -288,24 +288,28 @@ function formatPhaseTitle(s) {
     }
     return fallback;
   };
+  
+  // V33: Utiliser i18n pour captain au lieu de t() pour avoir la traduction multilingue
+  const captainName = window.i18n ? window.i18n('game.ui.captain') : t('captain');
+  const saboName = tRole('saboteur', true); // Pluriel traduit
 
   const map = {
     LOBBY: "LOBBY",
     ROLE_REVEAL: tr('game.phases.roleVerification', "VÉRIFICATION DU RÔLE"),
-    CAPTAIN_CANDIDACY: tr('game.phases.captainCandidacy', `CANDIDATURE ${t('captain').toUpperCase()}`),
-    CAPTAIN_VOTE: tr('game.phases.captainVote', `VOTE ${t('captain').toUpperCase()}`),
-    NIGHT_START: tr('game.phases.nightStart', `NUIT ${night} — DÉBUT`).replace('{night}', night),
+    CAPTAIN_CANDIDACY: tr('game.phases.captainCandidacy', `CANDIDATURE {captain}`).replace('{captain}', captainName.toUpperCase()),
+    CAPTAIN_VOTE: tr('game.phases.captainVote', `VOTE {captain}`).replace('{captain}', captainName.toUpperCase()),
+    NIGHT_START: tr('game.phases.nightStart', `NUIT {night} — DÉBUT`).replace('{night}', night),
     NIGHT_CHAMELEON: tr('game.phases.nightRole', `NUIT — {role}`).replace('{role}', tRole('chameleon').toUpperCase()),
     NIGHT_AI_AGENT: tr('game.phases.nightRoleLiaison', `NUIT — {role} (LIAISON)`).replace('{role}', tRole('ai_agent').toUpperCase()),
     NIGHT_AI_EXCHANGE: tr('game.phases.nightExchangePrivate', `NUIT — ÉCHANGE {role} (PRIVÉ)`).replace('{role}', tRole('ai_agent').toUpperCase()),
     NIGHT_RADAR: tr('game.phases.nightRole', `NUIT — {role}`).replace('{role}', tRole('radar').toUpperCase()),
-    NIGHT_SABOTEURS: tr('game.phases.nightSaboteurs', `NUIT — {role} (UNANIMITÉ)`).replace('{role}', t('saboteurs').toUpperCase()),
+    NIGHT_SABOTEURS: tr('game.phases.nightSaboteurs', `NUIT — {role} (UNANIMITÉ)`).replace('{role}', saboName.toUpperCase()),
     NIGHT_DOCTOR: tr('game.phases.nightRole', `NUIT — {role}`).replace('{role}', tRole('doctor').toUpperCase()),
     NIGHT_RESULTS: tr('game.phases.nightResults', `RÉSULTATS NUIT {night}`).replace('{night}', night),
     DAY_WAKE: tr('game.phases.dayWake', `JOUR {day} — RÉVEIL`).replace('{day}', day),
-    DAY_CAPTAIN_TRANSFER: tr('game.phases.dayCaptainTransfer', `JOUR {day} — TRANSMISSION DU {captain}`).replace('{day}', day).replace('{captain}', t('captain').toUpperCase()),
+    DAY_CAPTAIN_TRANSFER: tr('game.phases.dayCaptainTransfer', `JOUR {day} — TRANSMISSION DU {captain}`).replace('{day}', day).replace('{captain}', captainName.toUpperCase()),
     DAY_VOTE: tr('game.phases.dayVote', `JOUR {day} — VOTE D'ÉJECTION`).replace('{day}', day),
-    DAY_TIEBREAK: tr('game.phases.dayTiebreak', `JOUR {day} — DÉPARTAGE ({captain})`).replace('{day}', day).replace('{captain}', t('captain').toUpperCase()),
+    DAY_TIEBREAK: tr('game.phases.dayTiebreak', `JOUR {day} — DÉPARTAGE ({captain})`).replace('{day}', day).replace('{captain}', captainName.toUpperCase()),
     DAY_RESULTS: tr('game.phases.dayResults', `JOUR {day} — RÉSULTATS`).replace('{day}', day),
     REVENGE: tr('game.phases.revenge', `VENGEANCE — {role}`).replace('{role}', tRole('security').toUpperCase()),
     GAME_OVER: tr('game.phases.gameOver', "FIN DE PARTIE"),
@@ -1120,8 +1124,10 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
 
   if (state.phase === "NIGHT_CHAMELEON") {
     const alive = state.players.filter(p => p.status === "alive");
-    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Échanger", (id) => socket.emit("phaseAction", { targetId: id })));
-    controls.appendChild(makeHint(`${tRole('chameleon')} : Nuit 1 uniquement. Un seul usage dans toute la partie.`));
+    const swapVerb = window.i18n ? window.i18n('game.actions.swap') : "Échanger";
+    controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), swapVerb, (id) => socket.emit("phaseAction", { targetId: id })));
+    const chameleonHint = window.i18n ? window.i18n('game.hints.chameleonHint') : `${tRole('chameleon')} : Nuit 1 uniquement. Un seul usage dans toute la partie.`;
+    controls.appendChild(makeHint(chameleonHint));
   }
 
   if (state.phase === "NIGHT_AI_AGENT") {
@@ -1185,7 +1191,8 @@ if (state.phase === "CAPTAIN_CANDIDACY") {
     controls.appendChild(sel);
     controls.appendChild(btnLink);
     controls.appendChild(btnSkip);
-    controls.appendChild(makeHint(`Nuit 1 uniquement. La liaison est entre toi (${tRole('ai_agent')}) et le joueur choisi.`));
+    const aiAgentHint = window.i18n ? window.i18n('game.hints.aiAgentHint') : `Nuit 1 uniquement. La liaison est entre toi (${tRole('ai_agent')}) et le joueur choisi.`;
+    controls.appendChild(makeHint(aiAgentHint));
   }
 
   // NIGHT_AI_EXCHANGE: Phase privée où l'Agent IA et son partenaire lié doivent valider
@@ -1239,15 +1246,19 @@ if (radarLine) {
   box.style.borderRadius = "12px";
   box.style.border = "1px solid rgba(0,255,255,0.25)";
   box.style.background = "rgba(0,0,0,0.25)";
-  box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🔎 Radar</div>` +
+  const radarLabel = window.i18n ? window.i18n('game.ui.radar') : "Radar";
+  box.innerHTML = `<div style="font-weight:900; margin-bottom:6px;">🔎 ${radarLabel}</div>` +
     `<div style="opacity:.95; font-weight:800;">${escapeHtml(radarLine)}</div>`;
   controls.appendChild(box);
 }
-controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
+const readResultHint = window.i18n ? window.i18n('game.hints.readResultThenValidate') : "Lis le résultat puis valide pour continuer.";
+controls.appendChild(makeHint(readResultHint));
     } else {
       const alive = state.players.filter(p => p.status === "alive" && p.playerId !== state.you?.playerId);
-      controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Inspecter", (id) => socket.emit("phaseAction", { targetId: id }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); })));
-      controls.appendChild(makeHint("Choisis un joueur à inspecter. Ensuite, lis le résultat puis valide."));
+      const inspectVerb = window.i18n ? window.i18n('game.actions.inspect') : "Inspecter";
+      controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), inspectVerb, (id) => socket.emit("phaseAction", { targetId: id }, (r) => { if (r?.ok === false) setError(r.error || "Erreur"); })));
+      const radarHint = window.i18n ? window.i18n('game.hints.radarHint') : "Choisis un joueur à inspecter. Ensuite, lis le résultat puis valide.";
+      controls.appendChild(makeHint(radarHint));
     }
   }
 
@@ -1282,7 +1293,8 @@ controls.appendChild(makeHint("Lis le résultat puis valide pour continuer."));
       }
     }
     controls.appendChild(grid);
-    controls.appendChild(makeHint(`Vote UNANIME entre ${t('saboteurs').toLowerCase()}. Impossible de viser un ${tRole('saboteur').toLowerCase()} (ni toi-même).`));
+    const saboteursHint = window.i18n ? window.i18n('game.hints.saboteursHint') : `Vote UNANIME entre ${t('saboteurs').toLowerCase()}. Impossible de viser un ${tRole('saboteur').toLowerCase()} (ni toi-même).`;
+    controls.appendChild(makeHint(saboteursHint));
   }
 
   if (state.phase === "NIGHT_DOCTOR") {

@@ -1158,22 +1158,22 @@ const TRANSLATIONS = {
         nl: "ROLVERIFICATIE"
       },
       captainCandidacy: {
-        fr: "CANDIDATURE CAPITAINE",
-        en: "CAPTAIN CANDIDACY",
-        es: "CANDIDATURA CAPITÁN",
-        it: "CANDIDATURA CAPITANO",
-        de: "KAPITÄNS-KANDIDATUR",
-        pt: "CANDIDATURA CAPITÃO",
-        nl: "KAPITEIN KANDIDATUUR"
+        fr: "CANDIDATURE {captain}",
+        en: "{captain} CANDIDACY",
+        es: "CANDIDATURA {captain}",
+        it: "CANDIDATURA {captain}",
+        de: "{captain}-KANDIDATUR",
+        pt: "CANDIDATURA {captain}",
+        nl: "{captain} KANDIDATUUR"
       },
       captainVote: {
-        fr: "VOTE CAPITAINE",
-        en: "CAPTAIN VOTE",
-        es: "VOTO CAPITÁN",
-        it: "VOTO CAPITANO",
-        de: "KAPITÄNS-WAHL",
-        pt: "VOTO CAPITÃO",
-        nl: "KAPITEIN STEMMING"
+        fr: "VOTE {captain}",
+        en: "{captain} VOTE",
+        es: "VOTO {captain}",
+        it: "VOTO {captain}",
+        de: "{captain}-WAHL",
+        pt: "VOTO {captain}",
+        nl: "{captain} STEMMING"
       },
       nightStart: {
         fr: "NUIT {night} — DÉBUT",
@@ -1534,6 +1534,15 @@ const TRANSLATIONS = {
         pt: "agindo...",
         nl: "handelt..."
       },
+      radar: {
+        fr: "Radar",
+        en: "Radar",
+        es: "Radar",
+        it: "Radar",
+        de: "Radar",
+        pt: "Radar",
+        nl: "Radar"
+      },
       linkedTo: {
         fr: "Lié à",
         en: "Linked to",
@@ -1641,6 +1650,15 @@ const TRANSLATIONS = {
         de: "Saboteure kommunizieren...",
         pt: "Sabotadores comunicando...",
         nl: "Saboteurs communiceren..."
+      },
+      radar: {
+        fr: "Radar",
+        en: "Radar",
+        es: "Radar",
+        it: "Radar",
+        de: "Radar",
+        pt: "Radar",
+        nl: "Radar"
       }
     },
     
@@ -1761,6 +1779,15 @@ const TRANSLATIONS = {
         de: "Wähle einen Spieler zum Untersuchen. Dann lies das Ergebnis und bestätige.",
         pt: "Escolha um jogador para inspecionar. Depois leia o resultado e valide.",
         nl: "Kies een speler om te inspecteren. Lees dan het resultaat en bevestig."
+      },
+      readResultThenValidate: {
+        fr: "Lis le résultat puis valide pour continuer.",
+        en: "Read the result then validate to continue.",
+        es: "Lee el resultado y valida para continuar.",
+        it: "Leggi il risultato poi conferma per continuare.",
+        de: "Lies das Ergebnis dann bestätige um fortzufahren.",
+        pt: "Leia o resultado e valide para continuar.",
+        nl: "Lees het resultaat en bevestig om door te gaan."
       },
       saboteursHint: {
         fr: "Vote UNANIME entre saboteurs. Impossible de viser un saboteur (ni toi-même).",
@@ -2069,73 +2096,6 @@ const TRANSLATIONS = {
       }
     },
     
-    // Phases de jeu
-    phases: {
-      roleReveal: {
-        fr: "RÉVÉLATION DES RÔLES",
-        en: "ROLE REVEAL",
-        es: "REVELACIÓN DE ROLES",
-        it: "RIVELAZIONE DEI RUOLI",
-        de: "ROLLENAUFDECKUNG",
-        pt: "REVELAÇÃO DE PAPÉIS",
-        nl: "ROLONTHULLING"
-      },
-      captainElection: {
-        fr: "ÉLECTION DU CAPITAINE",
-        en: "CAPTAIN ELECTION",
-        es: "ELECCIÓN DEL CAPITÁN",
-        it: "ELEZIONE DEL CAPITANO",
-        de: "KAPITÄNSWAHL",
-        pt: "ELEIÇÃO DO CAPITÃO",
-        nl: "KAPITEINVERKIEZING"
-      },
-      night: {
-        fr: "NUIT",
-        en: "NIGHT",
-        es: "NOCHE",
-        it: "NOTTE",
-        de: "NACHT",
-        pt: "NOITE",
-        nl: "NACHT"
-      },
-      day: {
-        fr: "JOUR",
-        en: "DAY",
-        es: "DÍA",
-        it: "GIORNO",
-        de: "TAG",
-        pt: "DIA",
-        nl: "DAG"
-      },
-      discussion: {
-        fr: "DISCUSSION",
-        en: "DISCUSSION",
-        es: "DISCUSIÓN",
-        it: "DISCUSSIONE",
-        de: "DISKUSSION",
-        pt: "DISCUSSÃO",
-        nl: "DISCUSSIE"
-      },
-      vote: {
-        fr: "VOTE",
-        en: "VOTE",
-        es: "VOTACIÓN",
-        it: "VOTAZIONE",
-        de: "ABSTIMMUNG",
-        pt: "VOTAÇÃO",
-        nl: "STEMMING"
-      },
-      gameOver: {
-        fr: "FIN DE PARTIE",
-        en: "GAME OVER",
-        es: "FIN DEL JUEGO",
-        it: "FINE PARTITA",
-        de: "SPIELENDE",
-        pt: "FIM DE JOGO",
-        nl: "EINDE SPEL"
-      }
-    },
-    
     // Rôles (générique - les thèmes override)
     roles: {
       crewmate: {
@@ -2272,6 +2232,15 @@ const TRANSLATIONS = {
         pt: "Pular",
         nl: "Overslaan"
       },
+      inspect: {
+        fr: "Inspecter",
+        en: "Inspect",
+        es: "Inspeccionar",
+        it: "Ispeziona",
+        de: "Untersuchen",
+        pt: "Inspecionar",
+        nl: "Inspecteren"
+      },
       confirm: {
         fr: "Confirmer",
         en: "Confirm",
@@ -2361,6 +2330,15 @@ const TRANSLATIONS = {
         de: "Aktion nicht registriert (instabile Verbindung?). Versuche es erneut.",
         pt: "Ação não registrada (conexão instável?). Tente novamente.",
         nl: "Actie niet geregistreerd (instabiele verbinding?). Probeer opnieuw."
+      },
+      swap: {
+        fr: "Échanger",
+        en: "Swap",
+        es: "Intercambiar",
+        it: "Scambia",
+        de: "Tauschen",
+        pt: "Trocar",
+        nl: "Wisselen"
       }
     },
     
