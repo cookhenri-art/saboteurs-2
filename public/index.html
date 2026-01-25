@@ -832,6 +832,11 @@
       const currentTheme = localStorage.getItem('saboteur_theme') || 'default';
       const themeNames = getThemeNames();
       document.getElementById('selectedThemeName').textContent = themeNames[currentTheme] || themeNames['default'];
+      
+      // V33: Mettre à jour les crédits vidéo
+      if (currentUser && typeof updateVideoCreditsDisplay === 'function') {
+        updateVideoCreditsDisplay(currentUser.videoCredits);
+      }
     };
 
     // V32: Thèmes premium (nécessitent un compte pack/subscriber/admin)
