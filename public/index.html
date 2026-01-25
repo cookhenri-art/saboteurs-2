@@ -373,29 +373,42 @@
   <!-- Sélecteur de thème amélioré -->
   <div class="theme-selector-panel">
     <div class="theme-selector-header">
-      <span class="theme-selector-title">🎨 CHOISIS TON UNIVERS</span>
-      <span class="theme-selector-subtitle">Ce thème sera appliqué à ta partie</span>
+      <span class="theme-selector-title" data-i18n="index.themeSelector.title">🎨 CHOISIS TON UNIVERS</span>
+      <span class="theme-selector-subtitle" data-i18n="index.themeSelector.subtitle">Ce thème sera appliqué à ta partie</span>
     </div>
     <div class="theme-buttons-row">
       <button class="theme-btn-large active" data-theme="default" title="Infiltration Spatiale">
         <span class="theme-emoji">🚀</span>
-        <span class="theme-name">Spatial</span>
+        <span class="theme-name" data-i18n="index.themes.spatial">Spatial</span>
       </button>
       <button class="theme-btn-large" data-theme="werewolf" title="Village des Loups-Garous">
         <span class="theme-emoji">🐺</span>
-        <span class="theme-name">Loup-Garou</span>
+        <span class="theme-name" data-i18n="index.themes.werewolf">Loup-Garou</span>
       </button>
       <button class="theme-btn-large" data-theme="wizard-academy" title="Académie des Sorciers">
         <span class="theme-emoji">🧙</span>
-        <span class="theme-name">Sorciers</span>
+        <span class="theme-name" data-i18n="index.themes.wizardAcademy">Sorciers</span>
       </button>
       <button class="theme-btn-large" data-theme="mythic-realms" title="Royaumes Mythiques">
         <span class="theme-emoji">⚔️</span>
-        <span class="theme-name">Mythique</span>
+        <span class="theme-name" data-i18n="index.themes.mythicRealms">Mythique</span>
       </button>
     </div>
     <div class="theme-selected-indicator" id="themeIndicator">
-      <span>✨ Thème sélectionné : </span><strong id="selectedThemeName">Spatial</strong>
+      <span data-i18n="index.themeSelector.selected">✨ Thème sélectionné : </span><strong id="selectedThemeName">Spatial</strong>
+    </div>
+    
+    <!-- Sélecteur de langue -->
+    <div class="language-selector-container">
+      <div class="language-selector" id="languageSelector">
+        <button class="lang-flag" data-lang="fr" title="Français" onclick="changeLanguage('fr')">🇫🇷</button>
+        <button class="lang-flag" data-lang="en" title="English" onclick="changeLanguage('en')">🇬🇧</button>
+        <button class="lang-flag" data-lang="es" title="Español" onclick="changeLanguage('es')">🇪🇸</button>
+        <button class="lang-flag" data-lang="it" title="Italiano" onclick="changeLanguage('it')">🇮🇹</button>
+        <button class="lang-flag" data-lang="de" title="Deutsch" onclick="changeLanguage('de')">🇩🇪</button>
+        <button class="lang-flag" data-lang="pt" title="Português" onclick="changeLanguage('pt')">🇵🇹</button>
+        <button class="lang-flag" data-lang="nl" title="Nederlands" onclick="changeLanguage('nl')">🇳🇱</button>
+      </div>
     </div>
   </div>
 
@@ -498,6 +511,43 @@
       color: var(--neon-main, #00ffff);
     }
     
+    /* Sélecteur de langue */
+    .language-selector-container {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    
+    .language-selector {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    
+    .lang-flag {
+      font-size: 1.4rem;
+      background: transparent;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      padding: 4px 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      opacity: 0.6;
+    }
+    
+    .lang-flag:hover {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    
+    .lang-flag.active {
+      opacity: 1;
+      border-color: var(--neon-main, #00ffff);
+      background: rgba(0, 255, 255, 0.1);
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+    
     @media (max-width: 480px) {
       .theme-selector-panel {
         position: relative;
@@ -521,8 +571,8 @@
 
   <div class="main-container">
     <div class="header">
-      <h1 class="logo-title">LES SABOTEURS</h1>
-      <p class="subtitle">⚡ JEU DE DÉDUCTION SOCIALE ⚡</p>
+      <h1 class="logo-title" data-i18n="index.title">LES SABOTEURS</h1>
+      <p class="subtitle">⚡ <span data-i18n="index.subtitle">JEU DE DÉDUCTION SOCIALE</span> ⚡</p>
     </div>
 
     <div class="auth-card">
@@ -541,41 +591,41 @@
       </div>
 
       <div class="tabs" id="authTabs">
-        <div class="tab active" data-tab="login">CONNEXION</div>
-        <div class="tab" data-tab="register">INSCRIPTION</div>
+        <div class="tab active" data-tab="login" data-i18n="index.auth.login">CONNEXION</div>
+        <div class="tab" data-tab="register" data-i18n="index.auth.register">INSCRIPTION</div>
       </div>
 
       <!-- Login Form -->
       <div class="form-container active" id="loginForm">
         <div class="form-group">
-          <label>EMAIL</label>
-          <input type="email" id="loginEmail" placeholder="ton@email.com" autocomplete="email">
+          <label data-i18n="index.auth.email">EMAIL</label>
+          <input type="email" id="loginEmail" data-i18n-placeholder="index.auth.emailPlaceholder" placeholder="ton@email.com" autocomplete="email">
         </div>
         <div class="form-group">
-          <label>MOT DE PASSE</label>
+          <label data-i18n="index.auth.password">MOT DE PASSE</label>
           <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
         </div>
-        <button class="btn btn-primary btn-full" id="loginBtn" onclick="login()">
+        <button class="btn btn-primary btn-full" id="loginBtn" onclick="login()" data-i18n="index.auth.loginButton">
           🚀 CONNEXION
         </button>
-        <div class="divider"><span>OU</span></div>
-        <button class="btn-guest" onclick="playAsGuest()">
-          👤 JOUER EN INVITÉ (Chat uniquement)
+        <div class="divider"><span data-i18n="index.auth.or">OU</span></div>
+        <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
+          🎮 Jouer en tant qu'invité
         </button>
       </div>
 
       <!-- Register Form -->
       <div class="form-container" id="registerForm">
         <div class="form-group">
-          <label>PSEUDO</label>
-          <input type="text" id="registerUsername" placeholder="Ton pseudo de joueur" maxlength="20">
+          <label data-i18n="index.auth.username">PSEUDO</label>
+          <input type="text" id="registerUsername" data-i18n-placeholder="index.auth.usernamePlaceholder" placeholder="Ton pseudo de joueur" maxlength="20">
         </div>
         <div class="form-group">
-          <label>EMAIL</label>
-          <input type="email" id="registerEmail" placeholder="ton@email.com">
+          <label data-i18n="index.auth.email">EMAIL</label>
+          <input type="email" id="registerEmail" data-i18n-placeholder="index.auth.emailPlaceholder" placeholder="ton@email.com">
         </div>
         <div class="form-group">
-          <label>MOT DE PASSE</label>
+          <label data-i18n="index.auth.password">MOT DE PASSE</label>
           <input type="password" id="registerPassword" placeholder="Minimum 6 caractères">
         </div>
         
@@ -588,21 +638,21 @@
           </div>
         </div>
 
-        <button class="btn btn-primary btn-full" id="registerBtn" onclick="register()">
-          ✨ CRÉER MON COMPTE
+        <button class="btn btn-primary btn-full" id="registerBtn" onclick="register()" data-i18n="index.auth.registerButton">
+          🚀 CRÉER MON COMPTE
         </button>
-        <div class="divider"><span>OU</span></div>
-        <button class="btn-guest" onclick="playAsGuest()">
-          👤 JOUER EN INVITÉ (Chat uniquement)
+        <div class="divider"><span data-i18n="index.auth.or">OU</span></div>
+        <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
+          🎮 Jouer en tant qu'invité
         </button>
       </div>
 
       <!-- Home Screen -->
       <div class="home-screen" id="homeScreen">
-        <button class="btn btn-primary btn-full" onclick="goToGame()">🎮 JOUER MAINTENANT</button>
-        <button class="btn btn-secondary btn-full" onclick="goToAvatars()">🎨 CRÉER MON AVATAR IA</button>
-        <button class="btn btn-secondary btn-full" onclick="showChangePassword()">🔐 MODIFIER MOT DE PASSE</button>
-        <button class="btn btn-secondary btn-full" onclick="logout()">🚪 DÉCONNEXION</button>
+        <button class="btn btn-primary btn-full" onclick="goToGame()" data-i18n="index.profile.playNow">🎮 JOUER MAINTENANT</button>
+        <button class="btn btn-secondary btn-full" onclick="goToAvatars()" data-i18n="index.profile.createAvatar">🎨 CRÉER MON AVATAR IA</button>
+        <button class="btn btn-secondary btn-full" onclick="showChangePassword()" data-i18n="index.profile.changePassword">🔐 MODIFIER MOT DE PASSE</button>
+        <button class="btn btn-secondary btn-full" onclick="logout()" data-i18n="index.profile.logout">🚪 DÉCONNEXION</button>
       </div>
 
       <!-- Modal changement mot de passe -->
@@ -640,23 +690,58 @@
     </div>
   </div>
 
+  <!-- Script de traductions -->
+  <script src="translations.js"></script>
+  
   <script>
     const API_URL = '';
     let currentUser = null;
 
-    // Theme
-    const themeNames = {
-      'default': 'Spatial',
-      'werewolf': 'Loup-Garou',
-      'wizard-academy': 'Sorciers',
-      'mythic-realms': 'Mythique'
-    };
+    // Theme - noms traduits dynamiquement
+    function getThemeNames() {
+      const lang = getCurrentLanguage();
+      return {
+        'default': t('index.themes.spatial', lang),
+        'werewolf': t('index.themes.werewolf', lang),
+        'wizard-academy': t('index.themes.wizardAcademy', lang),
+        'mythic-realms': t('index.themes.mythicRealms', lang)
+      };
+    }
     
     function initTheme() {
       const saved = localStorage.getItem('saboteur_theme') || 'default';
       setTheme(saved);
       updateThemeAccess();
     }
+    
+    // Initialisation de la langue
+    function initLanguage() {
+      const lang = getCurrentLanguage();
+      
+      // Marquer le drapeau actif
+      document.querySelectorAll('.lang-flag').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+      
+      // Traduire la page
+      translatePage(lang);
+      
+      // Mettre à jour le nom du thème sélectionné
+      const currentTheme = localStorage.getItem('saboteur_theme') || 'default';
+      const themeNames = getThemeNames();
+      document.getElementById('selectedThemeName').textContent = themeNames[currentTheme] || themeNames['default'];
+    }
+    
+    // Surcharger changeLanguage pour mettre à jour le nom du thème
+    const originalChangeLanguage = changeLanguage;
+    changeLanguage = function(langCode) {
+      originalChangeLanguage(langCode);
+      
+      // Mettre à jour le nom du thème après changement de langue
+      const currentTheme = localStorage.getItem('saboteur_theme') || 'default';
+      const themeNames = getThemeNames();
+      document.getElementById('selectedThemeName').textContent = themeNames[currentTheme] || themeNames['default'];
+    };
 
     // V32: Thèmes premium (nécessitent un compte pack/subscriber/admin)
     const PREMIUM_THEMES = ['wizard-academy', 'mythic-realms'];
@@ -1003,6 +1088,7 @@
     // Init
     async function init() {
       initTheme();
+      initLanguage(); // Initialiser les traductions
       createParticles();
 
       const token = localStorage.getItem('saboteur_token');
