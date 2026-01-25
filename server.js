@@ -178,6 +178,7 @@ async function initAuthDatabase() {
       video_credits INTEGER DEFAULT 2,
       avatars_used INTEGER DEFAULT 0,
       current_avatar TEXT,
+      custom_avatar TEXT,
       created_from_ip TEXT,
       last_video_ip TEXT,
       lifetime_games INTEGER DEFAULT 0,
@@ -222,6 +223,14 @@ async function initAuthDatabase() {
       played_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
   `);
+
+  // V32: Migration - Ajouter colonne custom_avatar si elle n'existe pas
+  try {
+    authDb.run("ALTER TABLE users ADD COLUMN custom_avatar TEXT");
+    console.log("✅ Migration: colonne custom_avatar ajoutée");
+  } catch(e) {
+    // La colonne existe déjà, c'est OK
+  }
 
   saveAuthDatabase();
   console.log("✅ Base de données auth initialisée");
@@ -2848,6 +2857,117 @@ app.delete("/api/avatars/delete", authenticateToken, (req, res) => {
   } catch (error) {
     console.error("❌ Erreur suppression avatar:", error);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// ============================================================================
+// V32: AVATAR PERSO (UPLOAD)
+// ============================================================================
+
+// Configuration multer pour upload d'avatars custom
+const avatarUploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = path.join(__dirname, 'public', 'avatars', 'custom');
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = `custom_${req.user.id}_${Date.now()}.webp`;
+    cb(null, uniqueName);
+  }
+});
+
+const avatarUpload = multer({
+  storage: avatarUploadStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 Mo max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Format non supporté'), false);
+    }
+  }
+});
+
+// Récupérer l'avatar custom de l'utilisateur
+app.get("/api/avatar/my-custom", authenticateToken, (req, res) => {
+  try {
+    const user = dbGet("SELECT custom_avatar FROM users WHERE id = ?", [req.user.id]);
+    res.json({ ok: true, customAvatar: user?.custom_avatar || null });
+  } catch (error) {
+    console.error("❌ Erreur get custom avatar:", error);
+    res.status(500).json({ ok: false, error: "Erreur serveur" });
+  }
+});
+
+// Upload d'un avatar custom
+app.post("/api/avatar/upload-custom", authenticateToken, avatarUpload.single('avatar'), (req, res) => {
+  try {
+    // Vérifier email vérifié
+    const user = dbGet("SELECT email_verified, custom_avatar FROM users WHERE id = ?", [req.user.id]);
+    if (!user?.email_verified) {
+      // Supprimer le fichier uploadé
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(403).json({ ok: false, error: "Vérifie ton email d'abord" });
+    }
+    
+    // Supprimer l'ancien avatar custom s'il existe
+    if (user.custom_avatar) {
+      const oldPath = path.join(__dirname, 'public', user.custom_avatar);
+      if (fs.existsSync(oldPath)) {
+        fs.unlinkSync(oldPath);
+      }
+    }
+    
+    const avatarUrl = `/avatars/custom/${req.file.filename}`;
+    
+    // Enregistrer dans la base
+    dbRun("UPDATE users SET custom_avatar = ? WHERE id = ?", [avatarUrl, req.user.id]);
+    
+    console.log(`📸 Avatar custom uploadé pour user ${req.user.id}: ${avatarUrl}`);
+    
+    res.json({ ok: true, avatarUrl });
+    
+  } catch (error) {
+    console.error("❌ Erreur upload custom avatar:", error);
+    if (req.file) {
+      try { fs.unlinkSync(req.file.path); } catch(e) {}
+    }
+    res.status(500).json({ ok: false, error: "Erreur serveur" });
+  }
+});
+
+// Supprimer l'avatar custom
+app.delete("/api/avatar/delete-custom", authenticateToken, (req, res) => {
+  try {
+    const user = dbGet("SELECT custom_avatar FROM users WHERE id = ?", [req.user.id]);
+    
+    if (user?.custom_avatar) {
+      // Supprimer le fichier
+      const filePath = path.join(__dirname, 'public', user.custom_avatar);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+      
+      // Réinitialiser dans la base
+      dbRun("UPDATE users SET custom_avatar = NULL WHERE id = ?", [req.user.id]);
+      
+      // Si c'était l'avatar actif, le réinitialiser
+      const currentUser = dbGet("SELECT current_avatar FROM users WHERE id = ?", [req.user.id]);
+      if (currentUser?.current_avatar === user.custom_avatar) {
+        dbRun("UPDATE users SET current_avatar = NULL WHERE id = ?", [req.user.id]);
+      }
+      
+      console.log(`🗑️ Avatar custom supprimé pour user ${req.user.id}`);
+    }
+    
+    res.json({ ok: true });
+    
+  } catch (error) {
+    console.error("❌ Erreur delete custom avatar:", error);
+    res.status(500).json({ ok: false, error: "Erreur serveur" });
   }
 });
 
