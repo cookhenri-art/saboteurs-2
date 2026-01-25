@@ -316,38 +316,48 @@ function formatPhaseTitle(s) {
 }
 
 
+
+// Helper pour récupérer la description de rôle traduite
+function getRoleDescTranslation(roleKey, fallback) {
+  if (typeof window.i18n === 'function') {
+    const tr = window.i18n(`game.roleDesc.${roleKey}`);
+    if (tr !== `game.roleDesc.${roleKey}`) return tr;
+  }
+  return typeof fallback === 'function' ? fallback() : fallback;
+}
+
 const ROLE_INFO = {
   astronaut: {
     get title() { return tRole("astronaut"); },
-    desc: () => `Aucun pouvoir spécial. Observe, débat et vote pour protéger la ${t('station')}.`
+    desc: () => getRoleDescTranslation('astronaut', () => `Aucun pouvoir spécial. Observe, débat et vote pour protéger la ${t('station')}.`)
   },
   saboteur: {
     get title() { return tRole("saboteur"); },
-    desc: () => `Chaque nuit, les ${t('saboteurs').toLowerCase()} votent UNANIMEMENT une cible (impossible de viser un ${t('saboteurs').toLowerCase().slice(0, -1)}).`
+    desc: () => getRoleDescTranslation('saboteur', () => `Chaque nuit, les ${t('saboteurs').toLowerCase()} votent UNANIMEMENT une cible (impossible de viser un ${t('saboteurs').toLowerCase().slice(0, -1)}).`)
   },
   doctor: {
     get title() { return tRole("doctor"); },
-    desc: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible)."
+    desc: () => getRoleDescTranslation('doctor', "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible).")
   },
   security: {
     get title() { return tRole("security"); },
-    desc: "Si tu meurs, tu tires une dernière fois (vengeance)."
+    desc: () => getRoleDescTranslation('security', "Si tu meurs, tu tires une dernière fois (vengeance).")
   },
   ai_agent: {
     get title() { return tRole("ai_agent"); },
-    desc: "Nuit 1 : choisis un joueur à lier avec TOI. Si l’un meurt, l’autre meurt aussi."
+    desc: () => getRoleDescTranslation('ai_agent', "Nuit 1 : choisis un joueur à lier avec TOI. Si l'un meurt, l'autre meurt aussi.")
   },
   radar: {
     get title() { return tRole("radar"); },
-    desc: "Chaque nuit, inspecte un joueur et découvre son rôle."
+    desc: () => getRoleDescTranslation('radar', "Chaque nuit, inspecte un joueur et découvre son rôle.")
   },
   engineer: {
     get title() { return tRole("engineer"); },
-    desc: "Peut espionner à ses risques et périls. Rappel discret en début de nuit tant qu’il est vivant."
+    desc: () => getRoleDescTranslation('engineer', "Peut espionner à ses risques et périls. Rappel discret en début de nuit tant qu'il est vivant.")
   },
   chameleon: {
     get title() { return tRole("chameleon"); },
-    desc: "Nuit 1 seulement : échange TON rôle avec un joueur. Après l’échange : revérification globale."
+    desc: () => getRoleDescTranslation('chameleon', "Nuit 1 seulement : échange TON rôle avec un joueur. Après l'échange : revérification globale.")
   },
 };
 

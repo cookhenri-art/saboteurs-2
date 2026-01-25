@@ -1070,6 +1070,82 @@ const TRANSLATIONS = {
       }
     },
     
+    // Role descriptions (full, shown under role name)
+    roleDesc: {
+      astronaut: {
+        fr: "Aucun pouvoir spécial. Observe, débat et vote pour protéger la station.",
+        en: "No special power. Observe, debate and vote to protect the station.",
+        es: "Sin poder especial. Observa, debate y vota para proteger la estación.",
+        it: "Nessun potere speciale. Osserva, dibatti e vota per proteggere la stazione.",
+        de: "Keine besonderen Kräfte. Beobachte, diskutiere und stimme ab, um die Station zu schützen.",
+        pt: "Sem poder especial. Observa, debate e vota para proteger a estação.",
+        nl: "Geen speciale kracht. Observeer, debatteer en stem om het station te beschermen."
+      },
+      saboteur: {
+        fr: "Chaque nuit, les saboteurs votent UNANIMEMENT une cible (impossible de viser un saboteur).",
+        en: "Each night, saboteurs vote UNANIMOUSLY for a target (cannot target a saboteur).",
+        es: "Cada noche, los saboteadores votan UNÁNIMEMENTE un objetivo (no pueden apuntar a un saboteador).",
+        it: "Ogni notte, i sabotatori votano UNANIMEMENTE un bersaglio (non possono mirare a un sabotatore).",
+        de: "Jede Nacht stimmen die Saboteure EINSTIMMIG für ein Ziel (kann keinen Saboteur anvisieren).",
+        pt: "Cada noite, os sabotadores votam UNANIMEMENTE um alvo (não podem mirar um sabotador).",
+        nl: "Elke nacht stemmen saboteurs UNANIEM op een doelwit (kunnen geen saboteur targeten)."
+      },
+      doctor: {
+        fr: "Une seule fois : potion de vie (sauve la cible attaquée). Une seule fois : potion de mort (tue une cible).",
+        en: "Once only: life potion (saves the attacked target). Once only: death potion (kills a target).",
+        es: "Solo una vez: poción de vida (salva al objetivo atacado). Solo una vez: poción de muerte (mata un objetivo).",
+        it: "Solo una volta: pozione di vita (salva il bersaglio attaccato). Solo una volta: pozione di morte (uccide un bersaglio).",
+        de: "Nur einmal: Lebenstrank (rettet das angegriffene Ziel). Nur einmal: Todestrank (tötet ein Ziel).",
+        pt: "Apenas uma vez: poção de vida (salva o alvo atacado). Apenas uma vez: poção de morte (mata um alvo).",
+        nl: "Eenmalig: levensdrank (redt het aangevallen doelwit). Eenmalig: doodsdrank (doodt een doelwit)."
+      },
+      security: {
+        fr: "Si tu meurs, tu tires une dernière fois (vengeance).",
+        en: "If you die, you shoot one last time (revenge).",
+        es: "Si mueres, disparas una última vez (venganza).",
+        it: "Se muori, spari un'ultima volta (vendetta).",
+        de: "Wenn du stirbst, schießt du ein letztes Mal (Rache).",
+        pt: "Se você morrer, atira uma última vez (vingança).",
+        nl: "Als je sterft, schiet je nog één keer (wraak)."
+      },
+      ai_agent: {
+        fr: "Nuit 1 : choisis un joueur à lier avec TOI. Si l'un meurt, l'autre meurt aussi.",
+        en: "Night 1: choose a player to link with YOU. If one dies, the other dies too.",
+        es: "Noche 1: elige un jugador para enlazar CONTIGO. Si uno muere, el otro también muere.",
+        it: "Notte 1: scegli un giocatore da legare a TE. Se uno muore, anche l'altro muore.",
+        de: "Nacht 1: wähle einen Spieler, der mit DIR verbunden wird. Wenn einer stirbt, stirbt auch der andere.",
+        pt: "Noite 1: escolha um jogador para ligar com VOCÊ. Se um morrer, o outro também morre.",
+        nl: "Nacht 1: kies een speler om te linken met JOU. Als één sterft, sterft de ander ook."
+      },
+      radar: {
+        fr: "Chaque nuit, inspecte un joueur et découvre son rôle.",
+        en: "Each night, inspect a player and discover their role.",
+        es: "Cada noche, inspecciona a un jugador y descubre su rol.",
+        it: "Ogni notte, ispeziona un giocatore e scopri il suo ruolo.",
+        de: "Jede Nacht, untersuche einen Spieler und entdecke seine Rolle.",
+        pt: "Cada noite, inspecione um jogador e descubra seu papel.",
+        nl: "Elke nacht, inspecteer een speler en ontdek hun rol."
+      },
+      engineer: {
+        fr: "Peut espionner à ses risques et périls. Rappel discret en début de nuit tant qu'il est vivant.",
+        en: "Can spy at their own risk. Discreet reminder at nightfall while alive.",
+        es: "Puede espiar bajo su propio riesgo. Recordatorio discreto al anochecer mientras esté vivo.",
+        it: "Può spiare a proprio rischio. Promemoria discreto all'inizio della notte finché è vivo.",
+        de: "Kann auf eigenes Risiko spionieren. Dezente Erinnerung bei Einbruch der Nacht, solange er lebt.",
+        pt: "Pode espionar por sua conta e risco. Lembrete discreto ao anoitecer enquanto vivo.",
+        nl: "Kan spioneren op eigen risico. Discrete herinnering bij het vallen van de nacht zolang in leven."
+      },
+      chameleon: {
+        fr: "Nuit 1 seulement : échange TON rôle avec un joueur. Après l'échange : revérification globale.",
+        en: "Night 1 only: swap YOUR role with a player. After swap: global re-verification.",
+        es: "Solo Noche 1: intercambia TU rol con un jugador. Después del intercambio: reverificación global.",
+        it: "Solo Notte 1: scambia il TUO ruolo con un giocatore. Dopo lo scambio: ri-verifica globale.",
+        de: "Nur Nacht 1: tausche DEINE Rolle mit einem Spieler. Nach dem Tausch: globale Neuüberprüfung.",
+        pt: "Apenas Noite 1: troque SEU papel com um jogador. Após a troca: reverificação global.",
+        nl: "Alleen Nacht 1: wissel JOUW rol met een speler. Na de wissel: globale herverificatie."
+      }
+    },
+    
     // Phase titles
     phases: {
       roleVerification: {
