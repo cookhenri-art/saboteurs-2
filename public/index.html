@@ -658,6 +658,32 @@
         border-radius: 3px;
       }
     }
+    
+    /* V23: Password visibility toggle */
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrapper input {
+      flex: 1;
+      padding-right: 45px;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      padding: 5px;
+      color: var(--text-secondary, #aaa);
+    }
+    .password-toggle:hover {
+      opacity: 1;
+    }
   </style>
 
   <div class="main-container">
@@ -694,7 +720,10 @@
         </div>
         <div class="form-group">
           <label data-i18n="index.auth.password">MOT DE PASSE</label>
-          <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
+          </div>
         </div>
         <button class="btn btn-primary btn-full" id="loginBtn" onclick="login()" data-i18n="index.auth.loginButton">
           🚀 CONNEXION
@@ -717,7 +746,10 @@
         </div>
         <div class="form-group">
           <label data-i18n="index.auth.password">MOT DE PASSE</label>
-          <input type="password" id="registerPassword" placeholder="Minimum 6 caractères">
+          <div class="password-wrapper">
+            <input type="password" id="registerPassword" placeholder="Minimum 6 caractères">
+            <button type="button" class="password-toggle" onclick="togglePassword('registerPassword', this)">👁️</button>
+          </div>
         </div>
         
         <div class="promo-section">
@@ -752,15 +784,24 @@
           <h3>🔐 Changer le mot de passe</h3>
           <div class="form-group">
             <label>MOT DE PASSE ACTUEL</label>
-            <input type="password" id="currentPassword" placeholder="••••••••">
+            <div class="password-wrapper">
+              <input type="password" id="currentPassword" placeholder="••••••••">
+              <button type="button" class="password-toggle" onclick="togglePassword('currentPassword', this)">👁️</button>
+            </div>
           </div>
           <div class="form-group">
             <label>NOUVEAU MOT DE PASSE</label>
-            <input type="password" id="newPassword" placeholder="Minimum 6 caractères">
+            <div class="password-wrapper">
+              <input type="password" id="newPassword" placeholder="Minimum 6 caractères">
+              <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)">👁️</button>
+            </div>
           </div>
           <div class="form-group">
             <label>CONFIRMER</label>
-            <input type="password" id="confirmPassword" placeholder="Retape le nouveau mot de passe">
+            <div class="password-wrapper">
+              <input type="password" id="confirmPassword" placeholder="Retape le nouveau mot de passe">
+              <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)">👁️</button>
+            </div>
           </div>
           <div class="modal-buttons">
             <button class="btn btn-primary" onclick="changePassword()">✅ Valider</button>
@@ -787,6 +828,18 @@
   <script>
     const API_URL = '';
     let currentUser = null;
+
+    // V23: Toggle password visibility
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
 
     // Theme - noms traduits dynamiquement
     function getThemeNames() {
