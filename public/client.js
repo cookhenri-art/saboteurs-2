@@ -1,6 +1,8 @@
 // ==============================
 // V9.4.3 FORCE RECONNECT
+// V24: Awards + Radar translation
 // ==============================
+console.log('[Client.js] V24 Awards + Radar translation loaded');
 function shouldReconnect() {
   return !!localStorage.getItem("playerId");
 }
@@ -1533,19 +1535,25 @@ function renderEnd() {
       let title = a.title;
       let text = a.text;
       
+      console.log('[Awards V24] Translating award:', a);
+      
       // V24: Traduire le titre
       if (window.i18n && a.titleKey) {
         const fullKey = `game.${a.titleKey}`;
         const translatedTitle = window.i18n(fullKey);
+        console.log('[Awards V24] Title key:', fullKey, '-> result:', translatedTitle);
         if (translatedTitle && translatedTitle !== fullKey && !translatedTitle.startsWith('game.')) {
           title = translatedTitle;
         }
+      } else {
+        console.log('[Awards V24] No titleKey or no i18n:', { titleKey: a.titleKey, i18n: !!window.i18n });
       }
       
       // V24: Traduire le texte
       if (window.i18n && a.textKey) {
         const fullKey = `game.${a.textKey}`;
         let translatedText = window.i18n(fullKey);
+        console.log('[Awards V24] Text key:', fullKey, '-> result:', translatedText);
         if (translatedText && translatedText !== fullKey && !translatedText.startsWith('game.')) {
           // Remplacer les placeholders avec les données
           if (a.data) {

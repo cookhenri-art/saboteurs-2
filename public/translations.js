@@ -3423,6 +3423,43 @@ const TRANSLATIONS = {
         de: "Rache",
         pt: "vingança",
         nl: "wraak"
+      },
+      // V24: Sources thématiques
+      lycanthropes: {
+        fr: "lycanthropes",
+        en: "werewolves",
+        es: "licántropos",
+        it: "licantropi",
+        de: "Werwölfe",
+        pt: "licantropos",
+        nl: "weerwolven"
+      },
+      loups: {
+        fr: "loups-garous",
+        en: "werewolves",
+        es: "hombres lobo",
+        it: "lupi mannari",
+        de: "Werwölfe",
+        pt: "lobisomens",
+        nl: "weerwolven"
+      },
+      mages: {
+        fr: "mages noirs",
+        en: "dark mages",
+        es: "magos oscuros",
+        it: "maghi oscuri",
+        de: "Schwarzmagier",
+        pt: "magos negros",
+        nl: "zwarte magiërs"
+      },
+      titans: {
+        fr: "titans",
+        en: "titans",
+        es: "titanes",
+        it: "titani",
+        de: "Titanen",
+        pt: "titãs",
+        nl: "titanen"
       }
     },
     
@@ -5295,6 +5332,12 @@ window.translatePage = translatePage;
 window.createLanguageSelector = createLanguageSelector;
 window.changeLanguage = changeLanguage;
 window.detectBrowserLanguage = detectBrowserLanguage;
+
+// V24 Debug: Vérifier que awards existe
+console.log('[Translations V24] Awards section loaded:', !!TRANSLATIONS?.game?.awards);
+if (TRANSLATIONS?.game?.awards?.bestDoctor) {
+  console.log('[Translations V24] bestDoctor (pt):', TRANSLATIONS.game.awards.bestDoctor.pt);
+}
 
 // Export pour utilisation dans d'autres fichiers (Node.js)
 if (typeof module !== 'undefined' && module.exports) {
