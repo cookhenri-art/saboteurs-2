@@ -344,16 +344,16 @@ function translateGamePage() {
   // ============================================
   const tutorialPrev = document.getElementById('tutorialPrev');
   if (tutorialPrev) {
-    tutorialPrev.innerHTML = '← ' + tr('common.previous');
+    tutorialPrev.textContent = tr('common.previous');
   }
 
   const tutorialNext = document.getElementById('tutorialNext');
   if (tutorialNext) {
-    const isLastScreen = tutorialNext.textContent.includes('Commencer') || tutorialNext.textContent.includes('Start');
+    const isLastScreen = tutorialNext.textContent.includes('Commencer') || tutorialNext.textContent.includes('Start') || tutorialNext.textContent.includes('🚀');
     if (isLastScreen) {
-      tutorialNext.innerHTML = tr('common.start') + ' 🚀';
+      tutorialNext.textContent = tr('common.start');
     } else {
-      tutorialNext.innerHTML = tr('common.next') + ' →';
+      tutorialNext.textContent = tr('common.next');
     }
   }
 

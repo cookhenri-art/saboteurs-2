@@ -3251,9 +3251,11 @@ function updateTutorialScreen() {
   
   if (nextBtn) {
     if (currentTutorialScreen === 6) {
-      nextBtn.textContent = "Commencer ! 🚀";
+      const startText = window.i18n ? window.i18n('common.start') : 'Commencer ! 🚀';
+      nextBtn.textContent = startText;
     } else {
-      nextBtn.textContent = "Suivant →";
+      const nextText = window.i18n ? window.i18n('common.next') : 'Suivant →';
+      nextBtn.textContent = nextText;
     }
   }
 }
