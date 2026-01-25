@@ -1066,23 +1066,36 @@
           av.classList.add('show');
         }
         const c = currentUser.videoCredits;
-        // V33: Traductions avec fallback robuste
-        let unlimitedText = 'Vidéo illimitée';
-        let creditsText = 'partie(s) vidéo';
-        try {
-          if (window.t) {
-            const ut = window.t('index.auth.videoUnlimited');
-            const ct = window.t('index.auth.videoCredits');
-            // Vérifier que ce n'est pas la clé qui est retournée
-            if (ut && !ut.includes('index.auth')) unlimitedText = ut;
-            if (ct && !ct.includes('index.auth')) creditsText = ct;
-          }
-        } catch(e) { console.warn('Translation error:', e); }
-        document.getElementById('displayCredits').textContent = 
-          (c === '∞' || c > 1000) ? `🎬 ${unlimitedText}` : `🎬 ${c} ${creditsText}`;
+        updateVideoCreditsDisplay(c);
         document.getElementById('verificationBanner').classList.toggle('show', !currentUser.emailVerified);
       }
     }
+    
+    // V33: Fonction pour mettre à jour l'affichage des crédits vidéo (appelée aussi lors du changement de langue)
+    function updateVideoCreditsDisplay(credits) {
+      const c = credits !== undefined ? credits : (currentUser ? currentUser.videoCredits : 0);
+      let unlimitedText = 'Vidéo illimitée';
+      let creditsText = 'partie(s) vidéo';
+      try {
+        if (window.t) {
+          const ut = window.t('index.auth.videoUnlimited');
+          const ct = window.t('index.auth.videoCredits');
+          if (ut && !ut.includes('index.auth')) unlimitedText = ut;
+          if (ct && !ct.includes('index.auth')) creditsText = ct;
+        }
+      } catch(e) { console.warn('Translation error:', e); }
+      const el = document.getElementById('displayCredits');
+      if (el) {
+        el.textContent = (c === '∞' || c > 1000) ? `🎬 ${unlimitedText}` : `🎬 ${c} ${creditsText}`;
+      }
+    }
+    
+    // V33: Écouter les changements de langue pour mettre à jour les crédits vidéo
+    window.addEventListener('languageChanged', () => {
+      if (currentUser) {
+        updateVideoCreditsDisplay(currentUser.videoCredits);
+      }
+    });
 
     function showLoggedOutState() {
       document.getElementById('authTabs').style.display = 'flex';
