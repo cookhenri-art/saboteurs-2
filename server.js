@@ -4,6 +4,7 @@
  * ║                                                                           ║
  * ║  Base: saboteur reprise avatar (logique jeu complète)                     ║
  * ║  + Système d'authentification et avatars IA                               ║
+ * ║  V32.1 - 25/01/2026 - Fix avatars WebP + décompte crédits vidéo          ║
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
