@@ -1615,6 +1615,24 @@ const TRANSLATIONS = {
         pt: "é eleito Capitão!",
         nl: "is gekozen als Kapitein!"
       },
+      playerEliminated: {
+        fr: "{name} a été éliminé !",
+        en: "{name} has been eliminated!",
+        es: "¡{name} ha sido eliminado!",
+        it: "{name} è stato eliminato!",
+        de: "{name} wurde eliminiert!",
+        pt: "{name} foi eliminado!",
+        nl: "{name} is geëlimineerd!"
+      },
+      playersEliminated: {
+        fr: "{names} ont été éliminés !",
+        en: "{names} have been eliminated!",
+        es: "¡{names} han sido eliminados!",
+        it: "{names} sono stati eliminati!",
+        de: "{names} wurden eliminiert!",
+        pt: "{names} foram eliminados!",
+        nl: "{names} zijn geëlimineerd!"
+      },
       choosingPartner: {
         fr: "choisit son partenaire...",
         en: "choosing partner...",

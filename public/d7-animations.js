@@ -60,10 +60,26 @@
       `;
     }).join('');
     
-    // Texte selon le nombre de morts
-    const eliminationText = players.length > 1 
-      ? `${players.map(p => p.name).join(' et ')} ont été éliminés !`
-      : `${players[0]?.name || 'Joueur'} a été éliminé !`;
+    // Texte selon le nombre de morts (traduit)
+    const getSingleElimText = () => {
+      if (window.i18n) {
+        const t = window.i18n('game.ui.playerEliminated');
+        if (t !== 'game.ui.playerEliminated') {
+          return t.replace('{name}', players[0]?.name || 'Joueur');
+        }
+      }
+      return `${players[0]?.name || 'Joueur'} a été éliminé !`;
+    };
+    const getMultiElimText = () => {
+      if (window.i18n) {
+        const t = window.i18n('game.ui.playersEliminated');
+        if (t !== 'game.ui.playersEliminated') {
+          return t.replace('{names}', players.map(p => p.name).join(' & '));
+        }
+      }
+      return `${players.map(p => p.name).join(' et ')} ont été éliminés !`;
+    };
+    const eliminationText = players.length > 1 ? getMultiElimText() : getSingleElimText();
     
     const overlay = document.createElement('div');
     overlay.id = 'ejectionOverlay';
