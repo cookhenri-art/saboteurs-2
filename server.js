@@ -3053,6 +3053,40 @@ app.delete("/api/avatar/delete-custom", authenticateToken, (req, res) => {
   }
 });
 
+// V32.2: API pour voir les fichiers avatars (debug)
+app.get("/api/admin/list-files", (req, res) => {
+  try {
+    const result = {
+      DATA_DIR,
+      AVATARS_DIR,
+      avatars: [],
+      customAvatars: [],
+      publicAvatars: []
+    };
+    
+    // Avatars IA
+    if (fs.existsSync(AVATARS_DIR)) {
+      result.avatars = fs.readdirSync(AVATARS_DIR).filter(f => !fs.statSync(path.join(AVATARS_DIR, f)).isDirectory());
+    }
+    
+    // Avatars custom (nouveau chemin)
+    const customDir = path.join(AVATARS_DIR, 'custom');
+    if (fs.existsSync(customDir)) {
+      result.customAvatars = fs.readdirSync(customDir);
+    }
+    
+    // Avatars dans public (ancien chemin)
+    const publicDir = path.join(__dirname, 'public', 'avatars');
+    if (fs.existsSync(publicDir)) {
+      result.publicAvatars = fs.readdirSync(publicDir, { recursive: true });
+    }
+    
+    res.json(result);
+  } catch (e) {
+    res.json({ error: e.message });
+  }
+});
+
 // ============================================================================
 // ROUTES ORIGINALES DU JEU
 // ============================================================================
