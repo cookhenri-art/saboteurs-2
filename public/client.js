@@ -988,22 +988,26 @@ if (logEl) {
 const actorOnly = new Set(["NIGHT_CHAMELEON","NIGHT_AI_AGENT","NIGHT_RADAR","NIGHT_DOCTOR","NIGHT_SABOTEURS","DAY_TIEBREAK","DAY_CAPTAIN_TRANSFER","REVENGE"]);
 // Fonction dynamique pour récupérer le texte d'attente traduit selon le thème
 function getWaitText(phase) {
+  // V23: Utiliser les traductions
+  const h = (key, fallback) => window.i18n ? window.i18n(`game.hints.${key}`) : fallback;
+  
   const waitTexts = {
-    NIGHT_CHAMELEON: `🦎 ${tRole('chameleon')} agit…`,
-    NIGHT_AI_AGENT: `🤖 ${tRole('ai_agent')} agit…`,
-    NIGHT_RADAR: `🔍 ${tRole('radar')} agit…`,
-    NIGHT_DOCTOR: `🧪 ${tRole('doctor')} agit…`,
-    NIGHT_SABOTEURS: `🗡️ Les ${t('saboteurs').toLowerCase()} agissent…`,
-    DAY_TIEBREAK: `⭐ ${t('captain')} tranche…`,
-    DAY_CAPTAIN_TRANSFER: `⭐ Transmission du ${t('captain').toLowerCase()}…`,
-    REVENGE: `🔫 ${tRole('security')} se venge…`
+    NIGHT_CHAMELEON: h('waitChameleon', `🦎 {role} agit…`).replace('{role}', tRole('chameleon')),
+    NIGHT_AI_AGENT: h('waitAiAgent', `🤖 {role} agit…`).replace('{role}', tRole('ai_agent')),
+    NIGHT_RADAR: h('waitRadar', `🔍 {role} agit…`).replace('{role}', tRole('radar')),
+    NIGHT_DOCTOR: h('waitDoctor', `🧪 {role} agit…`).replace('{role}', tRole('doctor')),
+    NIGHT_SABOTEURS: h('waitSaboteurs', `🗡️ Les {saboteurs} agissent…`).replace('{saboteurs}', t('saboteurs').toLowerCase()),
+    DAY_TIEBREAK: h('waitTiebreak', `⭐ {captain} tranche…`).replace('{captain}', t('captain')),
+    DAY_CAPTAIN_TRANSFER: h('waitCaptainTransfer', `⭐ Transmission du {captain}…`).replace('{captain}', t('captain').toLowerCase()),
+    REVENGE: h('waitRevenge', `🔫 {role} se venge…`).replace('{role}', tRole('security'))
   };
-  return waitTexts[phase] || "⏳ Action en cours…";
+  return waitTexts[phase] || h('waitDefault', "⏳ Action en cours…");
 }
 
 // dead players have no controls (including ACK), except if they are the actor in REVENGE / captain transfer
 if (meDead && !deadCanAct) {
-  controls.appendChild(makeHint("💀 Vous êtes mort. Vous n’agissez plus."));
+  const deadHint = window.i18n ? window.i18n('game.hints.youAreDead') : "💀 Vous êtes mort. Vous n'agissez plus.";
+  controls.appendChild(makeHint(deadHint));
   return;
 }
 
@@ -1360,14 +1364,15 @@ controls.appendChild(makeHint(readResultHint));
     section.appendChild(btnNone);
 
     controls.appendChild(section);
-    controls.appendChild(makeHint(`La potion de vie protège automatiquement la cible des ${t('saboteurs').toLowerCase()} (s’il y en a une).`));
+    const doctorHintText = window.i18n ? window.i18n('game.hints.doctorHint') : "La potion de vie protège automatiquement la cible des saboteurs (s'il y en a une).";
+    controls.appendChild(makeHint(doctorHintText));
   }
 
   if (state.phase === "DAY_CAPTAIN_TRANSFER") {
     const alive = state.players.filter(p => p.status === "alive");
     controls.appendChild(makeChoiceGrid(alive.map(p => p.playerId), "Transmettre", (id) => socket.emit("phaseAction", { chosenId: id })));
     // V23: Traduire le hint
-    const transferHintTemplate = window.i18n ? window.i18n('game.gameHints.captainTransferHint') : "Le {captain} mort choisit sans connaître le rôle du joueur choisi.";
+    const transferHintTemplate = window.i18n ? window.i18n('game.hints.captainTransferHint') : "Le {captain} mort choisit sans connaître le rôle du joueur choisi.";
     const transferHint = transferHintTemplate.replace('{captain}', t('captain').toLowerCase());
     controls.appendChild(makeHint(transferHint));
   }
@@ -1403,7 +1408,7 @@ controls.appendChild(makeHint(readResultHint));
     }
     controls.appendChild(grid);
     // V23: Traduire le hint
-    const tiebreakerHintTemplate = window.i18n ? window.i18n('game.gameHints.tiebreakerHint') : "En cas d'égalité, le {captain} tranche avant toute conséquence.";
+    const tiebreakerHintTemplate = window.i18n ? window.i18n('game.hints.tiebreakerHint') : "En cas d'égalité, le {captain} tranche avant toute conséquence.";
     const tiebreakerHint = tiebreakerHintTemplate.replace('{captain}', t('captain').toLowerCase());
     controls.appendChild(makeHint(tiebreakerHint));
   }
@@ -1465,11 +1470,46 @@ function renderEnd() {
       return source;
     };
     
+    // V23: Reverse lookup pour traduire roleLabel français vers la langue cible
+    const translateRoleLabel = (roleLabel) => {
+      if (!roleLabel) return '';
+      // Mapping des noms français vers les clés
+      const frenchToKey = {
+        'Astronaute': 'crewmate', 'Saboteur': 'saboteur', 'Capitaine': 'captain',
+        'Officier Radar': 'radar', 'Voyante': 'radar', 'Docteur': 'doctor', 'Sorcière': 'doctor',
+        'Chef de sécurité': 'security', 'Chasseur': 'security',
+        'Caméléon': 'chameleon', 'Voleur': 'chameleon',
+        'Agent IA': 'ai_agent', 'Amoureux': 'ai_agent', "L'Amoureux": 'ai_agent',
+        // Thème Loup-Garou
+        'Villageois': 'crewmate', 'Loup-Garou': 'saboteur', 'Lycanthrope': 'saboteur',
+        'Maire': 'captain', 'Cupidon': 'ai_agent',
+        // Thème Wizard
+        'Étudiant': 'crewmate', 'Mage Noir': 'saboteur', 'Directeur': 'captain',
+        'Professeur de Divination': 'radar', 'Infirmière': 'doctor',
+        'Auror': 'security', 'Métamorphe': 'chameleon', 'Elfe de Maison': 'ai_agent',
+        // Thème Mythic
+        'Mortel': 'crewmate', 'Titan': 'saboteur', 'Zeus': 'captain',
+        'Oracle': 'radar', 'Asclépios': 'doctor', 'Némésis': 'security',
+        'Protée': 'chameleon', 'Éros': 'ai_agent'
+      };
+      const key = frenchToKey[roleLabel];
+      if (key) {
+        const translated = tRole(key);
+        if (translated && translated !== key) return translated;
+      }
+      return roleLabel; // Fallback au label original
+    };
+    
     // V25: Ordre des éjections
     const deaths = (rep.deathOrder || []).map((d, i) => {
-      // V23: Traduire le rôle
+      // V23: Traduire le rôle (essayer d.role d'abord, sinon reverse lookup sur roleLabel)
       const roleKey = d.role || '';
-      const translatedRole = roleKey ? (tRole(roleKey) || d.roleLabel || roleKey) : d.roleLabel;
+      let translatedRole;
+      if (roleKey) {
+        translatedRole = tRole(roleKey) || d.roleLabel || roleKey;
+      } else {
+        translatedRole = translateRoleLabel(d.roleLabel);
+      }
       const rl = translatedRole ? ` (${translatedRole})` : "";
       // V23: Traduire la source
       const translatedSource = translateSource(d.source);

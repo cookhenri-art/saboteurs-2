@@ -1790,13 +1790,13 @@ const TRANSLATIONS = {
     // Hints
     hints: {
       youAreDead: {
-        fr: "💀 Vous êtes mort. Vous n'agissez plus.",
-        en: "💀 You are dead. You no longer act.",
-        es: "💀 Estás muerto. Ya no actúas.",
-        it: "💀 Sei morto. Non agisci più.",
-        de: "💀 Du bist tot. Du handelst nicht mehr.",
-        pt: "💀 Você está morto. Você não age mais.",
-        nl: "💀 Je bent dood. Je handelt niet meer."
+        fr: "💀 Vous êtes éliminé. Vous n'agissez plus.",
+        en: "💀 You are eliminated. You no longer act.",
+        es: "💀 Estás eliminado. Ya no actúas.",
+        it: "💀 Sei eliminato. Non agisci più.",
+        de: "💀 Du bist eliminiert. Du handelst nicht mehr.",
+        pt: "💀 Você foi eliminado. Você não age mais.",
+        nl: "💀 Je bent geëlimineerd. Je handelt niet meer."
       },
       chameleonHint: {
         fr: "Caméléon : Nuit 1 uniquement. Un seul usage dans toute la partie.",
@@ -1869,6 +1869,88 @@ const TRANSLATIONS = {
         de: "Bei Gleichstand entscheidet der Kapitän vor jeglichen Konsequenzen.",
         pt: "Em caso de empate, o capitão decide antes de qualquer consequência.",
         nl: "Bij gelijkspel beslist de kapitein voor enige gevolgen."
+      },
+      // V23: Textes d'attente
+      waitChameleon: {
+        fr: "🦎 {role} agit…",
+        en: "🦎 {role} acts…",
+        es: "🦎 {role} actúa…",
+        it: "🦎 {role} agisce…",
+        de: "🦎 {role} handelt…",
+        pt: "🦎 {role} age…",
+        nl: "🦎 {role} handelt…"
+      },
+      waitAiAgent: {
+        fr: "🤖 {role} agit…",
+        en: "🤖 {role} acts…",
+        es: "🤖 {role} actúa…",
+        it: "🤖 {role} agisce…",
+        de: "🤖 {role} handelt…",
+        pt: "🤖 {role} age…",
+        nl: "🤖 {role} handelt…"
+      },
+      waitRadar: {
+        fr: "🔍 {role} agit…",
+        en: "🔍 {role} acts…",
+        es: "🔍 {role} actúa…",
+        it: "🔍 {role} agisce…",
+        de: "🔍 {role} handelt…",
+        pt: "🔍 {role} age…",
+        nl: "🔍 {role} handelt…"
+      },
+      waitDoctor: {
+        fr: "🧪 {role} agit…",
+        en: "🧪 {role} acts…",
+        es: "🧪 {role} actúa…",
+        it: "🧪 {role} agisce…",
+        de: "🧪 {role} handelt…",
+        pt: "🧪 {role} age…",
+        nl: "🧪 {role} handelt…"
+      },
+      waitSaboteurs: {
+        fr: "🗡️ Les {saboteurs} agissent…",
+        en: "🗡️ The {saboteurs} act…",
+        es: "🗡️ Los {saboteurs} actúan…",
+        it: "🗡️ I {saboteurs} agiscono…",
+        de: "🗡️ Die {saboteurs} handeln…",
+        pt: "🗡️ Os {saboteurs} agem…",
+        nl: "🗡️ De {saboteurs} handelen…"
+      },
+      waitTiebreak: {
+        fr: "⭐ {captain} tranche…",
+        en: "⭐ {captain} decides…",
+        es: "⭐ {captain} decide…",
+        it: "⭐ {captain} decide…",
+        de: "⭐ {captain} entscheidet…",
+        pt: "⭐ {captain} decide…",
+        nl: "⭐ {captain} beslist…"
+      },
+      waitCaptainTransfer: {
+        fr: "⭐ Transmission du {captain}…",
+        en: "⭐ {captain} transfer…",
+        es: "⭐ Transmisión del {captain}…",
+        it: "⭐ Trasferimento del {captain}…",
+        de: "⭐ Übertragung des {captain}…",
+        pt: "⭐ Transferência do {captain}…",
+        nl: "⭐ Overdracht van {captain}…"
+      },
+      waitRevenge: {
+        fr: "🔫 {role} se venge…",
+        en: "🔫 {role} takes revenge…",
+        es: "🔫 {role} se venga…",
+        it: "🔫 {role} si vendica…",
+        de: "🔫 {role} rächt sich…",
+        pt: "🔫 {role} se vinga…",
+        nl: "🔫 {role} neemt wraak…"
+      },
+      waitDefault: {
+        fr: "⏳ Action en cours…",
+        en: "⏳ Action in progress…",
+        es: "⏳ Acción en curso…",
+        it: "⏳ Azione in corso…",
+        de: "⏳ Aktion läuft…",
+        pt: "⏳ Ação em andamento…",
+        nl: "⏳ Actie bezig…"
       }
     },
     
