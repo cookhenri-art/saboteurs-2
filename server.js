@@ -2798,11 +2798,11 @@ app.post("/api/avatars/set-current", authenticateToken, (req, res) => {
 // Supprimer un avatar
 app.delete("/api/avatars/delete", authenticateToken, (req, res) => {
   try {
-    // Vérifier le type de compte
+    // V32: Seuls les admins peuvent supprimer des avatars
     const userInfo = dbGet("SELECT account_type FROM users WHERE id = ?", [req.user.id]);
-    if (userInfo?.account_type === "free") {
+    if (userInfo?.account_type !== "admin") {
       return res.status(403).json({ 
-        error: "Les comptes gratuits ne peuvent pas supprimer leurs avatars." 
+        error: "La suppression d'avatars n'est pas disponible. Choisis un autre avatar dans ta galerie !" 
       });
     }
 
