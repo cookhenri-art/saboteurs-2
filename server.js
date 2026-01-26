@@ -2666,14 +2666,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       
       console.log(`[Stripe] Paiement réussi pour user ${stripeUserId}, type: ${priceType}`);
       
-      if (stripeUserId && db) {
+      if (stripeUserId) {
         try {
           if (priceType === 'subscription') {
             // Abonnement mensuel : passer en subscriber
-            db.run(`
+            dbRun(`
               UPDATE users 
-              SET tier = 'subscriber', 
-                  videoCredits = 999999,
+              SET account_type = 'subscriber', 
+                  video_credits = 999999,
                   stripeCustomerId = ?,
                   stripeSubscriptionId = ?
               WHERE id = ?
@@ -2682,11 +2682,11 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             
           } else if (priceType === 'pack') {
             // Pack crédits : ajouter 50 crédits
-            db.run(`
+            dbRun(`
               UPDATE users 
-              SET tier = CASE WHEN tier = 'free' THEN 'pack' ELSE tier END,
-                  videoCredits = videoCredits + 50,
-                  avatarCredits = avatarCredits + 50,
+              SET account_type = CASE WHEN account_type = 'free' THEN 'pack' ELSE account_type END,
+                  video_credits = video_credits + 50,
+                  avatars_used = CASE WHEN avatars_used > 50 THEN avatars_used - 50 ELSE 0 END,
                   stripeCustomerId = ?
               WHERE id = ?
             `, [session.customer, stripeUserId]);
@@ -2719,16 +2719,14 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       
       console.log(`[Stripe] Abonnement annulé pour customer ${customerId}`);
       
-      if (db) {
-        db.run(`
-          UPDATE users 
-          SET tier = 'free',
-              videoCredits = 0,
-              stripeSubscriptionId = NULL
-          WHERE stripeCustomerId = ?
-        `, [customerId]);
-        saveDatabase();
-      }
+      dbRun(`
+        UPDATE users 
+        SET account_type = 'free',
+            video_credits = 0,
+            stripeSubscriptionId = NULL
+        WHERE stripeCustomerId = ?
+      `, [customerId]);
+      saveDatabase();
       break;
     }
     
