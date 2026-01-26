@@ -73,6 +73,8 @@
       font-size: 1.2em;
       transition: all 0.3s ease;
       box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+      position: relative;
+      z-index: 100;
     }
     
     .btn-play:hover {
@@ -86,6 +88,7 @@
       height: 10px;
       top: -10px;
       animation: fall 3s linear infinite;
+      pointer-events: none;
     }
     
     @keyframes fall {
