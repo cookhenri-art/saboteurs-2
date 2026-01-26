@@ -72,17 +72,6 @@ const ACCOUNT_LIMITS = {
   admin: { videoCredits: Infinity, avatars: Infinity, themes: "all", customPrompt: true }
 };
 
-const ADMIN_CODES = ["HENRICO-DEV", "SABOTEUR-ADMIN", "DEV-UNLIMITED", "ADMIN-MASTER-2024"];
-
-// Codes famille (donnent accès subscriber)
-const FAMILY_CODES = ["FAMILLE2024", "SABOTEUR-PAPA", "SABOTEUR-MAMAN", "SABOTEUR-FAMILLE"];
-
-// Codes promo spéciaux
-const PROMO_CODES = {
-  "BETA-TESTER-VIP": "subscriber",   // Abonnement gratuit
-  "PACK-PREMIUM-FREE": "pack"        // Pack 50 crédits
-};
-
 // V32 Option D: Tracking des sessions utilisateurs connectés (un seul compte à la fois)
 // Map: userId -> { socketId, roomCode, playerId, connectedAt }
 const userSessions = new Map();
@@ -2836,24 +2825,7 @@ app.post("/api/auth/register", async (req, res) => {
     let accountType = "free";
     let videoCredits = 2; // Par défaut pour free
     
-    if (promoCode) {
-      const code = promoCode.toUpperCase().trim();
-      
-      if (ADMIN_CODES.includes(code)) {
-        accountType = "admin";
-        videoCredits = 999999;
-      } else if (FAMILY_CODES.includes(code)) {
-        accountType = "subscriber";
-        videoCredits = 999999; // Famille = illimité
-      } else if (PROMO_CODES[code]) {
-        accountType = PROMO_CODES[code];
-        if (accountType === "subscriber") {
-          videoCredits = 999999;
-        } else if (accountType === "pack") {
-          videoCredits = 50;
-        }
-      }
-    }
+    // Note: Les codes promo sont désormais gérés via Stripe ou la page admin
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = generateVerificationToken();
