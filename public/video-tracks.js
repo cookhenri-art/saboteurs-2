@@ -606,6 +606,101 @@
     
     const phase = state.phase;
     const myPlayer = state.players?.find(p => p.playerId === myId);
+    const phaseData = state.phaseData || {};
+    
+    // V35: NIGHT_CHAMELEON - Caméléon seul voit son écran
+    if (phase === 'NIGHT_CHAMELEON') {
+      result.isPrivate = true;
+      const chameleonName = window.tRole ? window.tRole('chameleon') : 'Caméléon';
+      result.message = `🔒 ${chameleonName} fait son choix...`;
+      
+      if (phaseData.actorId) {
+        result.allowedPlayerIds = [phaseData.actorId];
+        result.iAmInvolved = (myId === phaseData.actorId);
+      } else {
+        // Fallback: chercher le caméléon
+        const chameleon = state.players?.find(p => p.role === 'chameleon' && p.status === 'alive');
+        if (chameleon) {
+          result.allowedPlayerIds = [chameleon.playerId];
+          result.iAmInvolved = (myId === chameleon.playerId);
+        }
+      }
+      log("NIGHT_CHAMELEON check: myId=", myId, "involved=", result.iAmInvolved);
+      return result;
+    }
+    
+    // V35: NIGHT_RADAR - Officier radar seul voit son écran
+    if (phase === 'NIGHT_RADAR') {
+      result.isPrivate = true;
+      const radarName = window.tRole ? window.tRole('radar') : 'Officier Radar';
+      result.message = `🔒 ${radarName} scanne la zone...`;
+      
+      if (phaseData.actorId) {
+        result.allowedPlayerIds = [phaseData.actorId];
+        result.iAmInvolved = (myId === phaseData.actorId);
+      } else {
+        // Fallback: chercher le radar
+        const radar = state.players?.find(p => p.role === 'radar' && p.status === 'alive');
+        if (radar) {
+          result.allowedPlayerIds = [radar.playerId];
+          result.iAmInvolved = (myId === radar.playerId);
+        }
+      }
+      log("NIGHT_RADAR check: myId=", myId, "involved=", result.iAmInvolved);
+      return result;
+    }
+    
+    // V35: NIGHT_DOCTOR - Médecin seul voit son écran
+    if (phase === 'NIGHT_DOCTOR') {
+      result.isPrivate = true;
+      const doctorName = window.tRole ? window.tRole('doctor') : 'Médecin';
+      result.message = `🔒 ${doctorName} choisit qui protéger...`;
+      
+      if (phaseData.actorId) {
+        result.allowedPlayerIds = [phaseData.actorId];
+        result.iAmInvolved = (myId === phaseData.actorId);
+      } else {
+        // Fallback: chercher le médecin
+        const doctor = state.players?.find(p => p.role === 'doctor' && p.status === 'alive');
+        if (doctor) {
+          result.allowedPlayerIds = [doctor.playerId];
+          result.iAmInvolved = (myId === doctor.playerId);
+        }
+      }
+      log("NIGHT_DOCTOR check: myId=", myId, "involved=", result.iAmInvolved);
+      return result;
+    }
+    
+    // V35: NIGHT_SECURITY - Agent sécurité seul (pour revenge éventuelle)
+    if (phase === 'NIGHT_SECURITY' || phase === 'REVENGE') {
+      result.isPrivate = true;
+      const securityName = window.tRole ? window.tRole('security') : 'Agent Sécurité';
+      result.message = `🔒 ${securityName} agit...`;
+      
+      if (phaseData.actorId) {
+        result.allowedPlayerIds = [phaseData.actorId];
+        result.iAmInvolved = (myId === phaseData.actorId);
+      } else {
+        // Fallback: chercher l'agent sécurité
+        const security = state.players?.find(p => p.role === 'security' && p.status === 'alive');
+        if (security) {
+          result.allowedPlayerIds = [security.playerId];
+          result.iAmInvolved = (myId === security.playerId);
+        }
+      }
+      log("NIGHT_SECURITY/REVENGE check: myId=", myId, "involved=", result.iAmInvolved);
+      return result;
+    }
+    
+    // V35: NIGHT_START - Tout le monde en overlay pendant la transition
+    if (phase === 'NIGHT_START') {
+      result.isPrivate = true;
+      result.message = `🌙 La nuit tombe sur la station...`;
+      result.iAmInvolved = false; // Personne ne voit/entend pendant la transition
+      result.allowedPlayerIds = [];
+      log("NIGHT_START: everyone in private overlay");
+      return result;
+    }
     
     // NIGHT_AI_EXCHANGE : phase privée Agent IA + partenaire lié
     if (phase === 'NIGHT_AI_EXCHANGE') {
@@ -615,7 +710,6 @@
       result.message = `🔒 Échange ${aiAgentName} privé en cours...`;
       
       // D4 v5.7: Utiliser phaseData qui contient iaId et partnerId
-      const phaseData = state.phaseData || {};
       const iaId = phaseData.iaId;
       const partnerId = phaseData.partnerId;
       
@@ -652,7 +746,6 @@
       result.message = `🔒 Les ${saboName.toLowerCase()} communiquent...`;
       
       // D4 v5.7: Utiliser phaseData.actorIds
-      const phaseData = state.phaseData || {};
       if (phaseData.actorIds && phaseData.actorIds.length > 0) {
         result.allowedPlayerIds = phaseData.actorIds;
         result.iAmInvolved = phaseData.actorIds.includes(myId);
