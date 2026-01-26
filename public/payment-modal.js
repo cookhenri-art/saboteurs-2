@@ -4,18 +4,13 @@
  * ╚═══════════════════════════════════════════════════════════════════════════╝
  */
 
-// Afficher le modal de paiement
+// Afficher le modal de paiement (accessible à tous)
 function showPaymentModal() {
-  const user = JSON.parse(localStorage.getItem('saboteur_user') || '{}');
-  
-  if (!user.id) {
-    alert('Tu dois être connecté pour accéder aux offres premium !');
-    window.location.href = 'index.html';
-    return;
-  }
-  
   // Fermer si déjà ouvert
   closePaymentModal();
+  
+  const user = JSON.parse(localStorage.getItem('saboteur_user') || '{}');
+  const isLoggedIn = !!user.id;
   
   const modal = document.createElement('div');
   modal.id = 'payment-modal';
@@ -31,13 +26,13 @@ function showPaymentModal() {
           
           <div class="payment-card recommended">
             <div class="payment-badge">⭐ RECOMMANDÉ</div>
-            <h3>Premium Mensuel</h3>
+            <h3>🌟 Premium Mensuel</h3>
             <div class="payment-price">1,49 €<span>/mois</span></div>
             <ul class="payment-features">
-              <li>✅ Visioconférence illimitée</li>
-              <li>✅ 30 avatars IA / mois</li>
-              <li>✅ Tous les thèmes</li>
-              <li>✅ Sans engagement</li>
+              <li>✅ Visioconférence <strong>illimitée</strong></li>
+              <li>✅ <strong>30 avatars IA</strong> / mois</li>
+              <li>✅ <strong>4 univers</strong> de jeu</li>
+              <li>✅ Sans engagement, annulable</li>
             </ul>
             <button class="payment-btn primary" onclick="startCheckout('subscription')">
               S'abonner maintenant
@@ -45,13 +40,13 @@ function showPaymentModal() {
           </div>
           
           <div class="payment-card">
-            <h3>Pack 50 Crédits</h3>
+            <h3>📦 Pack 50 Crédits</h3>
             <div class="payment-price">4,99 €<span> une fois</span></div>
             <ul class="payment-features">
-              <li>✅ 50 parties vidéo</li>
-              <li>✅ 50 avatars IA</li>
-              <li>✅ Badge "Supporter"</li>
-              <li>✅ Valable à vie</li>
+              <li>✅ <strong>50 parties</strong> en vidéo</li>
+              <li>✅ <strong>50 avatars IA</strong> à créer</li>
+              <li>✅ Badge <strong>"Supporter"</strong></li>
+              <li>✅ Crédits valables <strong>à vie</strong></li>
             </ul>
             <button class="payment-btn secondary" onclick="startCheckout('pack')">
               Acheter le pack
@@ -59,6 +54,13 @@ function showPaymentModal() {
           </div>
           
         </div>
+        
+        ${!isLoggedIn ? `
+        <div class="payment-login-notice">
+          💡 <strong>Astuce :</strong> Crée un compte gratuit pour profiter des offres !
+          <a href="index.html" class="payment-login-link">Créer mon compte →</a>
+        </div>
+        ` : ''}
         
         <p class="payment-footer">
           🔒 Paiement sécurisé par Stripe<br>
@@ -87,8 +89,9 @@ function closePaymentModal() {
 async function startCheckout(priceType) {
   const user = JSON.parse(localStorage.getItem('saboteur_user') || '{}');
   
+  // Vérifier si connecté
   if (!user.id || !user.email) {
-    alert('Erreur : utilisateur non connecté');
+    showLoginRequiredModal();
     return;
   }
   
@@ -96,10 +99,10 @@ async function startCheckout(priceType) {
   const buttons = document.querySelectorAll('.payment-btn');
   buttons.forEach(btn => {
     btn.disabled = true;
-    if (btn.textContent.includes(priceType === 'subscription' ? 'abonner' : 'Acheter')) {
-      btn.textContent = 'Chargement...';
-    }
   });
+  
+  const clickedBtn = event.target;
+  clickedBtn.textContent = 'Chargement...';
   
   try {
     const response = await fetch('/api/stripe/create-checkout-session', {
@@ -131,6 +134,46 @@ async function startCheckout(priceType) {
     document.querySelector('.payment-btn.primary').textContent = "S'abonner maintenant";
     document.querySelector('.payment-btn.secondary').textContent = 'Acheter le pack';
   }
+}
+
+// Modal "Compte requis"
+function showLoginRequiredModal() {
+  closePaymentModal();
+  
+  const modal = document.createElement('div');
+  modal.id = 'payment-modal';
+  modal.innerHTML = `
+    <div class="payment-modal-overlay" onclick="if(event.target === this) closePaymentModal()">
+      <div class="payment-modal-content" style="max-width: 450px;">
+        <button class="payment-modal-close" onclick="closePaymentModal()">✕</button>
+        
+        <div style="text-align: center; padding: 20px 0;">
+          <div style="font-size: 60px; margin-bottom: 20px;">🔐</div>
+          <h2 style="margin-bottom: 15px;">Compte requis</h2>
+          <p style="color: rgba(255,255,255,0.8); margin-bottom: 25px; line-height: 1.6;">
+            Pour acheter une offre Premium, tu dois d'abord créer un compte gratuit.<br>
+            <strong>C'est rapide et ça prend 30 secondes !</strong>
+          </p>
+          
+          <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+            <a href="index.html" class="payment-btn primary" style="text-decoration: none; display: inline-block;">
+              ✨ Créer mon compte
+            </a>
+            <button class="payment-btn secondary" onclick="showPaymentModal()">
+              ← Voir les offres
+            </button>
+          </div>
+          
+          <p style="margin-top: 25px; font-size: 0.85em; color: rgba(255,255,255,0.5);">
+            Tu as déjà un compte ? <a href="index.html" style="color: var(--neon-main, #00ffff);">Connecte-toi</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
 }
 
 // Vérifier si l'utilisateur doit voir le prompt d'upgrade
@@ -231,3 +274,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('[Payment] Module de paiement chargé');
+

@@ -220,6 +220,30 @@
   margin-top: 5px;
 }
 
+/* Notice de connexion */
+.payment-login-notice {
+  background: rgba(0, 255, 255, 0.1);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  border-radius: 10px;
+  padding: 12px 20px;
+  margin-top: 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9em;
+}
+
+.payment-login-link {
+  display: inline-block;
+  margin-left: 10px;
+  color: #00ffff;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.payment-login-link:hover {
+  text-decoration: underline;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 650px) {
   .payment-modal-content {
