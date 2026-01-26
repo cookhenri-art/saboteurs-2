@@ -2981,7 +2981,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       const resetUrl = `${APP_URL}/reset-password.html?token=${resetToken}`;
       
       await resend.emails.send({
-        from: "Saboteur <noreply@music-music.music>",
+        from: process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>",
         to: user.email,
         subject: "🔑 Réinitialisation de ton mot de passe - Saboteur",
         html: `
