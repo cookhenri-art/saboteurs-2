@@ -183,6 +183,8 @@ async function initAuthDatabase() {
       email_verified INTEGER DEFAULT 0,
       verification_token TEXT,
       verification_expires DATETIME,
+      reset_token TEXT,
+      reset_expires DATETIME,
       video_credits INTEGER DEFAULT 2,
       avatars_used INTEGER DEFAULT 0,
       current_avatar TEXT,
@@ -213,6 +215,25 @@ async function initAuthDatabase() {
   } catch (err) {
     if (!err.message.includes('duplicate column')) {
       console.log('Migration stripeSubscriptionId:', err.message);
+    }
+  }
+  
+  // Migration : colonnes reset password
+  try {
+    authDb.run(`ALTER TABLE users ADD COLUMN reset_token TEXT`);
+    console.log('Migration reset_token: OK');
+  } catch (err) {
+    if (!err.message.includes('duplicate column')) {
+      console.log('Migration reset_token:', err.message);
+    }
+  }
+  
+  try {
+    authDb.run(`ALTER TABLE users ADD COLUMN reset_expires DATETIME`);
+    console.log('Migration reset_expires: OK');
+  } catch (err) {
+    if (!err.message.includes('duplicate column')) {
+      console.log('Migration reset_expires:', err.message);
     }
   }
 
@@ -2928,6 +2949,109 @@ app.post("/api/auth/resend-verification", async (req, res) => {
   } catch (error) {
     console.error("❌ Erreur renvoi:", error);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Mot de passe oublié
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, error: "Email requis" });
+    }
+    
+    const user = dbGet("SELECT id, username, email FROM users WHERE email = ?", [email.toLowerCase()]);
+    
+    // Toujours répondre succès pour éviter de révéler si l'email existe
+    if (!user) {
+      return res.json({ success: true, message: "Si cet email existe, un lien a été envoyé" });
+    }
+    
+    // Générer token de reset
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 heure
+    
+    dbRun("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?", 
+      [resetToken, resetExpires.toISOString(), user.id]);
+    saveDatabase();
+    
+    // Envoyer email
+    if (resend) {
+      const resetUrl = `${APP_URL}/reset-password.html?token=${resetToken}`;
+      
+      await resend.emails.send({
+        from: "Saboteur <noreply@music-music.music>",
+        to: user.email,
+        subject: "🔑 Réinitialisation de ton mot de passe - Saboteur",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; border-radius: 15px;">
+            <h1 style="text-align: center; color: #00ffff;">🔑 Mot de passe oublié</h1>
+            <p>Salut <strong>${user.username}</strong> !</p>
+            <p>Tu as demandé à réinitialiser ton mot de passe.</p>
+            <p>Clique sur le bouton ci-dessous (valable 1 heure) :</p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #00ffff, #0099cc); color: #000; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 1.1em;">
+                🔐 Réinitialiser mon mot de passe
+              </a>
+            </div>
+            <p style="color: #888; font-size: 0.9em;">Si tu n'as pas fait cette demande, ignore cet email.</p>
+            <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;">
+            <p style="text-align: center; color: #666; font-size: 0.8em;">🎭 L'équipe Saboteur</p>
+          </div>
+        `
+      });
+      
+      logger.info("password_reset_sent", { email: user.email });
+    }
+    
+    res.json({ success: true, message: "Email envoyé" });
+    
+  } catch (error) {
+    console.error("Erreur forgot-password:", error);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
+  }
+});
+
+// Réinitialiser le mot de passe
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({ success: false, error: "Token et mot de passe requis" });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: "Mot de passe trop court (min 6)" });
+    }
+    
+    const user = dbGet("SELECT id, username, email, reset_expires FROM users WHERE reset_token = ?", [token]);
+    
+    if (!user) {
+      return res.status(400).json({ success: false, error: "Lien invalide ou expiré" });
+    }
+    
+    // Vérifier expiration
+    if (new Date(user.reset_expires) < new Date()) {
+      return res.status(400).json({ success: false, error: "Lien expiré, redemande un nouveau" });
+    }
+    
+    // Hasher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Mettre à jour
+    dbRun("UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?", 
+      [hashedPassword, user.id]);
+    saveDatabase();
+    
+    logger.info("password_reset_completed", { email: user.email });
+    
+    res.json({ success: true, message: "Mot de passe modifié avec succès" });
+    
+  } catch (error) {
+    console.error("Erreur reset-password:", error);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
   }
 });
 
