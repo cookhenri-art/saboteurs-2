@@ -198,12 +198,23 @@ async function initAuthDatabase() {
   `);
   
   // Migration : ajouter colonnes Stripe si elles n'existent pas
-  authDb.run(`ALTER TABLE users ADD COLUMN stripeCustomerId TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) console.log('Migration stripeCustomerId:', err?.message || 'OK');
-  });
-  authDb.run(`ALTER TABLE users ADD COLUMN stripeSubscriptionId TEXT`, (err) => {
-    if (err && !err.message.includes('duplicate column')) console.log('Migration stripeSubscriptionId:', err?.message || 'OK');
-  });
+  try {
+    authDb.run(`ALTER TABLE users ADD COLUMN stripeCustomerId TEXT`);
+    console.log('Migration stripeCustomerId: OK');
+  } catch (err) {
+    if (!err.message.includes('duplicate column')) {
+      console.log('Migration stripeCustomerId:', err.message);
+    }
+  }
+  
+  try {
+    authDb.run(`ALTER TABLE users ADD COLUMN stripeSubscriptionId TEXT`);
+    console.log('Migration stripeSubscriptionId: OK');
+  } catch (err) {
+    if (!err.message.includes('duplicate column')) {
+      console.log('Migration stripeSubscriptionId:', err.message);
+    }
+  }
 
   authDb.run(`
     CREATE TABLE IF NOT EXISTS avatars (
