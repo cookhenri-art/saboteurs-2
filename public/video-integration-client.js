@@ -301,7 +301,10 @@ function initVideoForGame(state) {
  * Met à jour les permissions vidéo selon la phase
  * D4 v5.4: Respecte le choix manuel de l'utilisateur
  * D4 v5.8: Force démute aux phases clés (GAME_OVER, NIGHT_RESULTS, DAY_WAKE, ROLE_REVEAL)
+ * V35: Ne forcer le unmute qu'UNE SEULE FOIS au changement de phase (pas à chaque roomState)
  */
+let lastForceUnmutePhase = null; // V35: Tracker la dernière phase où on a forcé le unmute
+
 function updateVideoPermissions(state) {
   if (!videoRoomJoined || !window.dailyVideo.callFrame) {
     return;
@@ -316,12 +319,19 @@ function updateVideoPermissions(state) {
   const phase = state.phase;
   
   // D4 v5.8: Phases où on force le démute automatique
-  const FORCE_UNMUTE_PHASES = ['GAME_OVER', 'NIGHT_RESULTS', 'DAY_WAKE', 'ROLE_REVEAL'];
+  const FORCE_UNMUTE_PHASES = ['GAME_OVER', 'NIGHT_RESULTS', 'DAY_WAKE', 'ROLE_REVEAL', 'CAPTAIN_RESULT', 'VOTE_RESULT', 'LOBBY'];
   const shouldForceUnmute = FORCE_UNMUTE_PHASES.includes(phase);
   
-  if (shouldForceUnmute) {
-    console.log('[Video] 🔊 Phase', phase, '- Forcing unmute for all players');
+  // V35: Ne forcer qu'UNE SEULE FOIS au changement de phase
+  const isNewPhase = (phase !== lastForceUnmutePhase);
+  
+  if (shouldForceUnmute && isNewPhase) {
+    console.log('[Video] 🔊 Phase', phase, '- Forcing unmute (first time for this phase)');
+    lastForceUnmutePhase = phase;
     forceUnmuteWithNotification(phase, registry);
+  } else if (shouldForceUnmute && !isNewPhase) {
+    // V35: On a déjà forcé le unmute pour cette phase, respecter le choix de l'utilisateur
+    console.log('[Video] ⏭️ Phase', phase, '- Already forced unmute, respecting user choice');
   } else {
     // D4 v5.4: Vérifier si l'utilisateur a manuellement muté (seulement si pas de force unmute)
     const userMutedAudio = registry?.getUserMutedAudio?.() || false;
