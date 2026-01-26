@@ -2966,10 +2966,45 @@ app.get("/api/auth/verify-email", async (req, res) => {
   }
 });
 
+// V35: Rate limiting pour resend-verification (anti-spam emails)
+const resendVerificationAttempts = new Map();
+
+function checkResendVerificationRateLimit(email) {
+  const key = email.toLowerCase();
+  const now = Date.now();
+  const attempts = resendVerificationAttempts.get(key) || { count: 0, firstAttempt: now };
+  
+  // Reset après 15 minutes
+  if (now - attempts.firstAttempt > 15 * 60 * 1000) {
+    resendVerificationAttempts.set(key, { count: 1, firstAttempt: now });
+    return true;
+  }
+  
+  // Bloque après 3 tentatives
+  if (attempts.count >= 3) {
+    return false;
+  }
+  
+  attempts.count++;
+  resendVerificationAttempts.set(key, attempts);
+  return true;
+}
+
 // Renvoyer email
 app.post("/api/auth/resend-verification", async (req, res) => {
   try {
     const { email, lang } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: "Email requis" });
+    }
+    
+    // V35: Rate limiting
+    if (!checkResendVerificationRateLimit(email)) {
+      console.log(`[V35] Rate limit resend-verification: ${email}`);
+      return res.status(429).json({ error: "Trop de demandes. Réessaie dans 15 minutes." });
+    }
+    
     const userLang = lang || 'fr';
     const user = dbGet("SELECT * FROM users WHERE email = ?", [email?.toLowerCase()]);
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
@@ -2987,6 +3022,32 @@ app.post("/api/auth/resend-verification", async (req, res) => {
   }
 });
 
+// V35: Rate limiting pour forgot-password (anti-spam emails)
+const forgotPasswordAttempts = new Map();
+const FORGOT_PASSWORD_LIMIT = 3; // Max 3 demandes
+const FORGOT_PASSWORD_WINDOW = 15 * 60 * 1000; // Par 15 minutes
+
+function checkForgotPasswordRateLimit(email) {
+  const key = email.toLowerCase();
+  const now = Date.now();
+  const attempts = forgotPasswordAttempts.get(key) || { count: 0, firstAttempt: now };
+  
+  // Reset après 15 minutes
+  if (now - attempts.firstAttempt > FORGOT_PASSWORD_WINDOW) {
+    forgotPasswordAttempts.set(key, { count: 1, firstAttempt: now });
+    return true;
+  }
+  
+  // Bloque après 3 tentatives
+  if (attempts.count >= FORGOT_PASSWORD_LIMIT) {
+    return false;
+  }
+  
+  attempts.count++;
+  forgotPasswordAttempts.set(key, attempts);
+  return true;
+}
+
 // Mot de passe oublié
 app.post("/api/auth/forgot-password", async (req, res) => {
   try {
@@ -2994,6 +3055,15 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     
     if (!email) {
       return res.status(400).json({ success: false, error: "Email requis" });
+    }
+    
+    // V35: Rate limiting
+    if (!checkForgotPasswordRateLimit(email)) {
+      console.log(`[V35] Rate limit forgot-password: ${email}`);
+      return res.status(429).json({ 
+        success: false, 
+        error: "Trop de demandes. Réessaie dans 15 minutes." 
+      });
     }
     
     const user = dbGet("SELECT id, username, email FROM users WHERE email = ?", [email.toLowerCase()]);
