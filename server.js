@@ -22,7 +22,7 @@ const dailyManager = require("./daily-manager");
 const videoPermissions = require("./video-permissions");
 
 // Auth dependencies (optionnelles - graceful fallback si non installées)
-let bcrypt, jwt, initSqlJs, sharp, Replicate, Resend, multer;
+let bcrypt, jwt, initSqlJs, sharp, Replicate, Resend, multer, stripe;
 try { bcrypt = require("bcryptjs"); } catch(e) { console.log("⚠️ bcryptjs non installé"); }
 try { jwt = require("jsonwebtoken"); } catch(e) { console.log("⚠️ jsonwebtoken non installé"); }
 try { initSqlJs = require("sql.js"); } catch(e) { console.log("⚠️ sql.js non installé"); }
@@ -30,6 +30,12 @@ try { sharp = require("sharp"); } catch(e) { console.log("⚠️ sharp non insta
 try { Replicate = require("replicate"); } catch(e) { console.log("⚠️ replicate non installé"); }
 try { Resend = require("resend").Resend; } catch(e) { console.log("⚠️ resend non installé"); }
 try { multer = require("multer"); } catch(e) { console.log("⚠️ multer non installé"); }
+try { 
+  if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+    console.log("✅ Stripe initialisé");
+  }
+} catch(e) { console.log("⚠️ stripe non installé"); }
 
 const PORT = process.env.PORT || 3000;
 const BUILD_ID = process.env.BUILD_ID || "saboteur-unified-v2.0";
@@ -184,10 +190,20 @@ async function initAuthDatabase() {
       created_from_ip TEXT,
       last_video_ip TEXT,
       lifetime_games INTEGER DEFAULT 0,
+      stripeCustomerId TEXT,
+      stripeSubscriptionId TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       last_login DATETIME
     )
   `);
+  
+  // Migration : ajouter colonnes Stripe si elles n'existent pas
+  authDb.run(`ALTER TABLE users ADD COLUMN stripeCustomerId TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) console.log('Migration stripeCustomerId:', err?.message || 'OK');
+  });
+  authDb.run(`ALTER TABLE users ADD COLUMN stripeSubscriptionId TEXT`, (err) => {
+    if (err && !err.message.includes('duplicate column')) console.log('Migration stripeSubscriptionId:', err?.message || 'OK');
+  });
 
   authDb.run(`
     CREATE TABLE IF NOT EXISTS avatars (
@@ -2606,6 +2622,136 @@ const cacheMiddleware = (req, res, next) => {
 };
 
 app.use(cacheMiddleware);
+
+// ============================================================================
+// STRIPE WEBHOOK (doit être AVANT express.json pour recevoir le body raw)
+// ============================================================================
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  if (!stripe) {
+    console.log('[Stripe] Stripe non configuré');
+    return res.status(400).send('Stripe not configured');
+  }
+  
+  const sig = req.headers['stripe-signature'];
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  let event;
+  
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+  } catch (err) {
+    console.error('[Stripe Webhook] Signature invalide:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+  
+  console.log(`[Stripe Webhook] Événement reçu: ${event.type}`);
+  
+  // Traiter les événements
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object;
+      const stripeUserId = session.metadata?.userId;
+      const priceType = session.metadata?.priceType;
+      
+      console.log(`[Stripe] Paiement réussi pour user ${stripeUserId}, type: ${priceType}`);
+      
+      if (stripeUserId && db) {
+        try {
+          if (priceType === 'subscription') {
+            // Abonnement mensuel : passer en subscriber
+            db.run(`
+              UPDATE users 
+              SET tier = 'subscriber', 
+                  videoCredits = 999999,
+                  stripeCustomerId = ?,
+                  stripeSubscriptionId = ?
+              WHERE id = ?
+            `, [session.customer, session.subscription, stripeUserId]);
+            console.log(`[Stripe] User ${stripeUserId} upgradé en subscriber`);
+            
+          } else if (priceType === 'pack') {
+            // Pack crédits : ajouter 50 crédits
+            db.run(`
+              UPDATE users 
+              SET tier = CASE WHEN tier = 'free' THEN 'pack' ELSE tier END,
+                  videoCredits = videoCredits + 50,
+                  avatarCredits = avatarCredits + 50,
+                  stripeCustomerId = ?
+              WHERE id = ?
+            `, [session.customer, stripeUserId]);
+            console.log(`[Stripe] User ${stripeUserId} a reçu 50 crédits`);
+          }
+          saveDatabase();
+        } catch (dbError) {
+          console.error('[Stripe] Erreur DB:', dbError);
+        }
+      }
+      break;
+    }
+    
+    case 'customer.subscription.created': {
+      const subscription = event.data.object;
+      console.log(`[Stripe] Nouvel abonnement créé: ${subscription.id}`);
+      break;
+    }
+    
+    case 'customer.subscription.updated': {
+      const subscription = event.data.object;
+      console.log(`[Stripe] Abonnement mis à jour: ${subscription.id}, status: ${subscription.status}`);
+      break;
+    }
+    
+    case 'customer.subscription.deleted': {
+      // Abonnement annulé
+      const subscription = event.data.object;
+      const customerId = subscription.customer;
+      
+      console.log(`[Stripe] Abonnement annulé pour customer ${customerId}`);
+      
+      if (db) {
+        db.run(`
+          UPDATE users 
+          SET tier = 'free',
+              videoCredits = 0,
+              stripeSubscriptionId = NULL
+          WHERE stripeCustomerId = ?
+        `, [customerId]);
+        saveDatabase();
+      }
+      break;
+    }
+    
+    case 'invoice.payment_succeeded': {
+      const invoice = event.data.object;
+      console.log(`[Stripe] Paiement facture réussi: ${invoice.id}`);
+      break;
+    }
+    
+    case 'invoice.payment_failed': {
+      // Paiement échoué (abonnement)
+      const invoice = event.data.object;
+      const customerId = invoice.customer;
+      console.log(`[Stripe] Paiement échoué pour customer ${customerId}`);
+      // TODO: Envoyer email de relance
+      break;
+    }
+    
+    case 'charge.refunded': {
+      const charge = event.data.object;
+      console.log(`[Stripe] Remboursement effectué: ${charge.id}`);
+      break;
+    }
+    
+    case 'customer.created': {
+      const customer = event.data.object;
+      console.log(`[Stripe] Nouveau client créé: ${customer.id} (${customer.email})`);
+      break;
+    }
+  }
+  
+  res.json({ received: true });
+});
+
 app.use(express.json()); // Pour parser le JSON des requêtes auth
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/avatars", express.static(AVATARS_DIR)); // Servir les avatars
@@ -3475,6 +3621,137 @@ app.post("/api/admin/delete-user", (req, res) => {
 
 // Reset les limites IP (inclut account_creation_log)
 app.post("/api/admin/clear-ip-logs", (req, res) => {
+
+// ============================================================================
+// STRIPE PAYMENT ROUTES
+// ============================================================================
+
+// Créer une session de paiement Stripe Checkout
+app.post('/api/stripe/create-checkout-session', async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe non configuré' });
+  }
+  
+  try {
+    const { priceType, userId, userEmail } = req.body;
+    
+    if (!userId || !userEmail) {
+      return res.status(400).json({ error: 'userId et userEmail requis' });
+    }
+    
+    // Choisir le bon Price ID
+    const priceId = priceType === 'subscription' 
+      ? process.env.STRIPE_PRICE_SUBSCRIPTION 
+      : process.env.STRIPE_PRICE_PACK;
+    
+    if (!priceId) {
+      return res.status(500).json({ error: 'Price ID non configuré' });
+    }
+    
+    const mode = priceType === 'subscription' ? 'subscription' : 'payment';
+    
+    const session = await stripe.checkout.sessions.create({
+      mode: mode,
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      customer_email: userEmail,
+      metadata: {
+        userId: userId,
+        priceType: priceType
+      },
+      success_url: `${APP_URL}/payment-success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${APP_URL}/payment-cancel.html`,
+      locale: 'fr',
+      allow_promotion_codes: true,
+    });
+    
+    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId}`);
+    res.json({ url: session.url, sessionId: session.id });
+    
+  } catch (error) {
+    console.error('[Stripe] Erreur création session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Récupérer les infos de tarification (pour le frontend)
+app.get('/api/stripe/prices', (req, res) => {
+  res.json({
+    subscription: {
+      priceId: process.env.STRIPE_PRICE_SUBSCRIPTION || null,
+      amount: 149, // centimes
+      currency: 'eur',
+      interval: 'month',
+      name: 'Saboteur Premium',
+      description: 'Vidéo illimitée, 4 thèmes, 30 avatars/mois'
+    },
+    pack: {
+      priceId: process.env.STRIPE_PRICE_PACK || null,
+      amount: 499, // centimes
+      currency: 'eur',
+      name: 'Pack 50 Crédits',
+      description: '50 parties vidéo, 50 avatars, badge Supporter'
+    },
+    configured: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_SUBSCRIPTION)
+  });
+});
+
+// Vérifier le statut d'une session (pour page succès)
+app.get('/api/stripe/session-status', async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe non configuré' });
+  }
+  
+  try {
+    const { session_id } = req.query;
+    if (!session_id) {
+      return res.status(400).json({ error: 'session_id requis' });
+    }
+    
+    const session = await stripe.checkout.sessions.retrieve(session_id);
+    
+    res.json({
+      status: session.payment_status,
+      customer_email: session.customer_email,
+      priceType: session.metadata?.priceType
+    });
+  } catch (error) {
+    console.error('[Stripe] Erreur récupération session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Créer un portail client Stripe (pour gérer son abonnement)
+app.post('/api/stripe/create-portal-session', authenticateToken, async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe non configuré' });
+  }
+  
+  try {
+    const user = req.user;
+    
+    if (!user.stripeCustomerId) {
+      return res.status(400).json({ error: 'Pas de compte Stripe associé' });
+    }
+    
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: user.stripeCustomerId,
+      return_url: `${APP_URL}/game.html`,
+    });
+    
+    res.json({ url: portalSession.url });
+  } catch (error) {
+    console.error('[Stripe] Erreur création portail:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
   const { secretCode } = req.body;
   if (secretCode !== ADMIN_SECRET) {
     return res.status(403).json({ ok: false, error: "Code secret invalide" });
