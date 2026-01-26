@@ -3571,18 +3571,67 @@ app.delete("/api/video/delete-room/:roomCode", async (req, res) => {
 });
 
 // ===================================================
-// API ADMIN (temporaires - à supprimer en production)
+// API ADMIN SÉCURISÉE
 // ===================================================
-const ADMIN_SECRET = "SABOTEUR-ADMIN-2024-SECRET";
+const ADMIN_SECRET = process.env.ADMIN_SECRET || "SABOTEUR-ADMIN-2024-SECRET";
+const ADMIN_URL_SECRET = process.env.ADMIN_URL_SECRET || "panel-8x7k2m9z";
 
-// Upgrade un compte en admin
-app.post("/api/admin/upgrade", (req, res) => {
-  const { email, secretCode } = req.body;
+// Rate limiting pour admin (protection brute force)
+const adminAttempts = new Map();
+function checkAdminRateLimit(ip) {
+  const now = Date.now();
+  const attempts = adminAttempts.get(ip) || { count: 0, firstAttempt: now };
+  
+  // Reset après 15 minutes
+  if (now - attempts.firstAttempt > 15 * 60 * 1000) {
+    adminAttempts.set(ip, { count: 1, firstAttempt: now });
+    return true;
+  }
+  
+  // Bloque après 5 tentatives
+  if (attempts.count >= 5) {
+    return false;
+  }
+  
+  attempts.count++;
+  adminAttempts.set(ip, attempts);
+  return true;
+}
+
+// Middleware de vérification admin
+function verifyAdmin(req, res, next) {
+  const ip = getClientIP(req);
+  const secretCode = req.body.secretCode || req.query.secretCode;
+  
+  if (!checkAdminRateLimit(ip)) {
+    logger.warn("admin_rate_limited", { ip });
+    return res.status(429).json({ ok: false, error: "Trop de tentatives. Réessaie dans 15 minutes." });
+  }
+  
   if (secretCode !== ADMIN_SECRET) {
+    logger.warn("admin_invalid_secret", { ip });
     return res.status(403).json({ ok: false, error: "Code secret invalide" });
   }
+  
+  // Reset le compteur si succès
+  adminAttempts.delete(ip);
+  logger.info("admin_access", { ip });
+  next();
+}
+
+// Upgrade un compte (free → subscriber/pack/admin)
+app.post("/api/admin/upgrade", verifyAdmin, (req, res) => {
+  const { email, tier } = req.body;
+  
   if (!email) {
     return res.status(400).json({ ok: false, error: "Email requis" });
+  }
+  
+  const validTiers = ['free', 'pack', 'subscriber', 'admin'];
+  const targetTier = tier || 'admin';
+  
+  if (!validTiers.includes(targetTier)) {
+    return res.status(400).json({ ok: false, error: "Tier invalide (free/pack/subscriber/admin)" });
   }
   
   const user = dbGet("SELECT id, username, account_type FROM users WHERE email = ?", [email.toLowerCase()]);
@@ -3590,29 +3639,72 @@ app.post("/api/admin/upgrade", (req, res) => {
     return res.status(404).json({ ok: false, error: "Utilisateur non trouvé" });
   }
   
-  dbRun("UPDATE users SET account_type = 'admin', video_credits = 999999 WHERE id = ?", [user.id]);
-  logger.info("admin_upgrade", { email, userId: user.id });
+  let videoCredits = 2;
+  if (targetTier === 'pack') videoCredits = 50;
+  if (targetTier === 'subscriber' || targetTier === 'admin') videoCredits = 999999;
   
-  res.json({ ok: true, message: `${user.username} est maintenant admin`, user: { id: user.id, email, username: user.username, accountType: "admin" } });
+  dbRun("UPDATE users SET account_type = ?, video_credits = ? WHERE id = ?", [targetTier, videoCredits, user.id]);
+  logger.info("admin_upgrade", { email, userId: user.id, tier: targetTier });
+  
+  res.json({ 
+    ok: true, 
+    message: `${user.username} est maintenant ${targetTier}`, 
+    user: { id: user.id, email, username: user.username, accountType: targetTier, videoCredits } 
+  });
+});
+
+// Ajouter des crédits à un compte
+app.post("/api/admin/add-credits", verifyAdmin, (req, res) => {
+  const { email, credits } = req.body;
+  
+  if (!email || !credits) {
+    return res.status(400).json({ ok: false, error: "Email et credits requis" });
+  }
+  
+  const user = dbGet("SELECT id, username, video_credits FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ ok: false, error: "Utilisateur non trouvé" });
+  }
+  
+  const newCredits = (user.video_credits || 0) + parseInt(credits);
+  dbRun("UPDATE users SET video_credits = ? WHERE id = ?", [newCredits, user.id]);
+  logger.info("admin_add_credits", { email, credits, newTotal: newCredits });
+  
+  res.json({ 
+    ok: true, 
+    message: `${credits} crédits ajoutés à ${user.username}`,
+    user: { id: user.id, email, username: user.username, videoCredits: newCredits }
+  });
 });
 
 // Lister tous les utilisateurs
-app.get("/api/admin/users", (req, res) => {
-  const { secretCode } = req.query;
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ ok: false, error: "Code secret invalide" });
-  }
-  
-  const users = dbAll("SELECT id, email, username, account_type, email_verified, video_credits, created_at FROM users ORDER BY created_at DESC");
+app.get("/api/admin/users", verifyAdmin, (req, res) => {
+  const users = dbAll("SELECT id, email, username, account_type, email_verified, video_credits, avatars_used, stripeCustomerId, created_at, last_login FROM users ORDER BY created_at DESC");
   res.json({ ok: true, count: users.length, users });
 });
 
-// Supprimer un utilisateur
-app.post("/api/admin/delete-user", (req, res) => {
-  const { email, secretCode } = req.body;
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ ok: false, error: "Code secret invalide" });
+// Infos d'un utilisateur
+app.get("/api/admin/user", verifyAdmin, (req, res) => {
+  const { email } = req.query;
+  
+  if (!email) {
+    return res.status(400).json({ ok: false, error: "Email requis" });
   }
+  
+  const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
+  if (!user) {
+    return res.status(404).json({ ok: false, error: "Utilisateur non trouvé" });
+  }
+  
+  // Ne pas renvoyer le mot de passe
+  delete user.password;
+  res.json({ ok: true, user });
+});
+
+// Supprimer un utilisateur
+app.post("/api/admin/delete-user", verifyAdmin, (req, res) => {
+  const { email } = req.body;
+  
   if (!email) {
     return res.status(400).json({ ok: false, error: "Email requis" });
   }
@@ -3623,24 +3715,40 @@ app.post("/api/admin/delete-user", (req, res) => {
   }
   
   dbRun("DELETE FROM users WHERE id = ?", [user.id]);
+  dbRun("DELETE FROM avatars WHERE user_id = ?", [user.id]);
   logger.info("admin_delete_user", { email, userId: user.id });
   
   res.json({ ok: true, message: `Utilisateur ${user.username} supprimé` });
 });
 
-// Reset les limites IP (inclut account_creation_log)
-app.post("/api/admin/clear-ip-logs", (req, res) => {
-  const { secretCode } = req.body;
-  
-  if (!ADMIN_CODES.includes(secretCode)) {
-    return res.status(403).json({ ok: false, error: "Code secret invalide" });
-  }
-  
+// Reset les limites IP
+app.post("/api/admin/clear-ip-logs", verifyAdmin, (req, res) => {
   dbRun("DELETE FROM ip_tracking");
   dbRun("DELETE FROM account_creation_log");
   logger.info("admin_clear_ip_logs");
   
   res.json({ ok: true, message: "Logs IP et limites création de compte effacés" });
+});
+
+// Stats globales
+app.get("/api/admin/stats", verifyAdmin, (req, res) => {
+  const totalUsers = dbGet("SELECT COUNT(*) as count FROM users")?.count || 0;
+  const verifiedUsers = dbGet("SELECT COUNT(*) as count FROM users WHERE email_verified = 1")?.count || 0;
+  const subscribers = dbGet("SELECT COUNT(*) as count FROM users WHERE account_type = 'subscriber'")?.count || 0;
+  const packs = dbGet("SELECT COUNT(*) as count FROM users WHERE account_type = 'pack'")?.count || 0;
+  const admins = dbGet("SELECT COUNT(*) as count FROM users WHERE account_type = 'admin'")?.count || 0;
+  
+  res.json({ 
+    ok: true, 
+    stats: {
+      totalUsers,
+      verifiedUsers,
+      subscribers,
+      packs,
+      admins,
+      freeUsers: totalUsers - subscribers - packs - admins
+    }
+  });
 });
 
 // ============================================================================
