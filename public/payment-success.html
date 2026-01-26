@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement réussi - Saboteur</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    
+    .success-container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(0, 255, 136, 0.1);
+      border: 2px solid #00ff88;
+      border-radius: 20px;
+      max-width: 500px;
+      margin: 20px;
+      box-shadow: 0 0 50px rgba(0, 255, 136, 0.2);
+    }
+    
+    .success-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: bounce 1s ease infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    
+    h1 { 
+      color: #00ff88; 
+      font-size: 2.5em;
+      margin-bottom: 15px;
+    }
+    
+    p { 
+      color: rgba(255, 255, 255, 0.9); 
+      margin: 15px 0; 
+      font-size: 1.1em;
+      line-height: 1.6;
+    }
+    
+    #message {
+      min-height: 50px;
+    }
+    
+    .btn-play {
+      display: inline-block;
+      margin-top: 25px;
+      padding: 18px 45px;
+      background: linear-gradient(90deg, #00ff88, #00cc6a);
+      color: #000;
+      text-decoration: none;
+      border-radius: 12px;
+      font-weight: bold;
+      font-size: 1.2em;
+      transition: all 0.3s ease;
+      box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+    }
+    
+    .btn-play:hover {
+      transform: scale(1.05) translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0, 255, 136, 0.5);
+    }
+    
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      top: -10px;
+      animation: fall 3s linear infinite;
+    }
+    
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) rotate(720deg);
+      }
+    }
+    
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #00ff88;
+      animation: spin 1s ease-in-out infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="success-container">
+    <div class="success-icon">🎉</div>
+    <h1>Paiement réussi !</h1>
+    <p id="message"><span class="loading"></span> Vérification en cours...</p>
+    <a href="game.html" class="btn-play">🎮 Jouer maintenant</a>
+  </div>
+
+  <script>
+    // Créer des confettis
+    function createConfetti() {
+      const colors = ['#00ff88', '#00ffff', '#ff6600', '#ff00ff', '#ffff00'];
+      for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 3 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        document.body.appendChild(confetti);
+      }
+    }
+    
+    // Vérifier le statut de la session
+    async function checkSession() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sessionId = urlParams.get('session_id');
+      
+      if (!sessionId) {
+        document.getElementById('message').textContent = 
+          'Ton compte a été mis à jour. Profite de toutes les fonctionnalités !';
+        createConfetti();
+        return;
+      }
+      
+      try {
+        const response = await fetch(`/api/stripe/session-status?session_id=${sessionId}`);
+        const data = await response.json();
+        
+        if (data.priceType === 'subscription') {
+          document.getElementById('message').innerHTML = 
+            '🌟 <strong>Tu es maintenant Premium !</strong><br>Visioconférence illimitée activée.';
+        } else if (data.priceType === 'pack') {
+          document.getElementById('message').innerHTML = 
+            '📦 <strong>Tu as reçu 50 crédits !</strong><br>Profite de tes parties vidéo.';
+        } else {
+          document.getElementById('message').textContent = 
+            'Ton compte a été mis à jour avec succès !';
+        }
+        
+        createConfetti();
+        
+        // Rafraîchir les infos utilisateur
+        const token = localStorage.getItem('saboteur_token');
+        if (token) {
+          const userResponse = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const user = await userResponse.json();
+          if (user.id) {
+            localStorage.setItem('saboteur_user', JSON.stringify(user));
+            console.log('[Payment] User data refreshed:', user);
+          }
+        }
+        
+      } catch (error) {
+        console.error('Erreur vérification session:', error);
+        document.getElementById('message').textContent = 
+          'Paiement confirmé ! Ton compte sera mis à jour dans quelques instants.';
+        createConfetti();
+      }
+    }
+    
+    // Lancer au chargement
+    checkSession();
+  </script>
+</body>
+</html>

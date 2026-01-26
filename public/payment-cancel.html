@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paiement annulé - Saboteur</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+    }
+    
+    .cancel-container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(255, 100, 100, 0.1);
+      border: 2px solid rgba(255, 100, 100, 0.5);
+      border-radius: 20px;
+      max-width: 500px;
+      margin: 20px;
+    }
+    
+    .cancel-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    
+    h1 { 
+      color: #ff6b6b; 
+      font-size: 2em;
+      margin-bottom: 15px;
+    }
+    
+    p { 
+      color: rgba(255, 255, 255, 0.8); 
+      margin: 15px 0; 
+      line-height: 1.6;
+    }
+    
+    .buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 25px;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 15px 30px;
+      border-radius: 10px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: none;
+      font-size: 1em;
+    }
+    
+    .btn-back {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    .btn-retry {
+      background: linear-gradient(90deg, #00ffff, #0099cc);
+      color: #000;
+    }
+    
+    .btn-retry:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 255, 255, 0.3);
+    }
+    
+    .reassurance {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.9em;
+      color: rgba(255, 255, 255, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="cancel-container">
+    <div class="cancel-icon">😢</div>
+    <h1>Paiement annulé</h1>
+    <p>Pas de souci ! Tu peux continuer à jouer en mode chat gratuit.</p>
+    <p>Si tu changes d'avis, les offres Premium t'attendent !</p>
+    
+    <div class="buttons">
+      <a href="game.html" class="btn btn-back">← Retour au jeu</a>
+      <button class="btn btn-retry" onclick="showPaymentModal()">🔄 Réessayer</button>
+    </div>
+    
+    <div class="reassurance">
+      💡 Tu peux jouer gratuitement en mode chat, sans limite !
+    </div>
+  </div>
+  
+  <script src="payment-modal.js"></script>
+  
+  <!-- CSS du modal (inline pour cette page) -->
+  <style>
+    .payment-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 20px;
+    }
+
+    .payment-modal-content {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 700px;
+      width: 100%;
+      position: relative;
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+    }
+
+    .payment-modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .payment-modal-content h2 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 5px;
+      font-size: 28px;
+    }
+
+    .payment-subtitle {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 25px;
+    }
+
+    .payment-options {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .payment-card {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 25px;
+      width: 280px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    .payment-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(0, 255, 255, 0.5);
+    }
+
+    .payment-card.recommended {
+      border-color: #00ff88;
+      box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
+    }
+
+    .payment-badge {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #00ff88, #00cc6a);
+      color: #000;
+      padding: 5px 15px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .payment-card h3 {
+      color: #fff;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .payment-price {
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      color: #00ffff;
+      margin-bottom: 20px;
+    }
+
+    .payment-price span {
+      font-size: 16px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .payment-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 20px 0;
+    }
+
+    .payment-features li {
+      color: rgba(255, 255, 255, 0.9);
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .payment-btn {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .payment-btn.primary {
+      background: linear-gradient(90deg, #00ff88, #00cc6a);
+      color: #000;
+    }
+
+    .payment-btn.secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border: 2px solid rgba(0, 255, 255, 0.5);
+    }
+
+    .payment-footer {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      margin-top: 20px;
+      font-size: 14px;
+    }
+  </style>
+</body>
+</html>
