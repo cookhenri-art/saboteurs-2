@@ -43,6 +43,63 @@
       50% { opacity: 1; }
     }
 
+    /* Liens Premium */
+    .premium-links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .premium-link {
+      color: var(--neon-main, #00ffff);
+      text-decoration: none;
+      font-size: 0.9em;
+      padding: 8px 12px;
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .premium-link:hover {
+      background: rgba(0, 255, 255, 0.15);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+    
+    /* Tooltip au survol */
+    .premium-link::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.9);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.8em;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      border: 1px solid var(--neon-main, #00ffff);
+      z-index: 1000;
+    }
+    
+    .premium-link:hover::after {
+      opacity: 1;
+      visibility: visible;
+      bottom: calc(100% + 8px);
+    }
+    
+    .premium-separator {
+      color: rgba(255, 255, 255, 0.3);
+    }
+
     /* Container principal */
     .main-container {
       position: relative;
@@ -732,6 +789,17 @@
         <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
           🎮 Jouer en tant qu'invité
         </button>
+        
+        <!-- Liens Premium -->
+        <div class="premium-links">
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois">
+            🌟 Offres Premium
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
+            📦 Pack vidéo + avatars
+          </a>
+        </div>
       </div>
 
       <!-- Register Form -->
@@ -768,6 +836,17 @@
         <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
           🎮 Jouer en tant qu'invité
         </button>
+        
+        <!-- Liens Premium -->
+        <div class="premium-links">
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois">
+            🌟 Offres Premium
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
+            📦 Pack vidéo + avatars
+          </a>
+        </div>
       </div>
 
       <!-- Home Screen -->
@@ -776,6 +855,17 @@
         <button class="btn btn-secondary btn-full" onclick="goToAvatars()" data-i18n="index.profile.createAvatar">🎨 CRÉER MON AVATAR IA</button>
         <button class="btn btn-secondary btn-full" onclick="showChangePassword()" data-i18n="index.profile.changePassword">🔐 MODIFIER MOT DE PASSE</button>
         <button class="btn btn-secondary btn-full" onclick="logout()" data-i18n="index.profile.logout">🚪 DÉCONNEXION</button>
+        
+        <!-- Liens Premium -->
+        <div class="premium-links" style="margin-top: 20px;">
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois">
+            🌟 Offres Premium
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
+            📦 Pack vidéo + avatars
+          </a>
+        </div>
       </div>
 
       <!-- Modal changement mot de passe -->
@@ -1384,5 +1474,9 @@
       deferredPrompt = null;
     });
   </script>
+  
+  <!-- Module de paiement Stripe -->
+  <script src="payment-modal.js"></script>
+  <link rel="stylesheet" href="payment-modal.css">
 </body>
 </html>
