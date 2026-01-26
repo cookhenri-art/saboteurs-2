@@ -35,6 +35,45 @@
     .header-buttons {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-pack {
+      background: linear-gradient(135deg, #ff6600, #ff9900) !important;
+      color: #000 !important;
+      font-weight: bold;
+      position: relative;
+    }
+    
+    .btn-pack:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 102, 0, 0.4);
+    }
+    
+    .btn-pack::after {
+      content: attr(title);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.95);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.75em;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      border: 1px solid #ff6600;
+      z-index: 1000;
+      font-weight: normal;
+    }
+    
+    .btn-pack:hover::after {
+      opacity: 1;
+      visibility: visible;
     }
 
     .main-grid {
@@ -821,6 +860,7 @@
     <header class="header">
       <h1 data-i18n="avatar.title">🎨 CRÉATEUR D'AVATAR IA</h1>
       <div class="header-buttons">
+        <a href="#" onclick="showPaymentModal(); return false;" class="btn btn-pack" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">📦 Pack 50 vidéos + 50 avatars</a>
         <a href="/" class="btn btn-secondary">🏠 <span data-i18n="game.buttons.backToLobby">Accueil</span></a>
         <a href="/game.html" class="btn btn-primary">🎮 <span data-i18n="index.profile.playNow">Jouer</span></a>
       </div>
@@ -1990,5 +2030,9 @@
       translatePage();
     }
   </script>
+  
+  <!-- Module de paiement Stripe -->
+  <script src="payment-modal.js"></script>
+  <link rel="stylesheet" href="payment-modal.css">
 </body>
 </html>
