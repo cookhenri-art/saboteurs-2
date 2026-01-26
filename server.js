@@ -1001,6 +1001,7 @@ function getPhaseName(phaseKey, room) {
     ROLE_REVEAL: "RÉVÉLATION DES RÔLES",
     CAPTAIN_CANDIDACY: `Élection du ${captainTerm}`,
     CAPTAIN_VOTE: `Vote pour ${captainTerm}`,
+    CAPTAIN_RESULT: `${captainTerm} élu ! Préparez-vous pour la nuit`,
     NIGHT_START: "Début de la nuit",
     NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
     NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
@@ -1240,6 +1241,17 @@ function setPhase(room, phase, data = {}) {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night} video=${videoMessage}`);
   } catch {}
 
+  // V35: Auto-proceed pour les phases sans acteurs requis (comme NIGHT_START)
+  // Utiliser un petit délai pour laisser l'état se propager aux clients
+  const required = requiredPlayersForPhase(room);
+  if (required.length === 0) {
+    setTimeout(() => {
+      if (room.phase === phase) { // Vérifier qu'on est toujours sur cette phase
+        handlePhaseCompletion(room);
+        emitRoom(room);
+      }
+    }, 1500); // 1.5s pour afficher l'overlay et laisser la transition se faire
+  }
 }
 
 // V32: Décompter les crédits vidéo pour tous les joueurs éligibles d'une room
@@ -1361,7 +1373,8 @@ function requiredPlayersForPhase(room) {
     case "ROLE_REVEAL": return alive;
     case "CAPTAIN_CANDIDACY": return alive;
     case "CAPTAIN_VOTE": return alive;
-    case "NIGHT_START": return alive;
+    case "CAPTAIN_RESULT": return alive; // V35: Tous les joueurs valident avant la nuit
+    case "NIGHT_START": return []; // V35: Pas de validation - transition automatique
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_EXCHANGE": return (d.iaId && d.partnerId) ? [d.iaId, d.partnerId] : [];
@@ -2301,6 +2314,14 @@ function finishCaptainVote(room) {
   logEvent(room, "captain_elected", { playerId: best[0] });
   room.captainElected = true;
 
+  // V35: Phase CAPTAIN_RESULT avec validation avant la nuit
+  // Permet aux joueurs de discuter avant de lancer la nuit
+  setPhase(room, "CAPTAIN_RESULT", { captainId: best[0], captainName: cap?.name || "Capitaine" });
+}
+
+// V35: Nouvelle phase de résultat capitaine - tout le monde peut parler
+// Une fois que tous valident, la nuit commence automatiquement
+function proceedAfterCaptainResult(room) {
   beginNight(room);
 }
 
@@ -4463,6 +4484,11 @@ function handlePhaseCompletion(room) {
 
     case "CAPTAIN_VOTE":
       finishCaptainVote(room);
+      break;
+
+    // V35: Après validation de tous les joueurs, lance la nuit
+    case "CAPTAIN_RESULT":
+      proceedAfterCaptainResult(room);
       break;
 
     case "NIGHT_START":
