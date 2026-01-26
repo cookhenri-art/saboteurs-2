@@ -3632,6 +3632,18 @@ app.post("/api/admin/delete-user", (req, res) => {
 
 // Reset les limites IP (inclut account_creation_log)
 app.post("/api/admin/clear-ip-logs", (req, res) => {
+  const { secretCode } = req.body;
+  
+  if (!ADMIN_CODES.includes(secretCode)) {
+    return res.status(403).json({ ok: false, error: "Code secret invalide" });
+  }
+  
+  dbRun("DELETE FROM ip_tracking");
+  dbRun("DELETE FROM account_creation_log");
+  logger.info("admin_clear_ip_logs");
+  
+  res.json({ ok: true, message: "Logs IP et limites création de compte effacés" });
+});
 
 // ============================================================================
 // STRIPE PAYMENT ROUTES
@@ -3760,19 +3772,6 @@ app.post('/api/stripe/create-portal-session', authenticateToken, async (req, res
     console.error('[Stripe] Erreur création portail:', error);
     res.status(500).json({ error: error.message });
   }
-});
-
-// ============================================================================
-  const { secretCode } = req.body;
-  if (secretCode !== ADMIN_SECRET) {
-    return res.status(403).json({ ok: false, error: "Code secret invalide" });
-  }
-  
-  dbRun("DELETE FROM ip_tracking");
-  dbRun("DELETE FROM account_creation_log");
-  logger.info("admin_clear_ip_logs");
-  
-  res.json({ ok: true, message: "Logs IP et limites création de compte effacés" });
 });
 
 // ===================================================
