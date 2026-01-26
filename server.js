@@ -263,6 +263,18 @@ async function initAuthDatabase() {
     )
   `);
 
+  // V35: Table pour tracker les avatars par email (persiste après suppression compte)
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS email_avatar_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      total_avatars_created INTEGER DEFAULT 0,
+      monthly_avatars_created INTEGER DEFAULT 0,
+      last_month_reset TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
   // V32: Migration - Ajouter colonne custom_avatar si elle n'existe pas
   try {
     authDb.run("ALTER TABLE users ADD COLUMN custom_avatar TEXT");
@@ -365,6 +377,50 @@ function isBlockedEmailDomain(email) {
   if (BLOCKED_EMAIL_DOMAINS.includes(domain)) return true;
   const blocked = dbGet("SELECT id FROM blocked_email_domains WHERE domain = ?", [domain]);
   return !!blocked;
+}
+
+// V35: Helpers pour tracker les avatars par email (persiste après suppression compte)
+function getCurrentMonth() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function getEmailAvatarHistory(email) {
+  const emailLower = email.toLowerCase();
+  let history = dbGet("SELECT * FROM email_avatar_history WHERE email = ?", [emailLower]);
+  
+  if (!history) {
+    // Créer une entrée si elle n'existe pas
+    dbRun("INSERT INTO email_avatar_history (email, total_avatars_created, monthly_avatars_created, last_month_reset) VALUES (?, 0, 0, ?)", 
+      [emailLower, getCurrentMonth()]);
+    history = { email: emailLower, total_avatars_created: 0, monthly_avatars_created: 0, last_month_reset: getCurrentMonth() };
+  }
+  
+  // Reset mensuel si on a changé de mois
+  const currentMonth = getCurrentMonth();
+  if (history.last_month_reset !== currentMonth) {
+    dbRun("UPDATE email_avatar_history SET monthly_avatars_created = 0, last_month_reset = ? WHERE email = ?", 
+      [currentMonth, emailLower]);
+    history.monthly_avatars_created = 0;
+    history.last_month_reset = currentMonth;
+  }
+  
+  return history;
+}
+
+function incrementEmailAvatarCount(email) {
+  const emailLower = email.toLowerCase();
+  const currentMonth = getCurrentMonth();
+  
+  // Assure que l'entrée existe
+  getEmailAvatarHistory(emailLower);
+  
+  // Incrémenter les compteurs
+  dbRun(`UPDATE email_avatar_history 
+         SET total_avatars_created = total_avatars_created + 1, 
+             monthly_avatars_created = monthly_avatars_created + 1,
+             updated_at = CURRENT_TIMESTAMP 
+         WHERE email = ?`, [emailLower]);
 }
 
 function checkAccountCreationLimit(ip) {
@@ -2827,14 +2883,21 @@ app.post("/api/auth/register", async (req, res) => {
     
     // Note: Les codes promo sont désormais gérés via Stripe ou la page admin
 
+    // V35: Récupérer l'historique d'avatars pour cet email (même après suppression compte)
+    const emailHistory = getEmailAvatarHistory(email);
+    const avatarsAlreadyUsed = emailHistory.total_avatars_created || 0;
+    
+    console.log(`[V35] Nouveau compte ${email} - Historique avatars: ${avatarsAlreadyUsed} total, ${emailHistory.monthly_avatars_created} ce mois`);
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = generateVerificationToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
+    // V35: Utiliser l'historique mensuel pour avatars_used (pour subscribers)
     const result = dbInsert(
-      `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits]
+      `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits, avatars_used)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits, emailHistory.monthly_avatars_created]
     );
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
@@ -2844,7 +2907,7 @@ app.post("/api/auth/register", async (req, res) => {
 
     res.json({
       success: true, token,
-      user: { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType, emailVerified: false, videoCredits },
+      user: { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType, emailVerified: false, videoCredits, avatarsUsed: emailHistory.monthly_avatars_created },
       message: emailResult.simulated ? "Compte créé ! (Email simulé)" : "Compte créé ! Vérifie ton email."
     });
   } catch (error) {
@@ -3147,13 +3210,30 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
 
     const limits = getUserLimits(user);
 
+    // V35: Récupérer l'historique global par email
+    const emailHistory = getEmailAvatarHistory(user.email);
+    
+    // V35: Pour les packs (50 total), utiliser le compteur total
+    // Pour les subscribers (30/mois), utiliser le compteur mensuel
+    let avatarsToCheck = user.avatars_used; // Par défaut: mensuel (subscribers, free)
+    let limitType = "mensuel";
+    
+    if (user.account_type === "pack") {
+      avatarsToCheck = emailHistory.total_avatars_created;
+      limitType = "total";
+    }
+
     // Vérifier limite avatars
-    if (limits.avatars !== Infinity && user.avatars_used >= limits.avatars) {
+    if (limits.avatars !== Infinity && avatarsToCheck >= limits.avatars) {
       await fsPromises.unlink(req.file.path).catch(() => {});
+      console.log(`[V35] Limite avatars atteinte pour ${user.email}: ${avatarsToCheck}/${limits.avatars} (${limitType})`);
       return res.status(403).json({ 
-        error: "Limite d'avatars atteinte",
-        avatarsUsed: user.avatars_used,
-        avatarsLimit: limits.avatars
+        error: user.account_type === "pack" 
+          ? "Tu as utilisé tes 50 avatars du pack. Achète un nouveau pack !" 
+          : "Limite d'avatars atteinte ce mois-ci",
+        avatarsUsed: avatarsToCheck,
+        avatarsLimit: limits.avatars,
+        limitType
       });
     }
 
@@ -3289,6 +3369,10 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
       "UPDATE users SET avatars_used = avatars_used + 1, current_avatar = ? WHERE id = ?",
       [localAvatarUrl, user.id]
     );
+
+    // V35: Incrémenter aussi le compteur global par email (persiste après suppression)
+    incrementEmailAvatarCount(user.email);
+    console.log(`[V35] Avatar créé pour ${user.email} - compteur global incrémenté`);
 
     // Nettoyer le fichier uploadé
     await fsPromises.unlink(req.file.path).catch(() => {});
