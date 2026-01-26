@@ -2713,7 +2713,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             `, [session.customer, stripeUserId]);
             console.log(`[Stripe] User ${stripeUserId} a reçu 50 crédits`);
           }
-          saveDatabase();
+          
         } catch (dbError) {
           console.error('[Stripe] Erreur DB:', dbError);
         }
@@ -2747,7 +2747,7 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             stripeSubscriptionId = NULL
         WHERE stripeCustomerId = ?
       `, [customerId]);
-      saveDatabase();
+      
       break;
     }
     
@@ -2974,7 +2974,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     
     dbRun("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?", 
       [resetToken, resetExpires.toISOString(), user.id]);
-    saveDatabase();
+    
     
     // Envoyer email
     if (resend) {
@@ -3043,7 +3043,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
     // Mettre à jour
     dbRun("UPDATE users SET password = ?, reset_token = NULL, reset_expires = NULL WHERE id = ?", 
       [hashedPassword, user.id]);
-    saveDatabase();
+    
     
     logger.info("password_reset_completed", { email: user.email });
     
