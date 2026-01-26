@@ -1245,12 +1245,14 @@ function setPhase(room, phase, data = {}) {
   // Utiliser un petit délai pour laisser l'état se propager aux clients
   const required = requiredPlayersForPhase(room);
   if (required.length === 0) {
+    // V35: Délai plus long pour CAPTAIN_RESULT (discussion) vs NIGHT_START (transition)
+    const delay = (phase === 'CAPTAIN_RESULT') ? 8000 : 1500; // 8s pour discuter, 1.5s pour transition
     setTimeout(() => {
       if (room.phase === phase) { // Vérifier qu'on est toujours sur cette phase
         handlePhaseCompletion(room);
         emitRoom(room);
       }
-    }, 1500); // 1.5s pour afficher l'overlay et laisser la transition se faire
+    }, delay);
   }
 }
 
@@ -1373,7 +1375,7 @@ function requiredPlayersForPhase(room) {
     case "ROLE_REVEAL": return alive;
     case "CAPTAIN_CANDIDACY": return alive;
     case "CAPTAIN_VOTE": return alive;
-    case "CAPTAIN_RESULT": return alive; // V35: Tous les joueurs valident avant la nuit
+    case "CAPTAIN_RESULT": return alive; // V35: Tous valident avant la nuit (bouton visible)
     case "NIGHT_START": return []; // V35: Pas de validation - transition automatique
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
