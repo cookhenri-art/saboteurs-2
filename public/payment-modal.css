@@ -13,10 +13,12 @@
   bottom: 0;
   background: rgba(0, 0, 0, 0.85);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 10000;
   padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   animation: fadeIn 0.3s ease;
 }
 
@@ -35,6 +37,9 @@
   border: 2px solid rgba(0, 255, 255, 0.3);
   box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
   animation: slideUp 0.3s ease;
+  margin: auto;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 @keyframes slideUp {
@@ -246,27 +251,64 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 650px) {
+  .payment-modal-overlay {
+    padding: 10px;
+    align-items: flex-start;
+  }
+  
   .payment-modal-content {
-    padding: 20px;
-    margin: 10px;
+    padding: 20px 15px;
+    margin: 10px auto;
+    max-height: none;
+    border-radius: 15px;
   }
   
   .payment-modal-content h2 {
-    font-size: 22px;
+    font-size: 20px;
+  }
+  
+  .payment-subtitle {
+    font-size: 0.9em;
   }
   
   .payment-options {
     flex-direction: column;
     align-items: center;
+    gap: 15px;
   }
   
   .payment-card {
     width: 100%;
-    max-width: 300px;
+    max-width: 320px;
+    padding: 20px;
+  }
+  
+  .payment-card h3 {
+    font-size: 1.1em;
   }
   
   .payment-price {
     font-size: 28px;
+  }
+  
+  .payment-features li {
+    font-size: 0.85em;
+    padding: 6px 0;
+  }
+  
+  .payment-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+  
+  .payment-footer {
+    font-size: 12px;
+    margin-top: 15px;
+  }
+  
+  .payment-login-notice {
+    font-size: 0.85em;
+    padding: 10px 15px;
   }
 }
 
