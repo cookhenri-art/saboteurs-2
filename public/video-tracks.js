@@ -649,9 +649,7 @@
       result.isPrivate = true;
       // D11: Utiliser la traduction dynamique
       const saboName = window.t ? window.t('saboteurs') : 'saboteurs';
-      // V33: Traduction du message
-      const communicateText = window.i18n ? window.i18n('game.ui.saboteursCommunicate') : `Les ${saboName.toLowerCase()} communiquent...`;
-      result.message = `🔒 ${communicateText}`;
+      result.message = `🔒 Les ${saboName.toLowerCase()} communiquent...`;
       
       // D4 v5.7: Utiliser phaseData.actorIds
       const phaseData = state.phaseData || {};
@@ -675,9 +673,7 @@
       result.isPrivate = true;
       // D11: Utiliser la traduction dynamique du rôle
       const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
-      // V33: Traduction du message
-      const choosingText = window.i18n ? window.i18n('game.ui.choosingPartner') : 'choisit son partenaire...';
-      result.message = `🔒 ${aiAgentName} ${choosingText}`;
+      result.message = `🔒 ${aiAgentName} choisit son partenaire...`;
       
       const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
       if (iaPlayer) {
@@ -989,17 +985,13 @@
           color: #fff;
           font-family: 'Orbitron', sans-serif;
         `;
-        // V33: Traductions de l'overlay
-        const pleaseWaitText = window.i18n ? window.i18n('game.ui.pleaseWait') : 'Veuillez patienter...';
-        const micDisabledText = window.i18n ? window.i18n('game.ui.micDisabled') : '🎤 Micro désactivé';
-        const cameraDisabledText = window.i18n ? window.i18n('game.ui.cameraDisabled') : '📹 Caméra désactivée';
         overlay.innerHTML = `
           <div style="font-size: 3rem; margin-bottom: 20px;">🔒</div>
           <div id="privatePhaseMessage" style="font-size: 1.5rem; text-align: center; max-width: 80%; margin-bottom: 20px;"></div>
-          <div style="font-size: 1rem; opacity: 0.7;">${pleaseWaitText}</div>
+          <div style="font-size: 1rem; opacity: 0.7;">Veuillez patienter...</div>
           <div style="margin-top: 30px; padding: 20px; background: rgba(255,100,100,0.2); border: 2px solid rgba(255,100,100,0.5); border-radius: 12px;">
-            <div style="font-size: 0.9rem; opacity: 0.8;">${micDisabledText}</div>
-            <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">${cameraDisabledText}</div>
+            <div style="font-size: 0.9rem; opacity: 0.8;">🎤 Micro désactivé</div>
+            <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">📹 Caméra désactivée</div>
           </div>
         `;
         document.body.appendChild(overlay);
@@ -1051,6 +1043,40 @@
       }
     }
   }
+  
+  // V35: Restaurer micro/caméra aux moments clés (phases publiques uniquement)
+  // Appelée uniquement sur: LOBBY, CAPTAIN_RESULT, NIGHT_RESULT, DAY_RESULT, GAME_OVER
+  function restoreLocalTracks() {
+    const callObj = window.dailyVideo?.callFrame || window.dailyVideo?.callObject;
+    if (!callObj) return;
+    
+    // Vérifier qu'on n'est PAS en phase privée non-concerné
+    const state = window.lastKnownState;
+    const localId = getLocalPlayerId();
+    const privateStatus = getPrivatePhaseStatus(state, localId);
+    
+    if (privateStatus.isPrivate && !privateStatus.iAmInvolved) {
+      log("🔒 restoreLocalTracks blocked - still in private phase");
+      return;
+    }
+    
+    try {
+      // Respecter les choix manuels de l'utilisateur
+      if (!userMutedAudio) {
+        callObj.setLocalAudio(true);
+        log("🎤 Restored local audio");
+      }
+      if (!userMutedVideo) {
+        callObj.setLocalVideo(true);
+        log("📹 Restored local video");
+      }
+    } catch (e) {
+      log("Error restoring local tracks:", e);
+    }
+  }
+  
+  // V35: Exposer la fonction pour client.js
+  window.restoreLocalTracks = restoreLocalTracks;
   
   // D4 v5.5: Exposer une fonction pour forcer le recalcul des permissions
   // Appelée quand les permissions changent (changement de phase)

@@ -2662,6 +2662,17 @@ socket.on("roomState", (s) => {
     console.log('[D6] Player eliminated! Alive:', previousAliveCount, '->', currentAliveCount);
   }
 
+  // V35: Restaurer micro/caméra uniquement aux moments clés (phases publiques)
+  // Cela évite les saccades audio sur APK causées par des rallumages trop fréquents
+  const RESTORE_AUDIO_PHASES = ['LOBBY', 'CAPTAIN_RESULT', 'NIGHT_RESULT', 'DAY_RESULT', 'GAME_OVER', 'VOTE_RESULT'];
+  if (previousPhase !== currentPhaseNow && RESTORE_AUDIO_PHASES.includes(currentPhaseNow)) {
+    console.log('[V35] 🎤 Restoring local tracks for phase:', currentPhaseNow);
+    if (typeof window.restoreLocalTracks === 'function') {
+      // Petit délai pour laisser l'état se stabiliser
+      setTimeout(() => window.restoreLocalTracks(), 100);
+    }
+  }
+
   // audio per phase
   audioManager.play(state.audio);
 
