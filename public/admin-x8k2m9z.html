@@ -335,6 +335,29 @@
         <div id="deleteResult" class="result"></div>
       </div>
       
+      <!-- V35: Reset User Avatars/Video -->
+      <div class="section">
+        <h3>🔄 Reset Joueur (Avatars/Vidéo)</h3>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 15px;">Remet à zéro les compteurs d'un joueur (pour tests)</p>
+        <div class="form-group">
+          <label>ID Utilisateur</label>
+          <input type="number" id="resetUserId" placeholder="ID du joueur">
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" id="resetAvatarsCheck" checked> Reset compteur avatars
+          </label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" id="resetVideoCheck"> Reset crédits vidéo
+          </label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+            <input type="checkbox" id="deleteAvatarFilesCheck"> Supprimer fichiers avatars (libère disque)
+          </label>
+        </div>
+        <button class="btn-warning" onclick="resetUser()">🔄 Reset le joueur</button>
+        <div id="resetUserResult" class="result"></div>
+      </div>
+      
       <!-- Clear IP Logs -->
       <div class="section">
         <h3>🔓 Reset limites IP</h3>
@@ -547,6 +570,48 @@
         });
     }
     
+    // V35: Reset user avatars/video
+    function resetUser() {
+      const userId = document.getElementById('resetUserId').value;
+      if (!userId) {
+        showResult('resetUserResult', 'ID utilisateur requis', false);
+        return;
+      }
+      
+      const resetAvatars = document.getElementById('resetAvatarsCheck').checked;
+      const resetVideo = document.getElementById('resetVideoCheck').checked;
+      const deleteAvatarFiles = document.getElementById('deleteAvatarFilesCheck').checked;
+      
+      if (!resetAvatars && !resetVideo && !deleteAvatarFiles) {
+        showResult('resetUserResult', 'Sélectionne au moins une option', false);
+        return;
+      }
+      
+      let confirmMsg = `Reset pour user #${userId} :\n`;
+      if (resetAvatars) confirmMsg += '- Compteur avatars à 0\n';
+      if (resetVideo) confirmMsg += '- Crédits vidéo réinitialisés\n';
+      if (deleteAvatarFiles) confirmMsg += '- SUPPRESSION des fichiers avatars\n';
+      
+      if (!confirm(confirmMsg + '\nConfirmer ?')) return;
+      
+      fetch('/api/admin/reset-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: parseInt(userId), 
+          resetAvatars, 
+          resetVideo, 
+          deleteAvatarFiles,
+          secretCode: adminSecret 
+        })
+      })
+        .then(r => r.json())
+        .then(data => {
+          showResult('resetUserResult', data.message || data.error, data.ok);
+          if (data.ok) loadUsers();
+        });
+    }
+
     function clearIpLogs() {
       if (!confirm('Effacer toutes les limites IP ?')) return;
       

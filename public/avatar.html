@@ -1300,20 +1300,34 @@
       if (currentUser) {
         document.getElementById('avatarsUsed').textContent = currentUser.avatarsUsed || 0;
         
-        // V35: Calculer limite totale = mensuel + bonus
-        const monthlyLimits = { free: 1, subscriber: 30, pack: 50, family: 30, admin: Infinity };
-        const monthlyLimit = monthlyLimits[currentUser.accountType] || 1;
+        // V35: Calculer limite selon le type de compte
+        // pack: juste bonus (pas de mensuel), subscriber/family: 30/mois + bonus, free: 2/mois
         const bonusAvatars = currentUser.bonusAvatars || 0;
-        const totalLimit = monthlyLimit === Infinity ? '∞' : monthlyLimit + bonusAvatars;
+        let displayLimit, showBonus = false;
         
-        // Afficher la limite (avec indication bonus si présent)
-        if (bonusAvatars > 0 && monthlyLimit !== Infinity) {
-          document.getElementById('avatarsLimit').innerHTML = `${totalLimit} <small style="opacity:0.7">(${monthlyLimit}+${bonusAvatars})</small>`;
+        if (currentUser.accountType === 'admin') {
+          displayLimit = '∞';
+        } else if (currentUser.accountType === 'pack') {
+          // Pack : juste les bonus (50 à vie)
+          displayLimit = bonusAvatars;
         } else {
-          document.getElementById('avatarsLimit').textContent = totalLimit === Infinity ? '∞' : totalLimit;
+          // Free (2), subscriber (30), family (30) + bonus éventuel
+          const monthlyLimits = { free: 2, subscriber: 30, family: 30 };
+          const monthlyLimit = monthlyLimits[currentUser.accountType] || 2;
+          displayLimit = monthlyLimit + bonusAvatars;
+          showBonus = bonusAvatars > 0;
+          
+          if (showBonus) {
+            document.getElementById('avatarsLimit').innerHTML = `${displayLimit} <small style="opacity:0.7">(${monthlyLimit}+${bonusAvatars})</small>`;
+          }
+        }
+        
+        if (!showBonus) {
+          document.getElementById('avatarsLimit').textContent = displayLimit;
         }
         
         // V35: Afficher date de reset pour comptes mensuels (subscriber, family)
+        // Pas pour pack (les 50 sont à vie) ni free (reset au 1er du mois)
         const monthlyTypes = ['subscriber', 'family'];
         if (monthlyTypes.includes(currentUser.accountType)) {
           const resetInfo = document.getElementById('resetInfo');
@@ -1335,6 +1349,16 @@
           const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
           const dateOptions = { day: 'numeric', month: 'long' };
           resetDate.textContent = nextReset.toLocaleDateString(lang === 'en' ? 'en-US' : lang + '-' + lang.toUpperCase(), dateOptions);
+          resetInfo.style.display = 'block';
+        } else if (currentUser.accountType === 'free') {
+          // Free: reset le 1er du mois
+          const resetInfo = document.getElementById('resetInfo');
+          const resetDate = document.getElementById('resetDate');
+          const now = new Date();
+          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+          const dateOptions = { day: 'numeric', month: 'long' };
+          resetDate.textContent = nextMonth.toLocaleDateString(lang === 'en' ? 'en-US' : lang + '-' + lang.toUpperCase(), dateOptions);
           resetInfo.style.display = 'block';
         } else {
           document.getElementById('resetInfo').style.display = 'none';
