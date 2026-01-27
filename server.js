@@ -67,11 +67,11 @@ const resend = (RESEND_API_KEY && Resend) ? new Resend(RESEND_API_KEY) : null;
 const ACCOUNT_LIMITS = {
   guest: { videoCredits: 0, avatars: 0, themes: ["default", "werewolf"], customPrompt: false, sliders: false },
   free: { videoCredits: 2, avatars: 2, themes: ["default", "werewolf"], customPrompt: false, sliders: false },
-  // Pack 4.99€ : +50 vidéo, +50 bonus avatars (pas de quota mensuel, juste bonus)
-  pack: { videoCredits: 50, avatars: 0, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true },
-  subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true },
-  family: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true },
-  admin: { videoCredits: Infinity, avatars: Infinity, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true }
+  // Pack 4.99€ : +50 vidéo, +50 bonus avatars, garde les 2 avatars de base
+  pack: { videoCredits: 50, avatars: 2, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: false, sliders: true },
+  subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: false, sliders: true },
+  family: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: false, sliders: true },
+  admin: { videoCredits: Infinity, avatars: Infinity, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: false, sliders: true }
 };
 
 // V32 Option D: Tracking des sessions utilisateurs connectés (un seul compte à la fois)
@@ -4238,16 +4238,13 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     
     let totalLimit, avatarsToCheck;
     
-    if (user.account_type === 'pack') {
-      // Pack 4.99€ : pas de quota mensuel, juste les 50 bonus (total à vie)
-      totalLimit = bonusAvatars;
-      avatarsToCheck = emailHistory.total_avatars_created || 0;
-    } else if (user.account_type === 'admin') {
+    if (user.account_type === 'admin') {
       // Admin : illimité
       totalLimit = Infinity;
       avatarsToCheck = 0;
     } else {
-      // Free/subscriber/family : quota mensuel + bonus
+      // Tous les types ont un quota mensuel + bonus éventuel
+      // free: 2, pack: 2, subscriber: 30, family: 30
       totalLimit = limits.avatars + bonusAvatars;
       avatarsToCheck = monthlyUsed;
     }
@@ -4258,9 +4255,7 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
       console.log(`[V35] Limite avatars atteinte pour ${user.email}: ${avatarsToCheck}/${totalLimit} (type: ${user.account_type}, bonus: ${bonusAvatars})`);
       
       let errorMsg;
-      if (user.account_type === 'pack') {
-        errorMsg = `Tu as utilisé tes ${bonusAvatars} avatars du pack. Achète un nouveau pack !`;
-      } else if (bonusAvatars > 0) {
+      if (bonusAvatars > 0) {
         errorMsg = `Tu as utilisé tes ${limits.avatars} avatars mensuels + ${bonusAvatars} bonus`;
       } else {
         errorMsg = "Limite d'avatars atteinte ce mois-ci";
