@@ -1003,6 +1003,10 @@
             <div class="stat-label">Limite</div>
           </div>
         </div>
+        <!-- V35: Date de reset pour comptes mensuels -->
+        <div id="resetInfo" style="display: none; text-align: center; margin-top: 10px; font-size: 0.85em; color: rgba(255,255,255,0.6);">
+          🔄 <span data-i18n="avatar.resetInfo">Reset le</span> <span id="resetDate"></span>
+        </div>
       </div>
 
       <!-- Result -->
@@ -1295,8 +1299,46 @@
     function updateStats() {
       if (currentUser) {
         document.getElementById('avatarsUsed').textContent = currentUser.avatarsUsed || 0;
-        const limits = { free: 1, subscriber: 30, pack: 50, family: 30, admin: '∞' };
-        document.getElementById('avatarsLimit').textContent = limits[currentUser.accountType] || 1;
+        
+        // V35: Calculer limite totale = mensuel + bonus
+        const monthlyLimits = { free: 1, subscriber: 30, pack: 50, family: 30, admin: Infinity };
+        const monthlyLimit = monthlyLimits[currentUser.accountType] || 1;
+        const bonusAvatars = currentUser.bonusAvatars || 0;
+        const totalLimit = monthlyLimit === Infinity ? '∞' : monthlyLimit + bonusAvatars;
+        
+        // Afficher la limite (avec indication bonus si présent)
+        if (bonusAvatars > 0 && monthlyLimit !== Infinity) {
+          document.getElementById('avatarsLimit').innerHTML = `${totalLimit} <small style="opacity:0.7">(${monthlyLimit}+${bonusAvatars})</small>`;
+        } else {
+          document.getElementById('avatarsLimit').textContent = totalLimit === Infinity ? '∞' : totalLimit;
+        }
+        
+        // V35: Afficher date de reset pour comptes mensuels (subscriber, family)
+        const monthlyTypes = ['subscriber', 'family'];
+        if (monthlyTypes.includes(currentUser.accountType)) {
+          const resetInfo = document.getElementById('resetInfo');
+          const resetDate = document.getElementById('resetDate');
+          
+          // V35: Utiliser la date anniversaire (jour de l'abonnement)
+          const startDay = currentUser.subscriptionStartDay || 1;
+          const now = new Date();
+          let nextReset;
+          
+          // Si on n'a pas encore atteint le jour anniversaire ce mois, c'est ce mois
+          // Sinon c'est le mois prochain
+          if (now.getDate() < startDay) {
+            nextReset = new Date(now.getFullYear(), now.getMonth(), startDay);
+          } else {
+            nextReset = new Date(now.getFullYear(), now.getMonth() + 1, startDay);
+          }
+          
+          const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+          const dateOptions = { day: 'numeric', month: 'long' };
+          resetDate.textContent = nextReset.toLocaleDateString(lang === 'en' ? 'en-US' : lang + '-' + lang.toUpperCase(), dateOptions);
+          resetInfo.style.display = 'block';
+        } else {
+          document.getElementById('resetInfo').style.display = 'none';
+        }
       }
     }
 

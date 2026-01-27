@@ -4562,6 +4562,16 @@ const TRANSLATIONS = {
       nl: "AI-AVATAR MAKER"
     },
     
+    // V35: Info reset mensuel
+    resetInfo: {
+      fr: "Reset le",
+      en: "Resets on",
+      es: "Se reinicia el",
+      de: "Reset am",
+      it: "Reset il",
+      pt: "Reinicia em"
+    },
+    
     // Sections
     sections: {
       uploadPhoto: {
