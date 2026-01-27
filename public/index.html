@@ -956,6 +956,48 @@
               <button class="btn btn-primary" onclick="hideFamilyPackModal(); location.reload();">🎮 C'est parti !</button>
             </div>
           </div>
+          
+          <!-- V35: Étape 4 - Gestion des membres (propriétaire) -->
+          <div id="familyStep4" style="display: none;">
+            <p style="color: var(--neon-green); margin-bottom: 10px;">✅ Vous êtes propriétaire de ce Pack Famille</p>
+            
+            <div style="background: rgba(0,255,255,0.1); border: 1px solid var(--neon-cyan); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+              <p style="margin: 0; color: var(--text-secondary);">
+                <strong style="color: var(--neon-cyan);">Changements ce mois :</strong> <span id="familyChangesCount">0</span>/2
+              </p>
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin-bottom: 10px;">📋 Membres actuels :</h4>
+            <div id="familyMembersList" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+              <!-- Liste générée dynamiquement -->
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin-bottom: 10px;">🔄 Modifier un membre :</h4>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <select id="familyOldEmail" style="width: 100%;">
+                <option value="">-- Sélectionner le membre à remplacer --</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <input type="email" id="familyNewEmail" placeholder="Nouvel email" style="width: 100%;">
+            </div>
+            <div id="familyChangeError" style="color: var(--neon-red); margin-bottom: 10px; display: none;"></div>
+            <div id="familyChangeSuccess" style="color: var(--neon-green); margin-bottom: 10px; display: none;"></div>
+            
+            <div style="background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+              <strong style="color: var(--neon-orange);">⚠️ Attention :</strong>
+              <ul style="margin: 5px 0 0 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                <li>Le nouveau membre hérite des avatars créés</li>
+                <li>L'ancien membre perd son accès immédiatement</li>
+                <li>Maximum 2 changements par mois</li>
+              </ul>
+            </div>
+            
+            <div class="modal-buttons">
+              <button class="btn btn-primary" onclick="changeFamilyMember()">🔄 Modifier</button>
+              <button class="btn btn-secondary" onclick="hideFamilyPackModal()">❌ Fermer</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1584,14 +1626,56 @@
     
     let familyValidatedCode = null;
     
-    function showFamilyPackModal() {
+    async function showFamilyPackModal() {
       document.getElementById('familyPackModal').style.display = 'flex';
-      document.getElementById('familyStep1').style.display = 'block';
+      document.getElementById('familyStep1').style.display = 'none';
       document.getElementById('familyStep2').style.display = 'none';
       document.getElementById('familyStep3').style.display = 'none';
+      document.getElementById('familyStep4').style.display = 'none';
       document.getElementById('familyCode').value = '';
       document.getElementById('familyCodeError').style.display = 'none';
       familyValidatedCode = null;
+      
+      // Vérifier si l'utilisateur est déjà propriétaire d'un pack
+      if (currentUser && localStorage.getItem('authToken')) {
+        try {
+          const res = await fetch('/api/family/my-pack', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+          });
+          const data = await res.json();
+          
+          if (data.ok && data.hasFamilyPack && data.isOwner) {
+            // Afficher l'étape 4 (gestion des membres)
+            document.getElementById('familyStep4').style.display = 'block';
+            document.getElementById('familyChangesCount').textContent = data.pack.changesThisMonth || 0;
+            
+            // Remplir la liste des membres
+            const listEl = document.getElementById('familyMembersList');
+            const selectEl = document.getElementById('familyOldEmail');
+            listEl.innerHTML = '';
+            selectEl.innerHTML = '<option value="">-- Sélectionner le membre à remplacer --</option>';
+            
+            if (data.pack.members && data.pack.members.length > 0) {
+              data.pack.members.forEach((email, i) => {
+                // Ne pas afficher le propriétaire dans la liste modifiable
+                if (email.toLowerCase() !== data.pack.ownerEmail.toLowerCase()) {
+                  listEl.innerHTML += `<div style="padding: 8px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 5px;">
+                    ${i + 1}. ${email}
+                  </div>`;
+                  selectEl.innerHTML += `<option value="${email}">${email}</option>`;
+                }
+              });
+            }
+            
+            return;
+          }
+        } catch (err) {
+          console.log('Pas de pack famille existant');
+        }
+      }
+      
+      // Sinon afficher l'étape 1 (entrer un code)
+      document.getElementById('familyStep1').style.display = 'block';
     }
     
     function hideFamilyPackModal() {
@@ -1718,6 +1802,59 @@
       .catch(err => {
         alert('Erreur de connexion');
       });
+    }
+    
+    async function changeFamilyMember() {
+      const oldEmail = document.getElementById('familyOldEmail').value;
+      const newEmail = document.getElementById('familyNewEmail').value.trim().toLowerCase();
+      const errorEl = document.getElementById('familyChangeError');
+      const successEl = document.getElementById('familyChangeSuccess');
+      
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+      
+      if (!oldEmail) {
+        errorEl.textContent = 'Sélectionnez un membre à remplacer';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      if (!newEmail || !newEmail.includes('@')) {
+        errorEl.textContent = 'Entrez un email valide';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/family/change-member', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+          },
+          body: JSON.stringify({ oldEmail, newEmail })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          successEl.textContent = data.message;
+          successEl.style.display = 'block';
+          document.getElementById('familyNewEmail').value = '';
+          
+          // Mettre à jour le compteur
+          document.getElementById('familyChangesCount').textContent = 2 - data.changesRemaining;
+          
+          // Rafraîchir la liste après 2 secondes
+          setTimeout(() => showFamilyPackModal(), 2000);
+        } else {
+          errorEl.textContent = data.error || 'Erreur lors de la modification';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Erreur de connexion';
+        errorEl.style.display = 'block';
+      }
     }
 
     init();
