@@ -3694,18 +3694,43 @@ app.post("/api/auth/register", async (req, res) => {
     
     // V35: Vérifier si l'email est dans un Pack Famille actif
     const familyMember = dbGet(`
-      SELECT fm.*, fp.id as pack_id 
+      SELECT fm.*, fp.id as pack_id, fp.stripe_subscription_id
       FROM family_members fm
       JOIN family_packs fp ON fm.family_id = fp.id
       WHERE fm.email = ? AND fp.status = 'active'
     `, [email.toLowerCase()]);
     
     if (familyMember) {
-      accountType = "family";
-      videoCredits = 999999;
-      familyPackId = familyMember.pack_id;
-      subscriptionStartDay = new Date().getDate();
-      console.log(`[Family] Nouvel utilisateur ${email} auto-activé dans Pack Famille`);
+      // V35: Vérifier que l'abonnement Stripe est toujours actif
+      let stripeValid = true;
+      if (stripe && familyMember.stripe_subscription_id) {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(familyMember.stripe_subscription_id);
+          if (!['active', 'trialing'].includes(subscription.status)) {
+            console.log(`[Family] Abonnement Stripe inactif pour pack ${familyMember.pack_id}, user ${email} sera free`);
+            stripeValid = false;
+            // Désactiver le pack famille en base
+            dbRun("UPDATE family_packs SET status = 'cancelled' WHERE id = ?", [familyMember.pack_id]);
+          }
+        } catch (stripeErr) {
+          if (stripeErr.code === 'resource_missing') {
+            console.log(`[Family] Abonnement Stripe introuvable pour pack ${familyMember.pack_id}`);
+            stripeValid = false;
+            dbRun("UPDATE family_packs SET status = 'cancelled' WHERE id = ?", [familyMember.pack_id]);
+          } else {
+            console.error('[Family] Erreur vérification Stripe:', stripeErr.message);
+            // En cas d'erreur Stripe, on accepte quand même (bénéfice du doute)
+          }
+        }
+      }
+      
+      if (stripeValid) {
+        accountType = "family";
+        videoCredits = 999999;
+        familyPackId = familyMember.pack_id;
+        subscriptionStartDay = new Date().getDate();
+        console.log(`[Family] Nouvel utilisateur ${email} auto-activé dans Pack Famille (Stripe OK)`);
+      }
     }
     
     // V35: Récupérer l'historique d'avatars pour cet email (persiste après suppression)
@@ -4928,7 +4953,7 @@ app.post("/api/admin/clear-ip-logs", verifyAdmin, (req, res) => {
 
 // V35: Reset avatars et/ou vidéo d'un joueur + suppression fichiers avatars
 app.post("/api/admin/reset-user", verifyAdmin, (req, res) => {
-  const { userId, resetAvatars, resetVideo, deleteAvatarFiles } = req.body;
+  const { userId, resetAvatars, resetVideo, deleteAvatarFiles, removeFromFamily, downgradeToFree } = req.body;
   
   if (!userId) {
     return res.status(400).json({ ok: false, error: "userId requis" });
@@ -4941,6 +4966,29 @@ app.post("/api/admin/reset-user", verifyAdmin, (req, res) => {
   
   let messages = [];
   
+  // Downgrade to free (reset complet du type de compte)
+  if (downgradeToFree) {
+    dbRun(`
+      UPDATE users 
+      SET account_type = 'free', 
+          video_credits = 2,
+          bonus_avatars = 0,
+          avatars_used = 0,
+          family_pack_id = NULL,
+          stripeSubscriptionId = NULL,
+          stripeCustomerId = NULL
+      WHERE id = ?
+    `, [userId]);
+    messages.push("Compte rétrogradé en FREE (2 vidéos, 0 bonus)");
+  }
+  
+  // Retirer du pack famille (supprime l'entrée dans family_members)
+  if (removeFromFamily) {
+    const deleted = dbRun("DELETE FROM family_members WHERE email = ?", [user.email.toLowerCase()]);
+    dbRun("UPDATE users SET family_pack_id = NULL WHERE id = ?", [userId]);
+    messages.push("Retiré du pack famille");
+  }
+  
   // Reset compteur avatars
   if (resetAvatars) {
     dbRun("UPDATE users SET avatars_used = 0, last_avatar_reset = ? WHERE id = ?", [getCurrentMonth(), userId]);
@@ -4951,7 +4999,9 @@ app.post("/api/admin/reset-user", verifyAdmin, (req, res) => {
   
   // Reset crédits vidéo
   if (resetVideo) {
-    const limits = getUserLimits(user);
+    // Recharger user après modifications éventuelles
+    const updatedUser = dbGet("SELECT * FROM users WHERE id = ?", [userId]);
+    const limits = getUserLimits(updatedUser);
     const newCredits = limits.videoCredits === Infinity ? 999999 : limits.videoCredits;
     dbRun("UPDATE users SET video_credits = ? WHERE id = ?", [newCredits, userId]);
     messages.push(`Crédits vidéo remis à ${newCredits === 999999 ? '∞' : newCredits}`);
@@ -4985,7 +5035,7 @@ app.post("/api/admin/reset-user", verifyAdmin, (req, res) => {
     dbRun("UPDATE users SET current_avatar = NULL WHERE id = ?", [userId]);
   }
   
-  logger.info("admin_reset_user", { userId, resetAvatars, resetVideo, deleteAvatarFiles });
+  logger.info("admin_reset_user", { userId, resetAvatars, resetVideo, deleteAvatarFiles, removeFromFamily, downgradeToFree });
   
   res.json({ 
     ok: true, 
