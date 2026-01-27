@@ -2942,7 +2942,7 @@ async function sendFamilyCodeEmail(email, code) {
   
   try {
     await resend.emails.send({
-      from: 'Saboteur <noreply@saboteurs.music-music.fr>',
+      from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
       to: email,
       subject: '🎮 Votre code Pack Famille Saboteur',
       html: `
@@ -2957,7 +2957,7 @@ async function sendFamilyCodeEmail(email, code) {
           
           <h3 style="color: #ffa500;">📋 Comment activer votre Pack Famille :</h3>
           <ol style="line-height: 2; color: #ccc;">
-            <li>Connectez-vous sur <a href="https://saboteurs.music-music.fr" style="color: #00ffff;">saboteurs.music-music.fr</a></li>
+            <li>Connectez-vous sur <a href="https://saboteurs-loup-garou.com" style="color: #00ffff;">saboteurs-loup-garou.com</a></li>
             <li>Cliquez sur "Activer Pack Famille" dans votre profil</li>
             <li>Entrez le code ci-dessus</li>
             <li>Renseignez les 8 emails de vos invités</li>
@@ -2993,7 +2993,7 @@ async function sendFamilyActivationEmail(email, ownerEmail, isOwner) {
   
   try {
     await resend.emails.send({
-      from: 'Saboteur <noreply@saboteurs.music-music.fr>',
+      from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
       to: email,
       subject: subject,
       html: `
@@ -3019,7 +3019,7 @@ async function sendFamilyActivationEmail(email, ownerEmail, isOwner) {
           </div>
           
           <p style="text-align: center;">
-            <a href="https://saboteurs.music-music.fr" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
               Jouer maintenant !
             </a>
           </p>
@@ -3038,7 +3038,7 @@ async function sendFamilyCancellationEmail(email, ownerEmail, wasExisting) {
   
   try {
     await resend.emails.send({
-      from: 'Saboteur <noreply@saboteurs.music-music.fr>',
+      from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
       to: email,
       subject: '😢 Pack Famille Saboteur résilié',
       html: `
@@ -3064,7 +3064,7 @@ async function sendFamilyCancellationEmail(email, ownerEmail, wasExisting) {
           </div>
           
           <p style="text-align: center;">
-            <a href="https://saboteurs.music-music.fr" style="display: inline-block; background: #00ffff; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ffff; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
               Reprendre un abonnement
             </a>
           </p>
