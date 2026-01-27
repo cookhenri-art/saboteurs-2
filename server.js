@@ -1247,7 +1247,7 @@ function setPhase(room, phase, data = {}) {
         handlePhaseCompletion(room);
         emitRoom(room);
       }
-    }, 2000); // 2s pour laisser l'overlay s'afficher
+    }, 4000); // 4s pour laisser le temps d'entendre le MP3
   }
 }
 
