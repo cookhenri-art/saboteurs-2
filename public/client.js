@@ -1051,7 +1051,7 @@ if (actorOnly.has(state.phase) && !isActorNow) {
     return b;
   };
 
-  if (state.phase === "ROLE_REVEAL" || state.phase === "NIGHT_START" || state.phase === "NIGHT_RESULTS" || state.phase === "DAY_WAKE" || state.phase === "DAY_RESULTS") {
+  if (state.phase === "ROLE_REVEAL" || state.phase === "CAPTAIN_RESULT" || state.phase === "NIGHT_RESULTS" || state.phase === "DAY_WAKE" || state.phase === "DAY_RESULTS") {
     controls.appendChild(ackButton());
   }
   if (state.phase === "NIGHT_RADAR" && state.phaseData?.selectionDone) {
