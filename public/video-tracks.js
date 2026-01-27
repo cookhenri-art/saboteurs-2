@@ -1087,13 +1087,43 @@
           color: #fff;
           font-family: 'Orbitron', sans-serif;
         `;
+        
+        // V35: Traductions overlay
+        const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+        const overlayTexts = {
+          pleaseWait: {
+            fr: 'Veuillez patienter...',
+            en: 'Please wait...',
+            es: 'Por favor espere...',
+            de: 'Bitte warten...',
+            it: 'Attendere prego...',
+            pt: 'Por favor aguarde...'
+          },
+          micOff: {
+            fr: '🎤 Micro désactivé',
+            en: '🎤 Microphone disabled',
+            es: '🎤 Micrófono desactivado',
+            de: '🎤 Mikrofon deaktiviert',
+            it: '🎤 Microfono disattivato',
+            pt: '🎤 Microfone desativado'
+          },
+          camOff: {
+            fr: '📹 Caméra désactivée',
+            en: '📹 Camera disabled',
+            es: '📹 Cámara desactivada',
+            de: '📹 Kamera deaktiviert',
+            it: '📹 Fotocamera disattivata',
+            pt: '📹 Câmera desativada'
+          }
+        };
+        
         overlay.innerHTML = `
           <div style="font-size: 3rem; margin-bottom: 20px;">🔒</div>
           <div id="privatePhaseMessage" style="font-size: 1.5rem; text-align: center; max-width: 80%; margin-bottom: 20px;"></div>
-          <div style="font-size: 1rem; opacity: 0.7;">Veuillez patienter...</div>
+          <div style="font-size: 1rem; opacity: 0.7;">${overlayTexts.pleaseWait[lang] || overlayTexts.pleaseWait.fr}</div>
           <div style="margin-top: 30px; padding: 20px; background: rgba(255,100,100,0.2); border: 2px solid rgba(255,100,100,0.5); border-radius: 12px;">
-            <div style="font-size: 0.9rem; opacity: 0.8;">🎤 Micro désactivé</div>
-            <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">📹 Caméra désactivée</div>
+            <div style="font-size: 0.9rem; opacity: 0.8;">${overlayTexts.micOff[lang] || overlayTexts.micOff.fr}</div>
+            <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 5px;">${overlayTexts.camOff[lang] || overlayTexts.camOff.fr}</div>
           </div>
         `;
         document.body.appendChild(overlay);
