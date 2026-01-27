@@ -3,8 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎨 Créer mon Avatar IA - Saboteur</title>
+  <title>🎨 Créer mon Avatar - Saboteur</title>
   <link rel="stylesheet" href="auth-themes.css">
+  <!-- V32: Socket.IO pour synchro temps réel -->
+  <script src="/socket.io/socket.io.js"></script>
   
   <style>
     .container {
@@ -33,6 +35,45 @@
     .header-buttons {
       display: flex;
       gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    .btn-pack {
+      background: linear-gradient(135deg, #ff6600, #ff9900) !important;
+      color: #000 !important;
+      font-weight: bold;
+      position: relative;
+    }
+    
+    .btn-pack:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(255, 102, 0, 0.4);
+    }
+    
+    .btn-pack::after {
+      content: attr(title);
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.95);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.75em;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      border: 1px solid #ff6600;
+      z-index: 1000;
+      font-weight: normal;
+    }
+    
+    .btn-pack:hover::after {
+      opacity: 1;
+      visibility: visible;
     }
 
     .main-grid {
@@ -402,36 +443,94 @@
       object-fit: cover;
     }
 
+    /* Avatars classiques (emojis) */
+    .classic-avatars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .classic-avatar-item {
+      aspect-ratio: 1;
+      border-radius: var(--border-radius);
+      border: 2px solid var(--metal-grey);
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .classic-avatar-item:hover {
+      border-color: var(--neon-main);
+      transform: scale(1.1);
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    .classic-avatar-item.active {
+      border-color: var(--neon-green);
+      box-shadow: 0 0 15px var(--neon-green);
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .section-divider {
+      border-top: 1px solid var(--metal-grey);
+      margin: 25px 0 15px 0;
+      padding-top: 15px;
+    }
+
     /* Bouton suppression avatar */
     .gallery-item {
       position: relative;
     }
 
-    .delete-avatar-btn {
+    /* V35: Conteneur pour les boutons d'action */
+    .avatar-actions {
       position: absolute;
       top: 5px;
       right: 5px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+
+    .gallery-item:hover .avatar-actions {
+      opacity: 1;
+    }
+
+    .delete-avatar-btn, .download-avatar-btn {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: rgba(255, 0, 85, 0.9);
       border: none;
       cursor: pointer;
       font-size: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
+      transition: transform 0.2s;
     }
 
-    .gallery-item:hover .delete-avatar-btn {
-      opacity: 1;
+    .delete-avatar-btn {
+      background: rgba(255, 0, 85, 0.9);
+    }
+
+    .download-avatar-btn {
+      background: rgba(0, 200, 100, 0.9);
     }
 
     .delete-avatar-btn:hover {
       background: var(--neon-red);
+      transform: scale(1.1);
+    }
+
+    .download-avatar-btn:hover {
+      background: #00cc66;
       transform: scale(1.1);
     }
 
@@ -449,7 +548,7 @@
       font-size: 2rem;
     }
 
-    .gallery-item.broken .delete-avatar-btn {
+    .gallery-item.broken .avatar-actions {
       opacity: 1;
     }
 
@@ -559,6 +658,23 @@
       background: rgba(0, 255, 255, 0.2);
       box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
     }
+    .save-preset-btn {
+      padding: 12px 16px;
+      font-size: 1.2rem;
+      min-width: auto;
+    }
+    .save-preset-btn:hover {
+      border-color: var(--neon-orange);
+      background: rgba(255, 102, 0, 0.2);
+    }
+    #customPresetBtn {
+      border-color: var(--neon-orange);
+    }
+    #customPresetBtn.active {
+      border-color: var(--neon-orange);
+      background: rgba(255, 102, 0, 0.2);
+      box-shadow: 0 0 15px rgba(255, 102, 0, 0.3);
+    }
     .preset-icon {
       font-size: 1.8rem;
     }
@@ -571,7 +687,201 @@
       font-size: 0.7rem;
       color: var(--text-muted);
     }
+
+    /* V32: Section avatar perso upload/photo */
+    .custom-avatar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .current-custom-avatar {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+    }
+
+    .current-custom-avatar img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--neon-main);
+    }
+
+    .current-custom-avatar .avatar-info {
+      flex: 1;
+    }
+
+    .current-custom-avatar .btn-delete-custom {
+      background: var(--neon-red);
+      border: none;
+      padding: 8px 12px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .upload-photo-zone {
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: var(--border-radius);
+      border: 2px dashed var(--metal-grey);
+    }
+
+    .upload-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-upload, .btn-camera {
+      padding: 12px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+      border: none;
+      transition: all 0.3s;
+    }
+
+    .btn-upload {
+      background: linear-gradient(135deg, var(--neon-cyan), var(--neon-blue));
+      color: var(--primary-bg);
+    }
+
+    .btn-camera {
+      background: linear-gradient(135deg, var(--neon-purple), var(--neon-pink));
+      color: white;
+    }
+
+    .btn-upload:hover, .btn-camera:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+    }
+
+    .custom-avatar-preview {
+      text-align: center;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+      border: 2px solid var(--neon-main);
+    }
+
+    .custom-avatar-preview img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 4px solid var(--neon-main);
+    }
+
+    .preview-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .btn-success {
+      background: var(--neon-green);
+      color: var(--primary-bg);
+      border: none;
+      padding: 10px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-cancel {
+      background: var(--metal-grey);
+      color: var(--text-primary);
+      border: none;
+      padding: 10px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-success:hover { background: #4ade80; }
+    .btn-cancel:hover { background: #555; }
+
+    /* V32: Modal Webcam */
+    .webcam-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 2000;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    .webcam-modal.show {
+      display: flex;
+    }
+
+    .webcam-container {
+      position: relative;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .webcam-video {
+      width: 100%;
+      border-radius: 10px;
+      transform: scaleX(-1); /* Miroir */
+    }
+
+    .webcam-canvas {
+      display: none;
+    }
+
+    .webcam-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    .btn-capture {
+      background: linear-gradient(135deg, var(--neon-green), #22c55e);
+      color: var(--primary-bg);
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .btn-close-webcam {
+      background: var(--metal-grey);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .webcam-title {
+      color: white;
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+      text-align: center;
+    }
   </style>
+  
+  <!-- Système de traductions -->
+  <script src="translations.js"></script>
 </head>
 <body>
   <!-- Sélecteur de thème -->
@@ -584,10 +894,11 @@
 
   <div class="container">
     <header class="header">
-      <h1>🎨 CRÉER MON AVATAR IA</h1>
+      <h1 data-i18n="avatar.title">🎨 CRÉATEUR D'AVATAR IA</h1>
       <div class="header-buttons">
-        <a href="/" class="btn btn-secondary">🏠 Accueil</a>
-        <a href="/game.html" class="btn btn-primary">🎮 Jouer</a>
+        <a href="#" onclick="showPaymentModal(); return false;" class="btn btn-pack" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">📦 Pack 50 vidéos + 50 avatars</a>
+        <a href="/" class="btn btn-secondary">🏠 <span data-i18n="game.buttons.backToLobby">Accueil</span></a>
+        <a href="/game.html" class="btn btn-primary">🎮 <span data-i18n="index.profile.playNow">Jouer</span></a>
       </div>
     </header>
 
@@ -597,58 +908,43 @@
     <div class="main-grid">
       <!-- Controls -->
       <div class="card">
-        <h2 class="card-title">📸 TA PHOTO</h2>
+        <h2 class="card-title">📸 <span data-i18n="avatar.sections.uploadPhoto">TA PHOTO</span></h2>
         
         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
           <div class="icon">📷</div>
-          <p>Clique pour ajouter ta photo</p>
-          <p style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);">Selfie de face recommandé</p>
+          <p data-i18n="avatar.sections.uploadPhoto">Clique pour ajouter ta photo</p>
+          <p style="font-size: 0.8rem; margin-top: 10px; color: var(--text-muted);" data-i18n="avatar.sections.selfieRecommended">Selfie de face recommandé</p>
           <img class="upload-preview" id="uploadPreview">
         </div>
         <input type="file" id="photoInput" accept="image/*" style="display: none">
+        <input type="file" id="cameraPhotoInput" accept="image/*" capture="user" style="display: none">
+        
+        <!-- Bouton prendre photo avec caméra -->
+        <div style="text-align: center; margin-top: 10px;">
+          <button class="btn btn-camera" onclick="openWebcam('ia')" style="padding: 10px 20px;" data-i18n="avatar.sections.takePhoto">
+            📷 Prendre une photo
+          </button>
+        </div>
 
-        <h2 class="card-title" style="margin-top: 25px;">🎨 THÈME DE L'AVATAR</h2>
+        <h2 class="card-title" style="margin-top: 25px;" data-i18n="avatar.sections.theme">🎨 THÈME DE L'AVATAR</h2>
         <div class="theme-grid" id="avatarThemeGrid"></div>
 
-        <h2 class="card-title">👤 PERSONNAGE</h2>
+        <h2 class="card-title" data-i18n="avatar.sections.character">👤 PERSONNAGE</h2>
         <div class="character-grid" id="characterGrid"></div>
 
-        <!-- Presets de rendu (comptes gratuits et premium non-admin) -->
-        <div class="preset-section" id="presetSection">
-          <h2 class="card-title">🎭 STYLE DE RENDU</h2>
-          <div class="preset-grid" id="presetGrid">
-            <button class="preset-btn active" data-preset="standard" onclick="selectPreset('standard')">
-              <span class="preset-icon">🎯</span>
-              <span class="preset-name">Standard</span>
-              <span class="preset-desc">Équilibré</span>
-            </button>
-            <button class="preset-btn" data-preset="transformed" onclick="selectPreset('transformed')">
-              <span class="preset-icon">🔥</span>
-              <span class="preset-name">Transformé</span>
-              <span class="preset-desc">Plus stylisé</span>
-            </button>
-            <button class="preset-btn" data-preset="natural" onclick="selectPreset('natural')">
-              <span class="preset-icon">👤</span>
-              <span class="preset-name">Naturel</span>
-              <span class="preset-desc">Proche photo</span>
-            </button>
-            <button class="preset-btn" data-preset="artistic" onclick="selectPreset('artistic')">
-              <span class="preset-icon">✨</span>
-              <span class="preset-name">Artistique</span>
-              <span class="preset-desc">Très stylisé</span>
-            </button>
+        <!-- V35: Sliders pour tous les utilisateurs -->
+        <div class="admin-section show" id="adminSection">
+          <h2 class="card-title">🔧 STYLE DE RENDU</h2>
+          
+          <!-- Presets rapides -->
+          <div class="presets-row" style="margin-bottom: 20px;">
+            <button class="preset-btn active" onclick="applyPreset('balanced')">⚖️ Équilibré</button>
+            <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
+            <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
+            <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
+            <button class="preset-btn" id="customPresetBtn" onclick="applyPreset('custom')" style="display: none;">⭐ Mon style</button>
+            <button class="preset-btn save-preset-btn" onclick="saveCustomPreset()" title="Sauvegarder mes réglages actuels">💾</button>
           </div>
-        </div>
-
-        <!-- Custom Prompt (Premium/Admin) -->
-        <div class="custom-prompt-section" id="customPromptSection">
-          <h2 class="card-title">✨ PROMPT PERSONNALISÉ</h2>
-          <textarea id="customPrompt" placeholder="Décris ton personnage personnalisé..."></textarea>
-        </div>
-
-        <!-- Admin Sliders -->
-        <div class="admin-section" id="adminSection">
-          <h4>🔧 Paramètres avancés (Admin)</h4>
           
           <!-- Slider 1: Ressemblance -->
           <div class="slider-group">
@@ -701,18 +997,10 @@
               <span>Fidèle</span>
             </div>
           </div>
-
-          <!-- Presets rapides -->
-          <div class="presets-row">
-            <button class="preset-btn" onclick="applyPreset('balanced')">⚖️ Équilibré</button>
-            <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
-            <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
-            <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
-          </div>
         </div>
 
-        <button class="btn btn-primary generate-btn" id="generateBtn" onclick="generateAvatar()" disabled>
-          ✨ GÉNÉRER MON AVATAR
+        <button class="btn btn-primary generate-btn" id="generateBtn" onclick="generateAvatar()" disabled data-i18n="avatar.buttons.generate">
+          🎨 GÉNÉRER MON AVATAR
         </button>
 
         <div class="stats" id="userStats">
@@ -725,28 +1013,83 @@
             <div class="stat-label">Limite</div>
           </div>
         </div>
+        <!-- V35: Date de reset pour comptes mensuels -->
+        <div id="resetInfo" style="display: none; text-align: center; margin-top: 10px; font-size: 0.85em; color: rgba(255,255,255,0.6);">
+          🔄 <span data-i18n="avatar.resetInfo">Reset le</span> <span id="resetDate"></span>
+        </div>
       </div>
 
       <!-- Result -->
       <div class="card">
-        <h2 class="card-title">🖼️ RÉSULTAT</h2>
+        <h2 class="card-title" data-i18n="avatar.sections.result">🖼️ RÉSULTAT</h2>
         
         <div class="result-zone" id="resultZone">
           <div class="result-placeholder" id="resultPlaceholder">
             <div class="icon">🎭</div>
-            <p>Ton avatar apparaîtra ici</p>
+            <p data-i18n="avatar.messages.avatarAppears">Ton avatar apparaîtra ici</p>
           </div>
           <img class="result-image" id="resultImage">
-          <button class="download-btn" id="downloadBtn" onclick="downloadAvatar()">⬇️ Télécharger</button>
+          <button class="download-btn" id="downloadBtn" onclick="downloadAvatar()" data-i18n="avatar.buttons.download">⬇️ Télécharger</button>
         </div>
 
         <div class="progress-bar" id="progressBar">
           <div class="progress-fill"></div>
         </div>
 
-        <h2 class="card-title" style="margin-top: 25px;">📁 MES AVATARS</h2>
+        <h2 class="card-title" style="margin-top: 25px;" data-i18n="avatar.sections.myAvatars">📁 MES AVATARS IA</h2>
         <div class="gallery" id="gallery">
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Aucun avatar pour le moment</p>
+          <p style="color: var(--text-muted); font-size: 0.9rem;" data-i18n="avatar.messages.noAvatars">Aucun avatar pour le moment</p>
+        </div>
+
+        <!-- V32: Section avatar perso (upload/photo) -->
+        <div class="section-divider" id="customAvatarSection" style="display: none;">
+          <h2 class="card-title" data-i18n="avatar.sections.myCustomAvatar">📤 MON AVATAR PERSO</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;" data-i18n="avatar.messages.uploadInfo">
+            Importe ta propre photo (1 seul avatar perso autorisé)
+          </p>
+          
+          <div class="custom-avatar-container">
+            <!-- Avatar actuel -->
+            <div class="current-custom-avatar" id="currentCustomAvatar">
+              <p style="color: var(--text-muted); font-size: 0.85rem;" data-i18n="avatar.messages.noCustomAvatar">Aucun avatar perso</p>
+            </div>
+            
+            <!-- Zone upload/photo -->
+            <div class="upload-photo-zone" id="uploadPhotoZone">
+              <input type="file" id="customAvatarInput" accept="image/*" style="display: none;">
+              <input type="file" id="cameraInput" accept="image/*" capture="user" style="display: none;">
+              
+              <div class="upload-buttons">
+                <button class="btn btn-upload" onclick="document.getElementById('customAvatarInput').click()" data-i18n="avatar.buttons.importImage">
+                  📁 Importer une image
+                </button>
+                <button class="btn btn-camera" onclick="openWebcam('custom')" data-i18n="avatar.sections.takePhoto">
+                  📷 Prendre une photo
+                </button>
+              </div>
+              
+              <p style="color: var(--text-muted); font-size: 0.75rem; margin-top: 10px;" data-i18n="avatar.messages.formatInfo">
+                Formats acceptés : JPG, PNG, WebP • Max 5 Mo • Sera redimensionné en 256×256
+              </p>
+            </div>
+            
+            <!-- Preview avant validation -->
+            <div class="custom-avatar-preview" id="customAvatarPreview" style="display: none;">
+              <img id="previewImg" src="" alt="Preview">
+              <div class="preview-buttons">
+                <button class="btn btn-success" onclick="confirmCustomAvatar()" data-i18n="avatar.buttons.use">✅ Utiliser cet avatar</button>
+                <button class="btn btn-cancel" onclick="cancelCustomAvatar()" data-i18n="game.actions.cancel">❌ Annuler</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-divider">
+          <h2 class="card-title" data-i18n="avatar.sections.classicAvatars">🎭 AVATARS CLASSIQUES</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 15px;" data-i18n="avatar.messages.chooseEmoji">Choisis un emoji comme avatar (sans photo)</p>
+          <div class="classic-avatars-grid" id="classicAvatarsGrid">
+            <!-- Les emojis seront ajoutés par JavaScript -->
+          </div>
         </div>
       </div>
     </div>
@@ -755,6 +1098,19 @@
   <!-- Toast -->
   <div class="toast" id="toast"></div>
 
+  <!-- V32: Modal Webcam -->
+  <div class="webcam-modal" id="webcamModal">
+    <p class="webcam-title" data-i18n="avatar.sections.takePhoto">📷 Prendre une photo</p>
+    <div class="webcam-container">
+      <video id="webcamVideo" class="webcam-video" autoplay playsinline></video>
+      <canvas id="webcamCanvas" class="webcam-canvas"></canvas>
+    </div>
+    <div class="webcam-buttons">
+      <button class="btn-capture" onclick="captureWebcamPhoto()">📸 Capturer</button>
+      <button class="btn-close-webcam" onclick="closeWebcam()">❌ Fermer</button>
+    </div>
+  </div>
+
   <script>
     const API_URL = '';
     let currentUser = null;
@@ -762,6 +1118,10 @@
     let selectedCharacter = null;
     let uploadedFile = null;
     let lastGeneratedUrl = null;
+    
+    // V32: Webcam
+    let webcamStream = null;
+    let webcamMode = null; // 'ia' ou 'custom'
 
     const avatarThemes = {
       default: {
@@ -774,43 +1134,37 @@
       },
       'wizard-academy': {
         name: 'Sorciers', icon: '🧙', premium: true,
-        characters: { wizard: 'Sorcier', house_elf: 'Elfe', goblin: 'Gobelin', ghost: 'Fantôme', professor: 'Professeur', creature: 'Créature magique' }
+        characters: { wizard: 'Sorcier', house_elf: 'Elfe', goblin: 'Gobelin', ghost: 'Fantôme', professor: 'Professeur' }
       },
       'mythic-realms': {
         name: 'Mythique', icon: '⚔️', premium: true,
-        characters: { knight: 'Chevalier', dragon: 'Dragon', dwarf: 'Nain', elf: 'Elfe', orc: 'Orque', royalty: 'Roi/Reine', barbarian: 'Barbare' }
+        characters: { knight: 'Chevalier', dragon: 'Dragon', dwarf: 'Nain', elf: 'Elfe', orc: 'Orque' }
       }
     };
 
     // Presets de rendu (valeurs pour prompt_strength et denoising_strength)
+    // V35: Valeurs augmentées pour des résultats plus marqués
     const renderPresets = {
       standard: { 
         name: 'Standard', 
-        prompt_strength: 4.5, 
-        denoising_strength: 0.65,
-        instant_id_strength: 0.8,
-        control_depth_strength: 0.8
+        prompt_strength: 5.5, 
+        denoising_strength: 0.70,
+        instant_id_strength: 0.75,
+        control_depth_strength: 0.75
       },
       transformed: { 
         name: 'Transformé', 
-        prompt_strength: 6.0, 
-        denoising_strength: 0.75,
-        instant_id_strength: 0.6,
-        control_depth_strength: 0.7
-      },
-      natural: { 
-        name: 'Naturel', 
-        prompt_strength: 3.0, 
-        denoising_strength: 0.5,
-        instant_id_strength: 0.9,
-        control_depth_strength: 0.9
+        prompt_strength: 7.0, 
+        denoising_strength: 0.80,
+        instant_id_strength: 0.55,
+        control_depth_strength: 0.65
       },
       artistic: { 
         name: 'Artistique', 
-        prompt_strength: 7.5, 
-        denoising_strength: 0.85,
-        instant_id_strength: 0.5,
-        control_depth_strength: 0.6
+        prompt_strength: 8.5, 
+        denoising_strength: 0.90,
+        instant_id_strength: 0.45,
+        control_depth_strength: 0.55
       }
     };
     let selectedPreset = 'standard';
@@ -845,6 +1199,9 @@
     async function init() {
       initSiteTheme();
       
+      // V32: Initialiser le socket pour la synchro temps réel
+      initSocket();
+      
       const token = localStorage.getItem('saboteur_token');
       if (!token) {
         window.location.href = '/?redirect=avatar';
@@ -859,18 +1216,9 @@
           updateStats();
           loadMyAvatars();
           
-          // Show admin section if admin (hide presets, show sliders)
-          if (currentUser.accountType === 'admin') {
-            document.getElementById('adminSection').classList.add('show');
-            document.getElementById('customPromptSection').classList.add('show');
-            document.getElementById('presetSection').style.display = 'none'; // Admin a les sliders
-          } else if (currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack') {
-            document.getElementById('customPromptSection').classList.add('show');
-            document.getElementById('presetSection').style.display = 'block'; // Premium voit les presets
-          } else {
-            // Compte gratuit : presets visibles, pas de prompt perso
-            document.getElementById('presetSection').style.display = 'block';
-          }
+          // V35: Charger preset custom si existant et appliquer preset par défaut
+          loadCustomPreset();
+          applyPreset('balanced');
         } else {
           window.location.href = '/';
         }
@@ -878,6 +1226,26 @@
 
       renderAvatarThemes();
       renderCharacters();
+    }
+    
+    // V32: Initialiser le socket (connexion au serveur)
+    function initSocket() {
+      try {
+        window.socket = io(window.location.origin, {
+          transports: ['websocket', 'polling'],
+          timeout: 10000
+        });
+        
+        window.socket.on('connect', () => {
+          console.log('[Avatar] Socket connecté');
+        });
+        
+        window.socket.on('disconnect', () => {
+          console.log('[Avatar] Socket déconnecté');
+        });
+      } catch (e) {
+        console.log('[Avatar] Erreur socket:', e);
+      }
     }
 
     function renderAvatarThemes() {
@@ -934,13 +1302,89 @@
     function updateStats() {
       if (currentUser) {
         document.getElementById('avatarsUsed').textContent = currentUser.avatarsUsed || 0;
-        const limits = { free: 1, subscriber: 30, pack: 50, family: 100, admin: '∞' };
-        document.getElementById('avatarsLimit').textContent = limits[currentUser.accountType] || 1;
+        
+        // V35: Calculer limite selon le type de compte
+        const bonusAvatars = currentUser.bonusAvatars || 0;
+        let displayLimit, showBonus = false;
+        
+        if (currentUser.accountType === 'admin') {
+          displayLimit = '∞';
+        } else {
+          // Tous les types ont un quota mensuel + bonus éventuel
+          // free: 2, pack: 2, subscriber: 30, family: 30
+          const monthlyLimits = { free: 2, pack: 2, subscriber: 30, family: 30 };
+          const monthlyLimit = monthlyLimits[currentUser.accountType] || 2;
+          displayLimit = monthlyLimit + bonusAvatars;
+          showBonus = bonusAvatars > 0;
+          
+          if (showBonus) {
+            document.getElementById('avatarsLimit').innerHTML = `${displayLimit} <small style="opacity:0.7">(${monthlyLimit}+${bonusAvatars})</small>`;
+          }
+        }
+        
+        if (!showBonus) {
+          document.getElementById('avatarsLimit').textContent = displayLimit;
+        }
+        
+        // V35: Afficher date de reset pour comptes mensuels
+        // subscriber/family: date anniversaire, free/pack: 1er du mois
+        if (['subscriber', 'family'].includes(currentUser.accountType)) {
+          const resetInfo = document.getElementById('resetInfo');
+          const resetDate = document.getElementById('resetDate');
+          
+          // V35: Utiliser la date anniversaire (jour de l'abonnement)
+          const startDay = currentUser.subscriptionStartDay || 1;
+          const now = new Date();
+          let nextReset;
+          
+          // Si on n'a pas encore atteint le jour anniversaire ce mois, c'est ce mois
+          // Sinon c'est le mois prochain
+          if (now.getDate() < startDay) {
+            nextReset = new Date(now.getFullYear(), now.getMonth(), startDay);
+          } else {
+            nextReset = new Date(now.getFullYear(), now.getMonth() + 1, startDay);
+          }
+          
+          const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+          const dateOptions = { day: 'numeric', month: 'long' };
+          resetDate.textContent = nextReset.toLocaleDateString(lang === 'en' ? 'en-US' : lang + '-' + lang.toUpperCase(), dateOptions);
+          resetInfo.style.display = 'block';
+        } else if (['free', 'pack'].includes(currentUser.accountType)) {
+          // Free et Pack: reset le 1er du mois
+          const resetInfo = document.getElementById('resetInfo');
+          const resetDate = document.getElementById('resetDate');
+          const now = new Date();
+          const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+          const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+          const dateOptions = { day: 'numeric', month: 'long' };
+          resetDate.textContent = nextMonth.toLocaleDateString(lang === 'en' ? 'en-US' : lang + '-' + lang.toUpperCase(), dateOptions);
+          resetInfo.style.display = 'block';
+        } else {
+          document.getElementById('resetInfo').style.display = 'none';
+        }
       }
     }
 
     // Upload
     document.getElementById('photoInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      uploadedFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const preview = document.getElementById('uploadPreview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+        document.getElementById('uploadZone').classList.add('has-photo');
+        document.querySelector('#uploadZone .icon').style.display = 'none';
+        document.querySelectorAll('#uploadZone p').forEach(p => p.style.display = 'none');
+      };
+      reader.readAsDataURL(file);
+      updateGenerateButton();
+    });
+
+    // V32: Caméra pour photo IA (même logique que photoInput)
+    document.getElementById('cameraPhotoInput').addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
       uploadedFile = file;
@@ -974,11 +1418,22 @@
 
     function applyPreset(presetName) {
       const presets = {
-        balanced: { s1: 5, s2: 5.5, s3: 8, s4: 6 },
+        balanced: { s1: 5, s2: 5.5, s3: 7, s4: 6 },
         realistic: { s1: 8, s2: 4, s3: 6, s4: 8 },
-        stylized: { s1: 3, s2: 7, s3: 9, s4: 4 },
-        extreme: { s1: 1, s2: 9, s3: 10, s4: 2 }
+        stylized: { s1: 3, s2: 7, s3: 8.5, s4: 4 },
+        extreme: { s1: 1, s2: 9, s3: 9.5, s4: 2 }
       };
+
+      // V35: Charger preset custom depuis localStorage
+      if (presetName === 'custom') {
+        const customPreset = localStorage.getItem('saboteur_custom_preset');
+        if (customPreset) {
+          presets.custom = JSON.parse(customPreset);
+        } else {
+          showToast('❌ Aucun style personnalisé sauvegardé');
+          return;
+        }
+      }
 
       const preset = presets[presetName];
       if (!preset) return;
@@ -993,7 +1448,46 @@
       updateSliderValue(3);
       updateSliderValue(4);
 
-      showToast(`✅ Preset "${presetName}" appliqué !`);
+      // Mettre à jour le bouton actif
+      document.querySelectorAll('.presets-row .preset-btn:not(.save-preset-btn)').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      
+      // Activer le bon bouton
+      if (presetName === 'custom') {
+        document.getElementById('customPresetBtn').classList.add('active');
+      } else {
+        document.querySelectorAll('.presets-row .preset-btn').forEach(btn => {
+          if (btn.textContent.toLowerCase().includes(presetName.substring(0, 4))) {
+            btn.classList.add('active');
+          }
+        });
+      }
+    }
+
+    // V35: Sauvegarder preset personnalisé
+    function saveCustomPreset() {
+      const customPreset = {
+        s1: parseFloat(document.getElementById('slider1').value),
+        s2: parseFloat(document.getElementById('slider2').value),
+        s3: parseFloat(document.getElementById('slider3').value),
+        s4: parseFloat(document.getElementById('slider4').value)
+      };
+      
+      localStorage.setItem('saboteur_custom_preset', JSON.stringify(customPreset));
+      
+      // Afficher le bouton "Mon style"
+      document.getElementById('customPresetBtn').style.display = 'flex';
+      
+      showToast('⭐ Style personnalisé sauvegardé !');
+    }
+
+    // V35: Charger preset custom au démarrage si existant
+    function loadCustomPreset() {
+      const customPreset = localStorage.getItem('saboteur_custom_preset');
+      if (customPreset) {
+        document.getElementById('customPresetBtn').style.display = 'flex';
+      }
     }
 
     // Generate
@@ -1012,28 +1506,13 @@
       formData.append('theme', selectedAvatarTheme);
       formData.append('character', selectedCharacter);
 
-      // Custom prompt
-      const customPrompt = document.getElementById('customPrompt').value.trim();
-      if (customPrompt && (currentUser.accountType === 'admin' || currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack')) {
-        formData.append('customPrompt', customPrompt);
-      }
-
-      // Admin sliders
-      if (currentUser.accountType === 'admin') {
-        const sliders = getSliderValues();
-        formData.append('instant_id_strength', sliders.instant_id_strength);
-        formData.append('prompt_strength', sliders.prompt_strength);
-        formData.append('denoising_strength', sliders.denoising_strength);
-        formData.append('control_depth_strength', sliders.control_depth_strength);
-      } else {
-        // Utiliser les presets pour les non-admins
-        const preset = renderPresets[selectedPreset] || renderPresets.standard;
-        formData.append('instant_id_strength', preset.instant_id_strength);
-        formData.append('prompt_strength', preset.prompt_strength);
-        formData.append('denoising_strength', preset.denoising_strength);
-        formData.append('control_depth_strength', preset.control_depth_strength);
-        console.log('[Generate] Preset utilisé:', selectedPreset, preset);
-      }
+      // V35: Sliders pour tout le monde (plus de customPrompt)
+      const sliders = getSliderValues();
+      formData.append('instant_id_strength', sliders.instant_id_strength);
+      formData.append('prompt_strength', sliders.prompt_strength);
+      formData.append('denoising_strength', sliders.denoising_strength);
+      formData.append('control_depth_strength', sliders.control_depth_strength);
+      console.log('[Generate] Sliders utilisés:', sliders);
 
       try {
         const token = localStorage.getItem('saboteur_token');
@@ -1089,9 +1568,15 @@
             const deleteBtn = isFreeAccount ? '' : 
               `<button class="delete-avatar-btn" onclick="event.stopPropagation(); deleteAvatar('${av.image_url}', ${av.id})" title="Supprimer">🗑️</button>`;
             
+            // V35: Bouton télécharger pour tous
+            const downloadBtn = `<button class="download-avatar-btn" onclick="event.stopPropagation(); downloadAvatar('${av.image_url}')" title="Télécharger">⬇️</button>`;
+            
             item.innerHTML = `
               <img src="${av.image_url}" alt="Avatar" onerror="this.style.display='none'; this.parentElement.classList.add('broken');">
-              ${deleteBtn}
+              <div class="avatar-actions">
+                ${downloadBtn}
+                ${deleteBtn}
+              </div>
             `;
             item.onclick = () => setCurrentAvatar(av.image_url);
             gallery.appendChild(item);
@@ -1102,8 +1587,30 @@
       } catch (e) { console.error(e); }
     }
 
+    // V35: Télécharger un avatar
+    async function downloadAvatar(url) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `avatar_${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+        showToast('⬇️ Avatar téléchargé !');
+      } catch (e) {
+        console.error('Erreur téléchargement:', e);
+        // Fallback: ouvrir dans nouvel onglet
+        window.open(url, '_blank');
+      }
+    }
+
     async function deleteAvatar(url, id) {
-      if (!confirm('Supprimer cet avatar ?')) return;
+      const confirmText = window.i18n ? window.i18n('avatar.messages.confirmDeleteAvatar') : 'Supprimer cet avatar ?';
+      if (!confirm(confirmText)) return;
       
       try {
         const token = localStorage.getItem('saboteur_token');
@@ -1171,7 +1678,487 @@
       setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
+    // ========================================
+    // AVATARS CLASSIQUES (EMOJIS)
+    // ========================================
+    
+    // Emojis existants des thèmes (d9-avatars.js) + quelques extras
+    const classicAvatars = [
+      // Spatial
+      '🧑‍🚀', '🤖', '👽', '🚀', '🛰️', '🛸', '⭐', '🌙', '🪐', '☄️',
+      // Loup-Garou
+      '🐺', '👨‍🌾', '🧙‍♀️', '🏹', '🔮', '🌕', '🌲', '🦉', '🦇', '💀',
+      // Sorciers
+      '🧙‍♂️', '🪄', '🧪', '📖', '🐈‍⬛', '⚗️', '✨', '🐉',
+      // Mythique  
+      '⚔️', '🛡️', '🧝', '🧝‍♀️', '🦄', '🔥', '💎', '📜'
+    ];
+
+    let currentClassicAvatar = null;
+
+    function renderClassicAvatars() {
+      const grid = document.getElementById('classicAvatarsGrid');
+      if (!grid) return;
+      
+      // Récupérer l'avatar actuel du localStorage
+      const savedUser = localStorage.getItem('saboteur_user');
+      let savedEmoji = null;
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          // Si l'avatar actuel est un emoji (pas une URL)
+          if (user.currentAvatar && !user.currentAvatar.startsWith('http')) {
+            savedEmoji = user.currentAvatar;
+          }
+        } catch(e) {}
+      }
+      
+      grid.innerHTML = '';
+      classicAvatars.forEach(emoji => {
+        const item = document.createElement('div');
+        item.className = 'classic-avatar-item' + (emoji === savedEmoji ? ' active' : '');
+        item.textContent = emoji;
+        item.onclick = () => selectClassicAvatar(emoji);
+        grid.appendChild(item);
+      });
+    }
+
+    async function selectClassicAvatar(emoji) {
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/avatars/set-current`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ avatarUrl: emoji }) // On envoie l'emoji comme "avatarUrl"
+        });
+        
+        if (res.ok) {
+          // Mettre à jour la sélection visuelle
+          document.querySelectorAll('.classic-avatar-item').forEach(item => {
+            item.classList.toggle('active', item.textContent === emoji);
+          });
+          // Désactiver la sélection des avatars IA
+          document.querySelectorAll('.gallery-item').forEach(item => {
+            item.classList.remove('active');
+          });
+          
+          // Mettre à jour le localStorage
+          const savedUser = localStorage.getItem('saboteur_user');
+          if (savedUser) {
+            const user = JSON.parse(savedUser);
+            user.currentAvatar = emoji;
+            localStorage.setItem('saboteur_user', JSON.stringify(user));
+          }
+          
+          // V32: Synchroniser avec le socket si en partie
+          syncAvatarWithSocket(emoji);
+          
+          currentClassicAvatar = emoji;
+          showToast(`✅ Avatar "${emoji}" sélectionné !`);
+        }
+      } catch (e) { 
+        console.error(e);
+        showToast('Erreur', true); 
+      }
+    }
+
+    // V32: Fonction pour synchroniser l'avatar avec le socket (mise à jour en temps réel)
+    function syncAvatarWithSocket(avatarUrl) {
+      const playerId = sessionStorage.getItem('is_playerId');
+      const roomCode = sessionStorage.getItem('is_roomCode');
+      
+      if (playerId && roomCode && window.socket && window.socket.connected) {
+        window.socket.emit('updateCustomization', {
+          playerId,
+          roomCode,
+          avatarUrl: avatarUrl
+        }, (response) => {
+          if (response?.ok) {
+            console.log('[Avatar] Synchro socket réussie');
+          } else {
+            console.log('[Avatar] Synchro socket échouée:', response?.error);
+          }
+        });
+      } else {
+        console.log('[Avatar] Pas de partie en cours, synchro socket ignorée');
+      }
+    }
+
+    // Modifier loadMyAvatars pour gérer la sélection croisée
+    const originalLoadMyAvatars = loadMyAvatars;
+    loadMyAvatars = async function() {
+      await originalLoadMyAvatars();
+      
+      // Vérifier si l'avatar actuel est un emoji (pas une URL)
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          if (user.currentAvatar && !user.currentAvatar.startsWith('http')) {
+            // C'est un emoji, s'assurer que les avatars IA ne sont pas sélectionnés
+            document.querySelectorAll('.gallery-item').forEach(item => {
+              item.classList.remove('active');
+            });
+          }
+        } catch(e) {}
+      }
+    };
+
+    // Modifier setCurrentAvatar pour désactiver les avatars classiques quand on sélectionne un avatar IA
+    const originalSetCurrentAvatar = setCurrentAvatar;
+    setCurrentAvatar = async function(url) {
+      await originalSetCurrentAvatar(url);
+      // Désactiver tous les avatars classiques
+      document.querySelectorAll('.classic-avatar-item').forEach(item => {
+        item.classList.remove('active');
+      });
+      currentClassicAvatar = null;
+      
+      // Mettre à jour le localStorage
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        user.currentAvatar = url;
+        localStorage.setItem('saboteur_user', JSON.stringify(user));
+      }
+      
+      // V32: Synchroniser avec le socket si en partie
+      syncAvatarWithSocket(url);
+    };
+
+    // Initialiser les avatars classiques au chargement
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(renderClassicAvatars, 500);
+      setTimeout(initCustomAvatarSection, 600);
+    });
+
+    // ========================================
+    // V32: AVATAR PERSO (UPLOAD / PHOTO)
+    // ========================================
+    
+    let customAvatarFile = null;
+    
+    function initCustomAvatarSection() {
+      const section = document.getElementById('customAvatarSection');
+      if (!section) return;
+      
+      // Vérifier si l'utilisateur a un compte vérifié
+      const token = localStorage.getItem('saboteur_token');
+      const savedUser = localStorage.getItem('saboteur_user');
+      
+      if (!token || !savedUser) {
+        section.style.display = 'none';
+        return;
+      }
+      
+      try {
+        const user = JSON.parse(savedUser);
+        // Afficher seulement si email vérifié
+        if (user.emailVerified) {
+          section.style.display = 'block';
+          loadCurrentCustomAvatar();
+        }
+      } catch(e) {
+        section.style.display = 'none';
+      }
+      
+      // Event listeners pour les inputs
+      document.getElementById('customAvatarInput')?.addEventListener('change', handleCustomAvatarSelect);
+      document.getElementById('cameraInput')?.addEventListener('change', handleCustomAvatarSelect);
+    }
+    
+    async function loadCurrentCustomAvatar() {
+      const container = document.getElementById('currentCustomAvatar');
+      if (!container) return;
+      
+      const token = localStorage.getItem('saboteur_token');
+      if (!token) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/api/avatar/my-custom`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        
+        if (data.ok && data.customAvatar) {
+          const myAvatarText = window.i18n ? window.i18n('avatar.messages.myCustomAvatarLabel') : 'Mon avatar perso';
+          const useText = window.i18n ? window.i18n('avatar.buttons.use') : '✅ Utiliser';
+          const deleteText = window.i18n ? window.i18n('avatar.buttons.delete') : '🗑️ Supprimer';
+          const imageNotFoundText = window.i18n ? window.i18n('avatar.messages.imageNotFound') : '⚠️ Image introuvable';
+          container.innerHTML = `
+            <img src="${data.customAvatar}" alt="${myAvatarText}" onerror="this.style.display='none'; this.nextElementSibling.querySelector('.fallback-text').style.display='block';">
+            <div class="avatar-info">
+              <p style="color: var(--neon-main); font-weight: 600;">${myAvatarText}</p>
+              <span class="fallback-text" style="display: none; color: var(--neon-red); font-size: 0.75rem;">${imageNotFoundText}</span>
+              <button class="btn btn-use-custom" onclick="useCustomAvatar('${data.customAvatar}')" style="margin-top: 5px; padding: 5px 10px; background: var(--neon-green); border: none; border-radius: 5px; cursor: pointer; font-size: 0.8rem;">${useText}</button>
+            </div>
+            <button class="btn-delete-custom" onclick="deleteCustomAvatar()">${deleteText}</button>
+          `;
+          document.getElementById('uploadPhotoZone').style.display = 'none';
+        } else {
+          const noAvatarText = window.i18n ? window.i18n('avatar.messages.noCustomAvatar') : 'Aucun avatar perso';
+          container.innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">${noAvatarText}</p>`;
+          document.getElementById('uploadPhotoZone').style.display = 'block';
+        }
+      } catch(e) {
+        console.error('Erreur chargement avatar perso:', e);
+      }
+    }
+    
+    function handleCustomAvatarSelect(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      // Vérifier le type
+      if (!file.type.startsWith('image/')) {
+        showToast('❌ Fichier non valide. Choisis une image.', true);
+        return;
+      }
+      
+      // Vérifier la taille (max 5 Mo)
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('❌ Image trop lourde (max 5 Mo)', true);
+        return;
+      }
+      
+      customAvatarFile = file;
+      
+      // Afficher preview
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const preview = document.getElementById('customAvatarPreview');
+        const previewImg = document.getElementById('previewImg');
+        
+        previewImg.src = event.target.result;
+        preview.style.display = 'block';
+        document.getElementById('uploadPhotoZone').style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+    
+    function cancelCustomAvatar() {
+      customAvatarFile = null;
+      document.getElementById('customAvatarPreview').style.display = 'none';
+      document.getElementById('uploadPhotoZone').style.display = 'block';
+      document.getElementById('customAvatarInput').value = '';
+      document.getElementById('cameraInput').value = '';
+    }
+    
+    async function confirmCustomAvatar() {
+      if (!customAvatarFile) return;
+      
+      const token = localStorage.getItem('saboteur_token');
+      if (!token) {
+        showToast('❌ Connecte-toi d\'abord', true);
+        return;
+      }
+      
+      showToast('⏳ Upload en cours...');
+      
+      try {
+        // Redimensionner et convertir en WebP
+        const resizedBlob = await resizeAndConvertImage(customAvatarFile, 256, 256);
+        
+        // Créer FormData
+        const formData = new FormData();
+        formData.append('avatar', resizedBlob, 'custom-avatar.webp');
+        
+        const res = await fetch(`${API_URL}/api/avatar/upload-custom`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          showToast('✅ Avatar perso enregistré !');
+          cancelCustomAvatar();
+          loadCurrentCustomAvatar();
+          
+          // Utiliser automatiquement cet avatar
+          useCustomAvatar(data.avatarUrl);
+        } else {
+          showToast('❌ ' + (data.error || 'Erreur upload'), true);
+        }
+      } catch(e) {
+        console.error('Erreur upload:', e);
+        showToast('❌ Erreur réseau', true);
+      }
+    }
+    
+    function useCustomAvatar(url) {
+      setCurrentAvatar(url);
+      showToast('✅ Avatar perso activé !');
+    }
+    
+    async function deleteCustomAvatar() {
+      const confirmText = window.i18n ? window.i18n('avatar.messages.confirmDeleteCustom') : 'Supprimer ton avatar perso ?';
+      if (!confirm(confirmText)) return;
+      
+      const token = localStorage.getItem('saboteur_token');
+      if (!token) return;
+      
+      try {
+        const res = await fetch(`${API_URL}/api/avatar/delete-custom`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          showToast('✅ Avatar supprimé');
+          loadCurrentCustomAvatar();
+        } else {
+          showToast('❌ ' + (data.error || 'Erreur'), true);
+        }
+      } catch(e) {
+        showToast('❌ Erreur réseau', true);
+      }
+    }
+    
+    // Redimensionner et convertir en WebP
+    function resizeAndConvertImage(file, maxWidth, maxHeight) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          // Calculer les dimensions (carré centré)
+          const size = Math.min(img.width, img.height);
+          const sx = (img.width - size) / 2;
+          const sy = (img.height - size) / 2;
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = maxWidth;
+          canvas.height = maxHeight;
+          
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, sx, sy, size, size, 0, 0, maxWidth, maxHeight);
+          
+          canvas.toBlob(
+            (blob) => resolve(blob),
+            'image/webp',
+            0.85  // Qualité 85%
+          );
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    // ========================================
+    // V32: WEBCAM FUNCTIONS
+    // ========================================
+    
+    async function openWebcam(mode) {
+      webcamMode = mode;
+      
+      // Détecter si on est sur mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Sur mobile, utiliser l'input capture natif
+        if (mode === 'ia') {
+          document.getElementById('cameraPhotoInput').click();
+        } else {
+          document.getElementById('cameraInput').click();
+        }
+        return;
+      }
+      
+      // Sur PC, ouvrir le modal webcam
+      try {
+        webcamStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false 
+        });
+        
+        const video = document.getElementById('webcamVideo');
+        video.srcObject = webcamStream;
+        
+        document.getElementById('webcamModal').classList.add('show');
+        
+      } catch (err) {
+        console.error('Erreur webcam:', err);
+        showToast('❌ Impossible d\'accéder à la caméra. Vérifie les permissions.', true);
+      }
+    }
+    
+    function closeWebcam() {
+      // Arrêter le stream
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        webcamStream = null;
+      }
+      
+      document.getElementById('webcamModal').classList.remove('show');
+      webcamMode = null;
+    }
+    
+    function captureWebcamPhoto() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('webcamCanvas');
+      
+      // Configurer le canvas à la taille de la vidéo
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Inverser horizontalement (miroir) pour correspondre à ce que l'utilisateur voit
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(video, 0, 0);
+      
+      // Convertir en blob
+      canvas.toBlob((blob) => {
+        // Créer un fichier à partir du blob
+        const file = new File([blob], 'webcam-photo.jpg', { type: 'image/jpeg' });
+        
+        if (webcamMode === 'ia') {
+          // Pour avatar IA
+          uploadedFile = file;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const preview = document.getElementById('uploadPreview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('uploadZone').classList.add('has-photo');
+            document.querySelector('#uploadZone .icon').style.display = 'none';
+            document.querySelectorAll('#uploadZone p').forEach(p => p.style.display = 'none');
+          };
+          reader.readAsDataURL(file);
+          updateGenerateButton();
+          showToast('✅ Photo capturée !');
+        } else {
+          // Pour avatar perso (custom)
+          customAvatarFile = file;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const preview = document.getElementById('customAvatarPreview');
+            const previewImg = document.getElementById('previewImg');
+            previewImg.src = e.target.result;
+            preview.style.display = 'block';
+            document.getElementById('uploadPhotoZone').style.display = 'none';
+          };
+          reader.readAsDataURL(file);
+          showToast('✅ Photo capturée !');
+        }
+        
+        closeWebcam();
+      }, 'image/jpeg', 0.9);
+    }
+
     init();
+    
+    // Traduire la page au chargement
+    if (typeof translatePage === 'function') {
+      translatePage();
+    }
   </script>
+  
+  <!-- Module de paiement Stripe -->
+  <script src="payment-modal.js"></script>
+  <link rel="stylesheet" href="payment-modal.css">
 </body>
 </html>
