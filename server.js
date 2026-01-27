@@ -65,12 +65,13 @@ const resend = (RESEND_API_KEY && Resend) ? new Resend(RESEND_API_KEY) : null;
 // ============================================================================
 
 const ACCOUNT_LIMITS = {
-  guest: { videoCredits: 0, avatars: 0, themes: ["default", "werewolf"], customPrompt: false },
-  free: { videoCredits: 2, avatars: 2, themes: ["default", "werewolf"], customPrompt: false },
-  pack: { videoCredits: 50, avatars: 50, themes: "all", customPrompt: true },  // Pack 4.99€ - accès à TOUS les thèmes (y compris futurs)
-  subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true },
-  family: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true },  // V35: Pack Famille 9.99€/mois
-  admin: { videoCredits: Infinity, avatars: Infinity, themes: "all", customPrompt: true }
+  guest: { videoCredits: 0, avatars: 0, themes: ["default", "werewolf"], customPrompt: false, sliders: false },
+  free: { videoCredits: 2, avatars: 2, themes: ["default", "werewolf"], customPrompt: false, sliders: false },
+  // Pack 4.99€ : +50 vidéo, +50 bonus avatars (pas de quota mensuel, juste bonus)
+  pack: { videoCredits: 50, avatars: 0, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true },
+  subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true },
+  family: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true },
+  admin: { videoCredits: Infinity, avatars: Infinity, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true, sliders: true }
 };
 
 // V32 Option D: Tracking des sessions utilisateurs connectés (un seul compte à la fois)
@@ -504,6 +505,61 @@ function checkAccountCreationLimit(ip) {
 function getUserLimits(user) {
   if (!user) return ACCOUNT_LIMITS.guest;
   return ACCOUNT_LIMITS[user.account_type] || ACCOUNT_LIMITS.free;
+}
+
+// V35: Vérifier et synchroniser l'état de l'abonnement Stripe
+async function verifyAndSyncSubscription(user) {
+  if (!stripe || !user) return user;
+  
+  const subscriptionTypes = ['subscriber', 'family'];
+  
+  // Si pas un type abonné ou pas de stripeSubscriptionId, rien à faire
+  if (!subscriptionTypes.includes(user.account_type)) return user;
+  if (!user.stripeSubscriptionId) return user;
+  
+  try {
+    const subscription = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
+    
+    // Si l'abonnement n'est plus actif
+    if (!['active', 'trialing'].includes(subscription.status)) {
+      console.log(`[Stripe Sync] Abonnement ${user.stripeSubscriptionId} inactif (${subscription.status}) pour user ${user.id}`);
+      
+      // Downgrade vers free
+      dbRun(`
+        UPDATE users 
+        SET account_type = 'free',
+            video_credits = 2,
+            avatars_used = 0,
+            stripeSubscriptionId = NULL
+        WHERE id = ?
+      `, [user.id]);
+      
+      user.account_type = 'free';
+      user.video_credits = 2;
+      user.avatars_used = 0;
+      console.log(`[Stripe Sync] User ${user.id} downgradé en free`);
+    }
+  } catch (err) {
+    // Abonnement introuvable = résilié
+    if (err.code === 'resource_missing') {
+      console.log(`[Stripe Sync] Abonnement introuvable pour user ${user.id}, downgrade en free`);
+      dbRun(`
+        UPDATE users 
+        SET account_type = 'free',
+            video_credits = 2,
+            avatars_used = 0,
+            stripeSubscriptionId = NULL
+        WHERE id = ?
+      `, [user.id]);
+      user.account_type = 'free';
+      user.video_credits = 2;
+      user.avatars_used = 0;
+    } else {
+      console.error('[Stripe Sync] Erreur vérification:', err.message);
+    }
+  }
+  
+  return user;
 }
 
 // JWT Middleware
@@ -2857,16 +2913,33 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             console.log(`[Stripe] Pack Famille créé: ${familyCode} pour ${ownerEmail}`);
             
           } else if (priceType === 'pack') {
-            // Pack crédits : ajouter 50 vidéos + 50 avatars bonus
-            // V35: bonus_avatars s'ajoutent au quota mensuel (ne se reset pas)
-            dbRun(`
-              UPDATE users 
-              SET video_credits = video_credits + 50,
-                  bonus_avatars = COALESCE(bonus_avatars, 0) + 50,
-                  stripeCustomerId = ?
-              WHERE id = ?
-            `, [session.customer, stripeUserId]);
-            console.log(`[Stripe] User ${stripeUserId} a reçu 50 vidéos + 50 avatars bonus`);
+            // Pack crédits 4.99€ : +50 vidéos + 50 avatars bonus
+            // V35: Si free → devient pack. Si subscriber/family → reste tel quel, juste ajoute bonus
+            const currentUser = dbGet('SELECT account_type FROM users WHERE id = ?', [stripeUserId]);
+            const currentType = currentUser?.account_type || 'free';
+            
+            if (currentType === 'free') {
+              // Free devient pack
+              dbRun(`
+                UPDATE users 
+                SET account_type = 'pack',
+                    video_credits = video_credits + 50,
+                    bonus_avatars = COALESCE(bonus_avatars, 0) + 50,
+                    stripeCustomerId = ?
+                WHERE id = ?
+              `, [session.customer, stripeUserId]);
+              console.log(`[Stripe] User ${stripeUserId} upgradé en pack (50 vidéos + 50 avatars bonus)`);
+            } else {
+              // Subscriber/family/admin/pack → juste ajouter le bonus
+              dbRun(`
+                UPDATE users 
+                SET video_credits = CASE WHEN video_credits < 999999 THEN video_credits + 50 ELSE video_credits END,
+                    bonus_avatars = COALESCE(bonus_avatars, 0) + 50,
+                    stripeCustomerId = COALESCE(stripeCustomerId, ?)
+                WHERE id = ?
+              `, [session.customer, stripeUserId]);
+              console.log(`[Stripe] User ${stripeUserId} (${currentType}) a reçu +50 avatars bonus`);
+            }
           }
           
         } catch (dbError) {
@@ -3616,6 +3689,8 @@ app.post("/api/auth/register", async (req, res) => {
     let accountType = "free";
     let videoCredits = 2; // Par défaut pour free
     let familyPackId = null;
+    let subscriptionStartDay = 1;
+    let bonusAvatars = 0;
     
     // V35: Vérifier si l'email est dans un Pack Famille actif
     const familyMember = dbGet(`
@@ -3629,36 +3704,66 @@ app.post("/api/auth/register", async (req, res) => {
       accountType = "family";
       videoCredits = 999999;
       familyPackId = familyMember.pack_id;
+      subscriptionStartDay = new Date().getDate();
       console.log(`[Family] Nouvel utilisateur ${email} auto-activé dans Pack Famille`);
     }
     
-    // Note: Les codes promo sont désormais gérés via Stripe ou la page admin
-
-    // V35: Récupérer l'historique d'avatars pour cet email (même après suppression compte)
+    // V35: Récupérer l'historique d'avatars pour cet email (persiste après suppression)
     const emailHistory = getEmailAvatarHistory(email);
-    const avatarsAlreadyUsed = emailHistory.total_avatars_created || 0;
     
-    console.log(`[V35] Nouveau compte ${email} - Historique avatars: ${avatarsAlreadyUsed} total, ${emailHistory.monthly_avatars_created} ce mois`);
+    // V35: Vérifier si des avatars orphelins existent (compte supprimé < 1 mois)
+    // Les avatars sans user_id valide peuvent être récupérés
+    const orphanAvatars = dbAll(`
+      SELECT * FROM avatars 
+      WHERE user_id IN (SELECT id FROM users WHERE email = ?) 
+      OR (created_at > datetime('now', '-30 days') AND user_id IS NULL)
+    `, [email.toLowerCase()]);
+    
+    console.log(`[V35] Nouveau compte ${email} - Historique: ${emailHistory.monthly_avatars_created} avatars ce mois`);
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationToken = generateVerificationToken();
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-    // V35: Utiliser l'historique mensuel pour avatars_used (pour subscribers)
+    // V35: Créer le compte avec les bonnes valeurs initiales
     const result = dbInsert(
-      `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits, avatars_used, family_pack_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits, emailHistory.monthly_avatars_created, familyPackId]
+      `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits, avatars_used, bonus_avatars, subscription_start_day, last_avatar_reset, family_pack_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits, emailHistory.monthly_avatars_created, bonusAvatars, subscriptionStartDay, getCurrentMonth(), familyPackId]
     );
+
+    const newUserId = result.lastInsertRowid;
+    
+    // V35: Récupérer les avatars orphelins pour ce nouvel utilisateur
+    if (orphanAvatars && orphanAvatars.length > 0) {
+      for (const avatar of orphanAvatars) {
+        dbRun('UPDATE avatars SET user_id = ? WHERE id = ?', [newUserId, avatar.id]);
+      }
+      console.log(`[V35] ${orphanAvatars.length} avatars récupérés pour ${email}`);
+    }
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
     const emailResult = await sendVerificationEmail(email, username, verificationToken, userLang);
 
-    const token = jwt.sign({ id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
+    const token = jwt.sign({ id: newUserId, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
+
+    const limits = getUserLimits({ account_type: accountType });
 
     res.json({
       success: true, token,
-      user: { id: result.lastInsertRowid, email: email.toLowerCase(), username, accountType, emailVerified: false, videoCredits, avatarsUsed: emailHistory.monthly_avatars_created },
+      user: { 
+        id: newUserId, email: email.toLowerCase(), username, accountType, 
+        emailVerified: false, videoCredits, 
+        avatarsUsed: emailHistory.monthly_avatars_created,
+        bonusAvatars: bonusAvatars,
+        subscriptionStartDay: subscriptionStartDay
+      },
+      limits: {
+        videoCredits: limits.videoCredits,
+        avatars: limits.avatars,
+        avatarsTotal: limits.avatars + bonusAvatars,
+        themes: limits.themes
+      },
       message: emailResult.simulated ? "Compte créé ! (Email simulé)" : "Compte créé ! Vérifie ton email."
     });
   } catch (error) {
@@ -3675,22 +3780,40 @@ app.post("/api/auth/login", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: "Email et mot de passe requis" });
 
-    const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
+    let user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
     if (!user) return res.status(401).json({ error: "Email ou mot de passe incorrect" });
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(401).json({ error: "Email ou mot de passe incorrect" });
 
+    // V35: Vérifier état abonnement Stripe avant de retourner les infos
+    user = await verifyAndSyncSubscription(user);
+    
+    // Recharger l'utilisateur après sync éventuel
+    user = dbGet("SELECT * FROM users WHERE id = ?", [user.id]);
+
     dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [user.id]);
 
     const token = jwt.sign({ id: user.id, email: user.email, username: user.username, accountType: user.account_type }, JWT_SECRET, { expiresIn: "30d" });
+
+    const limits = getUserLimits(user);
+    const bonusAvatars = user.bonus_avatars || 0;
 
     res.json({
       success: true, token,
       user: {
         id: user.id, email: user.email, username: user.username,
         accountType: user.account_type, emailVerified: user.email_verified === 1,
-        videoCredits: user.video_credits, currentAvatar: user.current_avatar
+        videoCredits: user.video_credits, avatarsUsed: user.avatars_used,
+        bonusAvatars: bonusAvatars,
+        subscriptionStartDay: user.subscription_start_day || 1,
+        currentAvatar: user.current_avatar
+      },
+      limits: {
+        videoCredits: limits.videoCredits,
+        avatars: limits.avatars,
+        avatarsTotal: limits.avatars + bonusAvatars,
+        themes: limits.themes
       }
     });
   } catch (error) {
@@ -3912,10 +4035,14 @@ app.post("/api/auth/reset-password", async (req, res) => {
 });
 
 // Profil
-app.get("/api/auth/me", authenticateToken, (req, res) => {
+app.get("/api/auth/me", authenticateToken, async (req, res) => {
   try {
-    const user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
+    let user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+
+    // V35: Vérifier état abonnement Stripe
+    user = await verifyAndSyncSubscription(user);
+    user = dbGet("SELECT * FROM users WHERE id = ?", [req.user.id]);
 
     const limits = getUserLimits(user);
     const bonusAvatars = user.bonus_avatars || 0;
@@ -4080,24 +4207,38 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     // V35: Récupérer l'historique global par email
     const emailHistory = getEmailAvatarHistory(user.email);
     
-    // V35: Calcul de la limite effective
-    // - Quota mensuel de base (30 pour subscriber/family, 2 pour free)
-    // - + bonus_avatars (achetés via pack 4.99€, ne se reset pas)
+    // V35: Calcul de la limite effective selon le type de compte
     const bonusAvatars = user.bonus_avatars || 0;
     const monthlyUsed = user.avatars_used || 0;
     
-    // La limite totale = quota mensuel + bonus
-    const totalLimit = limits.avatars === Infinity ? Infinity : limits.avatars + bonusAvatars;
-    const avatarsToCheck = monthlyUsed;
+    let totalLimit, avatarsToCheck;
+    
+    if (user.account_type === 'pack') {
+      // Pack 4.99€ : pas de quota mensuel, juste les 50 bonus (total à vie)
+      totalLimit = bonusAvatars;
+      avatarsToCheck = emailHistory.total_avatars_created || 0;
+    } else if (user.account_type === 'admin') {
+      // Admin : illimité
+      totalLimit = Infinity;
+      avatarsToCheck = 0;
+    } else {
+      // Free/subscriber/family : quota mensuel + bonus
+      totalLimit = limits.avatars + bonusAvatars;
+      avatarsToCheck = monthlyUsed;
+    }
 
     // Vérifier limite avatars
     if (totalLimit !== Infinity && avatarsToCheck >= totalLimit) {
       await fsPromises.unlink(req.file.path).catch(() => {});
-      console.log(`[V35] Limite avatars atteinte pour ${user.email}: ${avatarsToCheck}/${totalLimit} (mensuel: ${limits.avatars}, bonus: ${bonusAvatars})`);
+      console.log(`[V35] Limite avatars atteinte pour ${user.email}: ${avatarsToCheck}/${totalLimit} (type: ${user.account_type}, bonus: ${bonusAvatars})`);
       
-      let errorMsg = "Limite d'avatars atteinte ce mois-ci";
-      if (bonusAvatars > 0) {
+      let errorMsg;
+      if (user.account_type === 'pack') {
+        errorMsg = `Tu as utilisé tes ${bonusAvatars} avatars du pack. Achète un nouveau pack !`;
+      } else if (bonusAvatars > 0) {
         errorMsg = `Tu as utilisé tes ${limits.avatars} avatars mensuels + ${bonusAvatars} bonus`;
+      } else {
+        errorMsg = "Limite d'avatars atteinte ce mois-ci";
       }
       
       return res.status(403).json({ 
@@ -4783,6 +4924,74 @@ app.post("/api/admin/clear-ip-logs", verifyAdmin, (req, res) => {
   logger.info("admin_clear_ip_logs");
   
   res.json({ ok: true, message: "Logs IP et limites création de compte effacés" });
+});
+
+// V35: Reset avatars et/ou vidéo d'un joueur + suppression fichiers avatars
+app.post("/api/admin/reset-user", verifyAdmin, (req, res) => {
+  const { userId, resetAvatars, resetVideo, deleteAvatarFiles } = req.body;
+  
+  if (!userId) {
+    return res.status(400).json({ ok: false, error: "userId requis" });
+  }
+  
+  const user = dbGet("SELECT * FROM users WHERE id = ?", [userId]);
+  if (!user) {
+    return res.status(404).json({ ok: false, error: "Utilisateur non trouvé" });
+  }
+  
+  let messages = [];
+  
+  // Reset compteur avatars
+  if (resetAvatars) {
+    dbRun("UPDATE users SET avatars_used = 0, last_avatar_reset = ? WHERE id = ?", [getCurrentMonth(), userId]);
+    // Reset aussi l'historique email
+    dbRun("UPDATE email_avatar_history SET monthly_avatars_created = 0, total_avatars_created = 0 WHERE email = ?", [user.email]);
+    messages.push("Compteur avatars remis à 0");
+  }
+  
+  // Reset crédits vidéo
+  if (resetVideo) {
+    const limits = getUserLimits(user);
+    const newCredits = limits.videoCredits === Infinity ? 999999 : limits.videoCredits;
+    dbRun("UPDATE users SET video_credits = ? WHERE id = ?", [newCredits, userId]);
+    messages.push(`Crédits vidéo remis à ${newCredits === 999999 ? '∞' : newCredits}`);
+  }
+  
+  // Supprimer les fichiers avatars du disque
+  if (deleteAvatarFiles) {
+    const avatars = dbAll("SELECT * FROM avatars WHERE user_id = ?", [userId]);
+    let deletedCount = 0;
+    
+    for (const avatar of avatars) {
+      // Supprimer le fichier physique si c'est un chemin local
+      if (avatar.image_url && avatar.image_url.startsWith('/avatars/')) {
+        const filePath = path.join(__dirname, 'public', avatar.image_url);
+        try {
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            deletedCount++;
+          }
+        } catch (e) {
+          console.error(`Erreur suppression avatar ${filePath}:`, e.message);
+        }
+      }
+    }
+    
+    // Supprimer les entrées en base
+    dbRun("DELETE FROM avatars WHERE user_id = ?", [userId]);
+    messages.push(`${deletedCount} fichiers avatars supprimés, ${avatars.length} entrées DB supprimées`);
+    
+    // Reset aussi current_avatar
+    dbRun("UPDATE users SET current_avatar = NULL WHERE id = ?", [userId]);
+  }
+  
+  logger.info("admin_reset_user", { userId, resetAvatars, resetVideo, deleteAvatarFiles });
+  
+  res.json({ 
+    ok: true, 
+    message: messages.join('. '),
+    user: user.email
+  });
 });
 
 // Stats globales
