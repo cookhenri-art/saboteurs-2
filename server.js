@@ -1437,8 +1437,13 @@ function buildDeathsText(room, newlyDeadIds) {
   }).filter(Boolean);
   if (!items.length) return null;
 
-  if (items.length === 1) return `Le joueur ${items[0]} a été éjecté.`;
-  return `Les joueurs ${items.join(", ")} ont été éjectés.`;
+  // V35: Format pour traduction côté client
+  // Le client recevra {i18nKey, players} et pourra traduire
+  const playersList = items.join(", ");
+  if (items.length === 1) {
+    return `{{ejected_single:${playersList}}}`;
+  }
+  return `{{ejected_multiple:${playersList}}}`;
 }
 
 function killPlayer(room, playerId, source, extra = {}) {
