@@ -608,11 +608,20 @@
     const myPlayer = state.players?.find(p => p.playerId === myId);
     const phaseData = state.phaseData || {};
     
+    // V35: Helper pour les traductions des messages overlay
+    const tr = (key, fallback) => {
+      if (typeof window.i18n === 'function') {
+        const result = window.i18n(key);
+        if (result && result !== key) return result;
+      }
+      return fallback;
+    };
+    
     // V35: NIGHT_CHAMELEON - Caméléon seul voit son écran
     if (phase === 'NIGHT_CHAMELEON') {
       result.isPrivate = true;
       const chameleonName = window.tRole ? window.tRole('chameleon') : 'Caméléon';
-      result.message = `🔒 ${chameleonName} fait son choix...`;
+      result.message = tr('overlay.chameleon', `🔒 ${chameleonName} fait son choix...`).replace('{role}', chameleonName);
       
       if (phaseData.actorId) {
         result.allowedPlayerIds = [phaseData.actorId];
@@ -633,7 +642,7 @@
     if (phase === 'NIGHT_RADAR') {
       result.isPrivate = true;
       const radarName = window.tRole ? window.tRole('radar') : 'Officier Radar';
-      result.message = `🔒 ${radarName} scanne la zone...`;
+      result.message = tr('overlay.radar', `🔒 ${radarName} scanne la zone...`).replace('{role}', radarName);
       
       if (phaseData.actorId) {
         result.allowedPlayerIds = [phaseData.actorId];
@@ -654,7 +663,7 @@
     if (phase === 'NIGHT_DOCTOR') {
       result.isPrivate = true;
       const doctorName = window.tRole ? window.tRole('doctor') : 'Médecin';
-      result.message = `🔒 ${doctorName} choisit qui protéger...`;
+      result.message = tr('overlay.doctor', `🔒 ${doctorName} choisit qui protéger...`).replace('{role}', doctorName);
       
       if (phaseData.actorId) {
         result.allowedPlayerIds = [phaseData.actorId];
@@ -675,7 +684,7 @@
     if (phase === 'NIGHT_SECURITY' || phase === 'REVENGE') {
       result.isPrivate = true;
       const securityName = window.tRole ? window.tRole('security') : 'Agent Sécurité';
-      result.message = `🔒 ${securityName} agit...`;
+      result.message = tr('overlay.security', `🔒 ${securityName} agit...`).replace('{role}', securityName);
       
       if (phaseData.actorId) {
         result.allowedPlayerIds = [phaseData.actorId];
@@ -695,7 +704,7 @@
     // V35: NIGHT_START - Tout le monde en overlay pendant la transition
     if (phase === 'NIGHT_START') {
       result.isPrivate = true;
-      result.message = `🌙 La nuit tombe sur la station...`;
+      result.message = tr('overlay.nightStart', `🌙 La nuit tombe sur la station...`);
       result.iAmInvolved = false; // Personne ne voit/entend pendant la transition
       result.allowedPlayerIds = [];
       log("NIGHT_START: everyone in private overlay");
@@ -707,7 +716,7 @@
       result.isPrivate = true;
       // D11: Utiliser la traduction dynamique du rôle
       const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
-      result.message = `🔒 Échange ${aiAgentName} privé en cours...`;
+      result.message = tr('overlay.aiExchange', `🔒 Échange ${aiAgentName} privé en cours...`).replace('{role}', aiAgentName);
       
       // D4 v5.7: Utiliser phaseData qui contient iaId et partnerId
       const iaId = phaseData.iaId;
@@ -743,7 +752,7 @@
       result.isPrivate = true;
       // D11: Utiliser la traduction dynamique
       const saboName = window.t ? window.t('saboteurs') : 'saboteurs';
-      result.message = `🔒 Les ${saboName.toLowerCase()} communiquent...`;
+      result.message = tr('overlay.saboteurs', `🔒 Les ${saboName.toLowerCase()} communiquent...`).replace('{team}', saboName.toLowerCase());
       
       // D4 v5.7: Utiliser phaseData.actorIds
       if (phaseData.actorIds && phaseData.actorIds.length > 0) {
@@ -766,7 +775,7 @@
       result.isPrivate = true;
       // D11: Utiliser la traduction dynamique du rôle
       const aiAgentName = window.tRole ? window.tRole('ai_agent') : 'Agent IA';
-      result.message = `🔒 ${aiAgentName} choisit son partenaire...`;
+      result.message = tr('overlay.aiAgent', `🔒 ${aiAgentName} choisit son partenaire...`).replace('{role}', aiAgentName);
       
       const iaPlayer = state.players?.find(p => p.role === 'ai_agent' && p.status === 'alive');
       if (iaPlayer) {

@@ -5142,6 +5142,74 @@ const TRANSLATIONS = {
         nl: "🗳️ Het is tijd om te stemmen!"
       }
     }
+  },
+  
+  // V35: Messages overlays phases privées (nuit)
+  overlay: {
+    chameleon: {
+      fr: "🔒 {role} fait son choix...",
+      en: "🔒 {role} is making a choice...",
+      es: "🔒 {role} está eligiendo...",
+      de: "🔒 {role} trifft eine Wahl...",
+      it: "🔒 {role} sta scegliendo...",
+      pt: "🔒 {role} está escolhendo..."
+    },
+    radar: {
+      fr: "🔒 {role} scanne la zone...",
+      en: "🔒 {role} is scanning the area...",
+      es: "🔒 {role} está escaneando la zona...",
+      de: "🔒 {role} scannt die Zone...",
+      it: "🔒 {role} sta scansionando la zona...",
+      pt: "🔒 {role} está escaneando a área..."
+    },
+    doctor: {
+      fr: "🔒 {role} choisit qui protéger...",
+      en: "🔒 {role} is choosing who to protect...",
+      es: "🔒 {role} está eligiendo a quién proteger...",
+      de: "🔒 {role} wählt, wen er schützen soll...",
+      it: "🔒 {role} sta scegliendo chi proteggere...",
+      pt: "🔒 {role} está escolhendo quem proteger..."
+    },
+    security: {
+      fr: "🔒 {role} agit...",
+      en: "🔒 {role} is acting...",
+      es: "🔒 {role} está actuando...",
+      de: "🔒 {role} handelt...",
+      it: "🔒 {role} sta agendo...",
+      pt: "🔒 {role} está agindo..."
+    },
+    nightStart: {
+      fr: "🌙 La nuit tombe sur la station...",
+      en: "🌙 Night falls on the station...",
+      es: "🌙 La noche cae sobre la estación...",
+      de: "🌙 Die Nacht bricht über die Station herein...",
+      it: "🌙 La notte cala sulla stazione...",
+      pt: "🌙 A noite cai sobre a estação..."
+    },
+    aiExchange: {
+      fr: "🔒 Échange {role} privé en cours...",
+      en: "🔒 Private {role} exchange in progress...",
+      es: "🔒 Intercambio privado de {role} en curso...",
+      de: "🔒 Privater {role}-Austausch läuft...",
+      it: "🔒 Scambio privato {role} in corso...",
+      pt: "🔒 Troca privada de {role} em andamento..."
+    },
+    saboteurs: {
+      fr: "🔒 Les {team} communiquent...",
+      en: "🔒 The {team} are communicating...",
+      es: "🔒 Los {team} se comunican...",
+      de: "🔒 Die {team} kommunizieren...",
+      it: "🔒 I {team} stanno comunicando...",
+      pt: "🔒 Os {team} estão se comunicando..."
+    },
+    aiAgent: {
+      fr: "🔒 {role} choisit son partenaire...",
+      en: "🔒 {role} is choosing a partner...",
+      es: "🔒 {role} está eligiendo un compañero...",
+      de: "🔒 {role} wählt einen Partner...",
+      it: "🔒 {role} sta scegliendo un partner...",
+      pt: "🔒 {role} está escolhendo um parceiro..."
+    }
   }
 };
 
