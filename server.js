@@ -4712,6 +4712,12 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'userId et userEmail requis' });
     }
     
+    // V35: Vérifier que l'email est vérifié avant achat
+    const user = dbGet('SELECT email_verified FROM users WHERE id = ?', [userId]);
+    if (!user || user.email_verified !== 1) {
+      return res.status(403).json({ error: 'Vérifie ton email avant de faire un achat' });
+    }
+    
     // V35: Support Pack Famille
     let priceId;
     if (priceType === 'subscription') {
