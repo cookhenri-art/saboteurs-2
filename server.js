@@ -169,7 +169,7 @@ const AVATAR_THEMES = {
       creature: {
         name: "Créature magique",
         prompt: "ultra-detailed magical creature humanoid, feathered wings on back, glittering sparkles, brilliant glowing aura, iridescent accents, mystical eyes, background: cathedral-like hall with gargoyles, radiant volumetric light, video game character render"
-      } }
+      } 
     }
   },
   "mythic-realms": {
