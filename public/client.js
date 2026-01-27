@@ -3314,10 +3314,10 @@ function generateTutorialContent() {
         <h2 style="color: var(--neon-cyan); font-size: 1.8rem; margin: 0;">${tr('tutorial.welcome', 'Bienvenue !')}</h2>
       </div>
       <p style="font-size: 1.1rem; line-height: 1.6; color: var(--text-primary);">
-        <strong>Les Saboteurs</strong> ${tr('tutorial.gameDescriptionShort', `est un jeu de déduction sociale où des <span style="color: var(--neon-red);">${saboteurs.toLowerCase()}</span> tentent d'éliminer les <span style="color: var(--neon-cyan);">${astronauts.toLowerCase()}</span> sans être découverts.`)}
+        ${tr('tutorial.gameDescription', `<strong>Les Saboteurs</strong> est un jeu de déduction sociale où des <span style="color: var(--neon-red);">${saboteurs.toLowerCase()}</span> tentent d'éliminer les <span style="color: var(--neon-cyan);">${astronauts.toLowerCase()}</span> sans être découverts.`)}
       </p>
       <p style="font-size: 1.05rem; line-height: 1.6; color: var(--text-secondary);">
-        ${tr('tutorial.phaseAlternationShort', `Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).`)}
+        ${tr('tutorial.phaseAlternation', `Le jeu alterne entre <strong>phases de nuit</strong> (actions secrètes) et <strong>phases de jour</strong> (discussions et votes).`)}
       </p>
     </div>
 
