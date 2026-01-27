@@ -4382,10 +4382,10 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     console.log(`🎨 Génération avatar: ${theme}/${character} pour ${user.username}`);
 
     // Paramètres
-    const instant_id = parseFloat(req.body.instant_id_strength) || 0.8;
-    const prompt_str = parseFloat(req.body.prompt_strength) || 4.5;
-    const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
-    const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
+    const instant_id = parseFloat(req.body.instant_id_strength) || 0.5;
+    const prompt_str = parseFloat(req.body.prompt_strength) || 5.5;
+    const denoise_str = parseFloat(req.body.denoising_strength) || 0.8;
+    const depth_str = parseFloat(req.body.control_depth_strength) || 0.6;
 
     // Récupérer la dernière version du modèle
     let modelVersion = "fofr/face-to-many";
