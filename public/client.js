@@ -2257,13 +2257,40 @@ class AudioManager {
     // V29-safe: Skip si SpeechSynthesis non disponible (Android WebView)
     if (typeof SpeechSynthesisUtterance === 'undefined') return;
     
-    // V35: Traduire les messages d'éjection
+    // V35: Traduire les messages
     let translatedText = text;
     const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
     
+    // V35: Traductions des phrases fixes
+    const fixedTranslations = {
+      '{{nightResults}}': {
+        fr: 'Résultats de la nuit.',
+        en: 'Night results.',
+        es: 'Resultados de la noche.',
+        de: 'Nachtergebnisse.',
+        it: 'Risultati della notte.',
+        pt: 'Resultados da noite.'
+      },
+      '{{captainTransfer}}': {
+        fr: 'Transmission du capitaine.',
+        en: 'Captain transfer.',
+        es: 'Transmisión del capitán.',
+        de: 'Kapitänsübergabe.',
+        it: 'Trasferimento del capitano.',
+        pt: 'Transferência do capitão.'
+      }
+    };
+    
+    // Remplacer les clés fixes
+    for (const [key, translations] of Object.entries(fixedTranslations)) {
+      if (text.includes(key)) {
+        translatedText = text.replace(key, translations[lang] || translations['fr']);
+      }
+    }
+    
     // Détecter {{ejected_single:PlayerName}} ou {{ejected_multiple:Player1, Player2}}
-    const singleMatch = text.match(/\{\{ejected_single:(.+?)\}\}/);
-    const multiMatch = text.match(/\{\{ejected_multiple:(.+?)\}\}/);
+    const singleMatch = translatedText.match(/\{\{ejected_single:(.+?)\}\}/);
+    const multiMatch = translatedText.match(/\{\{ejected_multiple:(.+?)\}\}/);
     
     if (singleMatch) {
       const playerName = singleMatch[1];
@@ -2275,7 +2302,7 @@ class AudioManager {
         it: `Il giocatore ${playerName} è stato espulso.`,
         pt: `O jogador ${playerName} foi ejetado.`
       };
-      translatedText = text.replace(singleMatch[0], templates[lang] || templates['fr']);
+      translatedText = translatedText.replace(singleMatch[0], templates[lang] || templates['fr']);
     } else if (multiMatch) {
       const playerNames = multiMatch[1];
       const templates = {
@@ -2286,7 +2313,7 @@ class AudioManager {
         it: `I giocatori ${playerNames} sono stati espulsi.`,
         pt: `Os jogadores ${playerNames} foram ejetados.`
       };
-      translatedText = text.replace(multiMatch[0], templates[lang] || templates['fr']);
+      translatedText = translatedText.replace(multiMatch[0], templates[lang] || templates['fr']);
     }
     
     // Map langue vers code TTS
