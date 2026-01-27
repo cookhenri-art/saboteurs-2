@@ -1206,7 +1206,7 @@
             document.getElementById('adminSection').classList.add('show');
             document.getElementById('customPromptSection').classList.add('show');
             document.getElementById('presetSection').style.display = 'none'; // Admin a les sliders
-          } else if (currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack') {
+          } else if (currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack' || currentUser.accountType === 'family') {
             document.getElementById('customPromptSection').classList.add('show');
             document.getElementById('presetSection').style.display = 'block'; // Premium voit les presets
           } else {
@@ -1296,7 +1296,7 @@
     function updateStats() {
       if (currentUser) {
         document.getElementById('avatarsUsed').textContent = currentUser.avatarsUsed || 0;
-        const limits = { free: 1, subscriber: 30, pack: 50, family: 100, admin: '∞' };
+        const limits = { free: 1, subscriber: 30, pack: 50, family: 30, admin: '∞' };
         document.getElementById('avatarsLimit').textContent = limits[currentUser.accountType] || 1;
       }
     }
@@ -1394,7 +1394,7 @@
 
       // Custom prompt
       const customPrompt = document.getElementById('customPrompt').value.trim();
-      if (customPrompt && (currentUser.accountType === 'admin' || currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack')) {
+      if (customPrompt && (currentUser.accountType === 'admin' || currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack' || currentUser.accountType === 'family')) {
         formData.append('customPrompt', customPrompt);
       }
 

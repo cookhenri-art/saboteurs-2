@@ -1122,7 +1122,7 @@
     function canAccessPremiumThemes() {
       const user = JSON.parse(localStorage.getItem('saboteur_user') || 'null');
       if (!user) return false;
-      const allowedTypes = ['pack', 'subscriber', 'admin'];
+      const allowedTypes = ['pack', 'subscriber', 'family', 'admin'];
       return allowedTypes.includes(user.accountType);
     }
 
