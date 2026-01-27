@@ -882,6 +882,80 @@
           <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
             📦 Pack vidéo + avatars
           </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showFamilyPackModal(); return false;" class="premium-link" title="9 comptes, vidéo illimitée - 9,99€/mois">
+            👨‍👩‍👧‍👦 Pack Famille
+          </a>
+        </div>
+      </div>
+
+      <!-- V35: Modal Pack Famille -->
+      <div class="modal" id="familyPackModal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+          <h3 style="color: var(--neon-cyan);">👨‍👩‍👧‍👦 Pack Famille</h3>
+          
+          <!-- Étape 1: Entrer le code -->
+          <div id="familyStep1">
+            <p style="color: var(--text-secondary); margin-bottom: 15px;">
+              Vous avez reçu un code Pack Famille par email après votre achat Stripe ?<br>
+              Entrez-le ci-dessous pour activer votre pack.
+            </p>
+            <div class="form-group">
+              <label>CODE PACK FAMILLE</label>
+              <input type="text" id="familyCode" placeholder="FAM-XXXX-XXXX" style="text-transform: uppercase; letter-spacing: 2px; text-align: center; font-size: 1.2rem;">
+            </div>
+            <div id="familyCodeError" style="color: var(--neon-red); margin-bottom: 10px; display: none;"></div>
+            <div class="modal-buttons">
+              <button class="btn btn-primary" onclick="validateFamilyCode()">✅ Valider le code</button>
+              <button class="btn btn-secondary" onclick="hideFamilyPackModal()">❌ Annuler</button>
+            </div>
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--neon-cyan);">
+              <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                Pas encore de code ? <a href="#" onclick="buyFamilyPack(); return false;" style="color: var(--neon-cyan);">Acheter un Pack Famille (9,99€/mois)</a>
+              </p>
+            </div>
+          </div>
+          
+          <!-- Étape 2: Entrer les 8 emails -->
+          <div id="familyStep2" style="display: none;">
+            <p style="color: var(--neon-green); margin-bottom: 10px;">✅ Code valide !</p>
+            <p style="color: var(--text-secondary); margin-bottom: 15px;">
+              Entrez les <strong>8 emails</strong> des membres de votre Pack Famille.<br>
+              Ils recevront un email d'invitation.
+            </p>
+            <div id="familyEmailsContainer">
+              <!-- Les 8 champs email seront générés ici -->
+            </div>
+            <div id="familyEmailsError" style="color: var(--neon-red); margin-bottom: 10px; display: none;"></div>
+            <div class="modal-buttons">
+              <button class="btn btn-primary" onclick="activateFamilyPack()">🚀 Activer le Pack</button>
+              <button class="btn btn-secondary" onclick="backToFamilyStep1()">← Retour</button>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 5px;">
+              <strong style="color: var(--neon-orange);">⚠️ Important :</strong>
+              <ul style="margin: 5px 0 0 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                <li>Ce code ne peut être utilisé qu'une seule fois</li>
+                <li>Abonnement résiliable chaque mois</li>
+                <li>À la résiliation : comptes → gratuit, avatars conservés 1 mois</li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Étape 3: Confirmation -->
+          <div id="familyStep3" style="display: none;">
+            <div style="text-align: center;">
+              <div style="font-size: 4rem; margin-bottom: 15px;">🎉</div>
+              <h3 style="color: var(--neon-green);">Pack Famille Activé !</h3>
+              <p style="color: var(--text-secondary);">
+                Tous les membres ont reçu un email d'invitation.<br>
+                Profitez de la vidéo illimitée en famille !
+              </p>
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+              <button class="btn btn-primary" onclick="hideFamilyPackModal(); location.reload();">🎮 C'est parti !</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1503,6 +1577,148 @@
 
     document.getElementById('loginPassword').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
     document.getElementById('registerPassword').addEventListener('keypress', e => { if (e.key === 'Enter') register(); });
+
+    // ============================================================================
+    // V35: PACK FAMILLE
+    // ============================================================================
+    
+    let familyValidatedCode = null;
+    
+    function showFamilyPackModal() {
+      document.getElementById('familyPackModal').style.display = 'flex';
+      document.getElementById('familyStep1').style.display = 'block';
+      document.getElementById('familyStep2').style.display = 'none';
+      document.getElementById('familyStep3').style.display = 'none';
+      document.getElementById('familyCode').value = '';
+      document.getElementById('familyCodeError').style.display = 'none';
+      familyValidatedCode = null;
+    }
+    
+    function hideFamilyPackModal() {
+      document.getElementById('familyPackModal').style.display = 'none';
+    }
+    
+    function backToFamilyStep1() {
+      document.getElementById('familyStep1').style.display = 'block';
+      document.getElementById('familyStep2').style.display = 'none';
+    }
+    
+    async function validateFamilyCode() {
+      const code = document.getElementById('familyCode').value.trim().toUpperCase();
+      const errorEl = document.getElementById('familyCodeError');
+      
+      if (!code || !code.startsWith('FAM-')) {
+        errorEl.textContent = 'Code invalide. Format: FAM-XXXX-XXXX';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/family/validate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          familyValidatedCode = code;
+          errorEl.style.display = 'none';
+          
+          // Générer les 8 champs email
+          const container = document.getElementById('familyEmailsContainer');
+          container.innerHTML = '';
+          for (let i = 1; i <= 8; i++) {
+            container.innerHTML += `
+              <div class="form-group" style="margin-bottom: 10px;">
+                <input type="email" id="familyEmail${i}" placeholder="Email membre ${i}" style="width: 100%;">
+              </div>
+            `;
+          }
+          
+          document.getElementById('familyStep1').style.display = 'none';
+          document.getElementById('familyStep2').style.display = 'block';
+        } else {
+          errorEl.textContent = data.error || 'Code invalide ou déjà utilisé';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Erreur de connexion';
+        errorEl.style.display = 'block';
+      }
+    }
+    
+    async function activateFamilyPack() {
+      const errorEl = document.getElementById('familyEmailsError');
+      const emails = [];
+      
+      for (let i = 1; i <= 8; i++) {
+        const email = document.getElementById(`familyEmail${i}`).value.trim().toLowerCase();
+        if (!email || !email.includes('@')) {
+          errorEl.textContent = `Email ${i} invalide`;
+          errorEl.style.display = 'block';
+          return;
+        }
+        if (emails.includes(email)) {
+          errorEl.textContent = `Email en double: ${email}`;
+          errorEl.style.display = 'block';
+          return;
+        }
+        emails.push(email);
+      }
+      
+      try {
+        const res = await fetch('/api/family/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: familyValidatedCode, memberEmails: emails })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          errorEl.style.display = 'none';
+          document.getElementById('familyStep2').style.display = 'none';
+          document.getElementById('familyStep3').style.display = 'block';
+        } else {
+          errorEl.textContent = data.error || 'Erreur lors de l\'activation';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Erreur de connexion';
+        errorEl.style.display = 'block';
+      }
+    }
+    
+    function buyFamilyPack() {
+      // Rediriger vers le paiement Stripe Pack Famille
+      if (!currentUser) {
+        alert('Connectez-vous d\'abord pour acheter un Pack Famille');
+        return;
+      }
+      
+      fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceType: 'family',
+          userId: currentUser.id,
+          userEmail: currentUser.email
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert(data.error || 'Erreur Stripe');
+        }
+      })
+      .catch(err => {
+        alert('Erreur de connexion');
+      });
+    }
 
     init();
   </script>
