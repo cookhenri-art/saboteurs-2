@@ -85,51 +85,126 @@ const BLOCKED_EMAIL_DOMAINS = [
 ];
 
 // Thèmes pour avatars IA
+// THÈMES ET PERSONNAGES - PROMPTS V3 ULTRA DÉTAILLÉS
 const AVATAR_THEMES = {
   default: {
     name: "Infiltration Spatiale", icon: "🚀", premium: false,
-    background: "deep space background with stars and nebula",
+    background: "deep space background with stars and nebula, three distant suns glowing red yellow and blue",
     characters: {
-      astronaut: { name: "Astronaute", prompt: "wearing white NASA astronaut helmet" },
-      alien: { name: "Alien", prompt: "green alien with huge black eyes" },
-      cyborg: { name: "Cyborg", prompt: "half robot face with glowing red eye" },
-      robot: { name: "Robot", prompt: "humanoid robot with metallic skin" },
-      captain: { name: "Capitaine", prompt: "space captain with futuristic uniform" }
+      astronaut: { 
+        name: "Astronaute", 
+        prompt: "wearing white NASA astronaut helmet with open visor, full space suit with oxygen tubes, astronaut costume, space explorer"
+      },
+      alien: { 
+        name: "Alien", 
+        prompt: "green alien skin color, elongated bald head, huge bulging black eyes, no hair, extraterrestrial creature, alien face transformation"
+      },
+      bounty_hunter: { 
+        name: "Chasseur de primes", 
+        prompt: "large sci-fi rifle strapped on back visible over shoulder, worn brown leather jacket with armor plates, facial scars, Star-Lord style, space outlaw"
+      },
+      cyborg: { 
+        name: "Robot/Cyborg", 
+        prompt: "half robot face with metal plates and wires under skin, one glowing red cybernetic eye, mechanical jaw, Terminator style transformation, cyborg face"
+      },
+      captain: { 
+        name: "Capitaine", 
+        prompt: "wearing navy captain hat with gold insignia on head, military uniform with medals and rank badges on chest, spaceship commander"
+      }
     }
   },
   werewolf: {
     name: "Loups-Garous", icon: "🐺", premium: false,
-    background: "dark medieval village at night with full moon",
+    background: "dark medieval village at night, old wooden houses, giant bright full moon in sky, fog and mist, horror atmosphere",
     characters: {
-      werewolf: { name: "Loup-garou", prompt: "werewolf with fur and fangs howling at moon" },
-      vampire: { name: "Vampire", prompt: "vampire with pale skin, fangs and red eyes" },
-      witch: { name: "Sorcière", prompt: "witch with pointy hat and black cat" },
-      hunter: { name: "Chasseur", prompt: "medieval hunter with crossbow and cloak" },
-      mayor: { name: "Maire", prompt: "medieval village mayor with fancy clothes" },
-      peasant: { name: "Paysan", prompt: "medieval peasant villager with simple clothes" }
+      werewolf: { 
+        name: "Loup-garou", 
+        prompt: "werewolf transformation with thick brown fur all over face, wolf snout nose, sharp white fangs showing, yellow glowing wolf eyes, pointed wolf ears, beast creature"
+      },
+      vampire: { 
+        name: "Vampire", 
+        prompt: "vampire with extremely pale white skin, sharp vampire fangs with blood dripping, glowing red eyes, wearing black cape with high collar, Dracula style, undead"
+      },
+      mayor: { 
+        name: "Maire du village", 
+        prompt: "wearing tall black top hat on head, red white blue tricolor mayor sash across chest, formal black victorian suit, distinguished gentleman with mustache"
+      },
+      peasant: { 
+        name: "Paysan", 
+        prompt: "holding wooden pitchfork weapon, wearing straw farmer hat on head, straw wheat piece in mouth, dirty simple medieval clothes, poor villager"
+      },
+      witch: { 
+        name: "Sorcière", 
+        prompt: "wearing tall twisted black pointy witch hat on head, ugly crooked nose with big wart, green tinted old wrinkled skin, wild grey messy hair, evil hag"
+      },
+      hunter: { 
+        name: "Chasseur", 
+        prompt: "old hunting rifle strapped on back, leather bandolier with brass bullets across chest, long brown leather coat, monster hunter, Van Helsing style"
+      }
     }
   },
   "wizard-academy": {
     name: "Académie des Sorciers", icon: "🧙", premium: true,
-    background: "magical great hall with floating candles and enchanted ceiling",
+    background: "magical great hall with very high cathedral stone ceiling, floating candles, stone gargoyles, Hogwarts castle interior",
     characters: {
-      wizard: { name: "Sorcier", prompt: "wizard with pointy hat and magical wand" },
-      ghost: { name: "Fantôme", prompt: "translucent ghostly apparition floating" },
-      house_elf: { name: "Elfe", prompt: "small house elf with big ears and magical eyes" },
-      goblin: { name: "Gobelin", prompt: "mischievous goblin banker with pointed ears" },
-      professor: { name: "Professeur", prompt: "old wise wizard professor with long beard and robes" }
+      wizard: { 
+        name: "Sorcier/Sorcière", 
+        prompt: "wearing tall pointed wizard hat with stars on head, long purple wizard robe, holding glowing magic wand, magical sparkles, Gandalf Dumbledore style wizard"
+      },
+      house_elf: { 
+        name: "Elfe de maison", 
+        prompt: "house elf creature with very large pointy bat ears, enormous sad bulging eyes, thin gaunt face with hollow cheeks, wearing dirty torn pillowcase, Dobby transformation"
+      },
+      goblin: { 
+        name: "Gobelin", 
+        prompt: "goblin creature with long pointed ears, very long hooked crooked nose, small beady eyes, greenish wrinkled skin, wearing banker suit, Gringotts goblin"
+      },
+      ghost: { 
+        name: "Fantôme", 
+        prompt: "ghostly spirit with pale bluish-white translucent skin, ethereal smoky aura dissolving into mist around body, semi-transparent face fading into smoke wisps, glowing spectral double image effect, floating phantom with body dissolving into fog at edges, haunted ghostly apparition, spooky ghost"
+      },
+      professor: { 
+        name: "Professeur", 
+        prompt: "wise magic professor with long grey beard, wearing academic robes and pointed hat, half-moon spectacles, old wise wizard teacher, Dumbledore style"
+      },
+      creature: { 
+        name: "Créature magique", 
+        prompt: "magical creature with large feathered wings sprouting from back, glowing golden aura and sparkles around body, mythical being, phoenix angel hybrid"
+      }
     }
   },
   "mythic-realms": {
     name: "Royaumes Mythiques", icon: "⚔️", premium: true,
-    background: "epic fantasy landscape with castle and mountains",
+    background: "epic fantasy dragon lair with rivers of glowing orange lava, piles of gold coins and treasure, mountains of golden wealth",
     characters: {
-      knight: { name: "Chevalier", prompt: "knight in shining silver armor with sword" },
-      dragon: { name: "Dragon", prompt: "powerful dragonborn warrior with scales and horns" },
-      dwarf: { name: "Nain", prompt: "dwarf warrior with long beard and battle axe" },
-      elf: { name: "Elfe", prompt: "elegant elf archer with pointed ears and bow" },
-      orc: { name: "Orque", prompt: "fierce orc warrior with green skin and tusks" },
-      mage: { name: "Mage", prompt: "powerful mage with glowing staff and mystical robes" }
+      knight: { 
+        name: "Chevalier", 
+        prompt: "wearing full medieval plate armor with helmet visor open, shining silver knight armor, sword on back, noble warrior, crusader paladin"
+      },
+      dragon: { 
+        name: "Dragon humanoïde", 
+        prompt: "dragonborn with green scales covering entire face, dragon snout with nostrils, reptilian yellow slit eyes, small horns on head, dragon humanoid transformation"
+      },
+      dwarf: { 
+        name: "Nain guerrier", 
+        prompt: "dwarf with very long thick braided beard reaching chest, wearing iron viking helmet with horns, large battle axe on back, stocky muscular, Gimli style"
+      },
+      elf: { 
+        name: "Elfe archer", 
+        prompt: "elf with very long pointed ears sticking out, flowing long white silver hair past shoulders, carrying elegant bow, ethereal beautiful elven features, Legolas style"
+      },
+      orc: { 
+        name: "Orque", 
+        prompt: "orc with green skin, large tusks from lower jaw, tribal war paint on face, brutish features, heavy fur armor, savage warrior, World of Warcraft orc"
+      },
+      royalty: { 
+        name: "Roi/Reine", 
+        prompt: "wearing magnificent golden crown with jewels on head, holding royal golden scepter, luxurious red velvet cape with white fur trim, medieval king queen royalty"
+      },
+      barbarian: { 
+        name: "Barbare", 
+        prompt: "barbarian with long wild unkempt hair, dirty face with tribal war paint, massive greatsword strapped on back, fur and leather primitive clothing, Conan style savage warrior"
+      }
     }
   }
 };
