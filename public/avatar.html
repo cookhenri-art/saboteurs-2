@@ -487,31 +487,50 @@
       position: relative;
     }
 
-    .delete-avatar-btn {
+    /* V35: Conteneur pour les boutons d'action */
+    .avatar-actions {
       position: absolute;
       top: 5px;
       right: 5px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 10;
+    }
+
+    .gallery-item:hover .avatar-actions {
+      opacity: 1;
+    }
+
+    .delete-avatar-btn, .download-avatar-btn {
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: rgba(255, 0, 85, 0.9);
       border: none;
       cursor: pointer;
       font-size: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      opacity: 0;
-      transition: opacity 0.2s;
-      z-index: 10;
+      transition: transform 0.2s;
     }
 
-    .gallery-item:hover .delete-avatar-btn {
-      opacity: 1;
+    .delete-avatar-btn {
+      background: rgba(255, 0, 85, 0.9);
+    }
+
+    .download-avatar-btn {
+      background: rgba(0, 200, 100, 0.9);
     }
 
     .delete-avatar-btn:hover {
       background: var(--neon-red);
+      transform: scale(1.1);
+    }
+
+    .download-avatar-btn:hover {
+      background: #00cc66;
       transform: scale(1.1);
     }
 
@@ -529,7 +548,7 @@
       font-size: 2rem;
     }
 
-    .gallery-item.broken .delete-avatar-btn {
+    .gallery-item.broken .avatar-actions {
       opacity: 1;
     }
 
@@ -638,6 +657,23 @@
       border-color: var(--neon-cyan);
       background: rgba(0, 255, 255, 0.2);
       box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+    }
+    .save-preset-btn {
+      padding: 12px 16px;
+      font-size: 1.2rem;
+      min-width: auto;
+    }
+    .save-preset-btn:hover {
+      border-color: var(--neon-orange);
+      background: rgba(255, 102, 0, 0.2);
+    }
+    #customPresetBtn {
+      border-color: var(--neon-orange);
+    }
+    #customPresetBtn.active {
+      border-color: var(--neon-orange);
+      background: rgba(255, 102, 0, 0.2);
+      box-shadow: 0 0 15px rgba(255, 102, 0, 0.3);
     }
     .preset-icon {
       font-size: 1.8rem;
@@ -906,6 +942,8 @@
             <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
             <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
             <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
+            <button class="preset-btn" id="customPresetBtn" onclick="applyPreset('custom')" style="display: none;">⭐ Mon style</button>
+            <button class="preset-btn save-preset-btn" onclick="saveCustomPreset()" title="Sauvegarder mes réglages actuels">💾</button>
           </div>
           
           <!-- Slider 1: Ressemblance -->
@@ -1178,8 +1216,8 @@
           updateStats();
           loadMyAvatars();
           
-          // V35: Sliders visibles pour tout le monde (déjà en .show dans le HTML)
-          // Appliquer le preset par défaut
+          // V35: Charger preset custom si existant et appliquer preset par défaut
+          loadCustomPreset();
           applyPreset('balanced');
         } else {
           window.location.href = '/';
@@ -1386,6 +1424,17 @@
         extreme: { s1: 1, s2: 9, s3: 9.5, s4: 2 }
       };
 
+      // V35: Charger preset custom depuis localStorage
+      if (presetName === 'custom') {
+        const customPreset = localStorage.getItem('saboteur_custom_preset');
+        if (customPreset) {
+          presets.custom = JSON.parse(customPreset);
+        } else {
+          showToast('❌ Aucun style personnalisé sauvegardé');
+          return;
+        }
+      }
+
       const preset = presets[presetName];
       if (!preset) return;
 
@@ -1400,12 +1449,45 @@
       updateSliderValue(4);
 
       // Mettre à jour le bouton actif
-      document.querySelectorAll('.presets-row .preset-btn').forEach(btn => {
+      document.querySelectorAll('.presets-row .preset-btn:not(.save-preset-btn)').forEach(btn => {
         btn.classList.remove('active');
-        if (btn.textContent.toLowerCase().includes(presetName.substring(0, 4))) {
-          btn.classList.add('active');
-        }
       });
+      
+      // Activer le bon bouton
+      if (presetName === 'custom') {
+        document.getElementById('customPresetBtn').classList.add('active');
+      } else {
+        document.querySelectorAll('.presets-row .preset-btn').forEach(btn => {
+          if (btn.textContent.toLowerCase().includes(presetName.substring(0, 4))) {
+            btn.classList.add('active');
+          }
+        });
+      }
+    }
+
+    // V35: Sauvegarder preset personnalisé
+    function saveCustomPreset() {
+      const customPreset = {
+        s1: parseFloat(document.getElementById('slider1').value),
+        s2: parseFloat(document.getElementById('slider2').value),
+        s3: parseFloat(document.getElementById('slider3').value),
+        s4: parseFloat(document.getElementById('slider4').value)
+      };
+      
+      localStorage.setItem('saboteur_custom_preset', JSON.stringify(customPreset));
+      
+      // Afficher le bouton "Mon style"
+      document.getElementById('customPresetBtn').style.display = 'flex';
+      
+      showToast('⭐ Style personnalisé sauvegardé !');
+    }
+
+    // V35: Charger preset custom au démarrage si existant
+    function loadCustomPreset() {
+      const customPreset = localStorage.getItem('saboteur_custom_preset');
+      if (customPreset) {
+        document.getElementById('customPresetBtn').style.display = 'flex';
+      }
     }
 
     // Generate
@@ -1486,9 +1568,15 @@
             const deleteBtn = isFreeAccount ? '' : 
               `<button class="delete-avatar-btn" onclick="event.stopPropagation(); deleteAvatar('${av.image_url}', ${av.id})" title="Supprimer">🗑️</button>`;
             
+            // V35: Bouton télécharger pour tous
+            const downloadBtn = `<button class="download-avatar-btn" onclick="event.stopPropagation(); downloadAvatar('${av.image_url}')" title="Télécharger">⬇️</button>`;
+            
             item.innerHTML = `
               <img src="${av.image_url}" alt="Avatar" onerror="this.style.display='none'; this.parentElement.classList.add('broken');">
-              ${deleteBtn}
+              <div class="avatar-actions">
+                ${downloadBtn}
+                ${deleteBtn}
+              </div>
             `;
             item.onclick = () => setCurrentAvatar(av.image_url);
             gallery.appendChild(item);
@@ -1497,6 +1585,27 @@
           gallery.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Aucun avatar pour le moment</p>';
         }
       } catch (e) { console.error(e); }
+    }
+
+    // V35: Télécharger un avatar
+    async function downloadAvatar(url) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `avatar_${Date.now()}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(blobUrl);
+        showToast('⬇️ Avatar téléchargé !');
+      } catch (e) {
+        console.error('Erreur téléchargement:', e);
+        // Fallback: ouvrir dans nouvel onglet
+        window.open(url, '_blank');
+      }
     }
 
     async function deleteAvatar(url, id) {
