@@ -896,37 +896,17 @@
         <h2 class="card-title" data-i18n="avatar.sections.character">👤 PERSONNAGE</h2>
         <div class="character-grid" id="characterGrid"></div>
 
-        <!-- Presets de rendu (comptes gratuits et premium non-admin) -->
-        <div class="preset-section" id="presetSection">
-          <h2 class="card-title" data-i18n="avatar.sections.style">🔥 STYLE DE RENDU</h2>
-          <div class="preset-grid" id="presetGrid">
-            <button class="preset-btn active" data-preset="standard" onclick="selectPreset('standard')">
-              <span class="preset-icon">🎯</span>
-              <span class="preset-name" data-i18n="avatar.styles.standard.name">Standard</span>
-              <span class="preset-desc" data-i18n="avatar.styles.standard.desc">Équilibré</span>
-            </button>
-            <button class="preset-btn" data-preset="transformed" onclick="selectPreset('transformed')">
-              <span class="preset-icon">🔥</span>
-              <span class="preset-name" data-i18n="avatar.styles.transformed.name">Transformé</span>
-              <span class="preset-desc" data-i18n="avatar.styles.transformed.desc">Plus stylisé</span>
-            </button>
-            <button class="preset-btn" data-preset="artistic" onclick="selectPreset('artistic')">
-              <span class="preset-icon">✨</span>
-              <span class="preset-name" data-i18n="avatar.styles.artistic.name">Artistique</span>
-              <span class="preset-desc" data-i18n="avatar.styles.artistic.desc">Très stylisé</span>
-            </button>
+        <!-- V35: Sliders pour tous les utilisateurs -->
+        <div class="admin-section show" id="adminSection">
+          <h2 class="card-title">🔧 STYLE DE RENDU</h2>
+          
+          <!-- Presets rapides -->
+          <div class="presets-row" style="margin-bottom: 20px;">
+            <button class="preset-btn active" onclick="applyPreset('balanced')">⚖️ Équilibré</button>
+            <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
+            <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
+            <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
           </div>
-        </div>
-
-        <!-- Custom Prompt (Premium/Admin) -->
-        <div class="custom-prompt-section" id="customPromptSection">
-          <h2 class="card-title" data-i18n="avatar.sections.customPrompt">✨ PROMPT PERSONNALISÉ</h2>
-          <textarea id="customPrompt" data-i18n-placeholder="avatar.messages.customPromptPlaceholder" placeholder="Décris ton personnage personnalisé..."></textarea>
-        </div>
-
-        <!-- Admin Sliders -->
-        <div class="admin-section" id="adminSection">
-          <h4>🔧 Paramètres avancés (Admin)</h4>
           
           <!-- Slider 1: Ressemblance -->
           <div class="slider-group">
@@ -978,14 +958,6 @@
               <span>Libre</span>
               <span>Fidèle</span>
             </div>
-          </div>
-
-          <!-- Presets rapides -->
-          <div class="presets-row">
-            <button class="preset-btn" onclick="applyPreset('balanced')">⚖️ Équilibré</button>
-            <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
-            <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
-            <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
           </div>
         </div>
 
@@ -1206,16 +1178,9 @@
           updateStats();
           loadMyAvatars();
           
-          // V35: Show admin section (sliders) for admin AND premium users
-          const premiumTypes = ['admin', 'subscriber', 'pack', 'family'];
-          if (premiumTypes.includes(currentUser.accountType)) {
-            document.getElementById('adminSection').classList.add('show');
-            document.getElementById('customPromptSection').classList.add('show');
-            document.getElementById('presetSection').style.display = 'block'; // Presets toujours visibles pour sélection rapide
-          } else {
-            // Compte gratuit : presets visibles, pas de sliders ni prompt perso
-            document.getElementById('presetSection').style.display = 'block';
-          }
+          // V35: Sliders visibles pour tout le monde (déjà en .show dans le HTML)
+          // Appliquer le preset par défaut
+          applyPreset('balanced');
         } else {
           window.location.href = '/';
         }
@@ -1301,18 +1266,15 @@
         document.getElementById('avatarsUsed').textContent = currentUser.avatarsUsed || 0;
         
         // V35: Calculer limite selon le type de compte
-        // pack: juste bonus (pas de mensuel), subscriber/family: 30/mois + bonus, free: 2/mois
         const bonusAvatars = currentUser.bonusAvatars || 0;
         let displayLimit, showBonus = false;
         
         if (currentUser.accountType === 'admin') {
           displayLimit = '∞';
-        } else if (currentUser.accountType === 'pack') {
-          // Pack : juste les bonus (50 à vie)
-          displayLimit = bonusAvatars;
         } else {
-          // Free (2), subscriber (30), family (30) + bonus éventuel
-          const monthlyLimits = { free: 2, subscriber: 30, family: 30 };
+          // Tous les types ont un quota mensuel + bonus éventuel
+          // free: 2, pack: 2, subscriber: 30, family: 30
+          const monthlyLimits = { free: 2, pack: 2, subscriber: 30, family: 30 };
           const monthlyLimit = monthlyLimits[currentUser.accountType] || 2;
           displayLimit = monthlyLimit + bonusAvatars;
           showBonus = bonusAvatars > 0;
@@ -1326,10 +1288,9 @@
           document.getElementById('avatarsLimit').textContent = displayLimit;
         }
         
-        // V35: Afficher date de reset pour comptes mensuels (subscriber, family)
-        // Pas pour pack (les 50 sont à vie) ni free (reset au 1er du mois)
-        const monthlyTypes = ['subscriber', 'family'];
-        if (monthlyTypes.includes(currentUser.accountType)) {
+        // V35: Afficher date de reset pour comptes mensuels
+        // subscriber/family: date anniversaire, free/pack: 1er du mois
+        if (['subscriber', 'family'].includes(currentUser.accountType)) {
           const resetInfo = document.getElementById('resetInfo');
           const resetDate = document.getElementById('resetDate');
           
@@ -1350,8 +1311,8 @@
           const dateOptions = { day: 'numeric', month: 'long' };
           resetDate.textContent = nextReset.toLocaleDateString(lang === 'en' ? 'en-US' : lang + '-' + lang.toUpperCase(), dateOptions);
           resetInfo.style.display = 'block';
-        } else if (currentUser.accountType === 'free') {
-          // Free: reset le 1er du mois
+        } else if (['free', 'pack'].includes(currentUser.accountType)) {
+          // Free et Pack: reset le 1er du mois
           const resetInfo = document.getElementById('resetInfo');
           const resetDate = document.getElementById('resetDate');
           const now = new Date();
@@ -1419,10 +1380,10 @@
 
     function applyPreset(presetName) {
       const presets = {
-        balanced: { s1: 5, s2: 5.5, s3: 8, s4: 6 },
+        balanced: { s1: 5, s2: 5.5, s3: 7, s4: 6 },
         realistic: { s1: 8, s2: 4, s3: 6, s4: 8 },
-        stylized: { s1: 3, s2: 7, s3: 9, s4: 4 },
-        extreme: { s1: 1, s2: 9, s3: 10, s4: 2 }
+        stylized: { s1: 3, s2: 7, s3: 8.5, s4: 4 },
+        extreme: { s1: 1, s2: 9, s3: 9.5, s4: 2 }
       };
 
       const preset = presets[presetName];
@@ -1438,7 +1399,13 @@
       updateSliderValue(3);
       updateSliderValue(4);
 
-      showToast(`✅ Preset "${presetName}" appliqué !`);
+      // Mettre à jour le bouton actif
+      document.querySelectorAll('.presets-row .preset-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase().includes(presetName.substring(0, 4))) {
+          btn.classList.add('active');
+        }
+      });
     }
 
     // Generate
@@ -1457,31 +1424,13 @@
       formData.append('theme', selectedAvatarTheme);
       formData.append('character', selectedCharacter);
 
-      // Custom prompt
-      const customPrompt = document.getElementById('customPrompt').value.trim();
-      const premiumTypes = ['admin', 'subscriber', 'pack', 'family'];
-      
-      if (customPrompt && premiumTypes.includes(currentUser.accountType)) {
-        formData.append('customPrompt', customPrompt);
-      }
-
-      // V35: Tous les comptes premium utilisent les sliders
-      if (premiumTypes.includes(currentUser.accountType)) {
-        const sliders = getSliderValues();
-        formData.append('instant_id_strength', sliders.instant_id_strength);
-        formData.append('prompt_strength', sliders.prompt_strength);
-        formData.append('denoising_strength', sliders.denoising_strength);
-        formData.append('control_depth_strength', sliders.control_depth_strength);
-        console.log('[Generate] Sliders utilisés:', sliders);
-      } else {
-        // Utiliser les presets pour les comptes gratuits
-        const preset = renderPresets[selectedPreset] || renderPresets.standard;
-        formData.append('instant_id_strength', preset.instant_id_strength);
-        formData.append('prompt_strength', preset.prompt_strength);
-        formData.append('denoising_strength', preset.denoising_strength);
-        formData.append('control_depth_strength', preset.control_depth_strength);
-        console.log('[Generate] Preset utilisé:', selectedPreset, preset);
-      }
+      // V35: Sliders pour tout le monde (plus de customPrompt)
+      const sliders = getSliderValues();
+      formData.append('instant_id_strength', sliders.instant_id_strength);
+      formData.append('prompt_strength', sliders.prompt_strength);
+      formData.append('denoising_strength', sliders.denoising_strength);
+      formData.append('control_depth_strength', sliders.control_depth_strength);
+      console.log('[Generate] Sliders utilisés:', sliders);
 
       try {
         const token = localStorage.getItem('saboteur_token');
