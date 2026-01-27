@@ -2256,12 +2256,51 @@ class AudioManager {
     if (!text || this.muted) return;
     // V29-safe: Skip si SpeechSynthesis non disponible (Android WebView)
     if (typeof SpeechSynthesisUtterance === 'undefined') return;
+    
+    // V35: Traduire les messages d'éjection
+    let translatedText = text;
+    const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+    
+    // Détecter {{ejected_single:PlayerName}} ou {{ejected_multiple:Player1, Player2}}
+    const singleMatch = text.match(/\{\{ejected_single:(.+?)\}\}/);
+    const multiMatch = text.match(/\{\{ejected_multiple:(.+?)\}\}/);
+    
+    if (singleMatch) {
+      const playerName = singleMatch[1];
+      const templates = {
+        fr: `Le joueur ${playerName} a été éjecté.`,
+        en: `Player ${playerName} has been ejected.`,
+        es: `El jugador ${playerName} ha sido expulsado.`,
+        de: `Spieler ${playerName} wurde ausgestoßen.`,
+        it: `Il giocatore ${playerName} è stato espulso.`,
+        pt: `O jogador ${playerName} foi ejetado.`
+      };
+      translatedText = text.replace(singleMatch[0], templates[lang] || templates['fr']);
+    } else if (multiMatch) {
+      const playerNames = multiMatch[1];
+      const templates = {
+        fr: `Les joueurs ${playerNames} ont été éjectés.`,
+        en: `Players ${playerNames} have been ejected.`,
+        es: `Los jugadores ${playerNames} han sido expulsados.`,
+        de: `Die Spieler ${playerNames} wurden ausgestoßen.`,
+        it: `I giocatori ${playerNames} sono stati espulsi.`,
+        pt: `Os jogadores ${playerNames} foram ejetados.`
+      };
+      translatedText = text.replace(multiMatch[0], templates[lang] || templates['fr']);
+    }
+    
+    // Map langue vers code TTS
+    const langMap = {
+      fr: 'fr-FR', en: 'en-US', es: 'es-ES', 
+      de: 'de-DE', it: 'it-IT', pt: 'pt-PT'
+    };
+    
     try {
       // Important: do NOT cancel TTS in stopAll(), otherwise a fast phase change can cut announcements.
       // Instead, cancel right before speaking to avoid overlaps.
       try { window.speechSynthesis.cancel(); } catch {}
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "fr-FR";
+      const u = new SpeechSynthesisUtterance(translatedText);
+      u.lang = langMap[lang] || 'fr-FR';
       
       // V28: Sur mobile, s'assurer que speechSynthesis est déverrouillé
       // Certains navigateurs mobiles ont besoin d'une interaction utilisateur
