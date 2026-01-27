@@ -254,7 +254,27 @@
       
       <h1>🔐 Saboteur Admin Panel</h1>
       
-      <!-- Stats -->
+      <!-- V35: Stats Serveur -->
+      <div class="stats-grid" id="serverStatsGrid" style="margin-bottom: 20px; background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%); padding: 15px; border-radius: 12px;">
+        <div class="stat-card" style="background: rgba(0,255,136,0.1); border-color: #00ff88;">
+          <div class="number" id="statUptime" style="color: #00ff88;">-</div>
+          <div class="label">⏱️ Uptime</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,165,0,0.1); border-color: #ffa500;">
+          <div class="number" id="statMemory" style="color: #ffa500;">-</div>
+          <div class="label">💾 Mémoire (MB)</div>
+        </div>
+        <div class="stat-card" style="background: rgba(0,255,255,0.1); border-color: #00ffff;">
+          <div class="number" id="statRooms" style="color: #00ffff;">-</div>
+          <div class="label">🚪 Rooms actives</div>
+        </div>
+        <div class="stat-card" style="background: rgba(255,0,255,0.1); border-color: #ff00ff;">
+          <div class="number" id="statPlayers" style="color: #ff00ff;">-</div>
+          <div class="label">👥 Joueurs connectés</div>
+        </div>
+      </div>
+      
+      <!-- Stats Utilisateurs -->
       <div class="stats-grid" id="statsGrid">
         <div class="stat-card">
           <div class="number" id="statTotal">-</div>
@@ -371,6 +391,10 @@
             document.getElementById('adminPanel').style.display = 'block';
             loadStats();
             loadUsers();
+            // V35: Auto-refresh stats serveur toutes les 30 secondes
+            if (!window.statsInterval) {
+              window.statsInterval = setInterval(loadStats, 30000);
+            }
           } else {
             showResult('loginResult', data.error || 'Code invalide', false);
           }
@@ -400,11 +424,20 @@
         .then(r => r.json())
         .then(data => {
           if (data.ok) {
+            // Stats utilisateurs
             document.getElementById('statTotal').textContent = data.stats.totalUsers;
             document.getElementById('statVerified').textContent = data.stats.verifiedUsers;
             document.getElementById('statSubscribers').textContent = data.stats.subscribers;
             document.getElementById('statPacks').textContent = data.stats.packs;
             document.getElementById('statAdmins').textContent = data.stats.admins;
+            
+            // V35: Stats serveur
+            if (data.server) {
+              document.getElementById('statUptime').textContent = data.server.uptime;
+              document.getElementById('statMemory').textContent = `${data.server.memory.heapUsed}/${data.server.memory.heapTotal}`;
+              document.getElementById('statRooms').textContent = data.server.activeRooms;
+              document.getElementById('statPlayers').textContent = `${data.server.playersInGame}/${data.server.totalPlayers}`;
+            }
           }
         });
     }
