@@ -4005,6 +4005,21 @@ app.get("/api/admin/stats", verifyAdmin, (req, res) => {
   const packs = dbGet("SELECT COUNT(*) as count FROM users WHERE account_type = 'pack'")?.count || 0;
   const admins = dbGet("SELECT COUNT(*) as count FROM users WHERE account_type = 'admin'")?.count || 0;
   
+  // V35: Stats serveur
+  const memUsage = process.memoryUsage();
+  const uptimeSeconds = process.uptime();
+  const uptimeFormatted = formatUptime(uptimeSeconds);
+  
+  // Rooms actives et joueurs connectés
+  const activeRooms = rooms.size;
+  let totalPlayers = 0;
+  let playersInGame = 0;
+  for (const [code, room] of rooms) {
+    const playerCount = room.players ? room.players.size : 0;
+    totalPlayers += playerCount;
+    if (room.started) playersInGame += playerCount;
+  }
+  
   res.json({ 
     ok: true, 
     stats: {
@@ -4014,9 +4029,34 @@ app.get("/api/admin/stats", verifyAdmin, (req, res) => {
       packs,
       admins,
       freeUsers: totalUsers - subscribers - packs - admins
+    },
+    server: {
+      uptime: uptimeFormatted,
+      uptimeSeconds: Math.floor(uptimeSeconds),
+      memory: {
+        heapUsed: Math.round(memUsage.heapUsed / 1024 / 1024),
+        heapTotal: Math.round(memUsage.heapTotal / 1024 / 1024),
+        rss: Math.round(memUsage.rss / 1024 / 1024)
+      },
+      activeRooms,
+      totalPlayers,
+      playersInGame
     }
   });
 });
+
+// V35: Helper pour formater l'uptime
+function formatUptime(seconds) {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  if (days > 0) return `${days}j ${hours}h ${minutes}m`;
+  if (hours > 0) return `${hours}h ${minutes}m ${secs}s`;
+  if (minutes > 0) return `${minutes}m ${secs}s`;
+  return `${secs}s`;
+}
 
 // ============================================================================
 // STRIPE PAYMENT ROUTES
