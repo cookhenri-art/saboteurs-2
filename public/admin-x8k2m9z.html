@@ -337,8 +337,8 @@
       
       <!-- V35: Reset User Avatars/Video -->
       <div class="section">
-        <h3>🔄 Reset Joueur (Avatars/Vidéo)</h3>
-        <p style="color: rgba(255,255,255,0.6); margin-bottom: 15px;">Remet à zéro les compteurs d'un joueur (pour tests)</p>
+        <h3>🔄 Reset Joueur (Tests)</h3>
+        <p style="color: rgba(255,255,255,0.6); margin-bottom: 15px;">Remet à zéro les compteurs d'un joueur pour les tests</p>
         <div class="form-group">
           <label>ID Utilisateur</label>
           <input type="number" id="resetUserId" placeholder="ID du joueur">
@@ -351,7 +351,15 @@
             <input type="checkbox" id="resetVideoCheck"> Reset crédits vidéo
           </label>
           <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
-            <input type="checkbox" id="deleteAvatarFilesCheck"> Supprimer fichiers avatars (libère disque)
+            <input type="checkbox" id="deleteAvatarFilesCheck"> Supprimer fichiers avatars
+          </label>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #ff6b6b;">
+            <input type="checkbox" id="removeFromFamilyCheck"> ⚠️ Retirer du pack famille
+          </label>
+          <label style="display: flex; align-items: center; gap: 5px; cursor: pointer; color: #ff6b6b;">
+            <input type="checkbox" id="downgradeToFreeCheck"> ⚠️ Downgrade en FREE (reset complet)
           </label>
         </div>
         <button class="btn-warning" onclick="resetUser()">🔄 Reset le joueur</button>
@@ -581,13 +589,17 @@
       const resetAvatars = document.getElementById('resetAvatarsCheck').checked;
       const resetVideo = document.getElementById('resetVideoCheck').checked;
       const deleteAvatarFiles = document.getElementById('deleteAvatarFilesCheck').checked;
+      const removeFromFamily = document.getElementById('removeFromFamilyCheck').checked;
+      const downgradeToFree = document.getElementById('downgradeToFreeCheck').checked;
       
-      if (!resetAvatars && !resetVideo && !deleteAvatarFiles) {
+      if (!resetAvatars && !resetVideo && !deleteAvatarFiles && !removeFromFamily && !downgradeToFree) {
         showResult('resetUserResult', 'Sélectionne au moins une option', false);
         return;
       }
       
       let confirmMsg = `Reset pour user #${userId} :\n`;
+      if (downgradeToFree) confirmMsg += '⚠️ DOWNGRADE EN FREE (reset complet)\n';
+      if (removeFromFamily) confirmMsg += '⚠️ Retrait du pack famille\n';
       if (resetAvatars) confirmMsg += '- Compteur avatars à 0\n';
       if (resetVideo) confirmMsg += '- Crédits vidéo réinitialisés\n';
       if (deleteAvatarFiles) confirmMsg += '- SUPPRESSION des fichiers avatars\n';
@@ -602,6 +614,8 @@
           resetAvatars, 
           resetVideo, 
           deleteAvatarFiles,
+          removeFromFamily,
+          downgradeToFree,
           secretCode: adminSecret 
         })
       })
