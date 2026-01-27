@@ -88,7 +88,7 @@ const BLOCKED_EMAIL_DOMAINS = [
 const AVATAR_THEMES = {
   default: {
     name: "Infiltration Spatiale", icon: "🚀", premium: false,
-    background: ""deep space background with stars and nebula, three distant suns glowing red yellow and blue"",
+    background: "deep space background with stars and nebula, three distant suns glowing red yellow and blue"",
     characters: {
             astronaut: {
         name: "Astronaute",
