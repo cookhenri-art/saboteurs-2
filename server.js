@@ -84,130 +84,141 @@ const BLOCKED_EMAIL_DOMAINS = [
   "yopmail.com", "mohmal.com", "getairmail.com", "tempail.com"
 ];
 
-// Thèmes pour avatars IA
-// THÈMES ET PERSONNAGES - PROMPTS V3 ULTRA DÉTAILLÉS
+// Thèmes pour avatars IA (restaurés depuis archive Avatar V3.1)
 const AVATAR_THEMES = {
   default: {
-    name: "Infiltration Spatiale", icon: "🚀", premium: false,
+    name: "Infiltration Spatiale",
+    icon: "🚀",
+    premium: false,
     background: "deep space background with stars and nebula, three distant suns glowing red yellow and blue",
     characters: {
-      astronaut: { 
-        name: "Astronaute", 
-        prompt: "wearing white NASA astronaut helmet with open visor, full space suit with oxygen tubes, astronaut costume, space explorer"
+      astronaut: {
+        name: "Astronaute",
+        prompt: "ultra-detailed NASA-style astronaut portrait, white EVA suit with visible fabric stitching, oxygen hoses and chest control box, open helmet visor with reflections of stars, subtle space dust on suit, background: deep space with stars + three distant suns (red, yellow, blue), cinematic rim light, video game character render, sharp focus"
       },
-      alien: { 
-        name: "Alien", 
-        prompt: "green alien skin color, elongated bald head, huge bulging black eyes, no hair, extraterrestrial creature, alien face transformation"
+      alien: {
+        name: "Alien",
+        prompt: "ultra-detailed extraterrestrial portrait, smooth green skin with subtle pores, elongated bald cranium, huge glossy black almond eyes with specular highlights, thin lips, faint bioluminescent freckles, no hair, background: starfield with three suns (red/yellow/blue), cinematic sci‑fi lighting, video game character render"
       },
-      bounty_hunter: { 
-        name: "Chasseur de primes", 
-        prompt: "large sci-fi rifle strapped on back visible over shoulder, worn brown leather jacket with armor plates, facial scars, Star-Lord style, space outlaw"
+      bounty_hunter: {
+        name: "Chasseur de primes",
+        prompt: "ultra-detailed space bounty hunter, weathered leather jacket with armored plates, scarf, utility belt with gadgets, large sci‑fi rifle strapped diagonally on back clearly visible over shoulder, facial scars and stubble, cybernetic earpiece, background: deep space with three suns, gritty cinematic lighting, video game character render"
       },
-      cyborg: { 
-        name: "Robot/Cyborg", 
-        prompt: "half robot face with metal plates and wires under skin, one glowing red cybernetic eye, mechanical jaw, Terminator style transformation, cyborg face"
+      cyborg: {
+        name: "Robot/Cyborg",
+        prompt: "ultra-detailed cyborg portrait, half human face and half exposed metal endoskeleton, one glowing red eye (Terminator style), visible pistons, cables and metal jawline, skin peeling edge showing mechanics, subtle oil/grease, background: starfield with three suns, dramatic contrast lighting, video game character render"
       },
-      captain: { 
-        name: "Capitaine", 
-        prompt: "wearing navy captain hat with gold insignia on head, military uniform with medals and rank badges on chest, spaceship commander"
+      captain: {
+        name: "Capitaine",
+        prompt: "ultra-detailed starship captain, military cap with insignia, rank badges/patches on crisp uniform, epaulettes, comms headset, confident commanding expression, subtle spacefleet embroidery, background: deep space with three suns, cinematic key light, video game character render"
       }
     }
   },
+
   werewolf: {
-    name: "Loups-Garous", icon: "🐺", premium: false,
+    name: "Loups-Garous",
+    icon: "🐺",
+    premium: false,
     background: "dark medieval village at night, old wooden houses, giant bright full moon in sky, fog and mist, horror atmosphere",
     characters: {
-      werewolf: { 
-        name: "Loup-garou", 
-        prompt: "werewolf transformation with thick brown fur all over face, wolf snout nose, sharp white fangs showing, yellow glowing wolf eyes, pointed wolf ears, beast creature"
+      werewolf: {
+        name: "Loup-garou",
+        prompt: "ultra-detailed werewolf transformation, thick coarse fur across face/neck, pointed ears, glowing yellow eyes, snarling mouth with long sharp fangs clearly visible, wet nose, torn clothing edges, background: old medieval village at night with full moon, moonlight rim lighting, video game character render"
       },
-      vampire: { 
-        name: "Vampire", 
-        prompt: "vampire with extremely pale white skin, sharp vampire fangs with blood dripping, glowing red eyes, wearing black cape with high collar, Dracula style, undead"
+      vampire: {
+        name: "Vampire",
+        prompt: "ultra-detailed vampire portrait, pale skin, sharp fangs exposed with fresh blood dripping, intense eyes with red tint, black cape with deep red lining, ornate gothic collar, background: medieval village night + full moon, cinematic low-key lighting, video game character render"
       },
-      mayor: { 
-        name: "Maire du village", 
-        prompt: "wearing tall black top hat on head, red white blue tricolor mayor sash across chest, formal black victorian suit, distinguished gentleman with mustache"
+      mayor: {
+        name: "Maire du village",
+        prompt: "ultra-detailed medieval village mayor, tricolor sash across chest, black top hat, formal suit with pocket watch chain, well-groomed mustache, authoritative expression, background: medieval village night with full moon, cinematic lighting, video game character render"
       },
-      peasant: { 
-        name: "Paysan", 
-        prompt: "holding wooden pitchfork weapon, wearing straw farmer hat on head, straw wheat piece in mouth, dirty simple medieval clothes, poor villager"
+      peasant: {
+        name: "Paysan",
+        prompt: "ultra-detailed peasant, straw hat, rough linen clothes, pitchfork held/visible, straw or twig in mouth, dirt on face, tired eyes, background: medieval village night with full moon, cinematic moonlight, video game character render"
       },
-      witch: { 
-        name: "Sorcière", 
-        prompt: "wearing tall twisted black pointy witch hat on head, ugly crooked nose with big wart, green tinted old wrinkled skin, wild grey messy hair, evil hag"
+      witch: {
+        name: "Sorcière",
+        prompt: "ultra-detailed village witch, crooked hooked nose with wart, twisted pointy black hat, wrinkled skin, crooked smile, talisman necklace, gnarled fingers, background: medieval village night + full moon, eerie rim light, video game character render"
       },
-      hunter: { 
-        name: "Chasseur", 
-        prompt: "old hunting rifle strapped on back, leather bandolier with brass bullets across chest, long brown leather coat, monster hunter, Van Helsing style"
+      hunter: {
+        name: "Chasseur",
+        prompt: "ultra-detailed monster hunter, leather coat, rifle slung on back, bullet bandolier with cartridges across chest, rugged face, scar, gloves, background: medieval village night with full moon, cinematic lighting, video game character render"
       }
     }
   },
+
   "wizard-academy": {
-    name: "Académie des Sorciers", icon: "🧙", premium: true,
+    name: "Académie des Sorciers",
+    icon: "🧙",
+    premium: true,
     background: "magical great hall with very high cathedral stone ceiling, floating candles, stone gargoyles, Hogwarts castle interior",
     characters: {
-      wizard: { 
-        name: "Sorcier/Sorcière", 
-        prompt: "wearing tall pointed wizard hat with stars on head, long purple wizard robe, holding glowing magic wand, magical sparkles, Gandalf Dumbledore style wizard"
+      wizard: {
+        name: "Sorcier/Sorcière",
+        prompt: "ultra-detailed wizard, long flowing robe (black/purple) with embroidered runes, pointed hat, wand or staff, glowing magical particles around hand, background: grand cathedral-like hall with stone gargoyles, volumetric light beams, video game character render"
       },
-      house_elf: { 
-        name: "Elfe de maison", 
-        prompt: "house elf creature with very large pointy bat ears, enormous sad bulging eyes, thin gaunt face with hollow cheeks, wearing dirty torn pillowcase, Dobby transformation"
+      house_elf: {
+        name: "Elfe de maison",
+        prompt: "ultra-detailed house elf, very large pointy ears, big sad eyes, sunken cheeks, dirty torn t-shirt, thin neck, timid expression, background: cathedral-like great hall with gargoyles, soft magical lighting, video game character render"
       },
-      goblin: { 
-        name: "Gobelin", 
-        prompt: "goblin creature with long pointed ears, very long hooked crooked nose, small beady eyes, greenish wrinkled skin, wearing banker suit, Gringotts goblin"
+      goblin: {
+        name: "Gobelin",
+        prompt: "ultra-detailed goblin banker, short and wiry, long hooked nose, sharp teeth, pointed ears, slicked-back hair, formal dark suit and tie, holding gold coins or ledger, background: grand hall with gargoyles, cinematic lighting, video game character render"
       },
-      ghost: { 
-        name: "Fantôme", 
-        prompt: "ghostly spirit with pale bluish-white translucent skin, ethereal smoky aura dissolving into mist around body, semi-transparent face fading into smoke wisps, glowing spectral double image effect, floating phantom with body dissolving into fog at edges, haunted ghostly apparition, spooky ghost"
+      ghost: {
+        name: "Fantôme",
+        prompt: "ultra-detailed friendly ghost, translucent glowing white figure, faint face details, ethereal mist trailing, floating posture, medieval clothing silhouette, background: cathedral-like great hall with gargoyles, soft bloom, video game character render"
       },
-      professor: { 
-        name: "Professeur", 
-        prompt: "wise magic professor with long grey beard, wearing academic robes and pointed hat, half-moon spectacles, old wise wizard teacher, Dumbledore style"
+      professor: {
+        name: "Professeur",
+        prompt: "ultra-detailed magic professor, greenish skin tint, large nose, pointy ears, large golden hoop earrings, axe strapped on back, scholarly robe with leather straps, stern expression, background: grand hall with gargoyles, cinematic lighting, video game character render"
       },
-      creature: { 
-        name: "Créature magique", 
-        prompt: "magical creature with large feathered wings sprouting from back, glowing golden aura and sparkles around body, mythical being, phoenix angel hybrid"
+      creature: {
+        name: "Créature magique",
+        prompt: "ultra-detailed magical creature humanoid, feathered wings on back, glittering sparkles, brilliant glowing aura, iridescent accents, mystical eyes, background: cathedral-like hall with gargoyles, radiant volumetric light, video game character render"
       }
     }
   },
+
   "mythic-realms": {
-    name: "Royaumes Mythiques", icon: "⚔️", premium: true,
+    name: "Royaumes Mythiques",
+    icon: "⚔️",
+    premium: true,
     background: "epic fantasy dragon lair with rivers of glowing orange lava, piles of gold coins and treasure, mountains of golden wealth",
     characters: {
-      knight: { 
-        name: "Chevalier", 
-        prompt: "wearing full medieval plate armor with helmet visor open, shining silver knight armor, sword on back, noble warrior, crusader paladin"
+      knight: {
+        name: "Chevalier",
+        prompt: "ultra-detailed noble knight, full shining plate armor with scratches, open helmet/visor revealing face, sword hilt visible, cape clasp, background: rivers of lava with mountains of gold treasure, fiery rim light, video game character render"
       },
-      dragon: { 
-        name: "Dragon humanoïde", 
-        prompt: "dragonborn with green scales covering entire face, dragon snout with nostrils, reptilian yellow slit eyes, small horns on head, dragon humanoid transformation"
+      dragon: {
+        name: "Dragon humanoïde",
+        prompt: "ultra-detailed dragonborn/dragon face transformation, scales covering face and neck, dragon nostrils, reptilian slit pupils, subtle smoke breath, rugged armor, background: lava rivers + golden treasure mountains, cinematic lighting, video game character render"
       },
-      dwarf: { 
-        name: "Nain guerrier", 
-        prompt: "dwarf with very long thick braided beard reaching chest, wearing iron viking helmet with horns, large battle axe on back, stocky muscular, Gimli style"
+      dwarf: {
+        name: "Nain guerrier",
+        prompt: "ultra-detailed dwarf warrior, long braided beard, long hair, open iron helmet, battle axe strapped on back, rune-etched armor, soot and dust, background: lava rivers + gold mountains, cinematic lighting, video game character render"
       },
-      elf: { 
-        name: "Elfe archer", 
-        prompt: "elf with very long pointed ears sticking out, flowing long white silver hair past shoulders, carrying elegant bow, ethereal beautiful elven features, Legolas style"
+      elf: {
+        name: "Elfe archer",
+        prompt: "ultra-detailed elven archer, very pointy ears, long flowing white hair, elegant bow with carvings, leather armor, sharp eyes, background: lava rivers + golden treasure mountains, cinematic lighting, video game character render"
       },
-      orc: { 
-        name: "Orque", 
-        prompt: "orc with green skin, large tusks from lower jaw, tribal war paint on face, brutish features, heavy fur armor, savage warrior, World of Warcraft orc"
+      orc: {
+        name: "Orque",
+        prompt: "ultra-detailed orc warrior, green skin, prominent tusks, heavy armor with dents, tribal war paint, fierce expression, background: lava rivers + mountains of gold, cinematic lighting, video game character render"
       },
-      royalty: { 
-        name: "Roi/Reine", 
-        prompt: "wearing magnificent golden crown with jewels on head, holding royal golden scepter, luxurious red velvet cape with white fur trim, medieval king queen royalty"
+      royalty: {
+        name: "Roi/Reine",
+        prompt: "ultra-detailed medieval royalty (king/queen), ornate golden crown, royal scepter, luxurious embroidered robes with jewels, poised expression, background: lava rivers + mountains of gold, dramatic cinematic lighting, video game character render"
       },
-      barbarian: { 
-        name: "Barbare", 
-        prompt: "barbarian with long wild unkempt hair, dirty face with tribal war paint, massive greatsword strapped on back, fur and leather primitive clothing, Conan style savage warrior"
+      barbarian: {
+        name: "Barbare",
+        prompt: "ultra-detailed barbarian warrior, dirty face with war paint, long wild hair, fur shoulder mantle, massive greatsword strapped on back, scars, background: lava rivers + golden treasure mountains, harsh cinematic lighting, video game character render"
       }
     }
   }
 };
+
 
 // ============================================================================
 // SECTION AUTH: BASE DE DONNÉES SQLITE
@@ -4377,16 +4388,16 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     if (customPrompt && limits.customPrompt) {
       finalPrompt = customPrompt;
     } else {
-      finalPrompt = `portrait photo of a person transformed into ${charConfig.prompt}, ${themeConfig.background}, high quality, detailed, 4k`;
+      finalPrompt = `${charConfig.prompt}, ${themeConfig.background}, fantasy character portrait, highly detailed, dramatic cinematic lighting`;
     }
 
     console.log(`🎨 Génération avatar: ${theme}/${character} pour ${user.username}`);
 
     // Paramètres
-    const instant_id = parseFloat(req.body.instant_id_strength) || 0.8;
-    const prompt_str = parseFloat(req.body.prompt_strength) || 4.5;
-    const denoise_str = parseFloat(req.body.denoising_strength) || 0.65;
-    const depth_str = parseFloat(req.body.control_depth_strength) || 0.8;
+    const instant_id = parseFloat(req.body.instant_id_strength) || 0.5;
+    const prompt_str = parseFloat(req.body.prompt_strength) || 5.5;
+    const denoise_str = parseFloat(req.body.denoising_strength) || 0.8;
+    const depth_str = parseFloat(req.body.control_depth_strength) || 0.6;
 
     // Récupérer la dernière version du modèle
     let modelVersion = "fofr/face-to-many";
@@ -4404,9 +4415,9 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     const output = await replicate.run(modelVersion, {
       input: {
         image: base64Image,
-        style: "3D",
+        style: "Video game",
         prompt: finalPrompt,
-        negative_prompt: "blurry, bad quality, distorted, ugly, deformed",
+        negative_prompt: "blurry, low quality, distorted, deformed, ugly, bad anatomy, watermark, text, nude, nsfw, realistic photo, photography",
         prompt_strength: prompt_str,
         denoising_strength: denoise_str,
         instant_id_strength: instant_id,
