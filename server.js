@@ -2984,49 +2984,125 @@ async function sendFamilyCodeEmail(email, code) {
 }
 
 // Envoyer email d'activation aux membres
-async function sendFamilyActivationEmail(email, ownerEmail, isOwner) {
+async function sendFamilyActivationEmail(email, ownerEmail, isOwner, hasExistingAccount) {
   if (!resend) return;
   
-  const subject = isOwner 
-    ? '✅ Votre Pack Famille est activé !'
-    : '🎮 Vous avez été ajouté à un Pack Famille Saboteur !';
+  let subject, htmlContent;
+  
+  if (isOwner) {
+    // Email pour le propriétaire
+    subject = '✅ Votre Pack Famille est activé !';
+    htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
+        <h1 style="color: #00ff88; text-align: center;">✅ Pack Famille Activé !</h1>
+        
+        <p style="text-align: center; font-size: 18px;">Votre Pack Famille est maintenant actif.</p>
+        <p style="text-align: center; color: #ccc;">Tous les membres ont été notifiés par email.</p>
+        
+        <div style="background: #0a0a15; border: 2px solid #00ff88; border-radius: 10px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #00ffff; margin-top: 0;">🎁 Avantages pour tous les membres :</h3>
+          <ul style="line-height: 1.8; color: #ccc;">
+            <li>✅ Vidéo illimitée</li>
+            <li>✅ Tous les thèmes débloqués</li>
+            <li>✅ 30 avatars IA par mois</li>
+          </ul>
+        </div>
+        
+        <p style="text-align: center;">
+          <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            Jouer maintenant !
+          </a>
+        </p>
+      </div>
+    `;
+  } else if (hasExistingAccount) {
+    // Email pour membre AVEC compte existant
+    subject = '🎮 Votre compte Saboteur a été amélioré !';
+    htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
+        <h1 style="color: #00ff88; text-align: center;">🎉 Bonne nouvelle !</h1>
+        
+        <p style="text-align: center; font-size: 18px;">
+          <strong>${ownerEmail}</strong> vous a ajouté à son Pack Famille Saboteur !
+        </p>
+        
+        <div style="background: #0a0a15; border: 2px solid #00ff88; border-radius: 10px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #00ffff; margin-top: 0;">🎁 Vos nouveaux avantages :</h3>
+          <ul style="line-height: 1.8; color: #ccc;">
+            <li>✅ Vidéo illimitée</li>
+            <li>✅ Tous les thèmes débloqués</li>
+            <li>✅ 30 avatars IA par mois</li>
+          </ul>
+        </div>
+        
+        <div style="background: rgba(0,255,255,0.1); border-left: 4px solid #00ffff; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <strong style="color: #00ffff;">ℹ️ Bon à savoir :</strong>
+          <p style="color: #ccc; margin: 10px 0 0 0;">
+            Votre compte existant a été automatiquement mis à jour.<br>
+            <strong>Si le Pack Famille est résilié</strong>, votre compte reviendra à son état précédent (vous ne perdrez rien de votre progression).
+          </p>
+        </div>
+        
+        <p style="text-align: center;">
+          <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            Jouer maintenant !
+          </a>
+        </p>
+      </div>
+    `;
+  } else {
+    // Email pour NOUVEAU membre (pas de compte)
+    subject = '🎮 Vous êtes invité à rejoindre Saboteur !';
+    htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
+        <h1 style="color: #00ff88; text-align: center;">🎉 Invitation Pack Famille !</h1>
+        
+        <p style="text-align: center; font-size: 18px;">
+          <strong>${ownerEmail}</strong> vous invite à rejoindre son Pack Famille Saboteur !
+        </p>
+        
+        <div style="background: #0a0a15; border: 2px solid #00ff88; border-radius: 10px; padding: 20px; margin: 20px 0;">
+          <h3 style="color: #00ffff; margin-top: 0;">🎁 Vos avantages inclus :</h3>
+          <ul style="line-height: 1.8; color: #ccc;">
+            <li>✅ Vidéo illimitée</li>
+            <li>✅ Tous les thèmes débloqués</li>
+            <li>✅ 30 avatars IA par mois</li>
+          </ul>
+        </div>
+        
+        <div style="background: rgba(255,165,0,0.1); border-left: 4px solid #ffa500; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <strong style="color: #ffa500;">📝 Comment rejoindre :</strong>
+          <ol style="color: #ccc; margin: 10px 0 0 0; padding-left: 20px;">
+            <li>Cliquez sur le bouton ci-dessous</li>
+            <li>Créez votre compte avec <strong>cette adresse email</strong> : ${email}</li>
+            <li>Votre compte sera automatiquement activé avec tous les avantages !</li>
+          </ol>
+        </div>
+        
+        <div style="background: rgba(0,255,255,0.1); border-left: 4px solid #00ffff; padding: 15px; margin: 20px 0; border-radius: 5px;">
+          <strong style="color: #00ffff;">ℹ️ Bon à savoir :</strong>
+          <p style="color: #ccc; margin: 10px 0 0 0;">
+            Si le Pack Famille est résilié un jour, votre compte passera en mode gratuit (2 parties vidéo). Vous pourrez toujours jouer !
+          </p>
+        </div>
+        
+        <p style="text-align: center;">
+          <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            Créer mon compte gratuitement !
+          </a>
+        </p>
+      </div>
+    `;
+  }
   
   try {
     await resend.emails.send({
       from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
       to: email,
       subject: subject,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
-          <h1 style="color: #00ff88; text-align: center;">✅ Pack Famille Activé !</h1>
-          
-          ${isOwner ? `
-            <p style="text-align: center; font-size: 18px;">Votre Pack Famille est maintenant actif.</p>
-            <p style="text-align: center; color: #ccc;">Tous les membres ont été notifiés par email.</p>
-          ` : `
-            <p style="text-align: center; font-size: 18px;">
-              <strong>${ownerEmail}</strong> vous a ajouté à son Pack Famille Saboteur !
-            </p>
-          `}
-          
-          <div style="background: #0a0a15; border: 2px solid #00ff88; border-radius: 10px; padding: 20px; margin: 20px 0;">
-            <h3 style="color: #00ffff; margin-top: 0;">🎁 Vos avantages :</h3>
-            <ul style="line-height: 1.8; color: #ccc;">
-              <li>✅ Vidéo illimitée</li>
-              <li>✅ Tous les thèmes débloqués</li>
-              <li>✅ Avatars IA illimités</li>
-            </ul>
-          </div>
-          
-          <p style="text-align: center;">
-            <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-              Jouer maintenant !
-            </a>
-          </p>
-        </div>
-      `
+      html: htmlContent
     });
-    console.log(`[Family] Email activation envoyé à ${email}`);
+    console.log(`[Family] Email activation envoyé à ${email} (existingAccount: ${hasExistingAccount})`);
   } catch (err) {
     console.error('[Family] Erreur envoi email activation:', err);
   }
@@ -3202,8 +3278,8 @@ app.post('/api/family/activate', async (req, res) => {
         // On stocke juste l'info pour l'activer automatiquement à l'inscription
       }
       
-      // Envoyer email
-      sendFamilyActivationEmail(email, familyPack.owner_email, isOwner);
+      // Envoyer email (avec info si compte existant ou non)
+      sendFamilyActivationEmail(email, familyPack.owner_email, isOwner, !!existingUser);
     }
     
     // Mettre à jour le Pack Famille
@@ -3442,8 +3518,8 @@ app.post('/api/family/change-member', async (req, res) => {
     dbRun('UPDATE family_packs SET member_emails = ? WHERE id = ?', 
       [JSON.stringify(memberEmails), familyPack.id]);
     
-    // 6. Envoyer emails
-    sendFamilyActivationEmail(newEmailLower, familyPack.owner_email, false);
+    // 6. Envoyer emails (newUser défini plus haut)
+    sendFamilyActivationEmail(newEmailLower, familyPack.owner_email, false, !!newUser);
     
     console.log(`[Family] Membre changé: ${oldEmailLower} → ${newEmailLower} (pack ${familyPack.code})`);
     
