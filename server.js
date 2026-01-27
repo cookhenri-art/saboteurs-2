@@ -139,7 +139,7 @@ const AVATAR_THEMES = {
       hunter: {
         name: "Chasseur",
         prompt: "ultra-detailed monster hunter, leather coat, rifle slung on back, bullet bandolier with cartridges across chest, rugged face, scar, gloves, background: medieval village night with full moon, cinematic lighting, video game character render"
-      } }
+      }
     }
   },
   "wizard-academy": {
