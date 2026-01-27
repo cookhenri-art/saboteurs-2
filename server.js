@@ -1001,7 +1001,6 @@ function getPhaseName(phaseKey, room) {
     ROLE_REVEAL: "RÉVÉLATION DES RÔLES",
     CAPTAIN_CANDIDACY: `Élection du ${captainTerm}`,
     CAPTAIN_VOTE: `Vote pour ${captainTerm}`,
-    CAPTAIN_RESULT: `${captainTerm} élu ! Préparez-vous pour la nuit`,
     NIGHT_START: "Début de la nuit",
     NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
     NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
@@ -1241,18 +1240,14 @@ function setPhase(room, phase, data = {}) {
     console.log(`[${room.code}] ➜ phase=${phase} day=${room.day} night=${room.night} video=${videoMessage}`);
   } catch {}
 
-  // V35: Auto-proceed pour les phases sans acteurs requis (comme NIGHT_START)
-  // Utiliser un petit délai pour laisser l'état se propager aux clients
-  const required = requiredPlayersForPhase(room);
-  if (required.length === 0) {
-    // V35: Délai plus long pour CAPTAIN_RESULT (discussion) vs NIGHT_START (transition)
-    const delay = (phase === 'CAPTAIN_RESULT') ? 8000 : 1500; // 8s pour discuter, 1.5s pour transition
+  // V35: Auto-proceed pour NIGHT_START (overlay empêche de cliquer)
+  if (phase === 'NIGHT_START') {
     setTimeout(() => {
-      if (room.phase === phase) { // Vérifier qu'on est toujours sur cette phase
+      if (room.phase === 'NIGHT_START') {
         handlePhaseCompletion(room);
         emitRoom(room);
       }
-    }, delay);
+    }, 2000); // 2s pour laisser l'overlay s'afficher
   }
 }
 
@@ -1375,8 +1370,7 @@ function requiredPlayersForPhase(room) {
     case "ROLE_REVEAL": return alive;
     case "CAPTAIN_CANDIDACY": return alive;
     case "CAPTAIN_VOTE": return alive;
-    case "CAPTAIN_RESULT": return alive; // V35: Tous valident avant la nuit (bouton visible)
-    case "NIGHT_START": return []; // V35: Pas de validation - transition automatique
+    case "NIGHT_START": return []; // V35: Pas de validation - overlay empêche de cliquer
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_EXCHANGE": return (d.iaId && d.partnerId) ? [d.iaId, d.partnerId] : [];
@@ -2316,14 +2310,6 @@ function finishCaptainVote(room) {
   logEvent(room, "captain_elected", { playerId: best[0] });
   room.captainElected = true;
 
-  // V35: Phase CAPTAIN_RESULT avec validation avant la nuit
-  // Permet aux joueurs de discuter avant de lancer la nuit
-  setPhase(room, "CAPTAIN_RESULT", { captainId: best[0], captainName: cap?.name || "Capitaine" });
-}
-
-// V35: Nouvelle phase de résultat capitaine - tout le monde peut parler
-// Une fois que tous valident, la nuit commence automatiquement
-function proceedAfterCaptainResult(room) {
   beginNight(room);
 }
 
@@ -4486,11 +4472,6 @@ function handlePhaseCompletion(room) {
 
     case "CAPTAIN_VOTE":
       finishCaptainVote(room);
-      break;
-
-    // V35: Après validation de tous les joueurs, lance la nuit
-    case "CAPTAIN_RESULT":
-      proceedAfterCaptainResult(room);
       break;
 
     case "NIGHT_START":
