@@ -275,10 +275,55 @@ async function initAuthDatabase() {
     )
   `);
 
+  // V35: Table des packs famille
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS family_packs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      owner_email TEXT NOT NULL,
+      stripe_subscription_id TEXT,
+      member_emails TEXT,
+      status TEXT DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      activated_at DATETIME,
+      cancelled_at DATETIME,
+      expires_at DATETIME
+    )
+  `);
+
+  // V35: Table des membres de pack famille
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS family_members (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      family_id INTEGER NOT NULL,
+      email TEXT NOT NULL,
+      previous_account_type TEXT,
+      was_existing_account INTEGER DEFAULT 0,
+      joined_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (family_id) REFERENCES family_packs(id)
+    )
+  `);
+
   // V32: Migration - Ajouter colonne custom_avatar si elle n'existe pas
   try {
     authDb.run("ALTER TABLE users ADD COLUMN custom_avatar TEXT");
     console.log("✅ Migration: colonne custom_avatar ajoutée");
+  } catch(e) {
+    // La colonne existe déjà, c'est OK
+  }
+
+  // V35: Migration - Ajouter colonne family_pack_id à users
+  try {
+    authDb.run("ALTER TABLE users ADD COLUMN family_pack_id INTEGER");
+    console.log("✅ Migration: colonne family_pack_id ajoutée");
+  } catch(e) {
+    // La colonne existe déjà, c'est OK
+  }
+
+  // V35: Migration - Ajouter colonne expires_at aux avatars
+  try {
+    authDb.run("ALTER TABLE avatars ADD COLUMN expires_at DATETIME");
+    console.log("✅ Migration: colonne expires_at (avatars) ajoutée");
   } catch(e) {
     // La colonne existe déjà, c'est OK
   }
@@ -2763,6 +2808,22 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             `, [session.customer, session.subscription, stripeUserId]);
             console.log(`[Stripe] User ${stripeUserId} upgradé en subscriber`);
             
+          } else if (priceType === 'family') {
+            // V35: Pack Famille - générer code unique et créer l'entrée
+            const familyCode = generateFamilyCode();
+            const ownerEmail = session.customer_email || session.customer_details?.email;
+            
+            // Créer l'entrée Pack Famille (en attente d'activation)
+            dbRun(`
+              INSERT INTO family_packs (code, owner_email, stripe_subscription_id, status)
+              VALUES (?, ?, ?, 'pending')
+            `, [familyCode, ownerEmail, session.subscription]);
+            
+            // Envoyer email avec le code au propriétaire
+            sendFamilyCodeEmail(ownerEmail, familyCode);
+            
+            console.log(`[Stripe] Pack Famille créé: ${familyCode} pour ${ownerEmail}`);
+            
           } else if (priceType === 'pack') {
             // Pack crédits : ajouter 50 crédits
             dbRun(`
@@ -2799,16 +2860,26 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
       // Abonnement annulé
       const subscription = event.data.object;
       const customerId = subscription.customer;
+      const subscriptionId = subscription.id;
       
-      console.log(`[Stripe] Abonnement annulé pour customer ${customerId}`);
+      console.log(`[Stripe] Abonnement annulé: ${subscriptionId} pour customer ${customerId}`);
       
-      dbRun(`
-        UPDATE users 
-        SET account_type = 'free',
-            video_credits = 0,
-            stripeSubscriptionId = NULL
-        WHERE stripeCustomerId = ?
-      `, [customerId]);
+      // V35: Vérifier si c'est un Pack Famille
+      const familyPack = dbGet(`SELECT * FROM family_packs WHERE stripe_subscription_id = ? AND status = 'active'`, [subscriptionId]);
+      
+      if (familyPack) {
+        // C'est un Pack Famille - gérer la résiliation
+        await handleFamilyPackCancellation(familyPack);
+      } else {
+        // Abonnement individuel
+        dbRun(`
+          UPDATE users 
+          SET account_type = 'free',
+              video_credits = 0,
+              stripeSubscriptionId = NULL
+          WHERE stripeCustomerId = ?
+        `, [customerId]);
+      }
       
       break;
     }
@@ -2847,6 +2918,368 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 app.use(express.json()); // Pour parser le JSON des requêtes auth
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/avatars", express.static(AVATARS_DIR)); // Servir les avatars
+
+// ============================================================================
+// V35: PACK FAMILLE - FONCTIONS ET ROUTES
+// ============================================================================
+
+// Envoyer email avec le code Pack Famille
+async function sendFamilyCodeEmail(email, code) {
+  if (!resend) {
+    console.log(`[Family] Email non envoyé (Resend non configuré): ${code} à ${email}`);
+    return;
+  }
+  
+  try {
+    await resend.emails.send({
+      from: 'Saboteur <noreply@saboteurs.music-music.fr>',
+      to: email,
+      subject: '🎮 Votre code Pack Famille Saboteur',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
+          <h1 style="color: #00ffff; text-align: center;">🎮 Pack Famille Saboteur</h1>
+          <p style="font-size: 18px; text-align: center;">Merci pour votre achat !</p>
+          
+          <div style="background: #0a0a15; border: 2px solid #00ffff; border-radius: 10px; padding: 20px; margin: 20px 0; text-align: center;">
+            <p style="color: #aaa; margin-bottom: 10px;">Votre code d'activation :</p>
+            <p style="font-size: 32px; font-weight: bold; color: #00ff88; letter-spacing: 3px; margin: 0;">${code}</p>
+          </div>
+          
+          <h3 style="color: #ffa500;">📋 Comment activer votre Pack Famille :</h3>
+          <ol style="line-height: 2; color: #ccc;">
+            <li>Connectez-vous sur <a href="https://saboteurs.music-music.fr" style="color: #00ffff;">saboteurs.music-music.fr</a></li>
+            <li>Cliquez sur "Activer Pack Famille" dans votre profil</li>
+            <li>Entrez le code ci-dessus</li>
+            <li>Renseignez les 8 emails de vos invités</li>
+          </ol>
+          
+          <h3 style="color: #ff6b6b;">⚠️ Règles importantes :</h3>
+          <ul style="line-height: 1.8; color: #ccc;">
+            <li>Ce code ne peut être utilisé <strong>qu'une seule fois</strong></li>
+            <li>L'abonnement est résiliable chaque mois depuis Stripe</li>
+            <li>À la résiliation, les membres reviennent en compte gratuit</li>
+            <li>Les avatars créés sont conservés 1 mois après résiliation</li>
+          </ul>
+          
+          <p style="text-align: center; margin-top: 30px; color: #888;">
+            Des questions ? Contactez-nous sur Discord !
+          </p>
+        </div>
+      `
+    });
+    console.log(`[Family] Email code envoyé à ${email}`);
+  } catch (err) {
+    console.error('[Family] Erreur envoi email:', err);
+  }
+}
+
+// Envoyer email d'activation aux membres
+async function sendFamilyActivationEmail(email, ownerEmail, isOwner) {
+  if (!resend) return;
+  
+  const subject = isOwner 
+    ? '✅ Votre Pack Famille est activé !'
+    : '🎮 Vous avez été ajouté à un Pack Famille Saboteur !';
+  
+  try {
+    await resend.emails.send({
+      from: 'Saboteur <noreply@saboteurs.music-music.fr>',
+      to: email,
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
+          <h1 style="color: #00ff88; text-align: center;">✅ Pack Famille Activé !</h1>
+          
+          ${isOwner ? `
+            <p style="text-align: center; font-size: 18px;">Votre Pack Famille est maintenant actif.</p>
+            <p style="text-align: center; color: #ccc;">Tous les membres ont été notifiés par email.</p>
+          ` : `
+            <p style="text-align: center; font-size: 18px;">
+              <strong>${ownerEmail}</strong> vous a ajouté à son Pack Famille Saboteur !
+            </p>
+          `}
+          
+          <div style="background: #0a0a15; border: 2px solid #00ff88; border-radius: 10px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #00ffff; margin-top: 0;">🎁 Vos avantages :</h3>
+            <ul style="line-height: 1.8; color: #ccc;">
+              <li>✅ Vidéo illimitée</li>
+              <li>✅ Tous les thèmes débloqués</li>
+              <li>✅ Avatars IA illimités</li>
+            </ul>
+          </div>
+          
+          <p style="text-align: center;">
+            <a href="https://saboteurs.music-music.fr" style="display: inline-block; background: #00ff88; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Jouer maintenant !
+            </a>
+          </p>
+        </div>
+      `
+    });
+    console.log(`[Family] Email activation envoyé à ${email}`);
+  } catch (err) {
+    console.error('[Family] Erreur envoi email activation:', err);
+  }
+}
+
+// Envoyer email de résiliation aux membres
+async function sendFamilyCancellationEmail(email, ownerEmail, wasExisting) {
+  if (!resend) return;
+  
+  try {
+    await resend.emails.send({
+      from: 'Saboteur <noreply@saboteurs.music-music.fr>',
+      to: email,
+      subject: '😢 Pack Famille Saboteur résilié',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a1a2e; color: white; padding: 30px; border-radius: 15px;">
+          <h1 style="color: #ff6b6b; text-align: center;">Pack Famille Résilié</h1>
+          
+          <p style="text-align: center; font-size: 18px; color: #ccc;">
+            Le Pack Famille de <strong>${ownerEmail}</strong> a été résilié.
+          </p>
+          
+          <div style="background: #0a0a15; border: 2px solid #ffa500; border-radius: 10px; padding: 20px; margin: 20px 0;">
+            <h3 style="color: #ffa500; margin-top: 0;">📋 Ce qui change pour vous :</h3>
+            <ul style="line-height: 1.8; color: #ccc;">
+              ${wasExisting ? `
+                <li>Votre compte revient à son état précédent</li>
+              ` : `
+                <li>Votre compte passe en mode gratuit</li>
+                <li>Vidéo limitée (2 crédits)</li>
+              `}
+              <li>⏰ <strong>Vos avatars sont conservés pendant 1 mois</strong></li>
+              <li>Reprenez un abonnement pour les conserver définitivement !</li>
+            </ul>
+          </div>
+          
+          <p style="text-align: center;">
+            <a href="https://saboteurs.music-music.fr" style="display: inline-block; background: #00ffff; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Reprendre un abonnement
+            </a>
+          </p>
+        </div>
+      `
+    });
+    console.log(`[Family] Email résiliation envoyé à ${email}`);
+  } catch (err) {
+    console.error('[Family] Erreur envoi email résiliation:', err);
+  }
+}
+
+// Gérer la résiliation d'un Pack Famille
+async function handleFamilyPackCancellation(familyPack) {
+  console.log(`[Family] Résiliation Pack ${familyPack.code}`);
+  
+  // Récupérer tous les membres
+  const members = dbAll(`SELECT * FROM family_members WHERE family_id = ?`, [familyPack.id]);
+  
+  for (const member of members) {
+    const user = dbGet(`SELECT * FROM users WHERE email = ?`, [member.email]);
+    if (!user) continue;
+    
+    if (member.was_existing_account && member.previous_account_type) {
+      // Restaurer l'état précédent
+      dbRun(`UPDATE users SET account_type = ?, family_pack_id = NULL WHERE email = ?`, 
+        [member.previous_account_type, member.email]);
+    } else {
+      // Passer en gratuit
+      dbRun(`UPDATE users SET account_type = 'free', video_credits = 2, family_pack_id = NULL WHERE email = ?`, 
+        [member.email]);
+    }
+    
+    // Marquer les avatars pour suppression dans 1 mois
+    const expiryDate = new Date();
+    expiryDate.setMonth(expiryDate.getMonth() + 1);
+    dbRun(`UPDATE avatars SET expires_at = ? WHERE user_id = ? AND expires_at IS NULL`, 
+      [expiryDate.toISOString(), user.id]);
+    
+    // Envoyer email
+    sendFamilyCancellationEmail(member.email, familyPack.owner_email, member.was_existing_account);
+  }
+  
+  // Mettre à jour le Pack Famille
+  dbRun(`UPDATE family_packs SET status = 'cancelled', cancelled_at = datetime('now') WHERE id = ?`, 
+    [familyPack.id]);
+  
+  console.log(`[Family] Pack ${familyPack.code} résilié, ${members.length} membres notifiés`);
+}
+
+// Route: Valider un code Pack Famille
+app.post('/api/family/validate-code', (req, res) => {
+  const { code } = req.body;
+  
+  if (!code) {
+    return res.status(400).json({ error: 'Code requis' });
+  }
+  
+  const familyPack = dbGet(`SELECT * FROM family_packs WHERE code = ? AND status = 'pending'`, [code.toUpperCase()]);
+  
+  if (!familyPack) {
+    return res.status(404).json({ error: 'Code invalide ou déjà utilisé' });
+  }
+  
+  res.json({ 
+    ok: true, 
+    ownerEmail: familyPack.owner_email,
+    message: 'Code valide ! Entrez les 8 emails des membres.'
+  });
+});
+
+// Route: Activer un Pack Famille avec les emails des membres
+app.post('/api/family/activate', async (req, res) => {
+  const { code, memberEmails } = req.body;
+  
+  if (!code || !memberEmails || !Array.isArray(memberEmails)) {
+    return res.status(400).json({ error: 'Code et emails requis' });
+  }
+  
+  // Vérifier qu'il y a exactement 8 emails
+  const validEmails = memberEmails.filter(e => e && e.includes('@')).map(e => e.toLowerCase().trim());
+  if (validEmails.length !== 8) {
+    return res.status(400).json({ error: 'Exactement 8 emails requis' });
+  }
+  
+  // Vérifier les doublons
+  const uniqueEmails = [...new Set(validEmails)];
+  if (uniqueEmails.length !== 8) {
+    return res.status(400).json({ error: 'Les emails doivent être uniques' });
+  }
+  
+  const familyPack = dbGet(`SELECT * FROM family_packs WHERE code = ? AND status = 'pending'`, [code.toUpperCase()]);
+  
+  if (!familyPack) {
+    return res.status(404).json({ error: 'Code invalide ou déjà utilisé' });
+  }
+  
+  // Vérifier que l'email du propriétaire n'est pas dans les membres
+  if (validEmails.includes(familyPack.owner_email.toLowerCase())) {
+    return res.status(400).json({ error: "L'email du propriétaire ne peut pas être dans les membres" });
+  }
+  
+  try {
+    // Tous les emails (propriétaire + 8 membres)
+    const allEmails = [familyPack.owner_email, ...validEmails];
+    
+    // Activer le pack pour chaque membre
+    for (const email of allEmails) {
+      const existingUser = dbGet(`SELECT * FROM users WHERE email = ?`, [email.toLowerCase()]);
+      const isOwner = email.toLowerCase() === familyPack.owner_email.toLowerCase();
+      
+      // Enregistrer le membre
+      dbRun(`
+        INSERT INTO family_members (family_id, email, previous_account_type, was_existing_account)
+        VALUES (?, ?, ?, ?)
+      `, [
+        familyPack.id, 
+        email.toLowerCase(),
+        existingUser?.account_type || null,
+        existingUser ? 1 : 0
+      ]);
+      
+      if (existingUser) {
+        // Utilisateur existant - upgrader son compte
+        dbRun(`
+          UPDATE users 
+          SET account_type = 'family', 
+              video_credits = 999999,
+              family_pack_id = ?
+          WHERE email = ?
+        `, [familyPack.id, email.toLowerCase()]);
+      } else {
+        // Nouvel utilisateur - créer un compte en attente
+        // L'utilisateur devra s'inscrire avec cet email pour bénéficier du pack
+        // On stocke juste l'info pour l'activer automatiquement à l'inscription
+      }
+      
+      // Envoyer email
+      sendFamilyActivationEmail(email, familyPack.owner_email, isOwner);
+    }
+    
+    // Mettre à jour le Pack Famille
+    dbRun(`
+      UPDATE family_packs 
+      SET status = 'active', 
+          member_emails = ?,
+          activated_at = datetime('now')
+      WHERE id = ?
+    `, [JSON.stringify(validEmails), familyPack.id]);
+    
+    console.log(`[Family] Pack ${familyPack.code} activé avec ${allEmails.length} membres`);
+    
+    res.json({ 
+      ok: true, 
+      message: 'Pack Famille activé ! Tous les membres ont été notifiés par email.'
+    });
+    
+  } catch (err) {
+    console.error('[Family] Erreur activation:', err);
+    res.status(500).json({ error: 'Erreur lors de l\'activation' });
+  }
+});
+
+// Route: Vérifier si un email est dans un Pack Famille actif (pour l'inscription)
+app.get('/api/family/check-email', (req, res) => {
+  const { email } = req.query;
+  
+  if (!email) {
+    return res.status(400).json({ error: 'Email requis' });
+  }
+  
+  const member = dbGet(`
+    SELECT fm.*, fp.code, fp.owner_email 
+    FROM family_members fm
+    JOIN family_packs fp ON fm.family_id = fp.id
+    WHERE fm.email = ? AND fp.status = 'active'
+  `, [email.toLowerCase()]);
+  
+  if (member) {
+    res.json({ ok: true, inFamilyPack: true, ownerEmail: member.owner_email });
+  } else {
+    res.json({ ok: true, inFamilyPack: false });
+  }
+});
+
+// Route: Mon Pack Famille (pour un utilisateur connecté)
+app.get('/api/family/my-pack', (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Non autorisé' });
+  }
+  
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_dev_key');
+    const user = dbGet('SELECT * FROM users WHERE id = ?', [decoded.userId]);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    if (!user.family_pack_id) {
+      return res.json({ ok: true, hasFamilyPack: false });
+    }
+    
+    const familyPack = dbGet('SELECT * FROM family_packs WHERE id = ?', [user.family_pack_id]);
+    const members = dbAll('SELECT email FROM family_members WHERE family_id = ?', [user.family_pack_id]);
+    
+    res.json({
+      ok: true,
+      hasFamilyPack: true,
+      isOwner: familyPack.owner_email.toLowerCase() === user.email.toLowerCase(),
+      pack: {
+        code: familyPack.code,
+        ownerEmail: familyPack.owner_email,
+        status: familyPack.status,
+        activatedAt: familyPack.activated_at,
+        memberCount: members.length
+      }
+    });
+    
+  } catch (err) {
+    return res.status(401).json({ error: 'Token invalide' });
+  }
+});
 
 // Initialiser les systèmes
 const rateLimiter = new RateLimiter();
@@ -2897,6 +3330,22 @@ app.post("/api/auth/register", async (req, res) => {
 
     let accountType = "free";
     let videoCredits = 2; // Par défaut pour free
+    let familyPackId = null;
+    
+    // V35: Vérifier si l'email est dans un Pack Famille actif
+    const familyMember = dbGet(`
+      SELECT fm.*, fp.id as pack_id 
+      FROM family_members fm
+      JOIN family_packs fp ON fm.family_id = fp.id
+      WHERE fm.email = ? AND fp.status = 'active'
+    `, [email.toLowerCase()]);
+    
+    if (familyMember) {
+      accountType = "family";
+      videoCredits = 999999;
+      familyPackId = familyMember.pack_id;
+      console.log(`[Family] Nouvel utilisateur ${email} auto-activé dans Pack Famille`);
+    }
     
     // Note: Les codes promo sont désormais gérés via Stripe ou la page admin
 
@@ -2912,9 +3361,9 @@ app.post("/api/auth/register", async (req, res) => {
 
     // V35: Utiliser l'historique mensuel pour avatars_used (pour subscribers)
     const result = dbInsert(
-      `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits, avatars_used)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits, emailHistory.monthly_avatars_created]
+      `INSERT INTO users (email, username, password, account_type, verification_token, verification_expires, created_from_ip, video_credits, avatars_used, family_pack_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [email.toLowerCase(), username, hashedPassword, accountType, verificationToken, verificationExpires, ip, videoCredits, emailHistory.monthly_avatars_created, familyPackId]
     );
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
@@ -4062,6 +4511,16 @@ function formatUptime(seconds) {
 // STRIPE PAYMENT ROUTES
 // ============================================================================
 
+// V35: Générer un code unique pour Pack Famille
+function generateFamilyCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Sans I, O, 0, 1 pour éviter confusion
+  let code = 'FAM-';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  code += '-';
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
 // Créer une session de paiement Stripe Checkout
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   if (!stripe) {
@@ -4075,16 +4534,21 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'userId et userEmail requis' });
     }
     
-    // Choisir le bon Price ID
-    const priceId = priceType === 'subscription' 
-      ? process.env.STRIPE_PRICE_SUBSCRIPTION 
-      : process.env.STRIPE_PRICE_PACK;
+    // V35: Support Pack Famille
+    let priceId;
+    if (priceType === 'subscription') {
+      priceId = process.env.STRIPE_PRICE_SUBSCRIPTION;
+    } else if (priceType === 'family') {
+      priceId = process.env.STRIPE_PRICE_FAMILY;
+    } else {
+      priceId = process.env.STRIPE_PRICE_PACK;
+    }
     
     if (!priceId) {
       return res.status(500).json({ error: 'Price ID non configuré' });
     }
     
-    const mode = priceType === 'subscription' ? 'subscription' : 'payment';
+    const mode = (priceType === 'subscription' || priceType === 'family') ? 'subscription' : 'payment';
     
     const session = await stripe.checkout.sessions.create({
       mode: mode,
@@ -4106,7 +4570,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       allow_promotion_codes: true,
     });
     
-    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId}`);
+    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId} (${priceType})`);
     res.json({ url: session.url, sessionId: session.id });
     
   } catch (error) {
@@ -4132,6 +4596,14 @@ app.get('/api/stripe/prices', (req, res) => {
       currency: 'eur',
       name: 'Pack 50 Crédits',
       description: '50 parties vidéo, 50 avatars, badge Supporter'
+    },
+    family: {
+      priceId: process.env.STRIPE_PRICE_FAMILY || null,
+      amount: 999, // centimes
+      currency: 'eur',
+      interval: 'month',
+      name: 'Pack Famille',
+      description: '9 comptes (1 principal + 8 invités), vidéo illimitée, résiliable chaque mois'
     },
     configured: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_SUBSCRIPTION)
   });
