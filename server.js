@@ -69,6 +69,7 @@ const ACCOUNT_LIMITS = {
   free: { videoCredits: 2, avatars: 2, themes: ["default", "werewolf"], customPrompt: false },
   pack: { videoCredits: 50, avatars: 50, themes: "all", customPrompt: true },  // Pack 4.99€ - accès à TOUS les thèmes (y compris futurs)
   subscriber: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true },
+  family: { videoCredits: Infinity, avatars: 30, themes: ["default", "werewolf", "wizard-academy", "mythic-realms"], customPrompt: true },  // V35: Pack Famille 9.99€/mois
   admin: { videoCredits: Infinity, avatars: Infinity, themes: "all", customPrompt: true }
 };
 
@@ -326,6 +327,15 @@ async function initAuthDatabase() {
     console.log("✅ Migration: colonne expires_at (avatars) ajoutée");
   } catch(e) {
     // La colonne existe déjà, c'est OK
+  }
+
+  // V35: Migration - Ajouter compteur de changements pour Pack Famille
+  try {
+    authDb.run("ALTER TABLE family_packs ADD COLUMN changes_this_month INTEGER DEFAULT 0");
+    authDb.run("ALTER TABLE family_packs ADD COLUMN last_change_reset TEXT");
+    console.log("✅ Migration: colonnes changes_this_month ajoutées");
+  } catch(e) {
+    // Les colonnes existent déjà, c'est OK
   }
 
   saveAuthDatabase();
@@ -1225,10 +1235,10 @@ if (phase === "NIGHT_RADAR") return seqIf(AUDIO.RADAR_WAKE, "Officier radar, ré
   if (phase === "NIGHT_SABOTEURS") return seqIf(AUDIO.SABOTEURS_WAKE, "Saboteurs, choisissez une cible. Unanimité requise.", AUDIO.WAITING_LOOP);
   if (phase === "NIGHT_DOCTOR") return seqIf(AUDIO.DOCTOR_WAKE, "Docteur bio, choisissez votre action.");
 
-  if (phase === "NIGHT_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("Résultats de la nuit.") };
+  if (phase === "NIGHT_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("{{nightResults}}") };
 
   if (phase === "DAY_WAKE") return { file: data.anyDeaths ? AUDIO.STATION_WAKE_HEAVY : AUDIO.STATION_WAKE_LIGHT, queueLoopFile: null, tts: "La station se réveille." };
-  if (phase === "DAY_CAPTAIN_TRANSFER") return { file: null, queueLoopFile: null, tts: "Transmission du capitaine." };
+  if (phase === "DAY_CAPTAIN_TRANSFER") return { file: null, queueLoopFile: null, tts: "{{captainTransfer}}" };
   if (phase === "DAY_VOTE") return { file: AUDIO.VOTE_ANNONCE, queueLoopFile: AUDIO.WAITING_LOOP, tts: "Vote d'éjection." };
   if (phase === "DAY_TIEBREAK") return { file: null, queueLoopFile: null, tts: "Égalité. Capitaine, tranche." };
   if (phase === "DAY_RESULTS") return { file: null, queueLoopFile: null, tts: withDeaths("Résultats du jour.") };
@@ -3263,6 +3273,15 @@ app.get('/api/family/my-pack', (req, res) => {
     const familyPack = dbGet('SELECT * FROM family_packs WHERE id = ?', [user.family_pack_id]);
     const members = dbAll('SELECT email FROM family_members WHERE family_id = ?', [user.family_pack_id]);
     
+    // V35: Vérifier reset mensuel du compteur de changements
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    if (familyPack.last_change_reset !== currentMonth) {
+      dbRun('UPDATE family_packs SET changes_this_month = 0, last_change_reset = ? WHERE id = ?', 
+        [currentMonth, familyPack.id]);
+      familyPack.changes_this_month = 0;
+    }
+    
     res.json({
       ok: true,
       hasFamilyPack: true,
@@ -3272,12 +3291,171 @@ app.get('/api/family/my-pack', (req, res) => {
         ownerEmail: familyPack.owner_email,
         status: familyPack.status,
         activatedAt: familyPack.activated_at,
-        memberCount: members.length
+        memberCount: members.length,
+        changesThisMonth: familyPack.changes_this_month || 0,
+        members: familyPack.owner_email.toLowerCase() === user.email.toLowerCase() ? members.map(m => m.email) : []
       }
     });
     
   } catch (err) {
     return res.status(401).json({ error: 'Token invalide' });
+  }
+});
+
+// V35: Route pour changer un membre du Pack Famille (propriétaire uniquement, max 2/mois)
+app.post('/api/family/change-member', async (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Non autorisé' });
+  }
+  
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_dev_key');
+    const user = dbGet('SELECT * FROM users WHERE id = ?', [decoded.userId]);
+    
+    if (!user || !user.family_pack_id) {
+      return res.status(404).json({ error: 'Pack Famille non trouvé' });
+    }
+    
+    const familyPack = dbGet('SELECT * FROM family_packs WHERE id = ? AND status = "active"', [user.family_pack_id]);
+    
+    if (!familyPack) {
+      return res.status(404).json({ error: 'Pack Famille non actif' });
+    }
+    
+    // Vérifier que c'est le propriétaire
+    if (familyPack.owner_email.toLowerCase() !== user.email.toLowerCase()) {
+      return res.status(403).json({ error: 'Seul le propriétaire peut modifier les membres' });
+    }
+    
+    // Vérifier reset mensuel
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+    if (familyPack.last_change_reset !== currentMonth) {
+      dbRun('UPDATE family_packs SET changes_this_month = 0, last_change_reset = ? WHERE id = ?', 
+        [currentMonth, familyPack.id]);
+      familyPack.changes_this_month = 0;
+    }
+    
+    // Vérifier limite de 2 changements par mois
+    if ((familyPack.changes_this_month || 0) >= 2) {
+      return res.status(429).json({ error: 'Limite de 2 changements par mois atteinte' });
+    }
+    
+    const { oldEmail, newEmail } = req.body;
+    
+    if (!oldEmail || !newEmail) {
+      return res.status(400).json({ error: 'Ancien et nouvel email requis' });
+    }
+    
+    const oldEmailLower = oldEmail.toLowerCase().trim();
+    const newEmailLower = newEmail.toLowerCase().trim();
+    
+    if (!newEmailLower.includes('@')) {
+      return res.status(400).json({ error: 'Email invalide' });
+    }
+    
+    // Vérifier que l'ancien email est bien membre
+    const oldMember = dbGet('SELECT * FROM family_members WHERE family_id = ? AND email = ?', 
+      [familyPack.id, oldEmailLower]);
+    
+    if (!oldMember) {
+      return res.status(404).json({ error: 'Membre non trouvé dans le pack' });
+    }
+    
+    // Vérifier que le nouvel email n'est pas déjà membre
+    const existingMember = dbGet('SELECT * FROM family_members WHERE family_id = ? AND email = ?', 
+      [familyPack.id, newEmailLower]);
+    
+    if (existingMember) {
+      return res.status(400).json({ error: 'Cet email est déjà membre du pack' });
+    }
+    
+    // Ne peut pas changer le propriétaire
+    if (oldEmailLower === familyPack.owner_email.toLowerCase()) {
+      return res.status(400).json({ error: 'Impossible de modifier le propriétaire' });
+    }
+    
+    // Récupérer les infos de l'ancien membre pour les transférer
+    const oldUser = dbGet('SELECT * FROM users WHERE email = ?', [oldEmailLower]);
+    const avatarsUsed = oldUser?.avatars_used || 0;
+    
+    // Récupérer les avatars de l'ancien membre
+    const oldAvatars = oldUser ? dbAll('SELECT * FROM avatars WHERE user_id = ?', [oldUser.id]) : [];
+    
+    // 1. Retirer l'ancien membre
+    if (oldUser) {
+      // Restaurer son état précédent
+      if (oldMember.was_existing_account && oldMember.previous_account_type) {
+        dbRun('UPDATE users SET account_type = ?, family_pack_id = NULL WHERE id = ?', 
+          [oldMember.previous_account_type, oldUser.id]);
+      } else {
+        dbRun('UPDATE users SET account_type = "free", video_credits = 2, family_pack_id = NULL WHERE id = ?', 
+          [oldUser.id]);
+      }
+    }
+    
+    // 2. Supprimer l'entrée family_members
+    dbRun('DELETE FROM family_members WHERE family_id = ? AND email = ?', [familyPack.id, oldEmailLower]);
+    
+    // 3. Ajouter le nouveau membre
+    const newUser = dbGet('SELECT * FROM users WHERE email = ?', [newEmailLower]);
+    
+    dbRun(`
+      INSERT INTO family_members (family_id, email, previous_account_type, was_existing_account)
+      VALUES (?, ?, ?, ?)
+    `, [
+      familyPack.id,
+      newEmailLower,
+      newUser?.account_type || null,
+      newUser ? 1 : 0
+    ]);
+    
+    if (newUser) {
+      // Upgrader le nouveau membre avec le compteur d'avatars de l'ancien
+      dbRun(`
+        UPDATE users 
+        SET account_type = 'family', 
+            video_credits = 999999,
+            family_pack_id = ?,
+            avatars_used = ?
+        WHERE id = ?
+      `, [familyPack.id, avatarsUsed, newUser.id]);
+      
+      // Transférer les avatars de l'ancien au nouveau
+      if (oldAvatars.length > 0 && oldUser) {
+        for (const avatar of oldAvatars) {
+          dbRun('UPDATE avatars SET user_id = ? WHERE id = ?', [newUser.id, avatar.id]);
+        }
+        console.log(`[Family] ${oldAvatars.length} avatars transférés de ${oldEmailLower} à ${newEmailLower}`);
+      }
+    }
+    
+    // 4. Mettre à jour le compteur de changements
+    dbRun('UPDATE family_packs SET changes_this_month = changes_this_month + 1 WHERE id = ?', [familyPack.id]);
+    
+    // 5. Mettre à jour la liste des emails dans family_packs
+    const allMembers = dbAll('SELECT email FROM family_members WHERE family_id = ? AND email != ?', 
+      [familyPack.id, familyPack.owner_email.toLowerCase()]);
+    const memberEmails = allMembers.map(m => m.email);
+    dbRun('UPDATE family_packs SET member_emails = ? WHERE id = ?', 
+      [JSON.stringify(memberEmails), familyPack.id]);
+    
+    // 6. Envoyer emails
+    sendFamilyActivationEmail(newEmailLower, familyPack.owner_email, false);
+    
+    console.log(`[Family] Membre changé: ${oldEmailLower} → ${newEmailLower} (pack ${familyPack.code})`);
+    
+    res.json({ 
+      ok: true, 
+      message: `Membre modifié ! ${newEmailLower} a été notifié par email.`,
+      changesRemaining: 2 - (familyPack.changes_this_month + 1)
+    });
+    
+  } catch (err) {
+    console.error('[Family] Erreur changement membre:', err);
+    return res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
