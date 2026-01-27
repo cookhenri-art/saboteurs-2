@@ -1129,27 +1129,28 @@
     };
 
     // Presets de rendu (valeurs pour prompt_strength et denoising_strength)
+    // V35: Valeurs augmentées pour des résultats plus marqués
     const renderPresets = {
       standard: { 
         name: 'Standard', 
-        prompt_strength: 4.5, 
-        denoising_strength: 0.65,
-        instant_id_strength: 0.8,
-        control_depth_strength: 0.8
+        prompt_strength: 5.5, 
+        denoising_strength: 0.70,
+        instant_id_strength: 0.75,
+        control_depth_strength: 0.75
       },
       transformed: { 
         name: 'Transformé', 
-        prompt_strength: 6.0, 
-        denoising_strength: 0.75,
-        instant_id_strength: 0.6,
-        control_depth_strength: 0.7
+        prompt_strength: 7.0, 
+        denoising_strength: 0.80,
+        instant_id_strength: 0.55,
+        control_depth_strength: 0.65
       },
       artistic: { 
         name: 'Artistique', 
-        prompt_strength: 7.5, 
-        denoising_strength: 0.85,
-        instant_id_strength: 0.5,
-        control_depth_strength: 0.6
+        prompt_strength: 8.5, 
+        denoising_strength: 0.90,
+        instant_id_strength: 0.45,
+        control_depth_strength: 0.55
       }
     };
     let selectedPreset = 'standard';
@@ -1201,16 +1202,14 @@
           updateStats();
           loadMyAvatars();
           
-          // Show admin section if admin (hide presets, show sliders)
-          if (currentUser.accountType === 'admin') {
+          // V35: Show admin section (sliders) for admin AND premium users
+          const premiumTypes = ['admin', 'subscriber', 'pack', 'family'];
+          if (premiumTypes.includes(currentUser.accountType)) {
             document.getElementById('adminSection').classList.add('show');
             document.getElementById('customPromptSection').classList.add('show');
-            document.getElementById('presetSection').style.display = 'none'; // Admin a les sliders
-          } else if (currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack' || currentUser.accountType === 'family') {
-            document.getElementById('customPromptSection').classList.add('show');
-            document.getElementById('presetSection').style.display = 'block'; // Premium voit les presets
+            document.getElementById('presetSection').style.display = 'block'; // Presets toujours visibles pour sélection rapide
           } else {
-            // Compte gratuit : presets visibles, pas de prompt perso
+            // Compte gratuit : presets visibles, pas de sliders ni prompt perso
             document.getElementById('presetSection').style.display = 'block';
           }
         } else {
@@ -1394,19 +1393,22 @@
 
       // Custom prompt
       const customPrompt = document.getElementById('customPrompt').value.trim();
-      if (customPrompt && (currentUser.accountType === 'admin' || currentUser.accountType === 'subscriber' || currentUser.accountType === 'pack' || currentUser.accountType === 'family')) {
+      const premiumTypes = ['admin', 'subscriber', 'pack', 'family'];
+      
+      if (customPrompt && premiumTypes.includes(currentUser.accountType)) {
         formData.append('customPrompt', customPrompt);
       }
 
-      // Admin sliders
-      if (currentUser.accountType === 'admin') {
+      // V35: Tous les comptes premium utilisent les sliders
+      if (premiumTypes.includes(currentUser.accountType)) {
         const sliders = getSliderValues();
         formData.append('instant_id_strength', sliders.instant_id_strength);
         formData.append('prompt_strength', sliders.prompt_strength);
         formData.append('denoising_strength', sliders.denoising_strength);
         formData.append('control_depth_strength', sliders.control_depth_strength);
+        console.log('[Generate] Sliders utilisés:', sliders);
       } else {
-        // Utiliser les presets pour les non-admins
+        // Utiliser les presets pour les comptes gratuits
         const preset = renderPresets[selectedPreset] || renderPresets.standard;
         formData.append('instant_id_strength', preset.instant_id_strength);
         formData.append('prompt_strength', preset.prompt_strength);

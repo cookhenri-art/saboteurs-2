@@ -266,6 +266,59 @@ const TRANSLATIONS = {
       pt: "Jogo de dedução social multiplayer",
       nl: "Multiplayer sociaal deductiespel"
     },
+    
+    // V35: Boutons Premium
+    premium: {
+      offers: {
+        fr: "🌟 Offres Premium",
+        en: "🌟 Premium Offers",
+        es: "🌟 Ofertas Premium",
+        de: "🌟 Premium-Angebote",
+        it: "🌟 Offerte Premium",
+        pt: "🌟 Ofertas Premium"
+      },
+      offersTitle: {
+        fr: "Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois",
+        en: "Unlimited video, 4 themes, 30 avatars/month - €1.49/month",
+        es: "Video ilimitado, 4 temas, 30 avatares/mes - 1,49€/mes",
+        de: "Unbegrenztes Video, 4 Themen, 30 Avatare/Monat - 1,49€/Monat",
+        it: "Video illimitato, 4 temi, 30 avatar/mese - 1,49€/mese",
+        pt: "Vídeo ilimitado, 4 temas, 30 avatares/mês - 1,49€/mês"
+      },
+      pack: {
+        fr: "📦 Pack vidéo + avatars",
+        en: "📦 Video + avatars pack",
+        es: "📦 Pack video + avatares",
+        de: "📦 Video + Avatare Paket",
+        it: "📦 Pack video + avatar",
+        pt: "📦 Pack vídeo + avatares"
+      },
+      packTitle: {
+        fr: "50 parties vidéo + 50 avatars IA - 4,99€ une fois",
+        en: "50 video games + 50 AI avatars - €4.99 one time",
+        es: "50 partidas de video + 50 avatares IA - 4,99€ una vez",
+        de: "50 Videospiele + 50 KI-Avatare - 4,99€ einmalig",
+        it: "50 partite video + 50 avatar IA - 4,99€ una volta",
+        pt: "50 jogos de vídeo + 50 avatares IA - 4,99€ uma vez"
+      },
+      family: {
+        fr: "👨‍👩‍👧‍👦 Pack Famille",
+        en: "👨‍👩‍👧‍👦 Family Pack",
+        es: "👨‍👩‍👧‍👦 Pack Familiar",
+        de: "👨‍👩‍👧‍👦 Familienpaket",
+        it: "👨‍👩‍👧‍👦 Pack Famiglia",
+        pt: "👨‍👩‍👧‍👦 Pack Família"
+      },
+      familyTitle: {
+        fr: "9 comptes, vidéo illimitée - 9,99€/mois",
+        en: "9 accounts, unlimited video - €9.99/month",
+        es: "9 cuentas, video ilimitado - 9,99€/mes",
+        de: "9 Konten, unbegrenztes Video - 9,99€/Monat",
+        it: "9 account, video illimitato - 9,99€/mese",
+        pt: "9 contas, vídeo ilimitado - 9,99€/mês"
+      }
+    },
+    
     missionRealtime: {
       fr: "⚡ MISSION TEMPS RÉEL ⚡",
       en: "⚡ REAL-TIME MISSION ⚡",
