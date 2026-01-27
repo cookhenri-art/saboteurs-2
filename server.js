@@ -4195,7 +4195,7 @@ app.get("/api/avatars/my-avatars", authenticateToken, (req, res) => {
       [req.user.id]
     );
 
-    const user = dbGet("SELECT avatars_used, current_avatar FROM users WHERE id = ?", [req.user.id]);
+    const user = dbGet("SELECT account_type, avatars_used, current_avatar FROM users WHERE id = ?", [req.user.id]);
     const limits = getUserLimits(user);
 
     res.json({
