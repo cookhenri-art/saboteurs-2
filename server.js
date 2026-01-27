@@ -1001,6 +1001,7 @@ function getPhaseName(phaseKey, room) {
     ROLE_REVEAL: "RÉVÉLATION DES RÔLES",
     CAPTAIN_CANDIDACY: `Élection du ${captainTerm}`,
     CAPTAIN_VOTE: `Vote pour ${captainTerm}`,
+    CAPTAIN_RESULT: `${captainTerm} élu !`,
     NIGHT_START: "Début de la nuit",
     NIGHT_CHAMELEON: `${getRoleLabel('chameleon', room)}, réveille-toi`,
     NIGHT_AI_AGENT: `${getRoleLabel('ai_agent', room)}, réveille-toi`,
@@ -1370,6 +1371,7 @@ function requiredPlayersForPhase(room) {
     case "ROLE_REVEAL": return alive;
     case "CAPTAIN_CANDIDACY": return alive;
     case "CAPTAIN_VOTE": return alive;
+    case "CAPTAIN_RESULT": return alive; // V35: Tous valident pour voir le résultat
     case "NIGHT_START": return []; // V35: Pas de validation - overlay empêche de cliquer
     case "NIGHT_CHAMELEON": return d.actorId ? [d.actorId] : [];
     case "NIGHT_AI_AGENT": return d.actorId ? [d.actorId] : [];
@@ -2310,7 +2312,8 @@ function finishCaptainVote(room) {
   logEvent(room, "captain_elected", { playerId: best[0] });
   room.captainElected = true;
 
-  beginNight(room);
+  // V35: Phase CAPTAIN_RESULT pour afficher le résultat avant la nuit
+  setPhase(room, "CAPTAIN_RESULT", { captainId: best[0], captainName: cap?.name || "Capitaine" });
 }
 
 function beginNight(room) {
@@ -4472,6 +4475,11 @@ function handlePhaseCompletion(room) {
 
     case "CAPTAIN_VOTE":
       finishCaptainVote(room);
+      break;
+
+    // V35: Après affichage du résultat capitaine, lance la nuit
+    case "CAPTAIN_RESULT":
+      beginNight(room);
       break;
 
     case "NIGHT_START":
