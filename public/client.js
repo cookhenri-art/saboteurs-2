@@ -2851,14 +2851,19 @@ function getThemeImagePath(filename) {
   return `/images/${themeId}/${filename}`;
 }
 
-// Résout le chemin d'un fichier audio selon le thème actif
+// Résout le chemin d'un fichier audio selon le thème actif ET la langue
+// V35: Structure /sounds/{theme}/{lang}/{filename}
 function getThemeAudioPath(filename) {
   if (!filename) return "";
   if (filename.startsWith("/") || filename.startsWith("http")) return filename;
   
   // Utiliser le thème de la room si disponible, sinon le thème sélectionné sur l'accueil
   const themeId = state?.themeId || currentTheme?.id || homeSelectedTheme || "default";
-  return `/sounds/${themeId}/${filename}`;
+  
+  // V35: Ajouter la langue
+  const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+  
+  return `/sounds/${themeId}/${lang}/${filename}`;
 }
 
 // Fonction de traduction des termes selon le thème actif
@@ -3931,18 +3936,20 @@ function preloadThemeAssets(themeId) {
   });
   
   // Précharger les sons (en background, sans lecture)
+  // V35: Ajouter la langue dans le chemin
+  const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
   THEME_ASSETS.sounds.forEach(filename => {
     const audio = new Audio();
     audio.preload = 'auto';
     audio.oncanplaythrough = () => {
       loadedCount++;
       if (loadedCount === totalAssets) {
-        console.log(`[preload] ✅ Theme ${themeId} fully preloaded (${totalAssets} assets)`);
+        console.log(`[preload] ✅ Theme ${themeId}/${lang} fully preloaded (${totalAssets} assets)`);
         preloadedAssets.add(cacheKey);
       }
     };
     audio.onerror = () => loadedCount++;
-    audio.src = `/sounds/${themeId}/${filename}`;
+    audio.src = `/sounds/${themeId}/${lang}/${filename}`;
   });
 }
 
