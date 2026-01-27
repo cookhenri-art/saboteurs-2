@@ -338,6 +338,23 @@ async function initAuthDatabase() {
     // Les colonnes existent déjà, c'est OK
   }
 
+  // V35: Migration - Ajouter bonus_avatars (avatars one-shot du pack 4.99€)
+  try {
+    authDb.run("ALTER TABLE users ADD COLUMN bonus_avatars INTEGER DEFAULT 0");
+    console.log("✅ Migration: colonne bonus_avatars ajoutée");
+  } catch(e) {
+    // La colonne existe déjà, c'est OK
+  }
+
+  // V35: Migration - Ajouter subscription_start_day et last_avatar_reset
+  try {
+    authDb.run("ALTER TABLE users ADD COLUMN subscription_start_day INTEGER DEFAULT 1");
+    authDb.run("ALTER TABLE users ADD COLUMN last_avatar_reset TEXT");
+    console.log("✅ Migration: colonnes subscription_start_day et last_avatar_reset ajoutées");
+  } catch(e) {
+    // Les colonnes existent déjà, c'est OK
+  }
+
   saveAuthDatabase();
   console.log("✅ Base de données auth initialisée");
 }
@@ -2808,15 +2825,20 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
         try {
           if (priceType === 'subscription') {
             // Abonnement mensuel : passer en subscriber
+            // V35: Stocker le jour d'anniversaire pour reset mensuel + reset compteur avatars
+            const startDay = new Date().getDate();
             dbRun(`
               UPDATE users 
               SET account_type = 'subscriber', 
                   video_credits = 999999,
+                  avatars_used = 0,
+                  subscription_start_day = ?,
+                  last_avatar_reset = ?,
                   stripeCustomerId = ?,
                   stripeSubscriptionId = ?
               WHERE id = ?
-            `, [session.customer, session.subscription, stripeUserId]);
-            console.log(`[Stripe] User ${stripeUserId} upgradé en subscriber`);
+            `, [startDay, getCurrentMonth(), session.customer, session.subscription, stripeUserId]);
+            console.log(`[Stripe] User ${stripeUserId} upgradé en subscriber (reset jour ${startDay})`);
             
           } else if (priceType === 'family') {
             // V35: Pack Famille - générer code unique et créer l'entrée
@@ -2835,16 +2857,16 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             console.log(`[Stripe] Pack Famille créé: ${familyCode} pour ${ownerEmail}`);
             
           } else if (priceType === 'pack') {
-            // Pack crédits : ajouter 50 crédits
+            // Pack crédits : ajouter 50 vidéos + 50 avatars bonus
+            // V35: bonus_avatars s'ajoutent au quota mensuel (ne se reset pas)
             dbRun(`
               UPDATE users 
-              SET account_type = CASE WHEN account_type = 'free' THEN 'pack' ELSE account_type END,
-                  video_credits = video_credits + 50,
-                  avatars_used = CASE WHEN avatars_used > 50 THEN avatars_used - 50 ELSE 0 END,
+              SET video_credits = video_credits + 50,
+                  bonus_avatars = COALESCE(bonus_avatars, 0) + 50,
                   stripeCustomerId = ?
               WHERE id = ?
             `, [session.customer, stripeUserId]);
-            console.log(`[Stripe] User ${stripeUserId} a reçu 50 crédits`);
+            console.log(`[Stripe] User ${stripeUserId} a reçu 50 vidéos + 50 avatars bonus`);
           }
           
         } catch (dbError) {
@@ -3265,13 +3287,18 @@ app.post('/api/family/activate', async (req, res) => {
       
       if (existingUser) {
         // Utilisateur existant - upgrader son compte
+        // V35: Stocker jour anniversaire pour reset mensuel
+        const startDay = new Date().getDate();
         dbRun(`
           UPDATE users 
           SET account_type = 'family', 
               video_credits = 999999,
+              avatars_used = 0,
+              subscription_start_day = ?,
+              last_avatar_reset = ?,
               family_pack_id = ?
           WHERE email = ?
-        `, [familyPack.id, email.toLowerCase()]);
+        `, [startDay, getCurrentMonth(), familyPack.id, email.toLowerCase()]);
       } else {
         // Nouvel utilisateur - créer un compte en attente
         // L'utilisateur devra s'inscrire avec cet email pour bénéficier du pack
@@ -3490,14 +3517,18 @@ app.post('/api/family/change-member', async (req, res) => {
     
     if (newUser) {
       // Upgrader le nouveau membre avec le compteur d'avatars de l'ancien
+      // V35: Stocker jour anniversaire pour reset mensuel
+      const startDay = new Date().getDate();
       dbRun(`
         UPDATE users 
         SET account_type = 'family', 
             video_credits = 999999,
             family_pack_id = ?,
-            avatars_used = ?
+            avatars_used = ?,
+            subscription_start_day = ?,
+            last_avatar_reset = ?
         WHERE id = ?
-      `, [familyPack.id, avatarsUsed, newUser.id]);
+      `, [familyPack.id, avatarsUsed, startDay, getCurrentMonth(), newUser.id]);
       
       // Transférer les avatars de l'ancien au nouveau
       if (oldAvatars.length > 0 && oldUser) {
@@ -3887,14 +3918,23 @@ app.get("/api/auth/me", authenticateToken, (req, res) => {
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
 
     const limits = getUserLimits(user);
+    const bonusAvatars = user.bonus_avatars || 0;
+    
     res.json({
       user: {
         id: user.id, email: user.email, username: user.username,
         accountType: user.account_type, emailVerified: user.email_verified === 1,
         videoCredits: user.video_credits, avatarsUsed: user.avatars_used,
+        bonusAvatars: bonusAvatars,
+        subscriptionStartDay: user.subscription_start_day || 1,
         currentAvatar: user.current_avatar
       },
-      limits: { videoCredits: limits.videoCredits, avatars: limits.avatars, themes: limits.themes }
+      limits: { 
+        videoCredits: limits.videoCredits, 
+        avatars: limits.avatars, 
+        avatarsTotal: limits.avatars + bonusAvatars,
+        themes: limits.themes 
+      }
     });
   } catch (error) {
     res.status(500).json({ error: "Erreur serveur" });
@@ -4000,30 +4040,72 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
 
     const limits = getUserLimits(user);
 
+    // V35: Vérifier si reset anniversaire nécessaire (pour subscriber/family)
+    const monthlyTypes = ['subscriber', 'family'];
+    if (monthlyTypes.includes(user.account_type)) {
+      const startDay = user.subscription_start_day || 1;
+      const lastReset = user.last_avatar_reset || '';
+      const now = new Date();
+      const currentDay = now.getDate();
+      const currentYearMonth = `${now.getFullYear()}-${now.getMonth() + 1}`;
+      
+      // Calculer si on a passé la date anniversaire ce mois-ci
+      let shouldReset = false;
+      if (lastReset !== currentYearMonth) {
+        // On n'a pas encore reset ce mois
+        if (currentDay >= startDay) {
+          // On a passé la date anniversaire
+          shouldReset = true;
+        } else {
+          // On n'a pas encore atteint la date anniversaire ce mois
+          // Vérifier si le mois précédent a été reset
+          const lastMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+          const lastYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+          const prevYearMonth = `${lastYear}-${lastMonth}`;
+          if (lastReset !== prevYearMonth && lastReset !== '') {
+            // Reset en retard
+            shouldReset = true;
+          }
+        }
+      }
+      
+      if (shouldReset) {
+        dbRun("UPDATE users SET avatars_used = 0, last_avatar_reset = ? WHERE id = ?", 
+          [currentYearMonth, user.id]);
+        user.avatars_used = 0;
+        console.log(`[V35] Reset avatars anniversaire pour ${user.email} (jour ${startDay})`);
+      }
+    }
+
     // V35: Récupérer l'historique global par email
     const emailHistory = getEmailAvatarHistory(user.email);
     
-    // V35: Pour les packs (50 total), utiliser le compteur total
-    // Pour les subscribers (30/mois), utiliser le compteur mensuel
-    let avatarsToCheck = user.avatars_used; // Par défaut: mensuel (subscribers, free)
-    let limitType = "mensuel";
+    // V35: Calcul de la limite effective
+    // - Quota mensuel de base (30 pour subscriber/family, 2 pour free)
+    // - + bonus_avatars (achetés via pack 4.99€, ne se reset pas)
+    const bonusAvatars = user.bonus_avatars || 0;
+    const monthlyUsed = user.avatars_used || 0;
     
-    if (user.account_type === "pack") {
-      avatarsToCheck = emailHistory.total_avatars_created;
-      limitType = "total";
-    }
+    // La limite totale = quota mensuel + bonus
+    const totalLimit = limits.avatars === Infinity ? Infinity : limits.avatars + bonusAvatars;
+    const avatarsToCheck = monthlyUsed;
 
     // Vérifier limite avatars
-    if (limits.avatars !== Infinity && avatarsToCheck >= limits.avatars) {
+    if (totalLimit !== Infinity && avatarsToCheck >= totalLimit) {
       await fsPromises.unlink(req.file.path).catch(() => {});
-      console.log(`[V35] Limite avatars atteinte pour ${user.email}: ${avatarsToCheck}/${limits.avatars} (${limitType})`);
+      console.log(`[V35] Limite avatars atteinte pour ${user.email}: ${avatarsToCheck}/${totalLimit} (mensuel: ${limits.avatars}, bonus: ${bonusAvatars})`);
+      
+      let errorMsg = "Limite d'avatars atteinte ce mois-ci";
+      if (bonusAvatars > 0) {
+        errorMsg = `Tu as utilisé tes ${limits.avatars} avatars mensuels + ${bonusAvatars} bonus`;
+      }
+      
       return res.status(403).json({ 
-        error: user.account_type === "pack" 
-          ? "Tu as utilisé tes 50 avatars du pack. Achète un nouveau pack !" 
-          : "Limite d'avatars atteinte ce mois-ci",
+        error: errorMsg,
         avatarsUsed: avatarsToCheck,
-        avatarsLimit: limits.avatars,
-        limitType
+        avatarsLimit: totalLimit,
+        monthlyLimit: limits.avatars,
+        bonusAvatars: bonusAvatars
       });
     }
 
@@ -4195,13 +4277,16 @@ app.get("/api/avatars/my-avatars", authenticateToken, (req, res) => {
       [req.user.id]
     );
 
-    const user = dbGet("SELECT account_type, avatars_used, current_avatar FROM users WHERE id = ?", [req.user.id]);
+    const user = dbGet("SELECT account_type, avatars_used, bonus_avatars, current_avatar FROM users WHERE id = ?", [req.user.id]);
     const limits = getUserLimits(user);
+    const bonusAvatars = user?.bonus_avatars || 0;
 
     res.json({
       avatars: avatars || [],
       avatarsUsed: user?.avatars_used || 0,
-      avatarsLimit: limits.avatars,
+      bonusAvatars: bonusAvatars,
+      avatarsLimit: limits.avatars + bonusAvatars,
+      monthlyLimit: limits.avatars,
       currentAvatar: user?.current_avatar
     });
 
