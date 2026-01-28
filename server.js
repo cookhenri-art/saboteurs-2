@@ -3748,6 +3748,26 @@ function cleanupInactiveRooms() {
     // Ne pas toucher aux rooms en cours de partie
     if (room.started && !room.ended) continue;
     
+    // V35: Pour les rooms publiques, vérifier si tous les joueurs sont déconnectés
+    if (room.isPublic && room.phase === 'LOBBY') {
+      let hasConnectedPlayer = false;
+      for (const [pid, p] of room.players) {
+        if (p.connected) {
+          hasConnectedPlayer = true;
+          break;
+        }
+      }
+      
+      // Si aucun joueur connecté et room créée depuis plus de 2 minutes, supprimer
+      const timeSinceCreation = now - room.phaseStartTime;
+      if (!hasConnectedPlayer && timeSinceCreation > 2 * 60 * 1000) {
+        rooms.delete(code);
+        cleaned++;
+        logger.info("room_cleanup_empty_public", { roomCode: code, reason: 'no_connected_players' });
+        continue;
+      }
+    }
+    
     // Vérifier l'inactivité
     const timeSinceActivity = now - (room.lastActivity || room.phaseStartTime);
     
@@ -4886,21 +4906,33 @@ app.get("/api/rooms/public", (req, res) => {
           !room.ended &&
           accessibleThemes.includes(room.themeId)) {
         
-        const playerCount = room.players.size;
+        // V35: Compter seulement les joueurs CONNECTÉS
+        let connectedCount = 0;
+        let hostConnected = false;
         const host = room.players.get(room.hostPlayerId);
+        
+        for (const [pid, p] of room.players) {
+          if (p.connected) {
+            connectedCount++;
+            if (pid === room.hostPlayerId) hostConnected = true;
+          }
+        }
+        
+        // Ne pas afficher les rooms vides (personne de connecté)
+        if (connectedCount === 0) continue;
         
         publicRooms.push({
           code: room.code,
           name: room.roomName || `Room ${room.code}`,
-          hostName: host?.name || 'Hôte',
+          hostName: hostConnected ? (host?.name || 'Hôte') : '(parti)',
           themeId: room.themeId,
           themeName: AVATAR_THEMES[room.themeId]?.name || room.themeId,
           themeIcon: AVATAR_THEMES[room.themeId]?.icon || '🎮',
           roomType: room.roomType,
           comment: room.comment || '',
-          playerCount,
+          playerCount: connectedCount,
           maxPlayers: room.maxPlayers,
-          isFull: playerCount >= room.maxPlayers,
+          isFull: connectedCount >= room.maxPlayers,
           createdAt: room.phaseStartTime
         });
       }
@@ -4958,12 +4990,24 @@ app.post("/api/rooms/join-random", (req, res) => {
     // Chercher une room compatible
     let bestRoom = null;
     let bestScore = -1;
+    let bestConnectedCount = 0;
     
     for (const [code, room] of rooms) {
       // Vérifications de base
       if (!room.isPublic || room.phase !== 'LOBBY' || room.started || room.ended) continue;
-      if (room.players.size >= room.maxPlayers) continue;
       if (!accessibleThemes.includes(room.themeId)) continue;
+      
+      // V35: Compter seulement les joueurs connectés
+      let connectedCount = 0;
+      for (const [pid, p] of room.players) {
+        if (p.connected) connectedCount++;
+      }
+      
+      // Ne pas proposer les rooms vides
+      if (connectedCount === 0) continue;
+      
+      // Vérifier si room pleine (avec joueurs connectés)
+      if (connectedCount >= room.maxPlayers) continue;
       
       // Filtrer par type de room
       if (roomType && roomType !== 'any') {
@@ -4977,10 +5021,11 @@ app.post("/api/rooms/join-random", (req, res) => {
       if (themeId && room.themeId !== themeId) continue;
       
       // Score: privilégier les rooms les plus remplies (pour démarrer plus vite)
-      const score = room.players.size;
+      const score = connectedCount;
       if (score > bestScore) {
         bestScore = score;
         bestRoom = room;
+        bestConnectedCount = connectedCount;
       }
     }
     
@@ -4991,7 +5036,7 @@ app.post("/api/rooms/join-random", (req, res) => {
         roomName: bestRoom.roomName || `Room ${bestRoom.code}`,
         themeId: bestRoom.themeId,
         roomType: bestRoom.roomType,
-        playerCount: bestRoom.players.size,
+        playerCount: bestConnectedCount,
         maxPlayers: bestRoom.maxPlayers
       });
     } else {
@@ -5014,9 +5059,18 @@ app.get("/api/rooms/stats", (req, res) => {
   
   for (const [code, room] of rooms) {
     if (room.isPublic && room.phase === 'LOBBY' && !room.started && !room.ended) {
+      // V35: Compter seulement les joueurs connectés
+      let connectedCount = 0;
+      for (const [pid, p] of room.players) {
+        if (p.connected) connectedCount++;
+      }
+      
+      // Ne pas compter les rooms vides
+      if (connectedCount === 0) continue;
+      
       if (room.roomType === 'chat') chatRooms++;
       else videoRooms++;
-      totalPlayers += room.players.size;
+      totalPlayers += connectedCount;
     }
   }
   
