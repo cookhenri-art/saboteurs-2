@@ -3743,6 +3743,7 @@ const ROOM_INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
 function cleanupInactiveRooms() {
   const now = Date.now();
   let cleaned = 0;
+  const RECONNECTION_GRACE_PERIOD = 3 * 60 * 1000; // 3 minutes pour revenir après avatar
   
   for (const [code, room] of rooms) {
     // Ne pas toucher aux rooms en cours de partie
@@ -3758,17 +3759,33 @@ function cleanupInactiveRooms() {
         }
       }
       
-      // Si aucun joueur connecté et room créée depuis plus de 2 minutes, supprimer
-      const timeSinceCreation = now - room.phaseStartTime;
-      if (!hasConnectedPlayer && timeSinceCreation > 2 * 60 * 1000) {
-        rooms.delete(code);
-        cleaned++;
-        logger.info("room_cleanup_empty_public", { roomCode: code, reason: 'no_connected_players' });
-        continue;
+      if (!hasConnectedPlayer) {
+        // Marquer le moment où le dernier joueur est parti (si pas déjà fait)
+        if (!room.lastPlayerLeftTime) {
+          room.lastPlayerLeftTime = now;
+          logger.info("room_all_players_left", { roomCode: code });
+          continue; // Donner une chance de revenir
+        }
+        
+        // Vérifier si le délai de grâce est passé
+        const timeSinceAllLeft = now - room.lastPlayerLeftTime;
+        if (timeSinceAllLeft > RECONNECTION_GRACE_PERIOD) {
+          rooms.delete(code);
+          cleaned++;
+          logger.info("room_cleanup_empty_public", { 
+            roomCode: code, 
+            reason: 'no_connected_players_after_grace',
+            gracePeriodMinutes: Math.round(RECONNECTION_GRACE_PERIOD / 60000)
+          });
+          continue;
+        }
+      } else {
+        // Un joueur est connecté, reset le timer
+        room.lastPlayerLeftTime = null;
       }
     }
     
-    // Vérifier l'inactivité
+    // Vérifier l'inactivité générale (20 min)
     const timeSinceActivity = now - (room.lastActivity || room.phaseStartTime);
     
     if (timeSinceActivity > ROOM_INACTIVITY_TIMEOUT) {
