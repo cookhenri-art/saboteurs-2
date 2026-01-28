@@ -213,7 +213,32 @@ function handleUrlMatchmaking() {
   // Déjà dans une room ? Ne rien faire
   if (sessionStorage.getItem(STORAGE.room)) return;
   
-  const savedName = sessionStorage.getItem(STORAGE.name);
+  // V35: Chercher le nom dans sessionStorage OU dans saboteur_user (utilisateur connecté)
+  let savedName = sessionStorage.getItem(STORAGE.name);
+  if (!savedName) {
+    try {
+      const saboteurUser = localStorage.getItem('saboteur_user');
+      if (saboteurUser) {
+        const user = JSON.parse(saboteurUser);
+        savedName = user.username || user.name || null;
+        if (savedName) {
+          // Synchroniser avec sessionStorage pour la suite
+          sessionStorage.setItem(STORAGE.name, savedName);
+          console.log('[Matchmaking] Got name from saboteur_user:', savedName);
+        }
+      }
+    } catch (e) {
+      console.error('[Matchmaking] Error reading saboteur_user:', e);
+    }
+  }
+  
+  // Aussi pré-remplir le champ nom si disponible
+  if (savedName) {
+    const nameInput = document.getElementById('playerName');
+    if (nameInput && !nameInput.value) {
+      nameInput.value = savedName;
+    }
+  }
   
   // Si on a un code room dans l'URL, rejoindre automatiquement
   if (urlRoomCode) {
