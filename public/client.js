@@ -247,12 +247,14 @@ function handleUrlMatchmaking() {
     
     if (savedName) {
       // On a le nom, rejoindre directement
-      setNotice("Connexion à la room...");
       autoJoinRoom(urlRoomCode, savedName);
     } else {
       // Stocker le code pour après la saisie du nom
       console.log('[Matchmaking] Need name first, storing pending join');
       sessionStorage.setItem('pending_room_join', urlRoomCode);
+      // Cacher le loader et montrer homeScreen pour saisie du nom
+      hideMatchmakingLoader();
+      showScreen("homeScreen");
     }
     return;
   }
@@ -264,15 +266,14 @@ function handleUrlMatchmaking() {
     if (savedName) {
       // On a le nom, créer directement la room publique
       console.log('[Matchmaking] Auto-creating public room with name:', savedName);
-      setNotice("Création de la room publique...");
-      // Appeler createRoomFlow après un court délai pour que l'UI soit prête
-      setTimeout(() => {
-        autoCreatePublicRoom(savedName);
-      }, 500);
+      autoCreatePublicRoom(savedName);
     } else {
       // Stocker le flag pour après la saisie du nom
       console.log('[Matchmaking] Need name first, storing pending public room');
       sessionStorage.setItem('pending_public_room', 'true');
+      // Cacher le loader et montrer homeScreen pour saisie du nom
+      hideMatchmakingLoader();
+      showScreen("homeScreen");
     }
   }
 }
@@ -280,6 +281,7 @@ function handleUrlMatchmaking() {
 // V35: Créer automatiquement une room publique
 function autoCreatePublicRoom(playerName) {
   sessionStorage.setItem(STORAGE.name, playerName);
+  hideMatchmakingLoader();
   showScreen("createScreen");
   setNotice("Création de la room publique...");
   
@@ -319,6 +321,7 @@ function autoCreatePublicRoom(playerName) {
     chatOnly: urlRoomType === 'chat',
     videoEnabled: urlRoomType !== 'chat'
   }, (res) => {
+    hideMatchmakingLoader();
     if (!res?.ok) {
       setError(res?.error || "Erreur création room publique");
       showScreen("homeScreen");
@@ -361,6 +364,7 @@ function autoJoinRoom(roomCode, playerName) {
     badgeEmoji: customization.badgeEmoji,
     badgeName: customization.badgeName
   }, (res) => {
+    hideMatchmakingLoader();
     if (res?.ok) {
       sessionStorage.setItem(STORAGE.room, roomCode);
       sessionStorage.setItem(STORAGE.name, playerName);
@@ -368,6 +372,7 @@ function autoJoinRoom(roomCode, playerName) {
       console.log('[Matchmaking] Successfully joined room:', roomCode);
     } else {
       setError(res?.error || "Impossible de rejoindre cette room");
+      showScreen("homeScreen");
       console.error('[Matchmaking] Failed to join room:', res?.error);
     }
   });
@@ -389,6 +394,9 @@ socket.on("disconnect", () => {
 });
 socket.on("connect_error", () => {
   isConnected = false;
+  // V35: Cacher le loader et montrer homeScreen
+  hideMatchmakingLoader();
+  showScreen("homeScreen");
   // Most common cause: user opened index.html directly (file://) or the server isn't running.
   setError("Connexion au serveur impossible. Lance l'application via le serveur (npm install puis npm start) et ouvre l'URL affichée (ex: http://localhost:3000). Sur Render, attends que le service soit démarré.");
 });
@@ -2963,6 +2971,9 @@ function showAutoStartCountdown(seconds, reason) {
 }
 
 socket.on("roomState", (s) => {
+  // V35: Cacher le loader de matchmaking si présent
+  hideMatchmakingLoader();
+  
   // D6: Stocker phase précédente et joueurs vivants pour vibration
   const previousPhase = state?.phase;
   const previousAliveCount = (state?.players || []).filter(p => p.status === 'alive').length;
@@ -3167,8 +3178,95 @@ socket.on("serverHello", () => {
   if (!name || !roomCode) showScreen("homeScreen");
 });
 
-// Initial screen: keep it simple, auto-reconnect will swap screens once roomState arrives.
-showScreen("homeScreen");
+// Initial screen: check for matchmaking params first
+// V35: Si matchmaking, afficher un écran de chargement au lieu du homeScreen
+if (urlIsPublic || urlRoomCode) {
+  showMatchmakingLoader();
+} else {
+  showScreen("homeScreen");
+}
+
+// V35: Afficher l'overlay de chargement pour matchmaking
+function showMatchmakingLoader() {
+  // Ajouter le CSS s'il n'existe pas
+  if (!document.getElementById('matchmakingLoaderStyles')) {
+    const style = document.createElement('style');
+    style.id = 'matchmakingLoaderStyles';
+    style.textContent = `
+      #matchmakingLoader {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 9999;
+      }
+      .matchmaking-loader-content {
+        text-align: center;
+      }
+      .loader-spinner {
+        width: 60px;
+        height: 60px;
+        border: 4px solid rgba(0, 255, 255, 0.2);
+        border-top-color: #00ffff;
+        border-radius: 50%;
+        animation: loaderSpin 1s linear infinite;
+        margin: 0 auto 20px;
+      }
+      @keyframes loaderSpin {
+        to { transform: rotate(360deg); }
+      }
+      .loader-text {
+        color: #00ffff;
+        font-size: 1.2em;
+        font-weight: bold;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+  
+  // Texte traduit (avec fallback français)
+  const lang = (typeof getCurrentLanguage === 'function') ? getCurrentLanguage() : 'fr';
+  let loaderText;
+  if (urlRoomCode) {
+    loaderText = window.TRANSLATIONS?.index?.explanation?.loaderJoining?.[lang] 
+      || window.TRANSLATIONS?.index?.explanation?.loaderJoining?.fr 
+      || '🔗 Connexion à la room...';
+  } else {
+    loaderText = window.TRANSLATIONS?.index?.explanation?.loaderCreating?.[lang] 
+      || window.TRANSLATIONS?.index?.explanation?.loaderCreating?.fr 
+      || '🌐 Création de la room...';
+  }
+  
+  // Créer l'overlay s'il n'existe pas
+  let loader = document.getElementById('matchmakingLoader');
+  if (!loader) {
+    loader = document.createElement('div');
+    loader.id = 'matchmakingLoader';
+    loader.innerHTML = `
+      <div class="matchmaking-loader-content">
+        <div class="loader-spinner"></div>
+        <p class="loader-text">${loaderText}</p>
+      </div>
+    `;
+    document.body.appendChild(loader);
+  } else {
+    // Mettre à jour le texte si déjà existant
+    const textEl = loader.querySelector('.loader-text');
+    if (textEl) textEl.textContent = loaderText;
+  }
+  loader.style.display = 'flex';
+  
+  // Cacher les autres écrans
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+}
+
+function hideMatchmakingLoader() {
+  const loader = document.getElementById('matchmakingLoader');
+  if (loader) loader.style.display = 'none';
+}
 
 // ============================================================================
 // V26 - NOUVELLES FONCTIONNALITÉS

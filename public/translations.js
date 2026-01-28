@@ -1053,6 +1053,24 @@ const TRANSLATIONS = {
         de: "👍 Verstanden!",
         pt: "👍 Entendi!",
         nl: "👍 Begrepen!"
+      },
+      loaderJoining: {
+        fr: "🔗 Connexion à la room...",
+        en: "🔗 Connecting to room...",
+        es: "🔗 Conectando a la sala...",
+        it: "🔗 Connessione alla stanza...",
+        de: "🔗 Verbindung zum Raum...",
+        pt: "🔗 Conectando à sala...",
+        nl: "🔗 Verbinden met kamer..."
+      },
+      loaderCreating: {
+        fr: "🌐 Création de la room...",
+        en: "🌐 Creating room...",
+        es: "🌐 Creando sala...",
+        it: "🌐 Creazione stanza...",
+        de: "🌐 Raum wird erstellt...",
+        pt: "🌐 Criando sala...",
+        nl: "🌐 Kamer maken..."
       }
     },
     
