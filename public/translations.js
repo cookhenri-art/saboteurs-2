@@ -563,6 +563,88 @@ const TRANSLATIONS = {
         it: "è il nuovo host",
         pt: "é o novo anfitrião",
         nl: "is de nieuwe gastheer"
+      },
+      // V35 NEW UI
+      playPublic: {
+        fr: "🌐 JOUER EN ROOM PUBLIQUE",
+        en: "🌐 PLAY IN PUBLIC ROOM",
+        es: "🌐 JUGAR EN SALA PÚBLICA",
+        de: "🌐 IN ÖFFENTLICHEM RAUM SPIELEN",
+        it: "🌐 GIOCA IN STANZA PUBBLICA",
+        pt: "🌐 JOGAR EM SALA PÚBLICA",
+        nl: "🌐 SPEEL IN OPENBARE KAMER"
+      },
+      privateGame: {
+        fr: "Partie privée avec code",
+        en: "Private game with code",
+        es: "Partida privada con código",
+        de: "Privates Spiel mit Code",
+        it: "Partita privata con codice",
+        pt: "Jogo privado com código",
+        nl: "Privé spel met code"
+      },
+      back: {
+        fr: "Retour",
+        en: "Back",
+        es: "Volver",
+        de: "Zurück",
+        it: "Indietro",
+        pt: "Voltar",
+        nl: "Terug"
+      },
+      publicRoomsTitle: {
+        fr: "🌐 ROOMS PUBLIQUES",
+        en: "🌐 PUBLIC ROOMS",
+        es: "🌐 SALAS PÚBLICAS",
+        de: "🌐 ÖFFENTLICHE RÄUME",
+        it: "🌐 STANZE PUBBLICHE",
+        pt: "🌐 SALAS PÚBLICAS",
+        nl: "🌐 OPENBARE KAMERS"
+      },
+      createYourRoom: {
+        fr: "➕ Créer ta room",
+        en: "➕ Create your room",
+        es: "➕ Crea tu sala",
+        de: "➕ Erstelle deinen Raum",
+        it: "➕ Crea la tua stanza",
+        pt: "➕ Crie sua sala",
+        nl: "➕ Maak je kamer"
+      },
+      commentPlaceholder: {
+        fr: "Message pour les joueurs (optionnel)",
+        en: "Message for players (optional)",
+        es: "Mensaje para los jugadores (opcional)",
+        de: "Nachricht für Spieler (optional)",
+        it: "Messaggio per i giocatori (opzionale)",
+        pt: "Mensagem para os jogadores (opcional)",
+        nl: "Bericht voor spelers (optioneel)"
+      },
+      createMyRoom: {
+        fr: "🚀 Créer ma room",
+        en: "🚀 Create my room",
+        es: "🚀 Crear mi sala",
+        de: "🚀 Meinen Raum erstellen",
+        it: "🚀 Crea la mia stanza",
+        pt: "🚀 Criar minha sala",
+        nl: "🚀 Maak mijn kamer"
+      },
+      waitingRooms: {
+        fr: "📋 Rooms en attente",
+        en: "📋 Waiting rooms",
+        es: "📋 Salas en espera",
+        de: "📋 Wartende Räume",
+        it: "📋 Stanze in attesa",
+        pt: "📋 Salas em espera",
+        nl: "📋 Wachtende kamers"
+      },
+      beFirst: {
+        fr: "Sois le premier à en créer une !",
+        en: "Be the first to create one!",
+        es: "¡Sé el primero en crear una!",
+        de: "Sei der Erste, der einen erstellt!",
+        it: "Sii il primo a crearne una!",
+        pt: "Seja o primeiro a criar uma!",
+        nl: "Wees de eerste om er een te maken!"
       }
     },
     

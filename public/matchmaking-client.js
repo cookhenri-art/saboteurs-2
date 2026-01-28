@@ -1,5 +1,5 @@
 // ============================================================================
-// MATCHMAKING CLIENT - V35
+// MATCHMAKING CLIENT - V35 NEW UI
 // Gestion des rooms publiques et matchmaking
 // ============================================================================
 
@@ -41,6 +41,7 @@ const Matchmaking = {
         this.publicRooms = data.rooms;
         this.userAccountType = data.userAccountType;
         this.renderRoomsList();
+        this.updateRoomsCount();
       }
     } catch (e) {
       console.error('[Matchmaking] Error refreshing rooms:', e);
@@ -101,28 +102,16 @@ const Matchmaking = {
     window.location.href = `/game.html?room=${roomCode}&theme=${theme}`;
   },
   
-  createPublicRoom(options = {}) {
-    const {
-      roomName = '',
-      themeId = 'default',
-      roomType = 'video'
-    } = options;
-    
-    const theme = localStorage.getItem('saboteur_theme') || themeId;
-    const params = new URLSearchParams({
-      theme,
-      public: 'true',
-      roomName: roomName || '',
-      roomType,
-      isMobile: this.isMobile() ? 'true' : 'false'
-    });
-    
-    window.location.href = `/game.html?${params.toString()}`;
-  },
-  
   // ============================================================================
   // UI RENDERING
   // ============================================================================
+  
+  updateRoomsCount() {
+    const countEl = document.getElementById('roomsCount');
+    if (countEl) {
+      countEl.textContent = `(${this.publicRooms.length})`;
+    }
+  },
   
   renderRoomsList() {
     const container = document.getElementById('publicRoomsList');
@@ -131,40 +120,48 @@ const Matchmaking = {
     if (this.publicRooms.length === 0) {
       container.innerHTML = `
         <div class="no-rooms-message">
-          <p>${this.t('noRooms')}</p>
-          <button onclick="Matchmaking.showCreatePublicRoomModal()" class="btn-quick-join btn-create" style="margin-top:10px;">
-            ${this.t('createPublic')}
-          </button>
+          <p>😴 ${this.t('noRooms')}</p>
+          <p style="font-size:0.9em;opacity:0.7;">${this.t('beFirst')}</p>
         </div>
       `;
       return;
     }
     
     const roomsHTML = this.publicRooms.map(room => this.renderRoomCard(room)).join('');
-    container.innerHTML = `<div class="rooms-grid">${roomsHTML}</div>`;
+    container.innerHTML = roomsHTML;
   },
   
   renderRoomCard(room) {
     const isFull = room.playerCount >= room.maxPlayers;
     const roomTypeIcon = room.roomType === 'chat' ? '💬' : '🎥';
+    const roomTypeLabel = room.roomType === 'chat' ? 'Chat' : 'Vidéo';
+    
+    // Commentaire optionnel
+    const commentHTML = room.comment ? `
+      <div class="room-comment">"${this.escapeHtml(room.comment)}"</div>
+    ` : '';
     
     return `
       <div class="room-card ${isFull ? 'room-full' : ''}" data-room-code="${room.code}">
-        <div class="room-card-left">
-          <span class="room-theme-icon">${room.themeIcon || '🎮'}</span>
-          <div class="room-info">
-            <div class="room-name">${this.escapeHtml(room.name)}</div>
-            <div class="room-meta">
-              <span class="room-type-badge ${room.roomType}">${roomTypeIcon}</span>
-              <span>${room.themeName || room.themeId}</span>
-              <span>• ${this.t('host')}: ${this.escapeHtml(room.hostName)}</span>
+        <div class="room-card-top">
+          <div class="room-card-left">
+            <span class="room-theme-icon">${room.themeIcon || '🎮'}</span>
+            <div class="room-info">
+              <div class="room-name">${this.escapeHtml(room.name)}</div>
+              <div class="room-meta">
+                <span class="room-type-badge ${room.roomType}">${roomTypeIcon} ${roomTypeLabel}</span>
+                <span>• ${this.t('host')}: ${this.escapeHtml(room.hostName)}</span>
+              </div>
             </div>
           </div>
+          <div class="room-card-right">
+            <span class="room-players ${isFull ? 'full' : ''}">👥 ${room.playerCount}/${room.maxPlayers}</span>
+            <button onclick="Matchmaking.joinRoom('${room.code}')" class="btn-join-room" ${isFull ? 'disabled' : ''}>
+              ${isFull ? this.t('full') : this.t('join')}
+            </button>
+          </div>
         </div>
-        <span class="room-players ${isFull ? 'full' : ''}">👥 ${room.playerCount}/${room.maxPlayers}</span>
-        <button onclick="Matchmaking.joinRoom('${room.code}')" class="btn-join-room" ${isFull ? 'disabled' : ''}>
-          ${isFull ? this.t('full') : this.t('join')}
-        </button>
+        ${commentHTML}
       </div>
     `;
   },
@@ -178,122 +175,6 @@ const Matchmaking = {
       <span>💬 ${this.stats.chatRooms} ${this.t('chatRooms')}</span>
       <span>👥 ${this.stats.totalPlayers} ${this.t('playersOnline')}</span>
     `;
-  },
-  
-  showCountdown(seconds, reason) {
-    const overlay = document.createElement('div');
-    overlay.className = 'countdown-overlay';
-    overlay.id = 'autoStartCountdown';
-    overlay.innerHTML = `
-      <div class="countdown-box">
-        <h3>${this.t('gameStarting')}</h3>
-        <div class="countdown-number">${seconds}</div>
-        <p>${reason === 'roomFull' ? this.t('roomFullStarting') : ''}</p>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-    
-    let remaining = seconds;
-    const interval = setInterval(() => {
-      remaining--;
-      const numEl = overlay.querySelector('.countdown-number');
-      if (numEl) numEl.textContent = remaining;
-      if (remaining <= 0) {
-        clearInterval(interval);
-        overlay.remove();
-      }
-    }, 1000);
-  },
-  
-  showCreatePublicRoomModal() {
-    // Vérifier si compte vérifié
-    const user = JSON.parse(localStorage.getItem('saboteur_user') || 'null');
-    if (!user || !user.emailVerified) {
-      this.showNotification(this.t('needsVerified'), 'warning');
-      return;
-    }
-    
-    const modal = document.createElement('div');
-    modal.className = 'countdown-overlay';
-    modal.id = 'createPublicRoomModal';
-    
-    const themes = this.getAccessibleThemes();
-    const themesOptions = themes.map(t => 
-      `<option value="${t.id}">${t.icon} ${t.name}</option>`
-    ).join('');
-    
-    modal.innerHTML = `
-      <div class="create-room-modal">
-        <h3>${this.t('createPublic')}</h3>
-        
-        <div style="margin-bottom:15px;">
-          <label style="display:block;margin-bottom:5px;color:rgba(255,255,255,0.7);">${this.t('roomName')}</label>
-          <input type="text" id="publicRoomName" placeholder="${this.t('roomNamePlaceholder')}" maxlength="30" 
-                 style="width:100%;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:white;">
-        </div>
-        
-        <div style="margin-bottom:15px;">
-          <label style="display:block;margin-bottom:5px;color:rgba(255,255,255,0.7);">${this.t('theme')}</label>
-          <select id="publicRoomTheme" style="width:100%;padding:10px;background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);border-radius:6px;color:white;">
-            ${themesOptions}
-          </select>
-        </div>
-        
-        <div style="margin-bottom:20px;">
-          <label style="display:block;margin-bottom:5px;color:rgba(255,255,255,0.7);">${this.t('roomType')}</label>
-          <div class="room-type-selector">
-            <button type="button" class="room-type-btn active" data-type="video">${this.t('videoRoom')}</button>
-            <button type="button" class="room-type-btn" data-type="chat">${this.t('chatRoom')}</button>
-          </div>
-        </div>
-        
-        <div style="display:flex;gap:10px;justify-content:flex-end;">
-          <button onclick="Matchmaking.closeModal('createPublicRoomModal')" 
-                  style="padding:10px 20px;background:transparent;border:1px solid rgba(255,255,255,0.3);border-radius:6px;color:white;cursor:pointer;">
-            ${this.t('cancel')}
-          </button>
-          <button onclick="Matchmaking.submitCreatePublicRoom()" 
-                  style="padding:10px 20px;background:var(--neon-main,#00ffff);border:none;border-radius:6px;color:#000;font-weight:bold;cursor:pointer;">
-            ${this.t('create')}
-          </button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(modal);
-    
-    // Event listeners pour les boutons de type
-    modal.querySelectorAll('.room-type-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        modal.querySelectorAll('.room-type-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      });
-    });
-    
-    // Fermer en cliquant dehors
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) this.closeModal('createPublicRoomModal');
-    });
-  },
-  
-  submitCreatePublicRoom() {
-    const name = document.getElementById('publicRoomName')?.value.trim() || '';
-    const themeId = document.getElementById('publicRoomTheme')?.value || 'default';
-    const roomTypeBtn = document.querySelector('#createPublicRoomModal .room-type-btn.active');
-    const roomType = roomTypeBtn?.dataset.type || 'video';
-    
-    this.closeModal('createPublicRoomModal');
-    
-    this.createPublicRoom({
-      roomName: name,
-      themeId,
-      roomType
-    });
-  },
-  
-  closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) modal.remove();
   },
   
   // ============================================================================
@@ -318,20 +199,6 @@ const Matchmaking = {
   isMobile() {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) 
       || window.innerWidth <= 768;
-  },
-  
-  getAccessibleThemes() {
-    const allThemes = [
-      { id: 'default', name: 'Infiltration Spatiale', icon: '🚀', premium: false },
-      { id: 'werewolf', name: 'Loups-Garous', icon: '🐺', premium: false },
-      { id: 'wizard-academy', name: 'Académie des Sorciers', icon: '🧙', premium: true },
-      { id: 'mythic-realms', name: 'Royaumes Mythiques', icon: '⚔️', premium: true }
-    ];
-    
-    const premiumTypes = ['subscriber', 'pack', 'family', 'admin'];
-    const hasPremium = premiumTypes.includes(this.userAccountType);
-    
-    return allThemes.filter(t => !t.premium || hasPremium);
   },
   
   showNotification(message, type = 'info') {
@@ -365,6 +232,7 @@ const Matchmaking = {
   },
   
   escapeHtml(str) {
+    if (!str) return '';
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
@@ -382,27 +250,25 @@ const Matchmaking = {
     // Fallback français
     const fallbacks = {
       title: '🌐 Rooms publiques',
-      quickJoinVideo: '🎥 Vidéo',
-      quickJoinChat: '💬 Chat',
-      createRoom: '➕ Créer',
+      publicRoomsTitle: '🌐 ROOMS PUBLIQUES',
+      playPublic: '🌐 JOUER EN ROOM PUBLIQUE',
+      privateGame: 'Partie privée avec code',
+      back: 'Retour',
+      createYourRoom: '➕ Créer ta room',
+      videoRoom: 'Vidéo',
+      chatRoom: 'Chat only',
+      commentPlaceholder: 'Message pour les joueurs (optionnel)',
+      createMyRoom: '🚀 Créer ma room',
+      waitingRooms: '📋 Rooms en attente',
       loading: 'Chargement...',
-      orPrivate: 'ou partie privée',
-      noRooms: 'Aucune room publique',
-      createPublic: 'Créer une room publique',
+      noRooms: 'Aucune room publique disponible',
+      beFirst: 'Sois le premier à en créer une !',
       host: 'Hôte',
       join: 'Rejoindre',
       full: 'Pleine',
       videoRooms: 'rooms vidéo',
       chatRooms: 'rooms chat',
-      playersOnline: 'joueurs',
-      roomName: 'Nom de la room',
-      roomNamePlaceholder: 'Ex: Partie entre amis',
-      theme: 'Thème',
-      roomType: 'Type de room',
-      videoRoom: '🎥 Vidéo',
-      chatRoom: '💬 Chat uniquement',
-      create: 'Créer',
-      cancel: 'Annuler',
+      playersOnline: 'joueurs en ligne',
       noRoomAvailable: 'Aucune room disponible. Crée la tienne !',
       gameStarting: 'La partie va commencer !',
       roomFullStarting: 'La room est pleine',
