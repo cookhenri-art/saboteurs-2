@@ -319,6 +319,253 @@ const TRANSLATIONS = {
       }
     },
     
+    // V35: Matchmaking Public
+    matchmaking: {
+      title: {
+        fr: "🌐 Rooms publiques",
+        en: "🌐 Public Rooms",
+        es: "🌐 Salas públicas",
+        de: "🌐 Öffentliche Räume",
+        it: "🌐 Stanze pubbliche",
+        pt: "🌐 Salas públicas",
+        nl: "🌐 Openbare kamers"
+      },
+      quickJoinVideo: {
+        fr: "🎥 Vidéo",
+        en: "🎥 Video",
+        es: "🎥 Video",
+        de: "🎥 Video",
+        it: "🎥 Video",
+        pt: "🎥 Vídeo",
+        nl: "🎥 Video"
+      },
+      quickJoinChat: {
+        fr: "💬 Chat",
+        en: "💬 Chat",
+        es: "💬 Chat",
+        de: "💬 Chat",
+        it: "💬 Chat",
+        pt: "💬 Chat",
+        nl: "💬 Chat"
+      },
+      createRoom: {
+        fr: "➕ Créer",
+        en: "➕ Create",
+        es: "➕ Crear",
+        de: "➕ Erstellen",
+        it: "➕ Crea",
+        pt: "➕ Criar",
+        nl: "➕ Maken"
+      },
+      loading: {
+        fr: "Chargement...",
+        en: "Loading...",
+        es: "Cargando...",
+        de: "Laden...",
+        it: "Caricamento...",
+        pt: "Carregando...",
+        nl: "Laden..."
+      },
+      orPrivate: {
+        fr: "ou partie privée",
+        en: "or private game",
+        es: "o partida privada",
+        de: "oder privates Spiel",
+        it: "o partita privata",
+        pt: "ou jogo privado",
+        nl: "of privé spel"
+      },
+      noRooms: {
+        fr: "Aucune room publique disponible",
+        en: "No public rooms available",
+        es: "No hay salas públicas disponibles",
+        de: "Keine öffentlichen Räume verfügbar",
+        it: "Nessuna stanza pubblica disponibile",
+        pt: "Nenhuma sala pública disponível",
+        nl: "Geen openbare kamers beschikbaar"
+      },
+      createPublic: {
+        fr: "Créer une room publique",
+        en: "Create a public room",
+        es: "Crear una sala pública",
+        de: "Öffentlichen Raum erstellen",
+        it: "Crea una stanza pubblica",
+        pt: "Criar uma sala pública",
+        nl: "Maak een openbare kamer"
+      },
+      host: {
+        fr: "Hôte",
+        en: "Host",
+        es: "Anfitrión",
+        de: "Gastgeber",
+        it: "Host",
+        pt: "Anfitrião",
+        nl: "Gastheer"
+      },
+      join: {
+        fr: "Rejoindre",
+        en: "Join",
+        es: "Unirse",
+        de: "Beitreten",
+        it: "Unisciti",
+        pt: "Entrar",
+        nl: "Deelnemen"
+      },
+      full: {
+        fr: "Pleine",
+        en: "Full",
+        es: "Llena",
+        de: "Voll",
+        it: "Piena",
+        pt: "Cheia",
+        nl: "Vol"
+      },
+      videoRooms: {
+        fr: "rooms vidéo",
+        en: "video rooms",
+        es: "salas de video",
+        de: "Video-Räume",
+        it: "stanze video",
+        pt: "salas de vídeo",
+        nl: "videokamers"
+      },
+      chatRooms: {
+        fr: "rooms chat",
+        en: "chat rooms",
+        es: "salas de chat",
+        de: "Chat-Räume",
+        it: "stanze chat",
+        pt: "salas de chat",
+        nl: "chatkamers"
+      },
+      playersOnline: {
+        fr: "joueurs",
+        en: "players",
+        es: "jugadores",
+        de: "Spieler",
+        it: "giocatori",
+        pt: "jogadores",
+        nl: "spelers"
+      },
+      roomName: {
+        fr: "Nom de la room",
+        en: "Room name",
+        es: "Nombre de la sala",
+        de: "Raumname",
+        it: "Nome stanza",
+        pt: "Nome da sala",
+        nl: "Kamernaam"
+      },
+      roomNamePlaceholder: {
+        fr: "Ex: Partie entre amis",
+        en: "Ex: Game with friends",
+        es: "Ej: Partida entre amigos",
+        de: "Z.B.: Spiel mit Freunden",
+        it: "Es: Partita tra amici",
+        pt: "Ex: Jogo entre amigos",
+        nl: "Bijv: Spel met vrienden"
+      },
+      theme: {
+        fr: "Thème",
+        en: "Theme",
+        es: "Tema",
+        de: "Thema",
+        it: "Tema",
+        pt: "Tema",
+        nl: "Thema"
+      },
+      roomType: {
+        fr: "Type de room",
+        en: "Room type",
+        es: "Tipo de sala",
+        de: "Raumtyp",
+        it: "Tipo di stanza",
+        pt: "Tipo de sala",
+        nl: "Kamertype"
+      },
+      videoRoom: {
+        fr: "🎥 Vidéo",
+        en: "🎥 Video",
+        es: "🎥 Video",
+        de: "🎥 Video",
+        it: "🎥 Video",
+        pt: "🎥 Vídeo",
+        nl: "🎥 Video"
+      },
+      chatRoom: {
+        fr: "💬 Chat uniquement",
+        en: "💬 Chat only",
+        es: "💬 Solo chat",
+        de: "💬 Nur Chat",
+        it: "💬 Solo chat",
+        pt: "💬 Apenas chat",
+        nl: "💬 Alleen chat"
+      },
+      create: {
+        fr: "Créer",
+        en: "Create",
+        es: "Crear",
+        de: "Erstellen",
+        it: "Crea",
+        pt: "Criar",
+        nl: "Maken"
+      },
+      cancel: {
+        fr: "Annuler",
+        en: "Cancel",
+        es: "Cancelar",
+        de: "Abbrechen",
+        it: "Annulla",
+        pt: "Cancelar",
+        nl: "Annuleren"
+      },
+      noRoomAvailable: {
+        fr: "Aucune room disponible. Crée la tienne !",
+        en: "No room available. Create your own!",
+        es: "No hay sala disponible. ¡Crea la tuya!",
+        de: "Kein Raum verfügbar. Erstelle deinen eigenen!",
+        it: "Nessuna stanza disponibile. Crea la tua!",
+        pt: "Nenhuma sala disponível. Crie a sua!",
+        nl: "Geen kamer beschikbaar. Maak je eigen!"
+      },
+      gameStarting: {
+        fr: "La partie va commencer !",
+        en: "Game starting!",
+        es: "¡La partida va a comenzar!",
+        de: "Das Spiel beginnt!",
+        it: "La partita sta per iniziare!",
+        pt: "O jogo vai começar!",
+        nl: "Het spel begint!"
+      },
+      roomFullStarting: {
+        fr: "La room est pleine",
+        en: "Room is full",
+        es: "La sala está llena",
+        de: "Der Raum ist voll",
+        it: "La stanza è piena",
+        pt: "A sala está cheia",
+        nl: "De kamer is vol"
+      },
+      needsVerified: {
+        fr: "Compte vérifié requis pour créer une room publique",
+        en: "Verified account required to create a public room",
+        es: "Cuenta verificada requerida para crear una sala pública",
+        de: "Verifiziertes Konto erforderlich, um einen öffentlichen Raum zu erstellen",
+        it: "Account verificato richiesto per creare una stanza pubblica",
+        pt: "Conta verificada necessária para criar uma sala pública",
+        nl: "Geverifieerd account vereist om een openbare kamer te maken"
+      },
+      newHost: {
+        fr: "est le nouvel hôte",
+        en: "is the new host",
+        es: "es el nuevo anfitrión",
+        de: "ist der neue Gastgeber",
+        it: "è il nuovo host",
+        pt: "é o novo anfitrião",
+        nl: "is de nieuwe gastheer"
+      }
+    },
+    
     missionRealtime: {
       fr: "⚡ MISSION TEMPS RÉEL ⚡",
       en: "⚡ REAL-TIME MISSION ⚡",

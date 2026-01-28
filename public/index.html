@@ -425,6 +425,196 @@
         font-size: 1rem;
       }
     }
+    
+    /* V35: MATCHMAKING STYLES */
+    .matchmaking-section {
+      margin-bottom: 15px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .matchmaking-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .matchmaking-header h3 {
+      margin: 0;
+      font-size: 1em;
+      color: var(--neon-main);
+    }
+    .matchmaking-actions {
+      display: flex;
+      gap: 6px;
+    }
+    .btn-quick-join {
+      padding: 5px 10px;
+      font-size: 0.8em;
+      background: linear-gradient(135deg, var(--neon-main), var(--neon-secondary, #0088ff));
+      border: none;
+      border-radius: 5px;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-quick-join:hover { transform: translateY(-2px); }
+    .btn-quick-join.btn-chat { background: linear-gradient(135deg, #0088ff, #00aaff); }
+    .btn-quick-join.btn-create { background: linear-gradient(135deg, #00ff88, #00aa55); }
+    #publicRoomsList {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .rooms-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .room-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .room-card:hover { border-color: var(--neon-main); }
+    .room-card.room-full { opacity: 0.5; }
+    .room-card-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .room-theme-icon { font-size: 1.2em; }
+    .room-info { flex: 1; min-width: 0; }
+    .room-name {
+      font-weight: bold;
+      font-size: 0.9em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-meta {
+      font-size: 0.75em;
+      color: rgba(255, 255, 255, 0.6);
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .room-type-badge {
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-size: 0.7em;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .room-type-badge.video { background: rgba(255, 0, 128, 0.3); }
+    .room-type-badge.chat { background: rgba(0, 128, 255, 0.3); }
+    .room-players { font-weight: bold; font-size: 0.85em; }
+    .room-players.full { color: #ff4444; }
+    .btn-join-room {
+      padding: 5px 12px;
+      background: var(--neon-main);
+      border: none;
+      border-radius: 5px;
+      color: #000;
+      font-weight: bold;
+      font-size: 0.8em;
+      cursor: pointer;
+    }
+    .btn-join-room:disabled { background: #555; cursor: not-allowed; }
+    .no-rooms-message {
+      text-align: center;
+      padding: 15px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.9em;
+    }
+    .matchmaking-stats {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 8px;
+      font-size: 0.75em;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .home-divider {
+      text-align: center;
+      margin: 12px 0;
+      position: relative;
+    }
+    .home-divider::before, .home-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 28%;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .home-divider::before { left: 0; }
+    .home-divider::after { right: 0; }
+    .home-divider span {
+      padding: 0 12px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.8em;
+    }
+    .create-room-modal {
+      background: var(--bg-card, #1a1a2e);
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      width: 90%;
+      max-width: 350px;
+    }
+    .create-room-modal h3 { margin-top: 0; color: var(--neon-main); }
+    .room-type-selector { display: flex; gap: 8px; }
+    .room-type-btn {
+      flex: 1;
+      padding: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid transparent;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+    .room-type-btn.active {
+      border-color: var(--neon-main);
+      background: rgba(0, 255, 255, 0.15);
+    }
+    .countdown-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .countdown-box {
+      text-align: center;
+      padding: 30px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid var(--neon-main);
+      border-radius: 15px;
+    }
+    .countdown-number {
+      font-size: 3.5em;
+      font-weight: bold;
+      color: var(--neon-main);
+      text-shadow: 0 0 15px var(--neon-main);
+    }
+    @media (max-width: 500px) {
+      .matchmaking-header { flex-direction: column; align-items: flex-start; }
+      .matchmaking-actions { width: 100%; justify-content: space-between; }
+      .btn-quick-join { flex: 1; text-align: center; font-size: 0.75em; }
+    }
   </style>
 </head>
 <body>
@@ -868,6 +1058,25 @@
 
       <!-- Home Screen -->
       <div class="home-screen" id="homeScreen">
+        
+        <!-- V35: MATCHMAKING PUBLIC -->
+        <div class="matchmaking-section" id="matchmakingSection">
+          <div class="matchmaking-header">
+            <h3 data-i18n="index.matchmaking.title">🌐 Rooms publiques</h3>
+            <div class="matchmaking-actions">
+              <button onclick="Matchmaking.joinRandomRoom('video')" class="btn-quick-join" data-i18n="index.matchmaking.quickJoinVideo">🎥 Vidéo</button>
+              <button onclick="Matchmaking.joinRandomRoom('chat')" class="btn-quick-join btn-chat" data-i18n="index.matchmaking.quickJoinChat">💬 Chat</button>
+              <button onclick="Matchmaking.showCreatePublicRoomModal()" class="btn-quick-join btn-create" data-i18n="index.matchmaking.createRoom">➕ Créer</button>
+            </div>
+          </div>
+          <div id="publicRoomsList">
+            <p style="text-align:center; opacity:0.6;" data-i18n="index.matchmaking.loading">Chargement...</p>
+          </div>
+          <div id="matchmakingStats" class="matchmaking-stats"></div>
+        </div>
+        
+        <div class="home-divider"><span data-i18n="index.matchmaking.orPrivate">ou partie privée</span></div>
+        
         <button class="btn btn-primary btn-full" onclick="goToGame()" data-i18n="index.profile.playNow">🎮 JOUER MAINTENANT</button>
         <button class="btn btn-secondary btn-full" onclick="goToAvatars()" data-i18n="index.profile.createAvatar">🎨 CRÉER MON AVATAR IA</button>
         <button class="btn btn-secondary btn-full" onclick="showChangePassword()" data-i18n="index.profile.changePassword">🔐 MODIFIER MOT DE PASSE</button>
@@ -1949,5 +2158,29 @@
   <!-- Module de paiement Stripe -->
   <script src="payment-modal.js"></script>
   <link rel="stylesheet" href="payment-modal.css">
+  
+  <!-- V35: Matchmaking Public -->
+  <script src="matchmaking-client.js"></script>
+  <script>
+    // Init matchmaking quand homeScreen visible
+    function initMatchmakingIfReady() {
+      if (typeof Matchmaking !== 'undefined' && document.getElementById('homeScreen')?.classList.contains('show')) {
+        Matchmaking.init();
+      }
+    }
+    
+    // Observer pour détecter quand homeScreen devient visible
+    document.addEventListener('DOMContentLoaded', () => {
+      const homeScreen = document.getElementById('homeScreen');
+      if (homeScreen) {
+        const observer = new MutationObserver(() => {
+          if (homeScreen.classList.contains('show')) initMatchmakingIfReady();
+        });
+        observer.observe(homeScreen, { attributes: true, attributeFilter: ['class'] });
+      }
+      // Check après délai au cas où déjà connecté
+      setTimeout(initMatchmakingIfReady, 1500);
+    });
+  </script>
 </body>
 </html>
