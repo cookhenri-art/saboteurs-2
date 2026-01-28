@@ -628,6 +628,24 @@ const TRANSLATIONS = {
         pt: "🚀 Criar minha sala",
         nl: "🚀 Maak mijn kamer"
       },
+      playerCount: {
+        fr: "👥 Nombre de joueurs",
+        en: "👥 Number of players",
+        es: "👥 Número de jugadores",
+        de: "👥 Spieleranzahl",
+        it: "👥 Numero di giocatori",
+        pt: "👥 Número de jogadores",
+        nl: "👥 Aantal spelers"
+      },
+      autoStartHint: {
+        fr: "⚡ La partie démarre automatiquement quand le nombre est atteint",
+        en: "⚡ The game starts automatically when the number is reached",
+        es: "⚡ El juego comienza automáticamente cuando se alcanza el número",
+        de: "⚡ Das Spiel startet automatisch, wenn die Anzahl erreicht ist",
+        it: "⚡ La partita inizia automaticamente quando il numero viene raggiunto",
+        pt: "⚡ O jogo começa automaticamente quando o número é atingido",
+        nl: "⚡ Het spel start automatisch wanneer het aantal is bereikt"
+      },
       waitingRooms: {
         fr: "📋 Rooms en attente",
         en: "📋 Waiting rooms",

@@ -89,8 +89,9 @@ const urlRoomName = urlParams.get('roomName') || '';     // Nom de la room publi
 const urlRoomType = urlParams.get('roomType') || 'video'; // 'video' ou 'chat'
 const urlComment = urlParams.get('comment') || '';        // Commentaire de la room
 const urlIsMobile = urlParams.get('isMobile') === 'true' || /Android|iPhone|iPad/i.test(navigator.userAgent);
+const urlMaxPlayers = parseInt(urlParams.get('maxPlayers')) || (urlIsMobile ? 9 : 12); // V35: Nombre de joueurs
 
-console.log('[Matchmaking] URL params:', { urlRoomCode, urlIsPublic, urlRoomName, urlRoomType, urlComment, urlIsMobile });
+console.log('[Matchmaking] URL params:', { urlRoomCode, urlIsPublic, urlRoomName, urlRoomType, urlComment, urlIsMobile, urlMaxPlayers });
 
 // Générer ou récupérer le playerToken (localStorage pour persistence entre sessions)
 function getOrCreatePlayerToken() {
@@ -316,7 +317,7 @@ function autoCreatePublicRoom(playerName) {
     isPublic: true,
     roomName: urlRoomName || `Room de ${playerName}`,
     comment: urlComment,
-    maxPlayers: urlIsMobile ? 9 : 12,
+    maxPlayers: urlMaxPlayers,
     isMobile: urlIsMobile,
     chatOnly: urlRoomType === 'chat',
     videoEnabled: urlRoomType !== 'chat'
@@ -2783,7 +2784,7 @@ function createRoomFlow() {
     isPublic: urlIsPublic,
     roomName: urlRoomName || `Room de ${name}`,
     comment: urlComment,
-    maxPlayers: urlIsMobile ? 9 : 12,
+    maxPlayers: urlMaxPlayers,
     isMobile: urlIsMobile,
     chatOnly: urlRoomType === 'chat',
     videoEnabled: urlRoomType !== 'chat'

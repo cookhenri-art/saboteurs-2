@@ -652,7 +652,7 @@
         </div>
         <div class="user-bar-right">
           <button class="user-bar-btn" onclick="goToAvatarFromLobby()" id="avatarBtn" style="display:none;">🎨 Avatar</button>
-          <button class="user-bar-btn logout" onclick="logoutGame()">🚪 Déconnexion</button>
+          <button class="user-bar-btn" onclick="goToHome()">🏠 Accueil</button>
         </div>
       `;
       document.body.insertBefore(userBar, document.body.firstChild);
@@ -773,6 +773,15 @@
       }
 
       // Fonction de déconnexion
+      // V35: Retour à l'accueil sans déconnecter
+      window.goToHome = function() {
+        // Nettoyer seulement la session de jeu, pas les infos de connexion
+        sessionStorage.removeItem('saboteur_room');
+        sessionStorage.removeItem('saboteur_name');
+        window.location.href = '/';
+      };
+      
+      // Fonction de déconnexion complète (non utilisée mais gardée pour compatibilité)
       window.logoutGame = function() {
         localStorage.removeItem('saboteur_token');
         localStorage.removeItem('saboteur_user');

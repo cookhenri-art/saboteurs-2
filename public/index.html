@@ -559,6 +559,77 @@
       border-color: #00cc88;
       background: rgba(0, 200, 100, 0.2);
     }
+    /* V35: Player count selector */
+    .player-count-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-secondary);
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .player-count-value {
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .player-count-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .player-count-btn {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 50%;
+      color: white;
+      font-size: 1.3em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .player-count-btn:hover {
+      border-color: #00cc88;
+      background: rgba(0, 200, 100, 0.2);
+    }
+    #playerCountSlider {
+      flex: 1;
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      outline: none;
+    }
+    #playerCountSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    #playerCountSlider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    .player-count-hint {
+      color: #00cc88;
+      font-size: 0.8em;
+      margin-top: 8px;
+      opacity: 0.8;
+    }
     #createRoomComment {
       width: 100%;
       padding: 12px;
@@ -1283,6 +1354,21 @@
               </div>
             </div>
             
+            <!-- V35: Sélecteur nombre de joueurs -->
+            <div class="form-row">
+              <label class="player-count-label">
+                <span data-i18n="index.matchmaking.playerCount">👥 Nombre de joueurs</span>
+                <span id="playerCountDisplay" class="player-count-value">6</span>
+              </label>
+              <div class="player-count-selector">
+                <button type="button" class="player-count-btn" onclick="adjustPlayerCount(-1)">−</button>
+                <input type="range" id="playerCountSlider" min="6" max="12" value="6" 
+                       oninput="updatePlayerCountDisplay(this.value)">
+                <button type="button" class="player-count-btn" onclick="adjustPlayerCount(1)">+</button>
+              </div>
+              <p class="player-count-hint" data-i18n="index.matchmaking.autoStartHint">⚡ La partie démarre automatiquement quand le nombre est atteint</p>
+            </div>
+            
             <div class="form-row">
               <input type="text" id="createRoomComment" maxlength="50" 
                      data-i18n-placeholder="index.matchmaking.commentPlaceholder"
@@ -1987,6 +2073,7 @@
 
     // V35: Matchmaking - Gestion des screens
     let selectedRoomType = 'video';
+    let selectedPlayerCount = 6; // V35: Nombre de joueurs par défaut
     
     function showPublicRoomsScreen() {
       document.getElementById('homeScreen').style.display = 'none';
@@ -2007,6 +2094,20 @@
       document.querySelectorAll('.room-type-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.type === type);
       });
+    }
+    
+    // V35: Fonctions pour le sélecteur de nombre de joueurs
+    function updatePlayerCountDisplay(value) {
+      selectedPlayerCount = parseInt(value);
+      document.getElementById('playerCountDisplay').textContent = value;
+    }
+    
+    function adjustPlayerCount(delta) {
+      const slider = document.getElementById('playerCountSlider');
+      let newValue = parseInt(slider.value) + delta;
+      newValue = Math.max(6, Math.min(12, newValue)); // Clamp entre 6 et 12
+      slider.value = newValue;
+      updatePlayerCountDisplay(newValue);
     }
     
     function createPublicRoomFromPage() {
@@ -2034,7 +2135,8 @@
         roomName: user.username ? `Room de ${user.username}` : 'Room publique',
         roomType: selectedRoomType,
         comment: comment,
-        isMobile: isMobile ? 'true' : 'false'
+        isMobile: isMobile ? 'true' : 'false',
+        maxPlayers: selectedPlayerCount.toString() // V35: Nombre de joueurs choisi
       });
       
       window.location.href = `/game.html?${params.toString()}`;
