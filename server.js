@@ -6186,26 +6186,7 @@ io.on("connection", (socket) => {
     joinRoomCommon(socket, room, playerId, name, playerToken, customization, authToken);
     updateRoomActivity(room); // V35: Mise à jour activité
     
-    // V35: Auto-start si room publique pleine
-    if (room.isPublic && room.phase === 'LOBBY' && !room.started) {
-      const newPlayerCount = room.players.size;
-      if (newPlayerCount >= room.maxPlayers) {
-        logger.info("room_public_full_autostart", { roomCode: code, playerCount: newPlayerCount, maxPlayers: room.maxPlayers });
-        // V35: Délai réduit (500ms au lieu de 2s) pour laisser le dernier joueur voir le lobby
-        setTimeout(() => {
-          if (room.phase === 'LOBBY' && !room.started && room.players.size >= 6) {
-            // Notifier tous les joueurs que la partie va démarrer
-            io.to(code).emit('autoStartCountdown', { seconds: 5, reason: 'roomFull' });
-            setTimeout(() => {
-              if (room.phase === 'LOBBY' && !room.started) {
-                startGame(room);
-                emitRoom(room); // V35 FIX: Envoyer le roomState aux clients !
-              }
-            }, 5000);
-          }
-        }, 500);
-      }
-    }
+    // V35: Auto-start déplacé dans setReady (le dernier joueur doit cliquer Prêt)
     
     cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId, isPublic: room.isPublic, playerCount: room.players.size, maxPlayers: room.maxPlayers });
   });
@@ -6271,6 +6252,33 @@ io.on("connection", (socket) => {
     p.ready = !!ready;
     emitRoom(room);
     cb && cb({ ok: true });
+    
+    // V35: Auto-start pour rooms publiques quand tous sont prêts ET room pleine
+    if (room.isPublic && room.phase === 'LOBBY' && !room.started && !room.autoStartPending) {
+      const activePlayers = Array.from(room.players.values()).filter(pl => pl.status !== 'left' && pl.connected);
+      const allReady = activePlayers.every(pl => pl.ready);
+      const roomFull = activePlayers.length >= room.maxPlayers;
+      
+      if (allReady && roomFull && activePlayers.length >= 6) {
+        room.autoStartPending = true; // Éviter les doubles déclenchements
+        logger.info("room_public_all_ready_autostart", { 
+          roomCode: room.code, 
+          playerCount: activePlayers.length, 
+          maxPlayers: room.maxPlayers 
+        });
+        
+        // Notifier tous les joueurs que la partie va démarrer
+        io.to(room.code).emit('autoStartCountdown', { seconds: 5, reason: 'allReady' });
+        
+        setTimeout(() => {
+          if (room.phase === 'LOBBY' && !room.started) {
+            startGame(room);
+            emitRoom(room);
+          }
+          room.autoStartPending = false;
+        }, 5000);
+      }
+    }
   });
 
   socket.on("updateConfig", ({ config }, cb) => {
