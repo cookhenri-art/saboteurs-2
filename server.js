@@ -174,7 +174,7 @@ const AVATAR_THEMES = {
   },
   "mythic-realms": {
     name: "Royaumes Mythiques", icon: "⚔️", premium: true,
-    background: "epic fantasy dragon lair with rivers of glowing orange lava, piles of gold coins and treasure, mountains of golden wealth",
+    background: "epic fantasy dragon lair with rivers and fantasy landscape with castle and mountains",
     characters: {
       knight: {
         name: "Chevalier",
