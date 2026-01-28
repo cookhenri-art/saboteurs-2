@@ -424,10 +424,55 @@ function showScreen(screenId) {
   }
 }
 
+// V35: Traduire les messages d'erreur courants
+function translateError(msg) {
+  if (!msg) return msg;
+  const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+  const errors = window.TRANSLATIONS?.game?.errors;
+  if (!errors) return msg;
+  
+  // Mapping des erreurs serveur vers clés de traduction
+  const errorMappings = {
+    'Ce nom est déjà utilisé dans cette mission.': 'nameTaken',
+    'Ce nom est déjà utilisé': 'nameTaken',
+    'Room introuvable': 'roomNotFound',
+    'Joueur introuvable': 'playerNotFound',
+    'Cette partie a déjà commencé': 'gameStarted',
+    'Partie déjà commencée': 'gameStarted',
+    'Déjà commencé': 'gameStarted',
+    'Cette room est pleine': 'roomFull',
+    'roomFull': 'roomFull',
+    'Min 4 joueurs': 'minPlayers',
+    'Tous doivent être prêts': 'allMustBeReady',
+    'Only host': 'onlyHost',
+    'Trop de tentatives': 'tooManyAttempts',
+    'Erreur création': 'createError',
+    'Erreur config': 'configError',
+    'Connexion instable': 'unstableConnection',
+    'Nom invalide': 'invalidName',
+    'min 2 caractères': 'invalidName',
+    'Code mission invalide': 'invalidRoomCode',
+    'Impossible de rejoindre': 'cannotJoin',
+    'Erreur création room publique': 'createPublicError',
+    'Choisis une cible': 'chooseTarget'
+  };
+  
+  // Chercher une correspondance exacte ou partielle
+  for (const [pattern, key] of Object.entries(errorMappings)) {
+    if (msg.includes(pattern) || msg === pattern) {
+      const translated = errors[key]?.[lang] || errors[key]?.fr;
+      if (translated) return translated;
+    }
+  }
+  
+  return msg;
+}
+
 function setError(msg) {
   const el = $("errorDisplay");
-  el.textContent = msg || "";
-  if (msg) {
+  const translatedMsg = translateError(msg);
+  el.textContent = translatedMsg || "";
+  if (translatedMsg) {
     el.style.marginTop = "12px";
     el.style.color = "var(--neon-red)";
     el.style.fontWeight = "800";
@@ -2939,14 +2984,22 @@ function showAutoStartCountdown(seconds, reason) {
   const existing = document.getElementById('autoStartCountdown');
   if (existing) existing.remove();
   
-  // V35: Textes traduits
-  const titleText = t('game.autoStart.title') || '🚀 La partie va commencer !';
-  const reasonText = reason === 'roomFull' 
-    ? (t('game.autoStart.roomFull') || 'La room est pleine')
-    : reason === 'allReady'
-      ? (t('game.autoStart.allReady') || 'Tous les joueurs sont prêts')
-      : '';
-  const launchingText = t('game.autoStart.launching') || 'Lancement en cours...';
+  // V35: Textes traduits via window.TRANSLATIONS
+  const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+  const titleText = window.TRANSLATIONS?.game?.autoStart?.title?.[lang] 
+    || window.TRANSLATIONS?.game?.autoStart?.title?.fr 
+    || '🚀 La partie va commencer !';
+  const roomFullText = window.TRANSLATIONS?.game?.autoStart?.roomFull?.[lang]
+    || window.TRANSLATIONS?.game?.autoStart?.roomFull?.fr
+    || 'La room est pleine';
+  const allReadyText = window.TRANSLATIONS?.game?.autoStart?.allReady?.[lang]
+    || window.TRANSLATIONS?.game?.autoStart?.allReady?.fr
+    || 'Tous les joueurs sont prêts';
+  const launchingText = window.TRANSLATIONS?.game?.autoStart?.launching?.[lang]
+    || window.TRANSLATIONS?.game?.autoStart?.launching?.fr
+    || 'Lancement en cours...';
+  
+  const reasonText = reason === 'roomFull' ? roomFullText : reason === 'allReady' ? allReadyText : '';
   
   const overlay = document.createElement('div');
   overlay.id = 'autoStartCountdown';

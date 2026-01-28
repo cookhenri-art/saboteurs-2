@@ -2359,18 +2359,6 @@ const TRANSLATIONS = {
     },
     
     // Errors
-    errors: {
-      choosePlayerToLink: {
-        fr: "Choisis un joueur à lier.",
-        en: "Choose a player to link.",
-        es: "Elige un jugador a enlazar.",
-        it: "Scegli un giocatore da legare.",
-        de: "Wähle einen Spieler zum Verbinden.",
-        pt: "Escolha um jogador para ligar.",
-        nl: "Kies een speler om te linken."
-      }
-    },
-    
     // Hints
     hints: {
       youAreDead: {
@@ -3358,6 +3346,172 @@ const TRANSLATIONS = {
         it: "Avvio in corso...",
         pt: "Iniciando...",
         nl: "Starten..."
+      }
+    },
+    
+    // V35: Messages d'erreur traduits
+    errors: {
+      choosePlayerToLink: {
+        fr: "Choisis un joueur à lier.",
+        en: "Choose a player to link.",
+        es: "Elige un jugador a enlazar.",
+        it: "Scegli un giocatore da legare.",
+        de: "Wähle einen Spieler zum Verbinden.",
+        pt: "Escolha um jogador para ligar.",
+        nl: "Kies een speler om te linken."
+      },
+      nameTaken: {
+        fr: "Ce nom est déjà utilisé dans cette partie.",
+        en: "This name is already taken in this game.",
+        es: "Este nombre ya está en uso en esta partida.",
+        de: "Dieser Name wird in diesem Spiel bereits verwendet.",
+        it: "Questo nome è già in uso in questa partita.",
+        pt: "Este nome já está em uso nesta partida.",
+        nl: "Deze naam is al in gebruik in dit spel."
+      },
+      roomNotFound: {
+        fr: "Room introuvable (expirée ou terminée).",
+        en: "Room not found (expired or ended).",
+        es: "Sala no encontrada (expirada o terminada).",
+        de: "Raum nicht gefunden (abgelaufen oder beendet).",
+        it: "Stanza non trovata (scaduta o terminata).",
+        pt: "Sala não encontrada (expirada ou terminada).",
+        nl: "Kamer niet gevonden (verlopen of beëindigd)."
+      },
+      playerNotFound: {
+        fr: "Joueur introuvable dans cette partie.",
+        en: "Player not found in this game.",
+        es: "Jugador no encontrado en esta partida.",
+        de: "Spieler in diesem Spiel nicht gefunden.",
+        it: "Giocatore non trovato in questa partita.",
+        pt: "Jogador não encontrado nesta partida.",
+        nl: "Speler niet gevonden in dit spel."
+      },
+      gameStarted: {
+        fr: "Cette partie a déjà commencé.",
+        en: "This game has already started.",
+        es: "Esta partida ya ha comenzado.",
+        de: "Dieses Spiel hat bereits begonnen.",
+        it: "Questa partita è già iniziata.",
+        pt: "Esta partida já começou.",
+        nl: "Dit spel is al begonnen."
+      },
+      roomFull: {
+        fr: "Cette room est pleine.",
+        en: "This room is full.",
+        es: "Esta sala está llena.",
+        de: "Dieser Raum ist voll.",
+        it: "Questa stanza è piena.",
+        pt: "Esta sala está cheia.",
+        nl: "Deze kamer is vol."
+      },
+      minPlayers: {
+        fr: "Minimum 4 joueurs requis.",
+        en: "Minimum 4 players required.",
+        es: "Se requieren mínimo 4 jugadores.",
+        de: "Mindestens 4 Spieler erforderlich.",
+        it: "Minimo 4 giocatori richiesti.",
+        pt: "Mínimo de 4 jogadores necessário.",
+        nl: "Minimaal 4 spelers vereist."
+      },
+      allMustBeReady: {
+        fr: "Tous les joueurs doivent être prêts.",
+        en: "All players must be ready.",
+        es: "Todos los jugadores deben estar listos.",
+        de: "Alle Spieler müssen bereit sein.",
+        it: "Tutti i giocatori devono essere pronti.",
+        pt: "Todos os jogadores devem estar prontos.",
+        nl: "Alle spelers moeten klaar zijn."
+      },
+      onlyHost: {
+        fr: "Seul l'hôte peut faire cette action.",
+        en: "Only the host can do this action.",
+        es: "Solo el anfitrión puede hacer esta acción.",
+        de: "Nur der Gastgeber kann diese Aktion ausführen.",
+        it: "Solo l'host può fare questa azione.",
+        pt: "Apenas o anfitrião pode fazer esta ação.",
+        nl: "Alleen de host kan deze actie uitvoeren."
+      },
+      tooManyAttempts: {
+        fr: "Trop de tentatives. Attendez un moment.",
+        en: "Too many attempts. Please wait.",
+        es: "Demasiados intentos. Espera un momento.",
+        de: "Zu viele Versuche. Bitte warten.",
+        it: "Troppi tentativi. Attendi un momento.",
+        pt: "Muitas tentativas. Aguarde um momento.",
+        nl: "Te veel pogingen. Even wachten."
+      },
+      createError: {
+        fr: "Erreur lors de la création.",
+        en: "Error while creating.",
+        es: "Error al crear.",
+        de: "Fehler beim Erstellen.",
+        it: "Errore durante la creazione.",
+        pt: "Erro ao criar.",
+        nl: "Fout bij het aanmaken."
+      },
+      configError: {
+        fr: "Erreur de configuration.",
+        en: "Configuration error.",
+        es: "Error de configuración.",
+        de: "Konfigurationsfehler.",
+        it: "Errore di configurazione.",
+        pt: "Erro de configuração.",
+        nl: "Configuratiefout."
+      },
+      unstableConnection: {
+        fr: "Action non prise en compte (connexion instable). Réessaie.",
+        en: "Action not registered (unstable connection). Try again.",
+        es: "Acción no registrada (conexión inestable). Inténtalo de nuevo.",
+        de: "Aktion nicht registriert (instabile Verbindung). Erneut versuchen.",
+        it: "Azione non registrata (connessione instabile). Riprova.",
+        pt: "Ação não registrada (conexão instável). Tente novamente.",
+        nl: "Actie niet geregistreerd (instabiele verbinding). Probeer opnieuw."
+      },
+      invalidName: {
+        fr: "Nom invalide (minimum 2 caractères).",
+        en: "Invalid name (minimum 2 characters).",
+        es: "Nombre inválido (mínimo 2 caracteres).",
+        de: "Ungültiger Name (mindestens 2 Zeichen).",
+        it: "Nome non valido (minimo 2 caratteri).",
+        pt: "Nome inválido (mínimo 2 caracteres).",
+        nl: "Ongeldige naam (minimaal 2 tekens)."
+      },
+      invalidRoomCode: {
+        fr: "Code mission invalide (4 chiffres).",
+        en: "Invalid mission code (4 digits).",
+        es: "Código de misión inválido (4 dígitos).",
+        de: "Ungültiger Missionscode (4 Ziffern).",
+        it: "Codice missione non valido (4 cifre).",
+        pt: "Código de missão inválido (4 dígitos).",
+        nl: "Ongeldige missiecode (4 cijfers)."
+      },
+      cannotJoin: {
+        fr: "Impossible de rejoindre cette room.",
+        en: "Unable to join this room.",
+        es: "No se puede unir a esta sala.",
+        de: "Kann diesem Raum nicht beitreten.",
+        it: "Impossibile unirsi a questa stanza.",
+        pt: "Não é possível entrar nesta sala.",
+        nl: "Kan niet deelnemen aan deze kamer."
+      },
+      createPublicError: {
+        fr: "Erreur lors de la création de la room publique.",
+        en: "Error creating public room.",
+        es: "Error al crear la sala pública.",
+        de: "Fehler beim Erstellen des öffentlichen Raums.",
+        it: "Errore durante la creazione della stanza pubblica.",
+        pt: "Erro ao criar sala pública.",
+        nl: "Fout bij het maken van openbare kamer."
+      },
+      chooseTarget: {
+        fr: "Choisis une cible.",
+        en: "Choose a target.",
+        es: "Elige un objetivo.",
+        de: "Wähle ein Ziel.",
+        it: "Scegli un bersaglio.",
+        pt: "Escolha um alvo.",
+        nl: "Kies een doelwit."
       }
     },
     
