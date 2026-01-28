@@ -210,26 +210,98 @@ socket.on("connect", () => {
 
 // V35: Gérer les paramètres URL pour le matchmaking
 function handleUrlMatchmaking() {
+  // Déjà dans une room ? Ne rien faire
+  if (sessionStorage.getItem(STORAGE.room)) return;
+  
+  const savedName = sessionStorage.getItem(STORAGE.name);
+  
   // Si on a un code room dans l'URL, rejoindre automatiquement
-  if (urlRoomCode && !sessionStorage.getItem(STORAGE.room)) {
+  if (urlRoomCode) {
     console.log('[Matchmaking] Auto-join room from URL:', urlRoomCode);
     
-    // Attendre que le nom soit disponible ou demander
-    const savedName = sessionStorage.getItem(STORAGE.name);
     if (savedName) {
+      // On a le nom, rejoindre directement
+      setNotice("Connexion à la room...");
       autoJoinRoom(urlRoomCode, savedName);
     } else {
-      // Stocker le code pour après
+      // Stocker le code pour après la saisie du nom
       console.log('[Matchmaking] Need name first, storing pending join');
       sessionStorage.setItem('pending_room_join', urlRoomCode);
     }
+    return;
   }
   
   // V35: Si on doit créer une room publique
-  if (urlIsPublic && !urlRoomCode && !sessionStorage.getItem(STORAGE.room)) {
-    console.log('[Matchmaking] Will create public room after name entry');
-    sessionStorage.setItem('pending_public_room', 'true');
+  if (urlIsPublic) {
+    console.log('[Matchmaking] Creating public room, urlIsPublic =', urlIsPublic);
+    
+    if (savedName) {
+      // On a le nom, créer directement la room publique
+      console.log('[Matchmaking] Auto-creating public room with name:', savedName);
+      setNotice("Création de la room publique...");
+      // Appeler createRoomFlow après un court délai pour que l'UI soit prête
+      setTimeout(() => {
+        autoCreatePublicRoom(savedName);
+      }, 500);
+    } else {
+      // Stocker le flag pour après la saisie du nom
+      console.log('[Matchmaking] Need name first, storing pending public room');
+      sessionStorage.setItem('pending_public_room', 'true');
+    }
   }
+}
+
+// V35: Créer automatiquement une room publique
+function autoCreatePublicRoom(playerName) {
+  sessionStorage.setItem(STORAGE.name, playerName);
+  showScreen("createScreen");
+  setNotice("Création de la room publique...");
+  
+  const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
+  let avatarUrl = customization.avatarUrl;
+  if (!avatarUrl) {
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+  }
+  const authToken = localStorage.getItem('saboteur_token') || null;
+  
+  socket.emit("createRoom", { 
+    playerId, 
+    name: playerName, 
+    playerToken,
+    authToken,
+    themeId: homeSelectedTheme,
+    avatarId: customization.avatarId,
+    avatarEmoji: customization.avatarEmoji,
+    avatarUrl: avatarUrl,
+    colorId: customization.colorId,
+    colorHex: customization.colorHex,
+    badgeId: customization.badgeId,
+    badgeEmoji: customization.badgeEmoji,
+    badgeName: customization.badgeName,
+    // V35: Matchmaking public
+    isPublic: true,
+    roomName: urlRoomName || `Room de ${playerName}`,
+    maxPlayers: urlIsMobile ? 9 : 12,
+    isMobile: urlIsMobile,
+    chatOnly: urlRoomType === 'chat',
+    videoEnabled: urlRoomType !== 'chat'
+  }, (res) => {
+    if (!res?.ok) {
+      setError(res?.error || "Erreur création room publique");
+      showScreen("homeScreen");
+      return;
+    }
+    sessionStorage.setItem(STORAGE.room, res.roomCode);
+    startHeartbeat();
+    clearError();
+    console.log('[Matchmaking] Public room created:', res.roomCode);
+  });
 }
 
 // V35: Rejoindre automatiquement une room depuis l'URL
@@ -2708,7 +2780,16 @@ function handleCreateOrJoin() {
     return;
   }
   
-  // Sinon, créer une room (publique ou privée selon URL)
+  // V35: Vérifier s'il y a une room publique pending à créer
+  const pendingPublic = sessionStorage.getItem('pending_public_room');
+  if (pendingPublic || urlIsPublic) {
+    sessionStorage.removeItem('pending_public_room');
+    console.log('[Matchmaking] Creating pending public room');
+    autoCreatePublicRoom(name);
+    return;
+  }
+  
+  // Sinon, créer une room privée normale
   createRoomFlow();
 }
 
@@ -4201,6 +4282,48 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     preloadThemeAssets('default');
   }, 1000);
+  
+  // V35: Adapter l'UI si création de room publique
+  if (urlIsPublic) {
+    const createBtn = document.getElementById('createBtn');
+    if (createBtn) {
+      createBtn.innerHTML = '🌐 CRÉER ROOM PUBLIQUE';
+      createBtn.style.background = 'linear-gradient(135deg, #00ff88, #00aa55)';
+    }
+    // Cacher le bouton rejoindre car on veut créer
+    const joinBtn = document.getElementById('joinBtn');
+    if (joinBtn) {
+      joinBtn.style.display = 'none';
+    }
+    // Afficher un message explicatif
+    const formContainer = document.querySelector('#homeScreen .btn-group');
+    if (formContainer) {
+      const notice = document.createElement('p');
+      notice.style.cssText = 'text-align:center;color:var(--neon-green);margin-top:15px;font-size:0.9em;';
+      notice.innerHTML = `📣 Room publique : <strong>${urlRoomName || 'Nouvelle room'}</strong><br><small>${urlRoomType === 'chat' ? '💬 Chat uniquement' : '🎥 Avec vidéo'}</small>`;
+      formContainer.appendChild(notice);
+    }
+  }
+  
+  // V35: Adapter l'UI si on rejoint une room depuis URL
+  if (urlRoomCode) {
+    const createBtn = document.getElementById('createBtn');
+    if (createBtn) {
+      createBtn.innerHTML = '🔗 REJOINDRE LA ROOM';
+      createBtn.style.background = 'linear-gradient(135deg, #00aaff, #0066cc)';
+    }
+    const joinBtn = document.getElementById('joinBtn');
+    if (joinBtn) {
+      joinBtn.style.display = 'none';
+    }
+    const formContainer = document.querySelector('#homeScreen .btn-group');
+    if (formContainer) {
+      const notice = document.createElement('p');
+      notice.style.cssText = 'text-align:center;color:var(--neon-cyan);margin-top:15px;font-size:0.9em;';
+      notice.innerHTML = `📍 Room à rejoindre : <strong>${urlRoomCode}</strong>`;
+      formContainer.appendChild(notice);
+    }
+  }
   
   // D11: Listener de visibilité pour rafraîchir le lobby quand la page redevient visible
   document.addEventListener('visibilitychange', () => {
