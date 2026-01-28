@@ -3128,18 +3128,26 @@ socket.on("roomState", (s) => {
   render();
   
   // D6: Réappliquer le badge PARLE après le re-render
-  requestAnimationFrame(() => {
-    if (typeof window.reapplySpeakerHighlight === 'function') {
-      window.reapplySpeakerHighlight();
-    }
-  });
+  // V40 FIX: Throttle pour éviter la boucle infinie de logs (max 1x/500ms)
+  if (!window.__lastSpeakerHighlightCall || Date.now() - window.__lastSpeakerHighlightCall > 500) {
+    window.__lastSpeakerHighlightCall = Date.now();
+    requestAnimationFrame(() => {
+      if (typeof window.reapplySpeakerHighlight === 'function') {
+        window.reapplySpeakerHighlight();
+      }
+    });
+  }
   
   // D6: Synchroniser le grayscale des joueurs morts
-  requestAnimationFrame(() => {
-    if (typeof window.syncEliminatedPlayersGrayscale === 'function') {
-      window.syncEliminatedPlayersGrayscale();
-    }
-  });
+  // V40 FIX: Throttle pour éviter la boucle infinie de logs (max 1x/500ms)
+  if (!window.__lastGrayscaleSyncCall || Date.now() - window.__lastGrayscaleSyncCall > 500) {
+    window.__lastGrayscaleSyncCall = Date.now();
+    requestAnimationFrame(() => {
+      if (typeof window.syncEliminatedPlayersGrayscale === 'function') {
+        window.syncEliminatedPlayersGrayscale();
+      }
+    });
+  }
   
   // =========================================================
   // D7: ANIMATIONS UX

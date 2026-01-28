@@ -790,7 +790,9 @@
   /**
    * D5: Gestion des highlights en mode INLINE
    * Ajoute/retire la classe .is-speaking sur les .player-item
+   * V40 FIX: Logger uniquement si le speaker a changé
    */
+  let lastLoggedSpeaker = null;
   function updateInlineModeSpeakerHighlights(speakerId) {
     // Retirer tous les anciens highlights
     document.querySelectorAll('.player-item.is-speaking').forEach(item => {
@@ -802,8 +804,15 @@
       const playerItem = document.querySelector(`.player-item[data-player-id="${CSS.escape(speakerId)}"]`);
       if (playerItem) {
         playerItem.classList.add('is-speaking');
-        log('🎙️ INLINE highlight added to:', speakerId.slice(0, 8));
+        // V40 FIX: Logger uniquement si le speaker a changé
+        if (speakerId !== lastLoggedSpeaker) {
+          log('🎙️ INLINE highlight added to:', speakerId.slice(0, 8));
+          lastLoggedSpeaker = speakerId;
+        }
       }
+    } else if (lastLoggedSpeaker !== null) {
+      // Reset si plus de speaker
+      lastLoggedSpeaker = null;
     }
   }
 

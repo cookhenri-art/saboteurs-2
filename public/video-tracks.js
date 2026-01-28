@@ -852,11 +852,19 @@
     v.style.cssText = "width:100%!important;height:100%!important;object-fit:cover!important;display:block!important;" + grayFilter;
     
     // D4: Debug - vérifier les dimensions du slot
+    // V40 FIX: Logger uniquement si dimensions > 0
     const rect = slot.getBoundingClientRect();
-    log("Video attached to slot for:", playerId, "slot size:", rect.width + "x" + rect.height, isEliminated ? "(ELIMINATED)" : "");
+    if (rect.width > 0 && rect.height > 0) {
+      log("Video attached to slot for:", playerId, "slot size:", rect.width + "x" + rect.height, isEliminated ? "(ELIMINATED)" : "");
+    }
     
     // D4: Forcer le play
-    v.play().catch(e => log("Video play error:", e));
+    // V40 FIX: Filtrer les AbortError (normales lors de rechargement)
+    v.play().catch(e => {
+      if (e.name !== 'AbortError') {
+        log("Video play error:", e.message || e);
+      }
+    });
   }
 
   // D4: Attach audio track for a remote participant
@@ -1693,6 +1701,8 @@
 
   // D6: Fonction globale pour synchroniser le grayscale des joueurs éliminés
   // Appelée après chaque roomState pour s'assurer que l'affichage est correct
+  // V40 FIX: Logger uniquement si le nombre de joueurs éliminés a changé
+  let lastEliminatedCount = 0;
   window.syncEliminatedPlayersGrayscale = function() {
     const state = window.lastKnownState;
     if (!state?.players) return;
@@ -1717,7 +1727,12 @@
       });
     });
     
-    log('🎬 Grayscale sync completed for', state.players.filter(p => p.status === 'dead' || p.status === 'left').length, 'eliminated players');
+    // V40 FIX: Logger uniquement si le nombre d'éliminés a changé
+    const currentEliminatedCount = state.players.filter(p => p.status === 'dead' || p.status === 'left').length;
+    if (currentEliminatedCount !== lastEliminatedCount) {
+      log('🎬 Grayscale sync completed for', currentEliminatedCount, 'eliminated players');
+      lastEliminatedCount = currentEliminatedCount;
+    }
   };
 
   // Boot
