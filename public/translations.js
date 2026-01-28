@@ -3323,6 +3323,25 @@ const TRANSLATIONS = {
     
     // Boutons
     buttons: {
+      // V35: Boutons navigation
+      home: {
+        fr: "Accueil",
+        en: "Home",
+        es: "Inicio",
+        it: "Home",
+        de: "Startseite",
+        pt: "Início",
+        nl: "Home"
+      },
+      avatar: {
+        fr: "Avatar",
+        en: "Avatar",
+        es: "Avatar",
+        it: "Avatar",
+        de: "Avatar",
+        pt: "Avatar",
+        nl: "Avatar"
+      },
       // Boutons de contrôle de jeu
       validate: {
         fr: "VALIDER",
