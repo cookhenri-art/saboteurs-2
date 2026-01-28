@@ -4897,6 +4897,7 @@ app.get("/api/rooms/public", (req, res) => {
           themeName: AVATAR_THEMES[room.themeId]?.name || room.themeId,
           themeIcon: AVATAR_THEMES[room.themeId]?.icon || '🎮',
           roomType: room.roomType,
+          comment: room.comment || '',
           playerCount,
           maxPlayers: room.maxPlayers,
           isFull: playerCount >= room.maxPlayers,
@@ -5966,7 +5967,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, authToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled, isPublic, roomName, maxPlayers, isMobile }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, authToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled, isPublic, roomName, maxPlayers, isMobile, comment }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -6028,6 +6029,7 @@ io.on("connection", (socket) => {
       if (isPublic) {
         room.isPublic = true;
         room.roomName = roomName || `Room de ${name}`;
+        room.comment = comment ? comment.substring(0, 50) : ''; // Max 50 chars
         room.creatorAccountType = creatorAccountType;
         // Max players: 9 pour mobile, 12 pour PC
         room.maxPlayers = isMobile ? 9 : 12;
