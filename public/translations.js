@@ -896,6 +896,15 @@ const TRANSLATIONS = {
         de: "im privaten Raum",
         pt: "em sala privada",
         nl: "in privékamer"
+      },
+      guestInfo: {
+        fr: "room privée • chat sans visio • sans compte",
+        en: "private room • chat without video • no account",
+        es: "sala privada • chat sin video • sin cuenta",
+        it: "stanza privata • chat senza video • senza account",
+        de: "privater Raum • Chat ohne Video • ohne Konto",
+        pt: "sala privada • chat sem vídeo • sem conta",
+        nl: "privékamer • chat zonder video • geen account"
       }
     },
     
