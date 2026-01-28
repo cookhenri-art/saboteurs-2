@@ -6199,6 +6199,7 @@ io.on("connection", (socket) => {
             setTimeout(() => {
               if (room.phase === 'LOBBY' && !room.started) {
                 startGame(room);
+                emitRoom(room); // V35 FIX: Envoyer le roomState aux clients !
               }
             }, 5000);
           }
