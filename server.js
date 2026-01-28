@@ -1245,6 +1245,14 @@ function newRoom(code, hostPlayerId) {
     config: defaultConfig(),
     themeId: "default",  // Thème sélectionné par l'hôte
 
+    // V35: Matchmaking public
+    isPublic: false,           // Room visible dans la liste publique
+    roomType: 'video',         // 'chat' ou 'video'
+    maxPlayers: 9,             // 9 PC, 12 mobile (défini à la création)
+    roomName: null,            // Nom personnalisé de la room
+    creatorAccountType: 'free', // Pour filtrer les thèmes visibles
+    lastActivity: Date.now(),  // Pour timeout inactivité
+
     started: false,
     ended: false,
     aborted: false,
@@ -1413,6 +1421,7 @@ function setPhase(room, phase, data = {}) {
   room.phaseData = data;
   room.phaseAck = new Set();
   room.phaseStartTime = Date.now(); // Tracker le début de phase
+  room.lastActivity = Date.now(); // V35: Mise à jour activité
   room.audio = computeAudioCue(room, prev);
   if (prev === "ROLE_REVEAL" && room.afterChameleonReveal) room.afterChameleonReveal = false;
   
@@ -2461,6 +2470,9 @@ function startGame(room) {
   room.night = 0;
   room.captainElected = false;
   room.startTime = Date.now();  // V26: Pour calcul durée partie
+  
+  // V35: Mise à jour activité
+  updateRoomActivity(room);
 
   // clear captain
   for (const p of room.players.values()) p.isCaptain = false;
@@ -3723,6 +3735,55 @@ const themeManager = new ThemeManager(path.join(__dirname, "themes"));
 // Garbage collection périodique du rate limiter
 setInterval(() => rateLimiter.gc(), 60000); // Toutes les minutes
 
+// ============================================================================
+// V35: ROOM INACTIVITY CLEANUP (20 minutes)
+// ============================================================================
+const ROOM_INACTIVITY_TIMEOUT = 20 * 60 * 1000; // 20 minutes
+
+function cleanupInactiveRooms() {
+  const now = Date.now();
+  let cleaned = 0;
+  
+  for (const [code, room] of rooms) {
+    // Ne pas toucher aux rooms en cours de partie
+    if (room.started && !room.ended) continue;
+    
+    // Vérifier l'inactivité
+    const timeSinceActivity = now - (room.lastActivity || room.phaseStartTime);
+    
+    if (timeSinceActivity > ROOM_INACTIVITY_TIMEOUT) {
+      // Notifier les joueurs restants
+      for (const [playerId, player] of room.players) {
+        if (player.socket) {
+          player.socket.emit('roomClosed', {
+            reason: 'inactivity',
+            message: 'La room a été fermée pour inactivité (20 minutes sans action)'
+          });
+        }
+      }
+      
+      // Supprimer la room
+      rooms.delete(code);
+      cleaned++;
+      logger.info("room_cleanup_inactivity", { roomCode: code, timeSinceActivity: Math.round(timeSinceActivity / 1000) + 's' });
+    }
+  }
+  
+  if (cleaned > 0) {
+    logger.info("rooms_cleanup_complete", { cleaned, remaining: rooms.size });
+  }
+}
+
+// Vérifier toutes les 2 minutes
+setInterval(cleanupInactiveRooms, 2 * 60 * 1000);
+
+// Fonction pour mettre à jour l'activité d'une room
+function updateRoomActivity(room) {
+  if (room) {
+    room.lastActivity = Date.now();
+  }
+}
+
 logger.info("server_start", { port: PORT, build: BUILD_ID });
 
 // ============================================================================
@@ -4788,6 +4849,186 @@ app.get("/api/themes", (req, res) => {
   });
 });
 
+// ============================================================================
+// V35: MATCHMAKING PUBLIC - API ROUTES
+// ============================================================================
+
+// Liste des rooms publiques
+app.get("/api/rooms/public", (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    let userAccountType = 'guest';
+    
+    // Déterminer le type de compte pour filtrer les thèmes
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userAccountType = decoded.accountType || 'free';
+      } catch (e) {
+        // Token invalide, reste guest
+      }
+    }
+    
+    // Thèmes accessibles selon le type de compte
+    const premiumTypes = ['subscriber', 'pack', 'family', 'admin'];
+    const accessibleThemes = premiumTypes.includes(userAccountType)
+      ? ['default', 'werewolf', 'wizard-academy', 'mythic-realms']
+      : ['default', 'werewolf'];
+    
+    const publicRooms = [];
+    
+    for (const [code, room] of rooms) {
+      // Filtrer: room publique, en lobby, pas démarrée, thème accessible
+      if (room.isPublic && 
+          room.phase === 'LOBBY' && 
+          !room.started && 
+          !room.ended &&
+          accessibleThemes.includes(room.themeId)) {
+        
+        const playerCount = room.players.size;
+        const host = room.players.get(room.hostPlayerId);
+        
+        publicRooms.push({
+          code: room.code,
+          name: room.roomName || `Room ${room.code}`,
+          hostName: host?.name || 'Hôte',
+          themeId: room.themeId,
+          themeName: AVATAR_THEMES[room.themeId]?.name || room.themeId,
+          themeIcon: AVATAR_THEMES[room.themeId]?.icon || '🎮',
+          roomType: room.roomType,
+          playerCount,
+          maxPlayers: room.maxPlayers,
+          isFull: playerCount >= room.maxPlayers,
+          createdAt: room.phaseStartTime
+        });
+      }
+    }
+    
+    // Trier par nombre de joueurs (les plus remplies en premier)
+    publicRooms.sort((a, b) => b.playerCount - a.playerCount);
+    
+    res.json({
+      ok: true,
+      rooms: publicRooms,
+      userAccountType,
+      accessibleThemes
+    });
+    
+  } catch (e) {
+    console.error('[Matchmaking] Erreur liste rooms:', e);
+    res.status(500).json({ ok: false, error: 'Erreur serveur' });
+  }
+});
+
+// Rejoindre une room aléatoire
+app.post("/api/rooms/join-random", (req, res) => {
+  try {
+    const { roomType, themeId } = req.body; // roomType: 'chat' | 'video' | 'any', themeId: optionnel
+    const authHeader = req.headers.authorization;
+    let userAccountType = 'guest';
+    let hasVideoCredits = false;
+    
+    // Vérifier l'authentification
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        userAccountType = decoded.accountType || 'free';
+        
+        // Vérifier crédits vidéo
+        if (authDb) {
+          const user = authDb.exec(`SELECT video_credits FROM users WHERE id = ?`, [decoded.userId])[0];
+          if (user && user.values[0]) {
+            const credits = user.values[0][0];
+            hasVideoCredits = credits === null || credits > 0; // null = illimité
+          }
+        }
+      } catch (e) {
+        // Token invalide
+      }
+    }
+    
+    // Thèmes accessibles
+    const premiumTypes = ['subscriber', 'pack', 'family', 'admin'];
+    const accessibleThemes = premiumTypes.includes(userAccountType)
+      ? ['default', 'werewolf', 'wizard-academy', 'mythic-realms']
+      : ['default', 'werewolf'];
+    
+    // Chercher une room compatible
+    let bestRoom = null;
+    let bestScore = -1;
+    
+    for (const [code, room] of rooms) {
+      // Vérifications de base
+      if (!room.isPublic || room.phase !== 'LOBBY' || room.started || room.ended) continue;
+      if (room.players.size >= room.maxPlayers) continue;
+      if (!accessibleThemes.includes(room.themeId)) continue;
+      
+      // Filtrer par type de room
+      if (roomType && roomType !== 'any') {
+        if (room.roomType !== roomType) continue;
+      }
+      
+      // Si room vidéo, vérifier crédits
+      if (room.roomType === 'video' && !hasVideoCredits) continue;
+      
+      // Filtrer par thème si spécifié
+      if (themeId && room.themeId !== themeId) continue;
+      
+      // Score: privilégier les rooms les plus remplies (pour démarrer plus vite)
+      const score = room.players.size;
+      if (score > bestScore) {
+        bestScore = score;
+        bestRoom = room;
+      }
+    }
+    
+    if (bestRoom) {
+      res.json({
+        ok: true,
+        roomCode: bestRoom.code,
+        roomName: bestRoom.roomName || `Room ${bestRoom.code}`,
+        themeId: bestRoom.themeId,
+        roomType: bestRoom.roomType,
+        playerCount: bestRoom.players.size,
+        maxPlayers: bestRoom.maxPlayers
+      });
+    } else {
+      res.json({
+        ok: false,
+        error: 'noRoomAvailable',
+        message: 'Aucune room disponible. Crée ta propre room !'
+      });
+    }
+    
+  } catch (e) {
+    console.error('[Matchmaking] Erreur join-random:', e);
+    res.status(500).json({ ok: false, error: 'Erreur serveur' });
+  }
+});
+
+// Stats des rooms publiques (pour affichage rapide)
+app.get("/api/rooms/stats", (req, res) => {
+  let chatRooms = 0, videoRooms = 0, totalPlayers = 0;
+  
+  for (const [code, room] of rooms) {
+    if (room.isPublic && room.phase === 'LOBBY' && !room.started && !room.ended) {
+      if (room.roomType === 'chat') chatRooms++;
+      else videoRooms++;
+      totalPlayers += room.players.size;
+    }
+  }
+  
+  res.json({
+    ok: true,
+    chatRooms,
+    videoRooms,
+    totalRooms: chatRooms + videoRooms,
+    totalPlayers
+  });
+});
+
 app.get("/api/assets/audio", (req, res) => {
   res.json({
     manifestLoaded: !!audioManifestLoaded,
@@ -5594,6 +5835,28 @@ function scheduleDisconnect(room, playerId) {
     p3.ready = false;
     logEvent(room, "player_removed", { playerId });
 
+    // V35: Transfert d'hôte si l'hôte quitte
+    if (room.hostPlayerId === playerId) {
+      // Trouver un autre joueur connecté pour être le nouvel hôte
+      const connectedPlayers = Array.from(room.players.values())
+        .filter(pl => pl.connected && pl.status !== "left" && pl.playerId !== playerId);
+      
+      if (connectedPlayers.length > 0) {
+        // Prendre le premier joueur connecté (ordre d'arrivée)
+        const newHost = connectedPlayers[0];
+        room.hostPlayerId = newHost.playerId;
+        logEvent(room, "host_transferred", { from: playerId, to: newHost.playerId, newHostName: newHost.name });
+        logger.info("host_transferred", { roomCode: room.code, from: playerId, to: newHost.playerId, newHostName: newHost.name });
+        
+        // Notifier tous les joueurs
+        io.to(room.code).emit('hostChanged', {
+          newHostId: newHost.playerId,
+          newHostName: newHost.name,
+          reason: 'previousHostLeft'
+        });
+      }
+    }
+
     // if phase waits on this actor, fallback
     if (room.phase === "DAY_CAPTAIN_TRANSFER" && room.phaseData?.actorId === playerId) {
       const alive = alivePlayers(room);
@@ -5704,7 +5967,7 @@ function handlePhaseCompletion(room) {
 io.on("connection", (socket) => {
   socket.emit("serverHello", { ok: true });
 
-  socket.on("createRoom", ({ playerId, name, playerToken, authToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled }, cb) => {
+  socket.on("createRoom", ({ playerId, name, playerToken, authToken, themeId, avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName, chatOnly, videoEnabled, isPublic, roomName, maxPlayers, isMobile }, cb) => {
     // Rate limiting
     if (!rateLimiter.check(socket.id, "createRoom", playerId)) {
       return cb && cb({ ok: false, error: "Trop de tentatives. Attendez un moment." });
@@ -5718,6 +5981,28 @@ io.on("connection", (socket) => {
     // }
     
     try {
+      // V35: Vérifier compte vérifié pour rooms publiques
+      let creatorAccountType = 'guest';
+      let emailVerified = false;
+      
+      if (authToken && authDb) {
+        try {
+          const decoded = jwt.verify(authToken, JWT_SECRET);
+          const userResult = authDb.exec(`SELECT account_type, email_verified FROM users WHERE id = ?`, [decoded.userId]);
+          if (userResult[0] && userResult[0].values[0]) {
+            creatorAccountType = userResult[0].values[0][0] || 'free';
+            emailVerified = userResult[0].values[0][1] === 1;
+          }
+        } catch (e) {
+          // Token invalide, reste guest
+        }
+      }
+      
+      // Room publique nécessite un compte vérifié
+      if (isPublic && !emailVerified) {
+        return cb && cb({ ok: false, error: "roomPublicNeedsVerified", message: "Un compte vérifié est requis pour créer une room publique" });
+      }
+      
       const code = genRoomCode(rooms);
       const room = newRoom(code, playerId);
       
@@ -5730,11 +6015,35 @@ io.on("connection", (socket) => {
       // Gérer le mode chatOnly (vidéo désactivée)
       if (chatOnly === true || videoEnabled === false) {
         room.videoDisabled = true;
+        room.roomType = 'chat';
         logger.info("room_video_disabled", { roomCode: code, chatOnly, videoEnabled });
+      } else {
+        room.roomType = 'video';
+      }
+      
+      // V35: Configuration room publique
+      if (isPublic) {
+        room.isPublic = true;
+        room.roomName = roomName || `Room de ${name}`;
+        room.creatorAccountType = creatorAccountType;
+        // Max players: 9 pour mobile, 12 pour PC
+        room.maxPlayers = isMobile ? 9 : 12;
+        // Override si spécifié (min 6, max selon plateforme)
+        if (maxPlayers) {
+          const maxLimit = isMobile ? 9 : 12;
+          room.maxPlayers = Math.max(6, Math.min(maxPlayers, maxLimit));
+        }
+        logger.info("room_public_created", { 
+          roomCode: code, 
+          roomName: room.roomName, 
+          roomType: room.roomType,
+          maxPlayers: room.maxPlayers,
+          isMobile
+        });
       }
       
       rooms.set(code, room);
-      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId, videoDisabled: room.videoDisabled });
+      logger.info("room_created", { roomCode: code, hostId: playerId, hostName: name, themeId: room.themeId, videoDisabled: room.videoDisabled, isPublic: room.isPublic });
       
       // D9: Préparer les données de personnalisation (V31: ajout avatarUrl)
       const customization = { avatarId, avatarEmoji, avatarUrl, colorId, colorHex, badgeId, badgeEmoji, badgeName };
@@ -5744,7 +6053,7 @@ io.on("connection", (socket) => {
       // V32 Option D: Enregistrer la session - DÉSACTIVÉ POUR LES TESTS
       // registerUserSession(authToken, socket.id, code, playerId);
       
-      cb && cb({ ok: true, roomCode: code, host: true });
+      cb && cb({ ok: true, roomCode: code, host: true, isPublic: room.isPublic, maxPlayers: room.maxPlayers });
     } catch (e) {
       logger.error("createRoom_failed", { error: e.message, playerId });
       cb && cb({ ok: false, error: "createRoom failed" });
@@ -5767,6 +6076,18 @@ io.on("connection", (socket) => {
       return cb && cb({ ok: false, error: "Room introuvable" });
     }
     
+    // V35: Vérifier si la room publique est pleine
+    if (room.isPublic && room.phase === 'LOBBY' && !room.started) {
+      const currentPlayers = room.players.size;
+      const existingPlayer = getPlayer(room, playerId);
+      
+      // Si c'est un nouveau joueur et la room est pleine
+      if (!existingPlayer && currentPlayers >= room.maxPlayers) {
+        logger.reject(code, "room_full", { playerId, currentPlayers, maxPlayers: room.maxPlayers });
+        return cb && cb({ ok: false, error: "roomFull", message: "Cette room est pleine" });
+      }
+    }
+    
     // V9.3.6: PRIORITÉ 1 - Reconnexion par nom déconnecté
     // Si un joueur avec ce nom existe et est déconnecté, on le réutilise immédiatement
     // Cela évite les conflits de token et simplifie la reconnexion
@@ -5781,6 +6102,7 @@ io.on("connection", (socket) => {
       logger.info("reconnect_by_name", { roomCode: code, oldPlayerId: playerByName.playerId, newPlayerId: playerId, name });
       // V32: Passer authToken pour vérifier les crédits vidéo
       joinRoomCommon(socket, room, playerByName.playerId, name, playerToken, customization, authToken);
+      updateRoomActivity(room); // V35: Mise à jour activité
       cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerByName.playerId });
       return;
     }
@@ -5803,7 +6125,29 @@ io.on("connection", (socket) => {
     
     // V32: Passer authToken pour vérifier les crédits vidéo
     joinRoomCommon(socket, room, playerId, name, playerToken, customization, authToken);
-    cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId });
+    updateRoomActivity(room); // V35: Mise à jour activité
+    
+    // V35: Auto-start si room publique pleine
+    if (room.isPublic && room.phase === 'LOBBY' && !room.started) {
+      const newPlayerCount = room.players.size;
+      if (newPlayerCount >= room.maxPlayers) {
+        logger.info("room_public_full_autostart", { roomCode: code, playerCount: newPlayerCount, maxPlayers: room.maxPlayers });
+        // Petit délai pour laisser le dernier joueur voir le lobby
+        setTimeout(() => {
+          if (room.phase === 'LOBBY' && !room.started && room.players.size >= 6) {
+            // Notifier tous les joueurs que la partie va démarrer
+            io.to(code).emit('autoStartCountdown', { seconds: 5, reason: 'roomFull' });
+            setTimeout(() => {
+              if (room.phase === 'LOBBY' && !room.started) {
+                startGame(room);
+              }
+            }, 5000);
+          }
+        }, 2000);
+      }
+    }
+    
+    cb && cb({ ok: true, roomCode: code, host: room.hostPlayerId === playerId, isPublic: room.isPublic, playerCount: room.players.size, maxPlayers: room.maxPlayers });
   });
 
   socket.on("reconnectRoom", ({ playerId, name, roomCode, playerToken }, cb) => {
@@ -5914,6 +6258,9 @@ io.on("connection", (socket) => {
     
     const player = room.players.get(socket.data.playerId);
     if (!player) return cb && cb({ ok: false, error: "Joueur introuvable" });
+    
+    // V35: Mise à jour activité
+    updateRoomActivity(room);
     
     // Validation du message
     const trimmedMessage = (message || "").trim();
