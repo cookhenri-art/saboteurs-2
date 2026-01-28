@@ -909,6 +909,141 @@ const TRANSLATIONS = {
         de: "Unterschied privater / öffentlicher Raum",
         pt: "Diferença sala privada / pública",
         nl: "Verschil privé / openbare kamer"
+      },
+      title: {
+        fr: "❓ Room Privée vs Publique",
+        en: "❓ Private vs Public Room",
+        es: "❓ Sala Privada vs Pública",
+        it: "❓ Stanza Privata vs Pubblica",
+        de: "❓ Privater vs Öffentlicher Raum",
+        pt: "❓ Sala Privada vs Pública",
+        nl: "❓ Privé vs Openbare Kamer"
+      },
+      privateTitle: {
+        fr: "🔒 Room Privée",
+        en: "🔒 Private Room",
+        es: "🔒 Sala Privada",
+        it: "🔒 Stanza Privata",
+        de: "🔒 Privater Raum",
+        pt: "🔒 Sala Privada",
+        nl: "🔒 Privékamer"
+      },
+      private1: {
+        fr: "Tu crées une room avec un <strong>code à 4 chiffres</strong>",
+        en: "You create a room with a <strong>4-digit code</strong>",
+        es: "Creas una sala con un <strong>código de 4 dígitos</strong>",
+        it: "Crei una stanza con un <strong>codice a 4 cifre</strong>",
+        de: "Du erstellst einen Raum mit einem <strong>4-stelligen Code</strong>",
+        pt: "Você cria uma sala com um <strong>código de 4 dígitos</strong>",
+        nl: "Je maakt een kamer met een <strong>4-cijferige code</strong>"
+      },
+      private2: {
+        fr: "Tu partages ce code avec tes amis",
+        en: "You share this code with your friends",
+        es: "Compartes este código con tus amigos",
+        it: "Condividi questo codice con i tuoi amici",
+        de: "Du teilst diesen Code mit deinen Freunden",
+        pt: "Você compartilha esse código com seus amigos",
+        nl: "Je deelt deze code met je vrienden"
+      },
+      private3: {
+        fr: "Seuls ceux qui ont le code peuvent rejoindre",
+        en: "Only those with the code can join",
+        es: "Solo los que tienen el código pueden unirse",
+        it: "Solo chi ha il codice può unirsi",
+        de: "Nur wer den Code hat, kann beitreten",
+        pt: "Apenas quem tem o código pode entrar",
+        nl: "Alleen mensen met de code kunnen deelnemen"
+      },
+      private4: {
+        fr: "Idéal pour jouer <strong>entre amis</strong>",
+        en: "Ideal for playing <strong>with friends</strong>",
+        es: "Ideal para jugar <strong>con amigos</strong>",
+        it: "Ideale per giocare <strong>con amici</strong>",
+        de: "Ideal zum Spielen <strong>mit Freunden</strong>",
+        pt: "Ideal para jogar <strong>com amigos</strong>",
+        nl: "Ideaal om te spelen <strong>met vrienden</strong>"
+      },
+      private5: {
+        fr: "Accessible à tous (invités et comptes)",
+        en: "Accessible to everyone (guests and accounts)",
+        es: "Accesible para todos (invitados y cuentas)",
+        it: "Accessibile a tutti (ospiti e account)",
+        de: "Für alle zugänglich (Gäste und Konten)",
+        pt: "Acessível a todos (convidados e contas)",
+        nl: "Toegankelijk voor iedereen (gasten en accounts)"
+      },
+      publicTitle: {
+        fr: "🌐 Room Publique",
+        en: "🌐 Public Room",
+        es: "🌐 Sala Pública",
+        it: "🌐 Stanza Pubblica",
+        de: "🌐 Öffentlicher Raum",
+        pt: "🌐 Sala Pública",
+        nl: "🌐 Openbare Kamer"
+      },
+      public1: {
+        fr: "Ta room apparaît dans la <strong>liste publique</strong>",
+        en: "Your room appears in the <strong>public list</strong>",
+        es: "Tu sala aparece en la <strong>lista pública</strong>",
+        it: "La tua stanza appare nella <strong>lista pubblica</strong>",
+        de: "Dein Raum erscheint in der <strong>öffentlichen Liste</strong>",
+        pt: "Sua sala aparece na <strong>lista pública</strong>",
+        nl: "Je kamer verschijnt in de <strong>openbare lijst</strong>"
+      },
+      public2: {
+        fr: "N'importe qui peut la rejoindre",
+        en: "Anyone can join",
+        es: "Cualquiera puede unirse",
+        it: "Chiunque può unirsi",
+        de: "Jeder kann beitreten",
+        pt: "Qualquer pessoa pode entrar",
+        nl: "Iedereen kan deelnemen"
+      },
+      public3: {
+        fr: "Parfait pour <strong>rencontrer de nouveaux joueurs</strong>",
+        en: "Perfect to <strong>meet new players</strong>",
+        es: "Perfecto para <strong>conocer nuevos jugadores</strong>",
+        it: "Perfetto per <strong>incontrare nuovi giocatori</strong>",
+        de: "Perfekt um <strong>neue Spieler kennenzulernen</strong>",
+        pt: "Perfeito para <strong>conhecer novos jogadores</strong>",
+        nl: "Perfect om <strong>nieuwe spelers te ontmoeten</strong>"
+      },
+      public4: {
+        fr: "Tu peux ajouter un message pour attirer les joueurs",
+        en: "You can add a message to attract players",
+        es: "Puedes añadir un mensaje para atraer jugadores",
+        it: "Puoi aggiungere un messaggio per attirare giocatori",
+        de: "Du kannst eine Nachricht hinzufügen, um Spieler anzulocken",
+        pt: "Você pode adicionar uma mensagem para atrair jogadores",
+        nl: "Je kunt een bericht toevoegen om spelers aan te trekken"
+      },
+      public5: {
+        fr: "Nécessite un <strong>compte vérifié</strong> pour créer",
+        en: "Requires a <strong>verified account</strong> to create",
+        es: "Requiere una <strong>cuenta verificada</strong> para crear",
+        it: "Richiede un <strong>account verificato</strong> per creare",
+        de: "Erfordert ein <strong>verifiziertes Konto</strong> zum Erstellen",
+        pt: "Requer uma <strong>conta verificada</strong> para criar",
+        nl: "Vereist een <strong>geverifieerd account</strong> om te maken"
+      },
+      tip: {
+        fr: "💡 <strong>Conseil :</strong> Crée un compte gratuit pour accéder aux rooms publiques et garder ton historique de parties !",
+        en: "💡 <strong>Tip:</strong> Create a free account to access public rooms and keep your game history!",
+        es: "💡 <strong>Consejo:</strong> ¡Crea una cuenta gratis para acceder a salas públicas y guardar tu historial de partidas!",
+        it: "💡 <strong>Consiglio:</strong> Crea un account gratuito per accedere alle stanze pubbliche e conservare la tua cronologia delle partite!",
+        de: "💡 <strong>Tipp:</strong> Erstelle ein kostenloses Konto, um auf öffentliche Räume zuzugreifen und deinen Spielverlauf zu speichern!",
+        pt: "💡 <strong>Dica:</strong> Crie uma conta grátis para acessar salas públicas e manter seu histórico de partidas!",
+        nl: "💡 <strong>Tip:</strong> Maak een gratis account aan voor toegang tot openbare kamers en om je spelgeschiedenis te bewaren!"
+      },
+      gotIt: {
+        fr: "👍 Compris !",
+        en: "👍 Got it!",
+        es: "👍 ¡Entendido!",
+        it: "👍 Capito!",
+        de: "👍 Verstanden!",
+        pt: "👍 Entendi!",
+        nl: "👍 Begrepen!"
       }
     },
     

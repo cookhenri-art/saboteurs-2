@@ -381,6 +381,19 @@
     .modal-buttons .btn {
       flex: 1;
     }
+    
+    /* Modal scrollable pour mobile */
+    .modal-scrollable {
+      max-height: 85vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 600px) {
+      .modal-scrollable {
+        max-height: 80vh;
+        padding: 20px;
+      }
+    }
 
     /* Features */
     .features {
@@ -1296,38 +1309,36 @@
 
       <!-- V35: Modal Explication Room Privée/Publique -->
       <div class="modal" id="roomExplanationModal" style="display:none;">
-        <div class="modal-content" style="max-width: 500px;">
-          <h3 style="color: var(--neon-cyan);">❓ Room Privée vs Publique</h3>
+        <div class="modal-content modal-scrollable" style="max-width: 500px;">
+          <h3 style="color: var(--neon-cyan);" data-i18n="index.explanation.title">❓ Room Privée vs Publique</h3>
           
           <div style="margin-bottom: 20px;">
-            <h4 style="color: #9d4edd; margin-bottom: 10px;">🔒 Room Privée</h4>
+            <h4 style="color: #9d4edd; margin-bottom: 10px;" data-i18n="index.explanation.privateTitle">🔒 Room Privée</h4>
             <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
-              <li>Tu crées une room avec un <strong>code à 4 chiffres</strong></li>
-              <li>Tu partages ce code avec tes amis</li>
-              <li>Seuls ceux qui ont le code peuvent rejoindre</li>
-              <li>Idéal pour jouer <strong>entre amis</strong></li>
-              <li>Accessible à tous (invités et comptes)</li>
+              <li data-i18n="index.explanation.private1">Tu crées une room avec un <strong>code à 4 chiffres</strong></li>
+              <li data-i18n="index.explanation.private2">Tu partages ce code avec tes amis</li>
+              <li data-i18n="index.explanation.private3">Seuls ceux qui ont le code peuvent rejoindre</li>
+              <li data-i18n="index.explanation.private4">Idéal pour jouer <strong>entre amis</strong></li>
+              <li data-i18n="index.explanation.private5">Accessible à tous (invités et comptes)</li>
             </ul>
           </div>
           
           <div style="margin-bottom: 20px;">
-            <h4 style="color: #00cc88; margin-bottom: 10px;">🌐 Room Publique</h4>
+            <h4 style="color: #00cc88; margin-bottom: 10px;" data-i18n="index.explanation.publicTitle">🌐 Room Publique</h4>
             <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
-              <li>Ta room apparaît dans la <strong>liste publique</strong></li>
-              <li>N'importe qui peut la rejoindre</li>
-              <li>Parfait pour <strong>rencontrer de nouveaux joueurs</strong></li>
-              <li>Tu peux ajouter un message pour attirer les joueurs</li>
-              <li>Nécessite un <strong>compte vérifié</strong> pour créer</li>
+              <li data-i18n="index.explanation.public1">Ta room apparaît dans la <strong>liste publique</strong></li>
+              <li data-i18n="index.explanation.public2">N'importe qui peut la rejoindre</li>
+              <li data-i18n="index.explanation.public3">Parfait pour <strong>rencontrer de nouveaux joueurs</strong></li>
+              <li data-i18n="index.explanation.public4">Tu peux ajouter un message pour attirer les joueurs</li>
+              <li data-i18n="index.explanation.public5">Nécessite un <strong>compte vérifié</strong> pour créer</li>
             </ul>
           </div>
           
           <div style="background: rgba(0, 255, 255, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--neon-cyan);">
-            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9em;">
-              💡 <strong>Conseil :</strong> Crée un compte gratuit pour accéder aux rooms publiques et garder ton historique de parties !
-            </p>
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9em;" data-i18n="index.explanation.tip">💡 <strong>Conseil :</strong> Crée un compte gratuit pour accéder aux rooms publiques et garder ton historique de parties !</p>
           </div>
           
-          <button class="btn btn-primary btn-full" style="margin-top: 20px;" onclick="hideRoomExplanation()">
+          <button class="btn btn-primary btn-full" style="margin-top: 20px;" onclick="hideRoomExplanation()" data-i18n="index.explanation.gotIt">
             👍 Compris !
           </button>
         </div>
