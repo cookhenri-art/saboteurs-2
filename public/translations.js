@@ -1353,6 +1353,106 @@ const TRANSLATIONS = {
         de: "Dieses Thema ist Premium-Abonnenten vorbehalten",
         pt: "Este tema é reservado para assinantes Premium",
         nl: "Dit thema is gereserveerd voor Premium-abonnees"
+      },
+      // V35: Nouvelles traductions d'erreurs
+      emailPasswordRequired: {
+        fr: "Email et mot de passe requis",
+        en: "Email and password required",
+        es: "Email y contraseña requeridos",
+        de: "E-Mail und Passwort erforderlich",
+        it: "Email e password richiesti",
+        pt: "Email e senha obrigatórios",
+        nl: "E-mail en wachtwoord vereist"
+      },
+      allFieldsRequired: {
+        fr: "Tous les champs sont requis",
+        en: "All fields are required",
+        es: "Todos los campos son obligatorios",
+        de: "Alle Felder sind erforderlich",
+        it: "Tutti i campi sono obbligatori",
+        pt: "Todos os campos são obrigatórios",
+        nl: "Alle velden zijn verplicht"
+      },
+      passwordTooShort: {
+        fr: "Mot de passe trop court (minimum 6 caractères)",
+        en: "Password too short (minimum 6 characters)",
+        es: "Contraseña demasiado corta (mínimo 6 caracteres)",
+        de: "Passwort zu kurz (mindestens 6 Zeichen)",
+        it: "Password troppo corta (minimo 6 caratteri)",
+        pt: "Senha muito curta (mínimo 6 caracteres)",
+        nl: "Wachtwoord te kort (minimaal 6 tekens)"
+      },
+      newPasswordTooShort: {
+        fr: "Le nouveau mot de passe doit faire au moins 6 caractères",
+        en: "New password must be at least 6 characters",
+        es: "La nueva contraseña debe tener al menos 6 caracteres",
+        de: "Neues Passwort muss mindestens 6 Zeichen haben",
+        it: "La nuova password deve avere almeno 6 caratteri",
+        pt: "A nova senha deve ter pelo menos 6 caracteres",
+        nl: "Nieuw wachtwoord moet minimaal 6 tekens bevatten"
+      },
+      premiumRequired: {
+        fr: "Ce thème nécessite un compte Premium",
+        en: "This theme requires a Premium account",
+        es: "Este tema requiere una cuenta Premium",
+        de: "Dieses Thema erfordert ein Premium-Konto",
+        it: "Questo tema richiede un account Premium",
+        pt: "Este tema requer uma conta Premium",
+        nl: "Dit thema vereist een Premium-account"
+      },
+      verifiedRequired: {
+        fr: "Un compte vérifié est requis",
+        en: "A verified account is required",
+        es: "Se requiere una cuenta verificada",
+        de: "Ein verifiziertes Konto ist erforderlich",
+        it: "È richiesto un account verificato",
+        pt: "Uma conta verificada é necessária",
+        nl: "Een geverifieerd account is vereist"
+      },
+      invalidEmail: {
+        fr: "Email invalide",
+        en: "Invalid email",
+        es: "Email inválido",
+        de: "Ungültige E-Mail",
+        it: "Email non valida",
+        pt: "Email inválido",
+        nl: "Ongeldig e-mailadres"
+      },
+      emailAlreadyUsed: {
+        fr: "Cet email est déjà utilisé",
+        en: "This email is already in use",
+        es: "Este email ya está en uso",
+        de: "Diese E-Mail wird bereits verwendet",
+        it: "Questa email è già in uso",
+        pt: "Este email já está em uso",
+        nl: "Dit e-mailadres is al in gebruik"
+      },
+      usernameTaken: {
+        fr: "Ce nom d'utilisateur est déjà pris",
+        en: "This username is already taken",
+        es: "Este nombre de usuario ya está en uso",
+        de: "Dieser Benutzername ist bereits vergeben",
+        it: "Questo nome utente è già in uso",
+        pt: "Este nome de usuário já está em uso",
+        nl: "Deze gebruikersnaam is al in gebruik"
+      },
+      accountNotVerified: {
+        fr: "Compte non vérifié. Vérifie ton email.",
+        en: "Account not verified. Check your email.",
+        es: "Cuenta no verificada. Revisa tu email.",
+        de: "Konto nicht verifiziert. Überprüfe deine E-Mail.",
+        it: "Account non verificato. Controlla la tua email.",
+        pt: "Conta não verificada. Verifique seu email.",
+        nl: "Account niet geverifieerd. Controleer je e-mail."
+      },
+      emailResent: {
+        fr: "Email de vérification renvoyé !",
+        en: "Verification email resent!",
+        es: "¡Email de verificación reenviado!",
+        de: "Bestätigungs-E-Mail erneut gesendet!",
+        it: "Email di verifica reinviata!",
+        pt: "Email de verificação reenviado!",
+        nl: "Verificatie-e-mail opnieuw verzonden!"
       }
     },
     

@@ -1743,8 +1743,44 @@
     });
 
     // Messages
+    // V35: Traduire les messages d'erreur
+    function translateIndexError(msg) {
+      if (!msg) return msg;
+      const lang = getCurrentLanguage ? getCurrentLanguage() : 'fr';
+      const toasts = window.TRANSLATIONS?.index?.toasts;
+      if (!toasts) return msg;
+      
+      const errorMappings = {
+        'Email et mot de passe requis': 'emailPasswordRequired',
+        'Email ou mot de passe incorrect': 'invalidCredentials',
+        'Tous les champs requis': 'allFieldsRequired',
+        'Mot de passe trop court': 'passwordTooShort',
+        'Erreur réseau': 'networkError',
+        'Ce thème nécessite un compte Premium': 'premiumRequired',
+        'Ce thème nécessite un compte Premium ou Pack': 'premiumRequired',
+        'Un compte vérifié est requis': 'verifiedRequired',
+        'Remplis tous les champs': 'allFieldsRequired',
+        'Le nouveau mot de passe doit faire au moins 6 caractères': 'newPasswordTooShort',
+        'Les mots de passe ne correspondent pas': 'passwordMismatch',
+        'Email invalide': 'invalidEmail',
+        'Cet email est déjà utilisé': 'emailAlreadyUsed',
+        'Ce nom d\'utilisateur est déjà pris': 'usernameTaken',
+        'Compte non vérifié': 'accountNotVerified',
+        'Email renvoyé': 'emailResent'
+      };
+      
+      for (const [pattern, key] of Object.entries(errorMappings)) {
+        if (msg.includes(pattern)) {
+          const translated = toasts[key]?.[lang] || toasts[key]?.fr;
+          if (translated) return translated;
+        }
+      }
+      return msg;
+    }
+
     function showError(msg) {
-      document.getElementById('errorMessage').textContent = msg;
+      const translatedMsg = translateIndexError(msg);
+      document.getElementById('errorMessage').textContent = translatedMsg;
       document.getElementById('errorMessage').classList.add('show');
       document.getElementById('successMessage').classList.remove('show');
     }
