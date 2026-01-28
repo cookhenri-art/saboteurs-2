@@ -1217,7 +1217,7 @@
             <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
             <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
           </div>
-          <a href="#" class="forgot-password-link" onclick="showForgotPassword(); return false;">🔑 Mot de passe oublié ?</a>
+          <a href="#" class="forgot-password-link" onclick="showForgotPassword(); return false;" data-i18n="index.auth.forgotPassword">🔑 Mot de passe oublié ?</a>
         </div>
         <button class="btn btn-primary btn-full" id="loginBtn" onclick="login()" data-i18n="index.auth.loginButton">
           🚀 CONNEXION
@@ -1805,6 +1805,15 @@
       // Fermer si déjà ouvert
       closeForgotPassword();
       
+      // V35: Textes traduits
+      const lang = getCurrentLanguage ? getCurrentLanguage() : 'fr';
+      const fp = window.TRANSLATIONS?.index?.forgotPassword;
+      const title = fp?.title?.[lang] || fp?.title?.fr || '🔑 Mot de passe oublié';
+      const subtitle = fp?.subtitle?.[lang] || fp?.subtitle?.fr || 'Entre ton email pour recevoir un lien de réinitialisation';
+      const placeholder = fp?.placeholder?.[lang] || fp?.placeholder?.fr || 'ton@email.com';
+      const sendButton = fp?.sendButton?.[lang] || fp?.sendButton?.fr || '📧 Envoyer le lien';
+      const backLink = fp?.backLink?.[lang] || fp?.backLink?.fr || '← Retour à la connexion';
+      
       const modal = document.createElement('div');
       modal.id = 'forgot-password-modal';
       modal.innerHTML = `
@@ -1819,12 +1828,12 @@
             border-radius: 20px; padding: 30px; max-width: 420px; width: 100%;
             border: 2px solid rgba(0,255,255,0.3);
           ">
-            <h2 style="text-align: center; margin-bottom: 10px;">🔑 Mot de passe oublié</h2>
+            <h2 style="text-align: center; margin-bottom: 10px;">${title}</h2>
             <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 25px;">
-              Entre ton email pour recevoir un lien de réinitialisation
+              ${subtitle}
             </p>
             
-            <input type="email" id="forgotEmail" placeholder="ton@email.com" style="
+            <input type="email" id="forgotEmail" placeholder="${placeholder}" style="
               width: 100%; padding: 14px; border-radius: 10px;
               border: 1px solid #444; background: rgba(0,0,0,0.5);
               color: #fff; font-size: 1em; margin-bottom: 15px;
@@ -1836,7 +1845,7 @@
               color: #000; font-weight: bold; font-size: 1em;
               border: none; cursor: pointer;
             ">
-              📧 Envoyer le lien
+              ${sendButton}
             </button>
             
             <div id="forgotResult" style="
@@ -1845,7 +1854,7 @@
             "></div>
             
             <p style="text-align: center; margin-top: 20px;">
-              <a href="#" onclick="closeForgotPassword(); return false;" style="color: #888;">← Retour à la connexion</a>
+              <a href="#" onclick="closeForgotPassword(); return false;" style="color: #888;">${backLink}</a>
             </p>
           </div>
         </div>
@@ -1863,12 +1872,19 @@
       const email = document.getElementById('forgotEmail').value.trim();
       const resultDiv = document.getElementById('forgotResult');
       
+      // V35: Textes traduits
+      const lang = getCurrentLanguage ? getCurrentLanguage() : 'fr';
+      const fp = window.TRANSLATIONS?.index?.forgotPassword;
+      const emailRequiredText = fp?.emailRequired?.[lang] || fp?.emailRequired?.fr || 'Email requis';
+      const emailSentText = fp?.emailSent?.[lang] || fp?.emailSent?.fr || '✅ Email envoyé ! Vérifie ta boîte mail.';
+      const networkErrorText = fp?.networkError?.[lang] || fp?.networkError?.fr || 'Erreur réseau';
+      
       if (!email) {
         resultDiv.style.display = 'block';
         resultDiv.style.background = 'rgba(255,68,68,0.2)';
         resultDiv.style.border = '1px solid #ff4444';
         resultDiv.style.color = '#ff4444';
-        resultDiv.textContent = 'Email requis';
+        resultDiv.textContent = emailRequiredText;
         return;
       }
       
@@ -1885,19 +1901,19 @@
           resultDiv.style.background = 'rgba(0,255,136,0.2)';
           resultDiv.style.border = '1px solid #00ff88';
           resultDiv.style.color = '#00ff88';
-          resultDiv.textContent = '✅ Email envoyé ! Vérifie ta boîte mail.';
+          resultDiv.textContent = emailSentText;
         } else {
           resultDiv.style.background = 'rgba(255,68,68,0.2)';
           resultDiv.style.border = '1px solid #ff4444';
           resultDiv.style.color = '#ff4444';
-          resultDiv.textContent = data.error || 'Erreur';
+          resultDiv.textContent = translateIndexError(data.error) || 'Erreur';
         }
       } catch (e) {
         resultDiv.style.display = 'block';
         resultDiv.style.background = 'rgba(255,68,68,0.2)';
         resultDiv.style.border = '1px solid #ff4444';
         resultDiv.style.color = '#ff4444';
-        resultDiv.textContent = 'Erreur réseau';
+        resultDiv.textContent = networkErrorText;
       }
     }
 

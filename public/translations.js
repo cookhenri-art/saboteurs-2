@@ -897,6 +897,15 @@ const TRANSLATIONS = {
         pt: "🎮 Jogar como convidado",
         nl: "🎮 Spelen als gast"
       },
+      forgotPassword: {
+        fr: "🔑 Mot de passe oublié ?",
+        en: "🔑 Forgot password?",
+        es: "🔑 ¿Contraseña olvidada?",
+        de: "🔑 Passwort vergessen?",
+        it: "🔑 Password dimenticata?",
+        pt: "🔑 Esqueceu a senha?",
+        nl: "🔑 Wachtwoord vergeten?"
+      },
       guestLimitations: {
         fr: "Sans compte : pas de vidéo, pas de progression sauvegardée",
         en: "Without account: no video, no saved progress",
@@ -1453,6 +1462,82 @@ const TRANSLATIONS = {
         it: "Email di verifica reinviata!",
         pt: "Email de verificação reenviado!",
         nl: "Verificatie-e-mail opnieuw verzonden!"
+      }
+    },
+    
+    // V35: Modal mot de passe oublié
+    forgotPassword: {
+      title: {
+        fr: "🔑 Mot de passe oublié",
+        en: "🔑 Forgot password",
+        es: "🔑 Contraseña olvidada",
+        de: "🔑 Passwort vergessen",
+        it: "🔑 Password dimenticata",
+        pt: "🔑 Esqueceu a senha",
+        nl: "🔑 Wachtwoord vergeten"
+      },
+      subtitle: {
+        fr: "Entre ton email pour recevoir un lien de réinitialisation",
+        en: "Enter your email to receive a reset link",
+        es: "Introduce tu email para recibir un enlace de restablecimiento",
+        de: "Gib deine E-Mail ein, um einen Link zum Zurücksetzen zu erhalten",
+        it: "Inserisci la tua email per ricevere un link di reimpostazione",
+        pt: "Digite seu email para receber um link de redefinição",
+        nl: "Voer je e-mail in om een resetlink te ontvangen"
+      },
+      placeholder: {
+        fr: "ton@email.com",
+        en: "your@email.com",
+        es: "tu@email.com",
+        de: "deine@email.com",
+        it: "tua@email.com",
+        pt: "seu@email.com",
+        nl: "jouw@email.com"
+      },
+      sendButton: {
+        fr: "📧 Envoyer le lien",
+        en: "📧 Send link",
+        es: "📧 Enviar enlace",
+        de: "📧 Link senden",
+        it: "📧 Invia link",
+        pt: "📧 Enviar link",
+        nl: "📧 Link verzenden"
+      },
+      backLink: {
+        fr: "← Retour à la connexion",
+        en: "← Back to login",
+        es: "← Volver al inicio de sesión",
+        de: "← Zurück zur Anmeldung",
+        it: "← Torna al login",
+        pt: "← Voltar ao login",
+        nl: "← Terug naar inloggen"
+      },
+      emailRequired: {
+        fr: "Email requis",
+        en: "Email required",
+        es: "Email requerido",
+        de: "E-Mail erforderlich",
+        it: "Email richiesta",
+        pt: "Email obrigatório",
+        nl: "E-mail vereist"
+      },
+      emailSent: {
+        fr: "✅ Email envoyé ! Vérifie ta boîte mail.",
+        en: "✅ Email sent! Check your inbox.",
+        es: "✅ ¡Email enviado! Revisa tu bandeja de entrada.",
+        de: "✅ E-Mail gesendet! Überprüfe deinen Posteingang.",
+        it: "✅ Email inviata! Controlla la tua casella di posta.",
+        pt: "✅ Email enviado! Verifique sua caixa de entrada.",
+        nl: "✅ E-mail verzonden! Controleer je inbox."
+      },
+      networkError: {
+        fr: "Erreur réseau",
+        en: "Network error",
+        es: "Error de red",
+        de: "Netzwerkfehler",
+        it: "Errore di rete",
+        pt: "Erro de rede",
+        nl: "Netwerkfout"
       }
     },
     
