@@ -2963,8 +2963,21 @@ function showAutoStartCountdown(seconds, reason) {
   const interval = setInterval(() => {
     remaining--;
     const numEl = document.getElementById('countdownNumber');
-    if (numEl) numEl.textContent = remaining;
-    if (remaining <= 0) {
+    if (numEl) {
+      if (remaining > 0) {
+        numEl.textContent = remaining;
+      } else {
+        // V35: Au lieu de fermer, afficher "Lancement..."
+        numEl.textContent = '🚀';
+        numEl.style.fontSize = '3em';
+        const h3 = overlay.querySelector('h3');
+        if (h3) h3.textContent = 'Lancement en cours...';
+        clearInterval(interval);
+        // L'overlay sera fermé par roomState quand la partie commence réellement
+      }
+    }
+    if (remaining <= -10) {
+      // Sécurité: fermer après 10s max d'attente supplémentaire
       clearInterval(interval);
       overlay.remove();
     }
@@ -2974,6 +2987,12 @@ function showAutoStartCountdown(seconds, reason) {
 socket.on("roomState", (s) => {
   // V35: Cacher le loader de matchmaking si présent
   hideMatchmakingLoader();
+  
+  // V35: Fermer le countdown overlay quand la partie commence
+  if (s.phase && s.phase !== 'LOBBY') {
+    const countdownOverlay = document.getElementById('autoStartCountdown');
+    if (countdownOverlay) countdownOverlay.remove();
+  }
   
   // D6: Stocker phase précédente et joueurs vivants pour vibration
   const previousPhase = state?.phase;
