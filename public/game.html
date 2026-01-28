@@ -651,11 +651,22 @@
           <span class="user-bar-credits" id="userBarCredits">Chat uniquement</span>
         </div>
         <div class="user-bar-right">
-          <button class="user-bar-btn" onclick="window.location.href='/avatar.html'" id="avatarBtn" style="display:none;">🎨 Avatar</button>
+          <button class="user-bar-btn" onclick="goToAvatarFromLobby()" id="avatarBtn" style="display:none;">🎨 Avatar</button>
           <button class="user-bar-btn logout" onclick="logoutGame()">🚪 Déconnexion</button>
         </div>
       `;
       document.body.insertBefore(userBar, document.body.firstChild);
+      
+      // V35: Fonction pour aller sur avatar en sauvegardant la room
+      window.goToAvatarFromLobby = function() {
+        const roomCode = sessionStorage.getItem('saboteur_room');
+        if (roomCode) {
+          // Stocker la room pour pouvoir y revenir (expire dans 5 min)
+          sessionStorage.setItem('pending_return_room', roomCode);
+          sessionStorage.setItem('pending_return_room_expiry', Date.now() + 5 * 60 * 1000);
+        }
+        window.location.href = '/avatar.html';
+      };
       
       // Style pour cacher les éléments
       const hideStyle = document.createElement('style');

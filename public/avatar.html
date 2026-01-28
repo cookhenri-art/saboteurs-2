@@ -897,8 +897,9 @@
       <h1 data-i18n="avatar.title">🎨 CRÉATEUR D'AVATAR IA</h1>
       <div class="header-buttons">
         <a href="#" onclick="showPaymentModal(); return false;" class="btn btn-pack" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">📦 Pack 50 vidéos + 50 avatars</a>
-        <a href="/" class="btn btn-secondary">🏠 <span data-i18n="game.buttons.backToLobby">Accueil</span></a>
-        <a href="/game.html" class="btn btn-primary">🎮 <span data-i18n="index.profile.playNow">Jouer</span></a>
+        <a href="/" class="btn btn-secondary">🏠 <span data-i18n="avatar.buttons.home">Accueil</span></a>
+        <a href="#" id="returnToRoomBtn" class="btn btn-primary" style="display:none;" onclick="returnToRoom(); return false;">🔙 <span data-i18n="avatar.buttons.returnToRoom">Retourner à ma room</span></a>
+        <a href="/game.html" id="playBtn" class="btn btn-primary">🎮 <span data-i18n="index.profile.playNow">Jouer</span></a>
       </div>
     </header>
 
@@ -1029,7 +1030,7 @@
             <p data-i18n="avatar.messages.avatarAppears">Ton avatar apparaîtra ici</p>
           </div>
           <img class="result-image" id="resultImage">
-          <button class="download-btn" id="downloadBtn" onclick="downloadAvatar()" data-i18n="avatar.buttons.download">⬇️ Télécharger</button>
+          <button class="download-btn" id="downloadBtn" onclick="downloadNewAvatar()" data-i18n="avatar.buttons.download">⬇️ Télécharger</button>
         </div>
 
         <div class="progress-bar" id="progressBar">
@@ -1652,7 +1653,7 @@
       } catch (e) { showError('Erreur'); }
     }
 
-    function downloadAvatar() {
+    function downloadNewAvatar() {
       if (!lastGeneratedUrl) return;
       const link = document.createElement('a');
       link.href = lastGeneratedUrl;
@@ -1830,7 +1831,44 @@
     document.addEventListener('DOMContentLoaded', () => {
       setTimeout(renderClassicAvatars, 500);
       setTimeout(initCustomAvatarSection, 600);
+      initReturnToRoom(); // V35: Check pending room
     });
+    
+    // V35: Gestion du retour à la room
+    function initReturnToRoom() {
+      const pendingRoom = sessionStorage.getItem('pending_return_room');
+      const expiry = parseInt(sessionStorage.getItem('pending_return_room_expiry') || '0');
+      
+      if (pendingRoom && Date.now() < expiry) {
+        // Afficher le bouton retour
+        const returnBtn = document.getElementById('returnToRoomBtn');
+        const playBtn = document.getElementById('playBtn');
+        if (returnBtn) {
+          returnBtn.style.display = '';
+          returnBtn.innerHTML = `🔙 <span>Retourner à ma room (${pendingRoom})</span>`;
+        }
+        if (playBtn) {
+          playBtn.style.display = 'none'; // Cacher le bouton Jouer normal
+        }
+      } else {
+        // Nettoyer les données expirées
+        sessionStorage.removeItem('pending_return_room');
+        sessionStorage.removeItem('pending_return_room_expiry');
+      }
+    }
+    
+    function returnToRoom() {
+      const pendingRoom = sessionStorage.getItem('pending_return_room');
+      if (pendingRoom) {
+        // Nettoyer
+        sessionStorage.removeItem('pending_return_room');
+        sessionStorage.removeItem('pending_return_room_expiry');
+        // Retourner à la room
+        window.location.href = `/game.html?room=${pendingRoom}`;
+      } else {
+        window.location.href = '/game.html';
+      }
+    }
 
     // ========================================
     // V32: AVATAR PERSO (UPLOAD / PHOTO)

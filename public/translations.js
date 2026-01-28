@@ -5308,6 +5308,24 @@ const TRANSLATIONS = {
         pt: "🎮 Voltar ao jogo",
         nl: "🎮 Terug naar spel"
       },
+      home: {
+        fr: "Accueil",
+        en: "Home",
+        es: "Inicio",
+        it: "Home",
+        de: "Startseite",
+        pt: "Início",
+        nl: "Home"
+      },
+      returnToRoom: {
+        fr: "Retourner à ma room",
+        en: "Return to my room",
+        es: "Volver a mi sala",
+        it: "Torna alla mia stanza",
+        de: "Zurück zu meinem Raum",
+        pt: "Voltar para minha sala",
+        nl: "Terug naar mijn kamer"
+      },
       importImage: {
         fr: "📁 Importer une image",
         en: "📁 Import an image",
