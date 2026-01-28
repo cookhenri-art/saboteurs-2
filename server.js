@@ -4937,12 +4937,11 @@ app.post("/api/rooms/join-random", (req, res) => {
         userAccountType = decoded.accountType || 'free';
         
         // Vérifier crédits vidéo
-        if (authDb) {
-          const user = authDb.exec(`SELECT video_credits FROM users WHERE id = ?`, [decoded.userId])[0];
-          if (user && user.values[0]) {
-            const credits = user.values[0][0];
-            hasVideoCredits = credits === null || credits > 0; // null = illimité
-          }
+        const userId = decoded.id || decoded.userId;
+        const user = dbGet("SELECT video_credits FROM users WHERE id = ?", [userId]);
+        if (user) {
+          const credits = user.video_credits;
+          hasVideoCredits = credits === null || credits > 0; // null = illimité
         }
       } catch (e) {
         // Token invalide
@@ -5985,16 +5984,20 @@ io.on("connection", (socket) => {
       let creatorAccountType = 'guest';
       let emailVerified = false;
       
-      if (authToken && authDb) {
+      if (authToken) {
         try {
           const decoded = jwt.verify(authToken, JWT_SECRET);
-          const userResult = authDb.exec(`SELECT account_type, email_verified FROM users WHERE id = ?`, [decoded.userId]);
-          if (userResult[0] && userResult[0].values[0]) {
-            creatorAccountType = userResult[0].values[0][0] || 'free';
-            emailVerified = userResult[0].values[0][1] === 1;
+          // Note: Le JWT utilise 'id' et non 'userId'
+          const userId = decoded.id || decoded.userId;
+          const user = dbGet("SELECT account_type, email_verified FROM users WHERE id = ?", [userId]);
+          if (user) {
+            creatorAccountType = user.account_type || 'free';
+            emailVerified = user.email_verified === 1;
           }
+          console.log('[Matchmaking] createRoom auth check:', { userId, creatorAccountType, emailVerified, user });
         } catch (e) {
           // Token invalide, reste guest
+          console.log('[Matchmaking] createRoom auth error:', e.message);
         }
       }
       
