@@ -81,6 +81,16 @@ const STORAGE = {
 // Mode debug: ajouter ?debug=1 dans l'URL pour créer un nouveau token à chaque session
 const isDebugMode = new URLSearchParams(window.location.search).get('debug') === '1';
 
+// V35: Matchmaking - Lire les paramètres URL
+const urlParams = new URLSearchParams(window.location.search);
+const urlRoomCode = urlParams.get('room');           // Code room pour rejoindre
+const urlIsPublic = urlParams.get('public') === 'true';  // Créer room publique
+const urlRoomName = urlParams.get('roomName') || '';     // Nom de la room publique
+const urlRoomType = urlParams.get('roomType') || 'video'; // 'video' ou 'chat'
+const urlIsMobile = urlParams.get('isMobile') === 'true' || /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+console.log('[Matchmaking] URL params:', { urlRoomCode, urlIsPublic, urlRoomName, urlRoomType, urlIsMobile });
+
 // Générer ou récupérer le playerToken (localStorage pour persistence entre sessions)
 function getOrCreatePlayerToken() {
   // En mode debug, créer un nouveau token à chaque fois pour tester avec plusieurs fenêtres
@@ -193,7 +203,77 @@ socket.on("connect", () => {
     disconnectReloadTimer = null;
   }
   attemptAutoReconnect();
+  
+  // V35: Matchmaking - Gestion automatique des paramètres URL
+  handleUrlMatchmaking();
 });
+
+// V35: Gérer les paramètres URL pour le matchmaking
+function handleUrlMatchmaking() {
+  // Si on a un code room dans l'URL, rejoindre automatiquement
+  if (urlRoomCode && !sessionStorage.getItem(STORAGE.room)) {
+    console.log('[Matchmaking] Auto-join room from URL:', urlRoomCode);
+    
+    // Attendre que le nom soit disponible ou demander
+    const savedName = sessionStorage.getItem(STORAGE.name);
+    if (savedName) {
+      autoJoinRoom(urlRoomCode, savedName);
+    } else {
+      // Stocker le code pour après
+      console.log('[Matchmaking] Need name first, storing pending join');
+      sessionStorage.setItem('pending_room_join', urlRoomCode);
+    }
+  }
+  
+  // V35: Si on doit créer une room publique
+  if (urlIsPublic && !urlRoomCode && !sessionStorage.getItem(STORAGE.room)) {
+    console.log('[Matchmaking] Will create public room after name entry');
+    sessionStorage.setItem('pending_public_room', 'true');
+  }
+}
+
+// V35: Rejoindre automatiquement une room depuis l'URL
+function autoJoinRoom(roomCode, playerName) {
+  const customization = window.D9Avatars?.getCustomizationForServer(homeSelectedTheme) || {};
+  let avatarUrl = customization.avatarUrl;
+  if (!avatarUrl) {
+    try {
+      const savedUser = localStorage.getItem('saboteur_user');
+      if (savedUser) {
+        const user = JSON.parse(savedUser);
+        avatarUrl = user.currentAvatar || null;
+      }
+    } catch (e) {}
+  }
+  const authToken = localStorage.getItem('saboteur_token') || null;
+  
+  socket.emit("joinRoom", {
+    playerId,
+    name: playerName,
+    roomCode: roomCode,
+    playerToken,
+    authToken,
+    avatarId: customization.avatarId,
+    avatarEmoji: customization.avatarEmoji,
+    avatarUrl: avatarUrl,
+    colorId: customization.colorId,
+    colorHex: customization.colorHex,
+    badgeId: customization.badgeId,
+    badgeEmoji: customization.badgeEmoji,
+    badgeName: customization.badgeName
+  }, (res) => {
+    if (res?.ok) {
+      sessionStorage.setItem(STORAGE.room, roomCode);
+      sessionStorage.setItem(STORAGE.name, playerName);
+      startHeartbeat();
+      console.log('[Matchmaking] Successfully joined room:', roomCode);
+    } else {
+      setError(res?.error || "Impossible de rejoindre cette room");
+      console.error('[Matchmaking] Failed to join room:', res?.error);
+    }
+  });
+}
+
 socket.on("disconnect", () => {
   isConnected = false;
   stopHeartbeat();
@@ -2591,7 +2671,14 @@ function createRoomFlow() {
     colorHex: customization.colorHex,
     badgeId: customization.badgeId,
     badgeEmoji: customization.badgeEmoji,
-    badgeName: customization.badgeName
+    badgeName: customization.badgeName,
+    // V35: Matchmaking public
+    isPublic: urlIsPublic,
+    roomName: urlRoomName || `Room de ${name}`,
+    maxPlayers: urlIsMobile ? 9 : 12,
+    isMobile: urlIsMobile,
+    chatOnly: urlRoomType === 'chat',
+    videoEnabled: urlRoomType !== 'chat'
   }, (res) => {
     if (!res?.ok) return setError(res?.error || "Erreur création");
     sessionStorage.setItem(STORAGE.room, res.roomCode);
@@ -2602,8 +2689,28 @@ function createRoomFlow() {
 }
 
 // UX: the big home button creates the room directly.
-$("createBtn").onclick = createRoomFlow;
-$("createRoomBtn").onclick = createRoomFlow;
+$("createBtn").onclick = handleCreateOrJoin;
+$("createRoomBtn").onclick = handleCreateOrJoin;
+
+// V35: Gère création ou join selon les paramètres URL
+function handleCreateOrJoin() {
+  clearError();
+  const name = mustName();
+  if (!name) return;
+  sessionStorage.setItem(STORAGE.name, name);
+  
+  // V35: Vérifier s'il y a un room pending à rejoindre
+  const pendingJoin = sessionStorage.getItem('pending_room_join');
+  if (pendingJoin) {
+    sessionStorage.removeItem('pending_room_join');
+    console.log('[Matchmaking] Joining pending room:', pendingJoin);
+    autoJoinRoom(pendingJoin, name);
+    return;
+  }
+  
+  // Sinon, créer une room (publique ou privée selon URL)
+  createRoomFlow();
+}
 
 $("joinRoomBtn").onclick = () => {
   clearError();
@@ -2675,6 +2782,75 @@ let lastScrolledPhase = null;
 function noAutoScroll() {
   // Ne rien faire - pas de scroll automatique
   console.log('[No Auto Scroll] Position maintenue par l\'utilisateur');
+}
+
+// ============================================================================
+// V35: MATCHMAKING SOCKET EVENTS
+// ============================================================================
+
+// Quand une room publique est fermée (inactivité, etc.)
+socket.on("roomClosed", (data) => {
+  console.log('[Matchmaking] Room closed:', data);
+  sessionStorage.removeItem(STORAGE.room);
+  stopHeartbeat();
+  setError(data.message || "La room a été fermée");
+  showScreen("homeScreen");
+});
+
+// Countdown auto-start quand room publique pleine
+socket.on("autoStartCountdown", (data) => {
+  console.log('[Matchmaking] Auto-start countdown:', data);
+  showAutoStartCountdown(data.seconds, data.reason);
+});
+
+// Changement d'hôte (si l'hôte quitte)
+socket.on("hostChanged", (data) => {
+  console.log('[Matchmaking] Host changed:', data);
+  // Afficher une notification
+  const me = state?.players?.find(p => p.playerId === playerId);
+  if (data.newHostId === playerId) {
+    setNotice("🎯 Tu es maintenant l'hôte de la room !");
+  } else {
+    setNotice(`👑 ${data.newHostName} est maintenant l'hôte`);
+  }
+});
+
+// V35: Afficher le countdown auto-start
+function showAutoStartCountdown(seconds, reason) {
+  // Supprimer un éventuel ancien countdown
+  const existing = document.getElementById('autoStartCountdown');
+  if (existing) existing.remove();
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'autoStartCountdown';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+  `;
+  overlay.innerHTML = `
+    <div style="text-align:center;padding:30px;background:rgba(0,0,0,0.9);border:2px solid var(--neon-main,#00ffff);border-radius:15px;">
+      <h3 style="color:var(--neon-main,#00ffff);margin:0 0 15px 0;">🚀 La partie va commencer !</h3>
+      <div id="countdownNumber" style="font-size:4em;font-weight:bold;color:var(--neon-main,#00ffff);text-shadow:0 0 15px var(--neon-main,#00ffff);">${seconds}</div>
+      <p style="margin-top:10px;color:rgba(255,255,255,0.7);">${reason === 'roomFull' ? 'La room est pleine' : ''}</p>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  
+  let remaining = seconds;
+  const interval = setInterval(() => {
+    remaining--;
+    const numEl = document.getElementById('countdownNumber');
+    if (numEl) numEl.textContent = remaining;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      overlay.remove();
+    }
+  }, 1000);
 }
 
 socket.on("roomState", (s) => {
