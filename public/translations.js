@@ -3321,6 +3321,46 @@ const TRANSLATIONS = {
       }
     },
     
+    // V35: Auto-start countdown
+    autoStart: {
+      title: {
+        fr: "🚀 La partie va commencer !",
+        en: "🚀 The game is about to start!",
+        es: "🚀 ¡La partida va a comenzar!",
+        de: "🚀 Das Spiel beginnt gleich!",
+        it: "🚀 La partita sta per iniziare!",
+        pt: "🚀 O jogo vai começar!",
+        nl: "🚀 Het spel gaat beginnen!"
+      },
+      roomFull: {
+        fr: "La room est pleine",
+        en: "The room is full",
+        es: "La sala está llena",
+        de: "Der Raum ist voll",
+        it: "La stanza è piena",
+        pt: "A sala está cheia",
+        nl: "De kamer is vol"
+      },
+      allReady: {
+        fr: "Tous les joueurs sont prêts",
+        en: "All players are ready",
+        es: "Todos los jugadores están listos",
+        de: "Alle Spieler sind bereit",
+        it: "Tutti i giocatori sono pronti",
+        pt: "Todos os jogadores estão prontos",
+        nl: "Alle spelers zijn klaar"
+      },
+      launching: {
+        fr: "Lancement en cours...",
+        en: "Launching...",
+        es: "Iniciando...",
+        de: "Wird gestartet...",
+        it: "Avvio in corso...",
+        pt: "Iniciando...",
+        nl: "Starten..."
+      }
+    },
+    
     // Boutons
     buttons: {
       // V35: Boutons navigation

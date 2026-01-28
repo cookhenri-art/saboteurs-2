@@ -2939,8 +2939,18 @@ function showAutoStartCountdown(seconds, reason) {
   const existing = document.getElementById('autoStartCountdown');
   if (existing) existing.remove();
   
+  // V35: Textes traduits
+  const titleText = t('game.autoStart.title') || '🚀 La partie va commencer !';
+  const reasonText = reason === 'roomFull' 
+    ? (t('game.autoStart.roomFull') || 'La room est pleine')
+    : reason === 'allReady'
+      ? (t('game.autoStart.allReady') || 'Tous les joueurs sont prêts')
+      : '';
+  const launchingText = t('game.autoStart.launching') || 'Lancement en cours...';
+  
   const overlay = document.createElement('div');
   overlay.id = 'autoStartCountdown';
+  overlay.dataset.launchingText = launchingText; // Stocker pour usage ultérieur
   overlay.style.cssText = `
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
@@ -2952,9 +2962,9 @@ function showAutoStartCountdown(seconds, reason) {
   `;
   overlay.innerHTML = `
     <div style="text-align:center;padding:30px;background:rgba(0,0,0,0.9);border:2px solid var(--neon-main,#00ffff);border-radius:15px;">
-      <h3 style="color:var(--neon-main,#00ffff);margin:0 0 15px 0;">🚀 La partie va commencer !</h3>
+      <h3 style="color:var(--neon-main,#00ffff);margin:0 0 15px 0;">${titleText}</h3>
       <div id="countdownNumber" style="font-size:4em;font-weight:bold;color:var(--neon-main,#00ffff);text-shadow:0 0 15px var(--neon-main,#00ffff);">${seconds}</div>
-      <p style="margin-top:10px;color:rgba(255,255,255,0.7);">${reason === 'roomFull' ? 'La room est pleine' : ''}</p>
+      <p style="margin-top:10px;color:rgba(255,255,255,0.7);">${reasonText}</p>
     </div>
   `;
   document.body.appendChild(overlay);
@@ -2971,7 +2981,7 @@ function showAutoStartCountdown(seconds, reason) {
         numEl.textContent = '🚀';
         numEl.style.fontSize = '3em';
         const h3 = overlay.querySelector('h3');
-        if (h3) h3.textContent = 'Lancement en cours...';
+        if (h3) h3.textContent = overlay.dataset.launchingText;
         clearInterval(interval);
         // L'overlay sera fermé par roomState quand la partie commence réellement
       }
