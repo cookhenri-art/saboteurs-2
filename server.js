@@ -6191,7 +6191,7 @@ io.on("connection", (socket) => {
       const newPlayerCount = room.players.size;
       if (newPlayerCount >= room.maxPlayers) {
         logger.info("room_public_full_autostart", { roomCode: code, playerCount: newPlayerCount, maxPlayers: room.maxPlayers });
-        // Petit délai pour laisser le dernier joueur voir le lobby
+        // V35: Délai réduit (500ms au lieu de 2s) pour laisser le dernier joueur voir le lobby
         setTimeout(() => {
           if (room.phase === 'LOBBY' && !room.started && room.players.size >= 6) {
             // Notifier tous les joueurs que la partie va démarrer
@@ -6202,7 +6202,7 @@ io.on("connection", (socket) => {
               }
             }, 5000);
           }
-        }, 2000);
+        }, 500);
       }
     }
     
