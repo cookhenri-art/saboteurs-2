@@ -887,6 +887,28 @@ const TRANSLATIONS = {
         de: "Ohne Konto: kein Video, kein gespeicherter Fortschritt",
         pt: "Sem conta: sem vídeo, sem progresso salvo",
         nl: "Zonder account: geen video, geen opgeslagen voortgang"
+      },
+      privateRoom: {
+        fr: "en room privée",
+        en: "in private room",
+        es: "en sala privada",
+        it: "in stanza privata",
+        de: "im privaten Raum",
+        pt: "em sala privada",
+        nl: "in privékamer"
+      }
+    },
+    
+    // Explication Room Privée/Publique
+    explanation: {
+      button: {
+        fr: "Différence room privée / publique",
+        en: "Difference private / public room",
+        es: "Diferencia sala privada / pública",
+        it: "Differenza stanza privata / pubblica",
+        de: "Unterschied privater / öffentlicher Raum",
+        pt: "Diferença sala privada / pública",
+        nl: "Verschil privé / openbare kamer"
       }
     },
     

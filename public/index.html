@@ -215,6 +215,31 @@
       box-shadow: 0 5px 30px rgba(157, 78, 221, 0.5);
       transform: translateY(-2px);
     }
+    
+    .btn-guest-subtitle {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.8em;
+      margin: 5px 0 10px 0;
+    }
+    
+    .btn-explanation {
+      background: transparent;
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.6);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85em;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .btn-explanation:hover {
+      border-color: var(--neon-main);
+      color: var(--neon-main);
+      background: rgba(0, 255, 255, 0.05);
+    }
 
     /* Divider */
     .divider {
@@ -1117,6 +1142,11 @@
         <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
           🎮 Jouer en tant qu'invité
         </button>
+        <p class="btn-guest-subtitle" data-i18n="index.auth.privateRoom">en room privée</p>
+        
+        <button class="btn-explanation" onclick="showRoomExplanation()">
+          ❓ <span data-i18n="index.explanation.button">Différence room privée / publique</span>
+        </button>
         
         <!-- Liens Premium -->
         <div class="premium-links">
@@ -1163,6 +1193,11 @@
         <div class="divider"><span data-i18n="index.auth.or">OU</span></div>
         <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
           🎮 Jouer en tant qu'invité
+        </button>
+        <p class="btn-guest-subtitle" data-i18n="index.auth.privateRoom">en room privée</p>
+        
+        <button class="btn-explanation" onclick="showRoomExplanation()">
+          ❓ <span data-i18n="index.explanation.button">Différence room privée / publique</span>
         </button>
         
         <!-- Liens Premium -->
@@ -1257,6 +1292,45 @@
         
         <!-- Stats -->
         <div id="matchmakingStats" class="matchmaking-stats"></div>
+      </div>
+
+      <!-- V35: Modal Explication Room Privée/Publique -->
+      <div class="modal" id="roomExplanationModal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+          <h3 style="color: var(--neon-cyan);">❓ Room Privée vs Publique</h3>
+          
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #9d4edd; margin-bottom: 10px;">🔒 Room Privée</h4>
+            <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+              <li>Tu crées une room avec un <strong>code à 4 chiffres</strong></li>
+              <li>Tu partages ce code avec tes amis</li>
+              <li>Seuls ceux qui ont le code peuvent rejoindre</li>
+              <li>Idéal pour jouer <strong>entre amis</strong></li>
+              <li>Accessible à tous (invités et comptes)</li>
+            </ul>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #00cc88; margin-bottom: 10px;">🌐 Room Publique</h4>
+            <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+              <li>Ta room apparaît dans la <strong>liste publique</strong></li>
+              <li>N'importe qui peut la rejoindre</li>
+              <li>Parfait pour <strong>rencontrer de nouveaux joueurs</strong></li>
+              <li>Tu peux ajouter un message pour attirer les joueurs</li>
+              <li>Nécessite un <strong>compte vérifié</strong> pour créer</li>
+            </ul>
+          </div>
+          
+          <div style="background: rgba(0, 255, 255, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--neon-cyan);">
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9em;">
+              💡 <strong>Conseil :</strong> Crée un compte gratuit pour accéder aux rooms publiques et garder ton historique de parties !
+            </p>
+          </div>
+          
+          <button class="btn btn-primary btn-full" style="margin-top: 20px;" onclick="hideRoomExplanation()">
+            👍 Compris !
+          </button>
+        </div>
       </div>
 
       <!-- V35: Modal Pack Famille -->
@@ -1876,6 +1950,15 @@
         localStorage.setItem('saboteur_theme', theme);
       }
       window.location.href = '/game.html?mode=guest&theme=' + theme;
+    }
+    
+    // V35: Modal explication room privée/publique
+    function showRoomExplanation() {
+      document.getElementById('roomExplanationModal').style.display = 'flex';
+    }
+    
+    function hideRoomExplanation() {
+      document.getElementById('roomExplanationModal').style.display = 'none';
     }
 
     function goToGame() { 
