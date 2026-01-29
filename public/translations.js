@@ -53,18 +53,6 @@ const TRANSLATIONS = {
       },
       chameleon: {
         fr: "Caméléon", en: "Chameleon", es: "Camaleón", it: "Camaleonte", de: "Chamäleon", pt: "Camaleão", nl: "Kameleon"
-      },
-      dark_lord: {
-        fr: "Seigneur Noir", en: "Dark Lord", es: "Señor Oscuro", it: "Signore Oscuro", de: "Dunkler Herr", pt: "Senhor das Trevas", nl: "Duistere Heer"
-      },
-      space_corsair: {
-        fr: "Corsaire Spatial", en: "Space Corsair", es: "Corsario Espacial", it: "Corsaro Spaziale", de: "Weltraumpirat", pt: "Corsário Espacial", nl: "Ruimtecorsaar"
-      },
-      tree_guardian: {
-        fr: "Gardien Arbre", en: "Tree Guardian", es: "Guardián Árbol", it: "Guardiano Albero", de: "Baumwächter", pt: "Guardião Árvore", nl: "Boom Beschermer"
-      },
-      cyborg_warrior: {
-        fr: "Cyborg Guerrière", en: "Cyborg Warrior", es: "Guerrera Cyborg", it: "Guerriera Cyborg", de: "Cyborg Kriegerin", pt: "Guerreira Ciborgue", nl: "Cyborg Strijdster"
       }
     },
     
@@ -95,24 +83,6 @@ const TRANSLATIONS = {
       },
       chameleon: {
         fr: "Transformiste", en: "Shapeshifter", es: "Metamorfo", it: "Mutaforma", de: "Gestaltwandler", pt: "Metamorfo", nl: "Gedaanteverwisselaar"
-      },
-      vampire_lord: {
-        fr: "Seigneur Vampire", en: "Vampire Lord", es: "Señor Vampiro", it: "Signore Vampiro", de: "Vampirfürst", pt: "Senhor Vampiro", nl: "Vampierheer"
-      },
-      banshee: {
-        fr: "Esprit", en: "Banshee", es: "Espíritu", it: "Spirito", de: "Geist", pt: "Espírito", nl: "Geest"
-      },
-      demon: {
-        fr: "Démon", en: "Demon", es: "Demonio", it: "Demone", de: "Dämon", pt: "Demônio", nl: "Demon"
-      },
-      blade_hunter: {
-        fr: "Chasseur de Vampires", en: "Vampire Hunter", es: "Cazador de Vampiros", it: "Cacciatore di Vampiri", de: "Vampirjäger", pt: "Caçador de Vampiros", nl: "Vampier Jager"
-      },
-      wendigo: {
-        fr: "Créature Maudite", en: "Cursed Creature", es: "Criatura Maldita", it: "Creatura Maledetta", de: "Verfluchte Kreatur", pt: "Criatura Amaldiçoada", nl: "Vervloekt Wezen"
-      },
-      witcher: {
-        fr: "Chasseur de Monstres", en: "Monster Hunter", es: "Cazador de Monstruos", it: "Cacciatore di Mostri", de: "Monsterjäger", pt: "Caçador de Monstros", nl: "Monster Jager"
       }
     },
     
@@ -143,21 +113,6 @@ const TRANSLATIONS = {
       },
       chameleon: {
         fr: "Métamorphe", en: "Metamorph", es: "Metamorfo", it: "Metamorfo", de: "Metamorph", pt: "Metamorfo", nl: "Metamorf"
-      },
-      dark_wizard: {
-        fr: "Sorcier Noir", en: "Dark Wizard", es: "Mago Oscuro", it: "Mago Oscuro", de: "Schwarzmagier", pt: "Mago Negro", nl: "Duistere Tovenaar"
-      },
-      mystic_sorcerer: {
-        fr: "Sorcier Mystique", en: "Mystic Sorcerer", es: "Hechicero Místico", it: "Stregone Mistico", de: "Mystischer Zauberer", pt: "Feiticeiro Místico", nl: "Mystieke Tovenaar"
-      },
-      necromancer: {
-        fr: "Nécromancien", en: "Necromancer", es: "Nigromante", it: "Negromante", de: "Nekromant", pt: "Necromante", nl: "Necromant"
-      },
-      druid: {
-        fr: "Druide", en: "Druid", es: "Druida", it: "Druido", de: "Druide", pt: "Druida", nl: "Druïde"
-      },
-      red_witch: {
-        fr: "Sorcière Rouge", en: "Red Witch", es: "Bruja Roja", it: "Strega Rossa", de: "Rote Hexe", pt: "Bruxa Vermelha", nl: "Rode Heks"
       }
     },
     
@@ -188,163 +143,6 @@ const TRANSLATIONS = {
       },
       chameleon: {
         fr: "Polymorphe", en: "Polymorph", es: "Polimorfo", it: "Polimorfo", de: "Polymorph", pt: "Polimorfo", nl: "Polymorf"
-      },
-      warrior_woman: {
-        fr: "Guerrière", en: "Warrior Woman", es: "Guerrera", it: "Guerriera", de: "Kriegerin", pt: "Guerreira", nl: "Krijgsvrouw"
-      },
-      war_god: {
-        fr: "Dieu de Guerre", en: "God of War", es: "Dios de la Guerra", it: "Dio della Guerra", de: "Kriegsgott", pt: "Deus da Guerra", nl: "Oorlogsgod"
-      },
-      elven_queen: {
-        fr: "Reine Elfe", en: "Elven Queen", es: "Reina Elfa", it: "Regina Elfica", de: "Elfenkönigin", pt: "Rainha Élfica", nl: "Elfen Koningin"
-      }
-    }
-  },
-
-  // ============================================================================
-  // PERSONNAGES D'AVATARS IA PAR THÈME ET PAR LANGUE
-  // Utilisé dans avatar.html pour les boutons de sélection de personnages
-  // ============================================================================
-  avatarCharacters: {
-    // ====== THÈME SPATIAL (default) ======
-    default: {
-      astronaut: {
-        fr: "Astronaute", en: "Astronaut", es: "Astronauta", it: "Astronauta", de: "Astronaut", pt: "Astronauta", nl: "Astronaut"
-      },
-      alien: {
-        fr: "Alien", en: "Alien", es: "Alienígena", it: "Alieno", de: "Außerirdischer", pt: "Alienígena", nl: "Buitenaards wezen"
-      },
-      bounty_hunter: {
-        fr: "Chasseur de primes", en: "Bounty Hunter", es: "Cazarrecompensas", it: "Cacciatore di taglie", de: "Kopfgeldjäger", pt: "Caçador de recompensas", nl: "Premiejager"
-      },
-      cyborg: {
-        fr: "Robot/Cyborg", en: "Robot/Cyborg", es: "Robot/Cyborg", it: "Robot/Cyborg", de: "Roboter/Cyborg", pt: "Robô/Ciborgue", nl: "Robot/Cyborg"
-      },
-      captain: {
-        fr: "Capitaine", en: "Captain", es: "Capitán", it: "Capitano", de: "Kapitän", pt: "Capitão", nl: "Kapitein"
-      },
-      dark_lord: {
-        fr: "Seigneur Noir", en: "Dark Lord", es: "Señor Oscuro", it: "Signore Oscuro", de: "Dunkler Herr", pt: "Senhor das Trevas", nl: "Duistere Heer"
-      },
-      space_corsair: {
-        fr: "Corsaire Spatial", en: "Space Corsair", es: "Corsario Espacial", it: "Corsaro Spaziale", de: "Weltraumpirat", pt: "Corsário Espacial", nl: "Ruimtecorsaar"
-      },
-      tree_guardian: {
-        fr: "Gardien Arbre", en: "Tree Guardian", es: "Guardián Árbol", it: "Guardiano Albero", de: "Baumwächter", pt: "Guardião Árvore", nl: "Boom Beschermer"
-      },
-      cyborg_warrior: {
-        fr: "Cyborg Guerrière", en: "Cyborg Warrior", es: "Guerrera Cyborg", it: "Guerriera Cyborg", de: "Cyborg Kriegerin", pt: "Guerreira Ciborgue", nl: "Cyborg Strijdster"
-      }
-    },
-
-    // ====== THÈME LOUP-GAROU (werewolf) ======
-    werewolf: {
-      werewolf: {
-        fr: "Loup-garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf"
-      },
-      vampire: {
-        fr: "Vampire", en: "Vampire", es: "Vampiro", it: "Vampiro", de: "Vampir", pt: "Vampiro", nl: "Vampier"
-      },
-      mayor: {
-        fr: "Maire du village", en: "Village Mayor", es: "Alcalde del pueblo", it: "Sindaco del villaggio", de: "Bürgermeister", pt: "Prefeito da aldeia", nl: "Burgemeester"
-      },
-      peasant: {
-        fr: "Paysan", en: "Peasant", es: "Campesino", it: "Contadino", de: "Bauer", pt: "Camponês", nl: "Boer"
-      },
-      witch: {
-        fr: "Sorcière", en: "Witch", es: "Bruja", it: "Strega", de: "Hexe", pt: "Bruxa", nl: "Heks"
-      },
-      hunter: {
-        fr: "Chasseur", en: "Hunter", es: "Cazador", it: "Cacciatore", de: "Jäger", pt: "Caçador", nl: "Jager"
-      },
-      vampire_lord: {
-        fr: "Seigneur Vampire", en: "Vampire Lord", es: "Señor Vampiro", it: "Signore Vampiro", de: "Vampirfürst", pt: "Senhor Vampiro", nl: "Vampierheer"
-      },
-      banshee: {
-        fr: "Esprit", en: "Banshee", es: "Espíritu", it: "Spirito", de: "Geist", pt: "Espírito", nl: "Geest"
-      },
-      demon: {
-        fr: "Démon", en: "Demon", es: "Demonio", it: "Demone", de: "Dämon", pt: "Demônio", nl: "Demon"
-      },
-      blade_hunter: {
-        fr: "Chasseur de Vampires", en: "Vampire Hunter", es: "Cazador de Vampiros", it: "Cacciatore di Vampiri", de: "Vampirjäger", pt: "Caçador de Vampiros", nl: "Vampier Jager"
-      },
-      wendigo: {
-        fr: "Créature Maudite", en: "Cursed Creature", es: "Criatura Maldita", it: "Creatura Maledetta", de: "Verfluchte Kreatur", pt: "Criatura Amaldiçoada", nl: "Vervloekt Wezen"
-      },
-      witcher: {
-        fr: "Chasseur de Monstres", en: "Monster Hunter", es: "Cazador de Monstruos", it: "Cacciatore di Mostri", de: "Monsterjäger", pt: "Caçador de Monstros", nl: "Monster Jager"
-      }
-    },
-
-    // ====== THÈME SORCIERS (wizard-academy) ======
-    "wizard-academy": {
-      wizard: {
-        fr: "Sorcier/Sorcière", en: "Wizard", es: "Mago/Maga", it: "Mago/Maga", de: "Zauberer/in", pt: "Mago/Maga", nl: "Tovenaar"
-      },
-      house_elf: {
-        fr: "Elfe de maison", en: "House Elf", es: "Elfo doméstico", it: "Elfo domestico", de: "Hauself", pt: "Elfo doméstico", nl: "Huiself"
-      },
-      goblin: {
-        fr: "Gobelin", en: "Goblin", es: "Duende", it: "Goblin", de: "Kobold", pt: "Goblin", nl: "Goblin"
-      },
-      ghost: {
-        fr: "Fantôme", en: "Ghost", es: "Fantasma", it: "Fantasma", de: "Geist", pt: "Fantasma", nl: "Spook"
-      },
-      professor: {
-        fr: "Professeur", en: "Professor", es: "Profesor", it: "Professore", de: "Professor", pt: "Professor", nl: "Professor"
-      },
-      creature: {
-        fr: "Créature magique", en: "Magical Creature", es: "Criatura mágica", it: "Creatura magica", de: "Magisches Wesen", pt: "Criatura mágica", nl: "Magisch wezen"
-      },
-      dark_wizard: {
-        fr: "Sorcier Noir", en: "Dark Wizard", es: "Mago Oscuro", it: "Mago Oscuro", de: "Schwarzmagier", pt: "Mago Negro", nl: "Duistere Tovenaar"
-      },
-      mystic_sorcerer: {
-        fr: "Sorcier Mystique", en: "Mystic Sorcerer", es: "Hechicero Místico", it: "Stregone Mistico", de: "Mystischer Zauberer", pt: "Feiticeiro Místico", nl: "Mystieke Tovenaar"
-      },
-      necromancer: {
-        fr: "Nécromancien", en: "Necromancer", es: "Nigromante", it: "Negromante", de: "Nekromant", pt: "Necromante", nl: "Necromant"
-      },
-      druid: {
-        fr: "Druide", en: "Druid", es: "Druida", it: "Druido", de: "Druide", pt: "Druida", nl: "Druïde"
-      },
-      red_witch: {
-        fr: "Sorcière Rouge", en: "Red Witch", es: "Bruja Roja", it: "Strega Rossa", de: "Rote Hexe", pt: "Bruxa Vermelha", nl: "Rode Heks"
-      }
-    },
-
-    // ====== THÈME MYTHIQUE (mythic-realms) ======
-    "mythic-realms": {
-      knight: {
-        fr: "Chevalier", en: "Knight", es: "Caballero", it: "Cavaliere", de: "Ritter", pt: "Cavaleiro", nl: "Ridder"
-      },
-      dragon: {
-        fr: "Dragon humanoïde", en: "Dragon Humanoid", es: "Dragón humanoide", it: "Drago umanoide", de: "Drachen-Humanoide", pt: "Dragão humanoide", nl: "Draak Humanoïde"
-      },
-      dwarf: {
-        fr: "Nain guerrier", en: "Dwarf Warrior", es: "Enano guerrero", it: "Nano guerriero", de: "Zwerg Krieger", pt: "Anão guerreiro", nl: "Dwerg Krijger"
-      },
-      elf: {
-        fr: "Elfe archer", en: "Elven Archer", es: "Elfo arquero", it: "Elfo arciere", de: "Elfen Bogenschütze", pt: "Elfo arqueiro", nl: "Elfen Boogschutter"
-      },
-      orc: {
-        fr: "Orque", en: "Orc", es: "Orco", it: "Orco", de: "Ork", pt: "Orco", nl: "Ork"
-      },
-      royalty: {
-        fr: "Roi/Reine", en: "King/Queen", es: "Rey/Reina", it: "Re/Regina", de: "König/in", pt: "Rei/Rainha", nl: "Koning/in"
-      },
-      barbarian: {
-        fr: "Barbare", en: "Barbarian", es: "Bárbaro", it: "Barbaro", de: "Barbar", pt: "Bárbaro", nl: "Barbaar"
-      },
-      warrior_woman: {
-        fr: "Guerrière", en: "Warrior Woman", es: "Guerrera", it: "Guerriera", de: "Kriegerin", pt: "Guerreira", nl: "Krijgsvrouw"
-      },
-      war_god: {
-        fr: "Dieu de Guerre", en: "God of War", es: "Dios de la Guerra", it: "Dio della Guerra", de: "Kriegsgott", pt: "Deus da Guerra", nl: "Oorlogsgod"
-      },
-      elven_queen: {
-        fr: "Reine Elfe", en: "Elven Queen", es: "Reina Elfa", it: "Regina Elfica", de: "Elfenkönigin", pt: "Rainha Élfica", nl: "Elfen Koningin"
       }
     }
   },
@@ -6140,6 +5938,137 @@ const TRANSLATIONS = {
         de: "✅ Foto aufgenommen!",
         pt: "✅ Foto capturada!",
         nl: "✅ Foto gemaakt!"
+      }
+    },
+    
+    // Noms des thèmes d'avatars
+    themes: {
+      spatial: {
+        fr: "Spatial", en: "Space", es: "Espacial", it: "Spaziale", de: "Weltraum", pt: "Espacial", nl: "Ruimte"
+      },
+      werewolf: {
+        fr: "Loup-Garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf"
+      },
+      wizard: {
+        fr: "Sorciers", en: "Wizards", es: "Magos", it: "Maghi", de: "Zauberer", pt: "Magos", nl: "Tovenaars"
+      },
+      mythic: {
+        fr: "Mythique", en: "Mythical", es: "Mítico", it: "Mitico", de: "Mythisch", pt: "Mítico", nl: "Mythisch"
+      }
+    },
+    
+    // Presets de style
+    presets: {
+      balanced: {
+        fr: "⚖️ Équilibré", en: "⚖️ Balanced", es: "⚖️ Equilibrado", it: "⚖️ Equilibrato", de: "⚖️ Ausgewogen", pt: "⚖️ Equilibrado", nl: "⚖️ Gebalanceerd"
+      },
+      realistic: {
+        fr: "👤 Réaliste", en: "👤 Realistic", es: "👤 Realista", it: "👤 Realistico", de: "👤 Realistisch", pt: "👤 Realista", nl: "👤 Realistisch"
+      },
+      stylized: {
+        fr: "🎨 Stylisé", en: "🎨 Stylized", es: "🎨 Estilizado", it: "🎨 Stilizzato", de: "🎨 Stilisiert", pt: "🎨 Estilizado", nl: "🎨 Gestileerd"
+      },
+      extreme: {
+        fr: "🔥 Extrême", en: "🔥 Extreme", es: "🔥 Extremo", it: "🔥 Estremo", de: "🔥 Extrem", pt: "🔥 Extremo", nl: "🔥 Extreem"
+      },
+      custom: {
+        fr: "⭐ Mon style", en: "⭐ My Style", es: "⭐ Mi Estilo", it: "⭐ Il Mio Stile", de: "⭐ Mein Stil", pt: "⭐ Meu Estilo", nl: "⭐ Mijn Stijl"
+      }
+    },
+    
+    // Sliders
+    sliders: {
+      styleTitle: {
+        fr: "🔧 STYLE DE RENDU", en: "🔧 RENDER STYLE", es: "🔧 ESTILO DE RENDERIZADO", it: "🔧 STILE DI RENDERING", de: "🔧 RENDER-STIL", pt: "🔧 ESTILO DE RENDERIZAÇÃO", nl: "🔧 RENDERSTIJL"
+      },
+      resemblance: {
+        fr: "👤 Ressemblance au visage", en: "👤 Face Resemblance", es: "👤 Parecido facial", it: "👤 Somiglianza facciale", de: "👤 Gesichtsähnlichkeit", pt: "👤 Semelhança facial", nl: "👤 Gezichtsgelijkenis"
+      },
+      styleStrength: {
+        fr: "🎨 Force du style/prompt", en: "🎨 Style/Prompt Strength", es: "🎨 Fuerza del estilo/prompt", it: "🎨 Forza stile/prompt", de: "🎨 Stil-/Prompt-Stärke", pt: "🎨 Força do estilo/prompt", nl: "🎨 Stijl/Prompt Sterkte"
+      },
+      transformation: {
+        fr: "🔄 Niveau de transformation", en: "🔄 Transformation Level", es: "🔄 Nivel de transformación", it: "🔄 Livello di trasformazione", de: "🔄 Transformationsstufe", pt: "🔄 Nível de transformação", nl: "🔄 Transformatieniveau"
+      },
+      structure: {
+        fr: "📐 Conservation de la structure", en: "📐 Structure Preservation", es: "📐 Conservación de estructura", it: "📐 Conservazione struttura", de: "📐 Strukturerhaltung", pt: "📐 Conservação da estrutura", nl: "📐 Structuurbehoud"
+      },
+      hints: {
+        stylized: {
+          fr: "Stylisé", en: "Stylized", es: "Estilizado", it: "Stilizzato", de: "Stilisiert", pt: "Estilizado", nl: "Gestileerd"
+        },
+        faithful: {
+          fr: "Fidèle", en: "Faithful", es: "Fiel", it: "Fedele", de: "Getreu", pt: "Fiel", nl: "Getrouw"
+        },
+        subtle: {
+          fr: "Subtil", en: "Subtle", es: "Sutil", it: "Sottile", de: "Subtil", pt: "Sutil", nl: "Subtiel"
+        },
+        intense: {
+          fr: "Intense", en: "Intense", es: "Intenso", it: "Intenso", de: "Intensiv", pt: "Intenso", nl: "Intens"
+        },
+        original: {
+          fr: "Original", en: "Original", es: "Original", it: "Originale", de: "Original", pt: "Original", nl: "Origineel"
+        },
+        transformed: {
+          fr: "Transformé", en: "Transformed", es: "Transformado", it: "Trasformato", de: "Transformiert", pt: "Transformado", nl: "Getransformeerd"
+        },
+        free: {
+          fr: "Libre", en: "Free", es: "Libre", it: "Libero", de: "Frei", pt: "Livre", nl: "Vrij"
+        }
+      }
+    },
+    
+    // Noms des personnages d'avatars par thème
+    characters: {
+      default: {
+        astronaut: { fr: "Astronaute", en: "Astronaut", es: "Astronauta", it: "Astronauta", de: "Astronaut", pt: "Astronauta", nl: "Astronaut" },
+        alien: { fr: "Alien", en: "Alien", es: "Alienígena", it: "Alieno", de: "Außerirdischer", pt: "Alienígena", nl: "Buitenaards wezen" },
+        bounty_hunter: { fr: "Chasseur de primes", en: "Bounty Hunter", es: "Cazarrecompensas", it: "Cacciatore di taglie", de: "Kopfgeldjäger", pt: "Caçador de recompensas", nl: "Premiejager" },
+        cyborg: { fr: "Robot/Cyborg", en: "Robot/Cyborg", es: "Robot/Cyborg", it: "Robot/Cyborg", de: "Roboter/Cyborg", pt: "Robô/Ciborgue", nl: "Robot/Cyborg" },
+        captain: { fr: "Capitaine", en: "Captain", es: "Capitán", it: "Capitano", de: "Kapitän", pt: "Capitão", nl: "Kapitein" },
+        dark_lord: { fr: "Seigneur Noir", en: "Dark Lord", es: "Señor Oscuro", it: "Signore Oscuro", de: "Dunkler Herr", pt: "Senhor das Trevas", nl: "Duistere Heer" },
+        space_corsair: { fr: "Corsaire Spatial", en: "Space Corsair", es: "Corsario Espacial", it: "Corsaro Spaziale", de: "Weltraumpirat", pt: "Corsário Espacial", nl: "Ruimtecorsaar" },
+        tree_guardian: { fr: "Gardien Arbre", en: "Tree Guardian", es: "Guardián Árbol", it: "Guardiano Albero", de: "Baumwächter", pt: "Guardião Árvore", nl: "Boom Beschermer" },
+        cyborg_warrior: { fr: "Cyborg Guerrière", en: "Cyborg Warrior", es: "Guerrera Cyborg", it: "Guerriera Cyborg", de: "Cyborg Kriegerin", pt: "Guerreira Ciborgue", nl: "Cyborg Strijdster" }
+      },
+      werewolf: {
+        werewolf: { fr: "Loup-garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf" },
+        vampire: { fr: "Vampire", en: "Vampire", es: "Vampiro", it: "Vampiro", de: "Vampir", pt: "Vampiro", nl: "Vampier" },
+        mayor: { fr: "Maire du village", en: "Village Mayor", es: "Alcalde del pueblo", it: "Sindaco del villaggio", de: "Bürgermeister", pt: "Prefeito da aldeia", nl: "Burgemeester" },
+        peasant: { fr: "Paysan", en: "Peasant", es: "Campesino", it: "Contadino", de: "Bauer", pt: "Camponês", nl: "Boer" },
+        witch: { fr: "Sorcière", en: "Witch", es: "Bruja", it: "Strega", de: "Hexe", pt: "Bruxa", nl: "Heks" },
+        hunter: { fr: "Chasseur", en: "Hunter", es: "Cazador", it: "Cacciatore", de: "Jäger", pt: "Caçador", nl: "Jager" },
+        vampire_lord: { fr: "Seigneur Vampire", en: "Vampire Lord", es: "Señor Vampiro", it: "Signore Vampiro", de: "Vampirfürst", pt: "Senhor Vampiro", nl: "Vampierheer" },
+        banshee: { fr: "Esprit", en: "Banshee", es: "Espíritu", it: "Spirito", de: "Geist", pt: "Espírito", nl: "Geest" },
+        demon: { fr: "Démon", en: "Demon", es: "Demonio", it: "Demone", de: "Dämon", pt: "Demônio", nl: "Demon" },
+        blade_hunter: { fr: "Chasseur de Vampires", en: "Vampire Hunter", es: "Cazador de Vampiros", it: "Cacciatore di Vampiri", de: "Vampirjäger", pt: "Caçador de Vampiros", nl: "Vampier Jager" },
+        wendigo: { fr: "Créature Maudite", en: "Cursed Creature", es: "Criatura Maldita", it: "Creatura Maledetta", de: "Verfluchte Kreatur", pt: "Criatura Amaldiçoada", nl: "Vervloekt Wezen" },
+        witcher: { fr: "Chasseur de Monstres", en: "Monster Hunter", es: "Cazador de Monstruos", it: "Cacciatore di Mostri", de: "Monsterjäger", pt: "Caçador de Monstros", nl: "Monster Jager" }
+      },
+      "wizard-academy": {
+        wizard: { fr: "Sorcier/Sorcière", en: "Wizard", es: "Mago/Maga", it: "Mago/Maga", de: "Zauberer/in", pt: "Mago/Maga", nl: "Tovenaar" },
+        house_elf: { fr: "Elfe de maison", en: "House Elf", es: "Elfo doméstico", it: "Elfo domestico", de: "Hauself", pt: "Elfo doméstico", nl: "Huiself" },
+        goblin: { fr: "Gobelin", en: "Goblin", es: "Duende", it: "Goblin", de: "Kobold", pt: "Goblin", nl: "Goblin" },
+        ghost: { fr: "Fantôme", en: "Ghost", es: "Fantasma", it: "Fantasma", de: "Geist", pt: "Fantasma", nl: "Spook" },
+        professor: { fr: "Professeur", en: "Professor", es: "Profesor", it: "Professore", de: "Professor", pt: "Professor", nl: "Professor" },
+        creature: { fr: "Créature magique", en: "Magical Creature", es: "Criatura mágica", it: "Creatura magica", de: "Magisches Wesen", pt: "Criatura mágica", nl: "Magisch wezen" },
+        dark_wizard: { fr: "Sorcier Noir", en: "Dark Wizard", es: "Mago Oscuro", it: "Mago Oscuro", de: "Schwarzmagier", pt: "Mago Negro", nl: "Duistere Tovenaar" },
+        mystic_sorcerer: { fr: "Sorcier Mystique", en: "Mystic Sorcerer", es: "Hechicero Místico", it: "Stregone Mistico", de: "Mystischer Zauberer", pt: "Feiticeiro Místico", nl: "Mystieke Tovenaar" },
+        necromancer: { fr: "Nécromancien", en: "Necromancer", es: "Nigromante", it: "Negromante", de: "Nekromant", pt: "Necromante", nl: "Necromant" },
+        druid: { fr: "Druide", en: "Druid", es: "Druida", it: "Druido", de: "Druide", pt: "Druida", nl: "Druïde" },
+        red_witch: { fr: "Sorcière Rouge", en: "Red Witch", es: "Bruja Roja", it: "Strega Rossa", de: "Rote Hexe", pt: "Bruxa Vermelha", nl: "Rode Heks" }
+      },
+      "mythic-realms": {
+        knight: { fr: "Chevalier", en: "Knight", es: "Caballero", it: "Cavaliere", de: "Ritter", pt: "Cavaleiro", nl: "Ridder" },
+        dragon: { fr: "Dragon humanoïde", en: "Dragon Humanoid", es: "Dragón humanoide", it: "Drago umanoide", de: "Drachen-Humanoide", pt: "Dragão humanoide", nl: "Draak Humanoïde" },
+        dwarf: { fr: "Nain guerrier", en: "Dwarf Warrior", es: "Enano guerrero", it: "Nano guerriero", de: "Zwerg Krieger", pt: "Anão guerreiro", nl: "Dwerg Krijger" },
+        elf: { fr: "Elfe archer", en: "Elven Archer", es: "Elfo arquero", it: "Elfo arciere", de: "Elfen Bogenschütze", pt: "Elfo arqueiro", nl: "Elfen Boogschutter" },
+        orc: { fr: "Orque", en: "Orc", es: "Orco", it: "Orco", de: "Ork", pt: "Orco", nl: "Ork" },
+        royalty: { fr: "Roi/Reine", en: "King/Queen", es: "Rey/Reina", it: "Re/Regina", de: "König/in", pt: "Rei/Rainha", nl: "Koning/in" },
+        barbarian: { fr: "Barbare", en: "Barbarian", es: "Bárbaro", it: "Barbaro", de: "Barbar", pt: "Bárbaro", nl: "Barbaar" },
+        warrior_woman: { fr: "Guerrière", en: "Warrior Woman", es: "Guerrera", it: "Guerriera", de: "Kriegerin", pt: "Guerreira", nl: "Krijgsvrouw" },
+        war_god: { fr: "Dieu de Guerre", en: "God of War", es: "Dios de la Guerra", it: "Dio della Guerra", de: "Kriegsgott", pt: "Deus da Guerra", nl: "Oorlogsgod" },
+        elven_queen: { fr: "Reine Elfe", en: "Elven Queen", es: "Reina Elfa", it: "Regina Elfica", de: "Elfenkönigin", pt: "Rainha Élfica", nl: "Elfen Koningin" }
       }
     }
   },

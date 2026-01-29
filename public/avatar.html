@@ -935,67 +935,67 @@
 
         <!-- V35: Sliders pour tous les utilisateurs -->
         <div class="admin-section show" id="adminSection">
-          <h2 class="card-title">🔧 STYLE DE RENDU</h2>
+          <h2 class="card-title" data-i18n="avatar.sliders.styleTitle">🔧 STYLE DE RENDU</h2>
           
           <!-- Presets rapides -->
           <div class="presets-row" style="margin-bottom: 20px;">
-            <button class="preset-btn active" onclick="applyPreset('balanced')">⚖️ Équilibré</button>
-            <button class="preset-btn" onclick="applyPreset('realistic')">👤 Réaliste</button>
-            <button class="preset-btn" onclick="applyPreset('stylized')">🎨 Stylisé</button>
-            <button class="preset-btn" onclick="applyPreset('extreme')">🔥 Extrême</button>
-            <button class="preset-btn" id="customPresetBtn" onclick="applyPreset('custom')" style="display: none;">⭐ Mon style</button>
+            <button class="preset-btn active" onclick="applyPreset('balanced')" data-i18n="avatar.presets.balanced">⚖️ Équilibré</button>
+            <button class="preset-btn" onclick="applyPreset('realistic')" data-i18n="avatar.presets.realistic">👤 Réaliste</button>
+            <button class="preset-btn" onclick="applyPreset('stylized')" data-i18n="avatar.presets.stylized">🎨 Stylisé</button>
+            <button class="preset-btn" onclick="applyPreset('extreme')" data-i18n="avatar.presets.extreme">🔥 Extrême</button>
+            <button class="preset-btn" id="customPresetBtn" onclick="applyPreset('custom')" style="display: none;" data-i18n="avatar.presets.custom">⭐ Mon style</button>
             <button class="preset-btn save-preset-btn" onclick="saveCustomPreset()" title="Sauvegarder mes réglages actuels">💾</button>
           </div>
           
           <!-- Slider 1: Ressemblance -->
           <div class="slider-group">
             <div class="slider-header">
-              <label>👤 Ressemblance au visage</label>
+              <label data-i18n="avatar.sliders.resemblance">👤 Ressemblance au visage</label>
               <span class="slider-value" id="sliderValue1">5</span>
             </div>
             <input type="range" min="0" max="10" value="5" class="slider" id="slider1" oninput="updateSliderValue(1)">
             <div class="slider-hints">
-              <span>Stylisé</span>
-              <span>Fidèle</span>
+              <span data-i18n="avatar.sliders.hints.stylized">Stylisé</span>
+              <span data-i18n="avatar.sliders.hints.faithful">Fidèle</span>
             </div>
           </div>
 
           <!-- Slider 2: Force du style -->
           <div class="slider-group">
             <div class="slider-header">
-              <label>🎨 Force du style/prompt</label>
+              <label data-i18n="avatar.sliders.styleStrength">🎨 Force du style/prompt</label>
               <span class="slider-value" id="sliderValue2">8.5</span>
             </div>
             <input type="range" min="0" max="10" value="8.5" step="0.5" class="slider" id="slider2" oninput="updateSliderValue(2)">
             <div class="slider-hints">
-              <span>Subtil</span>
-              <span>Intense</span>
+              <span data-i18n="avatar.sliders.hints.subtle">Subtil</span>
+              <span data-i18n="avatar.sliders.hints.intense">Intense</span>
             </div>
           </div>
 
           <!-- Slider 3: Transformation -->
           <div class="slider-group">
             <div class="slider-header">
-              <label>🔄 Niveau de transformation</label>
+              <label data-i18n="avatar.sliders.transformation">🔄 Niveau de transformation</label>
               <span class="slider-value" id="sliderValue3">8</span>
             </div>
             <input type="range" min="0" max="10" value="8" class="slider" id="slider3" oninput="updateSliderValue(3)">
             <div class="slider-hints">
-              <span>Original</span>
-              <span>Transformé</span>
+              <span data-i18n="avatar.sliders.hints.original">Original</span>
+              <span data-i18n="avatar.sliders.hints.transformed">Transformé</span>
             </div>
           </div>
 
           <!-- Slider 4: Structure -->
           <div class="slider-group">
             <div class="slider-header">
-              <label>📐 Conservation de la structure</label>
+              <label data-i18n="avatar.sliders.structure">📐 Conservation de la structure</label>
               <span class="slider-value" id="sliderValue4">5</span>
             </div>
             <input type="range" min="0" max="10" value="5" class="slider" id="slider4" oninput="updateSliderValue(4)">
             <div class="slider-hints">
-              <span>Libre</span>
-              <span>Fidèle</span>
+              <span data-i18n="avatar.sliders.hints.free">Libre</span>
+              <span data-i18n="avatar.sliders.hints.faithful">Fidèle</span>
             </div>
           </div>
         </div>
@@ -1127,34 +1127,67 @@
     const avatarThemes = {
       default: {
         name: 'Spatial', icon: '🚀', premium: false,
-        characters: ['astronaut', 'alien', 'bounty_hunter', 'cyborg', 'captain', 'dark_lord', 'space_corsair', 'tree_guardian', 'cyborg_warrior']
+        characters: { 
+          astronaut: 'Astronaute', 
+          alien: 'Alien', 
+          bounty_hunter: 'Chasseur de primes', 
+          cyborg: 'Robot/Cyborg', 
+          captain: 'Capitaine',
+          dark_lord: 'Seigneur Noir',
+          space_corsair: 'Corsaire Spatial',
+          tree_guardian: 'Gardien Arbre',
+          cyborg_warrior: 'Cyborg Guerrière'
+        }
       },
       werewolf: {
         name: 'Loup-Garou', icon: '🐺', premium: false,
-        characters: ['werewolf', 'vampire', 'mayor', 'peasant', 'witch', 'hunter', 'vampire_lord', 'banshee', 'demon', 'blade_hunter', 'wendigo', 'witcher']
+        characters: { 
+          werewolf: 'Loup-garou', 
+          vampire: 'Vampire', 
+          mayor: 'Maire du village', 
+          peasant: 'Paysan', 
+          witch: 'Sorcière', 
+          hunter: 'Chasseur',
+          vampire_lord: 'Seigneur Vampire',
+          banshee: 'Esprit',
+          demon: 'Démon',
+          blade_hunter: 'Chasseur de Vampires',
+          wendigo: 'Créature Maudite',
+          witcher: 'Chasseur de Monstres'
+        }
       },
       'wizard-academy': {
         name: 'Sorciers', icon: '🧙', premium: true,
-        characters: ['wizard', 'house_elf', 'goblin', 'ghost', 'professor', 'creature', 'dark_wizard', 'mystic_sorcerer', 'necromancer', 'druid', 'red_witch']
+        characters: { 
+          wizard: 'Sorcier/Sorcière', 
+          house_elf: 'Elfe de maison', 
+          goblin: 'Gobelin', 
+          ghost: 'Fantôme', 
+          professor: 'Professeur', 
+          creature: 'Créature magique',
+          dark_wizard: 'Sorcier Noir',
+          mystic_sorcerer: 'Sorcier Mystique',
+          necromancer: 'Nécromancien',
+          druid: 'Druide',
+          red_witch: 'Sorcière Rouge'
+        }
       },
       'mythic-realms': {
         name: 'Mythique', icon: '⚔️', premium: true,
-        characters: ['knight', 'dragon', 'dwarf', 'elf', 'orc', 'royalty', 'barbarian', 'warrior_woman', 'war_god', 'elven_queen']
+        characters: { 
+          knight: 'Chevalier', 
+          dragon: 'Dragon humanoïde', 
+          dwarf: 'Nain guerrier', 
+          elf: 'Elfe archer', 
+          orc: 'Orque', 
+          royalty: 'Roi / Reine', 
+          barbarian: 'Barbare',
+          warrior_woman: 'Guerrière',
+          war_god: 'Dieu de Guerre',
+          elven_queen: 'Reine Elfe'
+        }
       }
     };
-
-    // Fonction pour obtenir le nom traduit d'un personnage
-    function getCharacterName(themeId, characterId) {
-      const lang = localStorage.getItem('language') || 'fr';
-      const charTranslations = TRANSLATIONS?.avatarCharacters?.[themeId]?.[characterId];
-      
-      if (charTranslations && charTranslations[lang]) {
-        return charTranslations[lang];
-      }
-      
-      // Fallback: retourner l'ID si pas de traduction
-      return characterId;
-    }
 
     // Presets de rendu (valeurs pour prompt_strength et denoising_strength)
     // V35: Valeurs augmentées pour des résultats plus marqués
@@ -1262,6 +1295,43 @@
       }
     }
 
+    // Fonctions de traduction pour thèmes et personnages
+    function getThemeName(themeId) {
+      try {
+        const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+        const themeMap = {
+          'default': 'spatial',
+          'werewolf': 'werewolf',
+          'wizard-academy': 'wizard',
+          'mythic-realms': 'mythic'
+        };
+        const translationKey = themeMap[themeId] || themeId;
+        const translation = window.TRANSLATIONS?.avatar?.themes?.[translationKey]?.[lang];
+        return translation || avatarThemes[themeId]?.name || themeId;
+      } catch (e) {
+        console.error('[Avatar] Erreur traduction thème:', e);
+        return avatarThemes[themeId]?.name || themeId;
+      }
+    }
+
+    function getCharacterName(themeId, characterId) {
+      try {
+        const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+        const translation = window.TRANSLATIONS?.avatar?.characters?.[themeId]?.[characterId]?.[lang];
+        return translation || avatarThemes[themeId]?.characters?.[characterId] || characterId;
+      } catch (e) {
+        console.error('[Avatar] Erreur traduction personnage:', e);
+        return avatarThemes[themeId]?.characters?.[characterId] || characterId;
+      }
+    }
+    
+    function updateThemeMiniButtons() {
+      document.querySelectorAll('.theme-btn-mini').forEach(btn => {
+        const themeId = btn.dataset.theme;
+        btn.title = getThemeName(themeId);
+      });
+    }
+
     function renderAvatarThemes() {
       const grid = document.getElementById('avatarThemeGrid');
       grid.innerHTML = '';
@@ -1271,7 +1341,7 @@
         const locked = theme.premium && !userPremium;
         const btn = document.createElement('button');
         btn.className = `theme-btn ${key === selectedAvatarTheme ? 'active' : ''} ${locked ? 'locked' : ''}`;
-        btn.innerHTML = `<span class="icon">${theme.icon}</span><span class="name">${theme.name}</span>${locked ? '<span class="lock">🔒 Premium</span>' : ''}`;
+        btn.innerHTML = `<span class="icon">${theme.icon}</span><span class="name">${getThemeName(key)}</span>${locked ? '<span class="lock">🔒 Premium</span>' : ''}`;
         if (!locked) btn.onclick = () => selectAvatarTheme(key);
         grid.appendChild(btn);
       }
@@ -1283,15 +1353,15 @@
       const theme = avatarThemes[selectedAvatarTheme];
       if (!theme) return;
 
-      for (const characterId of theme.characters) {
+      for (const [key, name] of Object.entries(theme.characters)) {
         const btn = document.createElement('button');
-        btn.className = `character-btn ${characterId === selectedCharacter ? 'active' : ''}`;
-        btn.textContent = getCharacterName(selectedAvatarTheme, characterId);
-        btn.onclick = () => selectCharacter(characterId);
+        btn.className = `character-btn ${key === selectedCharacter ? 'active' : ''}`;
+        btn.textContent = getCharacterName(selectedAvatarTheme, key);
+        btn.onclick = () => selectCharacter(key);
         grid.appendChild(btn);
       }
 
-      if (selectedCharacter && !theme.characters.includes(selectedCharacter)) selectedCharacter = null;
+      if (selectedCharacter && !theme.characters[selectedCharacter]) selectedCharacter = null;
       updateGenerateButton();
     }
 
@@ -2205,7 +2275,16 @@
     // Traduire la page au chargement
     if (typeof translatePage === 'function') {
       translatePage();
+      updateThemeMiniButtons();
     }
+    
+    // Retraduire thèmes et personnages quand la langue change
+    window.addEventListener('languageChanged', () => {
+      console.log('[Avatar] Langue changée, retraduction...');
+      updateThemeMiniButtons();
+      renderAvatarThemes();
+      renderCharacters();
+    });
   </script>
   
   <!-- Module de paiement Stripe -->
