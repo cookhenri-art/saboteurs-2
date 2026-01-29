@@ -1127,21 +1127,34 @@
     const avatarThemes = {
       default: {
         name: 'Spatial', icon: '🚀', premium: false,
-        characters: { astronaut: 'Astronaute', alien: 'Alien', bounty_hunter: 'Chasseur', cyborg: 'Cyborg', captain: 'Capitaine' }
+        characters: ['astronaut', 'alien', 'bounty_hunter', 'cyborg', 'captain', 'dark_lord', 'space_corsair', 'tree_guardian', 'cyborg_warrior']
       },
       werewolf: {
         name: 'Loup-Garou', icon: '🐺', premium: false,
-        characters: { werewolf: 'Loup-garou', vampire: 'Vampire', mayor: 'Maire', peasant: 'Paysan', witch: 'Sorcière', hunter: 'Chasseur' }
+        characters: ['werewolf', 'vampire', 'mayor', 'peasant', 'witch', 'hunter', 'vampire_lord', 'banshee', 'demon', 'blade_hunter', 'wendigo', 'witcher']
       },
       'wizard-academy': {
         name: 'Sorciers', icon: '🧙', premium: true,
-        characters: { wizard: 'Sorcier', house_elf: 'Elfe', goblin: 'Gobelin', ghost: 'Fantôme', professor: 'Professeur', creature: 'Créature magique' }
+        characters: ['wizard', 'house_elf', 'goblin', 'ghost', 'professor', 'creature', 'dark_wizard', 'mystic_sorcerer', 'necromancer', 'druid', 'red_witch']
       },
       'mythic-realms': {
         name: 'Mythique', icon: '⚔️', premium: true,
-        characters: { knight: 'Chevalier', dragon: 'Dragon', dwarf: 'Nain', elf: 'Elfe', orc: 'Orque', royalty: 'Roi / Reine', barbarian: 'Barbare' }
+        characters: ['knight', 'dragon', 'dwarf', 'elf', 'orc', 'royalty', 'barbarian', 'warrior_woman', 'war_god', 'elven_queen']
       }
     };
+
+    // Fonction pour obtenir le nom traduit d'un personnage
+    function getCharacterName(themeId, characterId) {
+      const lang = localStorage.getItem('language') || 'fr';
+      const charTranslations = TRANSLATIONS?.avatarCharacters?.[themeId]?.[characterId];
+      
+      if (charTranslations && charTranslations[lang]) {
+        return charTranslations[lang];
+      }
+      
+      // Fallback: retourner l'ID si pas de traduction
+      return characterId;
+    }
 
     // Presets de rendu (valeurs pour prompt_strength et denoising_strength)
     // V35: Valeurs augmentées pour des résultats plus marqués
@@ -1270,15 +1283,15 @@
       const theme = avatarThemes[selectedAvatarTheme];
       if (!theme) return;
 
-      for (const [key, name] of Object.entries(theme.characters)) {
+      for (const characterId of theme.characters) {
         const btn = document.createElement('button');
-        btn.className = `character-btn ${key === selectedCharacter ? 'active' : ''}`;
-        btn.textContent = name;
-        btn.onclick = () => selectCharacter(key);
+        btn.className = `character-btn ${characterId === selectedCharacter ? 'active' : ''}`;
+        btn.textContent = getCharacterName(selectedAvatarTheme, characterId);
+        btn.onclick = () => selectCharacter(characterId);
         grid.appendChild(btn);
       }
 
-      if (selectedCharacter && !theme.characters[selectedCharacter]) selectedCharacter = null;
+      if (selectedCharacter && !theme.characters.includes(selectedCharacter)) selectedCharacter = null;
       updateGenerateButton();
     }
 
