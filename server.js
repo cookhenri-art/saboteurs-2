@@ -109,6 +109,22 @@ const AVATAR_THEMES = {
       captain: {
         name: "Capitaine",
         prompt: "ultra-detailed starship captain,spaceship commander, wearing navy captain hat with gold insignia on head, rank badges/patches on crisp uniform, epaulettes, comms headset, confident commanding expression, subtle spacefleet embroidery, background: deep space with three suns, cinematic key light, video game character render"
+      },
+      dark_lord: {
+        name: "Seigneur Noir",
+        prompt: "Heavy black obsidian futuristic armor with sharp angular plates, dark imperial cape flowing behind, ancient alien symbols engraved into armor, energy greatsword emitting deep red glow, reinforced gauntlets with glowing runes, high-tech dark lord design, Unmasked dark space lord, the face fully visible and identical to the input photo, ancient glowing symbols carved and subtly burning into the skin of the face, symmetrical markings across forehead, cheeks and temples, eyes glowing faint red, expression cold, emotionless and dominant, calm and controlled posture, presence of absolute authority and oppression, aura of fear and silent power, the feeling of a galactic ruler who does not need to raise his voice to command, Dark sci-fi fantasy atmosphere, dramatic cinematic lighting, deep shadows, high contrast, ultra-detailed, hyper-realistic, 8k concept art, centered character portrait, inspired by Dark Mole, dark space overlord style"
+      },
+      space_corsair: {
+        name: "Corsaire Spatial",
+        prompt: "Long black space pirate coat, skull insignia, futuristic captain boots, laser cutlass, gravity pistol, cybernetic belt, Tall charismatic space corsair, long flowing hair, stern but noble expression, one eye covered or scarred, posture of a lone rebel captain, aura of freedom and defiance, romantic and melancholic presence, legendary outlaw of the stars, inspired by Albator, space corsair style"
+      },
+      tree_guardian: {
+        name: "Gardien Arbre",
+        prompt: "Organic bark armor, vine-covered body, glowing sap veins, wooden limbs shaped like armor plates, no weapons, nature-grown spikes, Tall humanoid alien made of living wood, gentle yet powerful presence, ancient eyes glowing softly, body covered in bark textures and moss, calm posture, embodiment of cosmic nature and life energy, inspired by Groot, alien tree guardian style"
+      },
+      cyborg_warrior: {
+        name: "Cyborg Guerrière",
+        prompt: "Advanced cyborg combat armor, exposed mechanical joints, armored boots, plasma-enhanced fists, cybernetic spine, glowing artificial eyes, Athletic female cyborg with human face, large expressive eyes, mechanical body beneath synthetic skin, focused and determined expression, agile and battle-ready stance, fusion of innocence and lethal efficiency, inspired by Alita, cyberpunk cyborg warrior style"
       }
     }
   },
@@ -139,6 +155,30 @@ const AVATAR_THEMES = {
       hunter: {
         name: "Chasseur",
         prompt: "ultra-detailed monster hunter,old hunting rifle strapped on back, leather bandolier with brass bullets across chest, long brown leather coat, monster hunter, Van Helsing style, leather coat, rifle slung on back, bullet bandolier with cartridges across chest, rugged face, scar, gloves, background: medieval village night with full moon, cinematic lighting, video game character render"
+      },
+      vampire_lord: {
+        name: "Seigneur Vampire",
+        prompt: "Long red gothic coat, black leather armor, wide-brim hat, silver pistols engraved with occult symbols, crimson gloves, Tall pale vampire with sharp features, glowing red eyes, confident predatory smile, aristocratic and demonic aura, relaxed yet deadly posture, presence of immortal dominance and sadistic elegance, inspired by Alucard (manga), vampire lord style"
+      },
+      banshee: {
+        name: "Esprit",
+        prompt: "Tattered spectral robes, floating fabric, glowing ghostly aura, no weapons, ethereal body, Female ghostly entity with hollow glowing eyes, elongated face frozen in sorrow, mouth slightly open as if screaming, floating posture, aura of grief and death omen, cold supernatural presence, inspired by Banshee mythology, ghost spirit style"
+      },
+      demon: {
+        name: "Démon",
+        prompt: "Dark infernal armor, demonic horns, spiked pauldrons, hellforged blade, glowing runes carved into skin, Muscular demonic entity with glowing eyes, sharp teeth, powerful posture, aura of chaos and destruction, body emanating heat and dark energy, embodiment of pure infernal power, inspired by demon archetype, infernal fantasy style"
+      },
+      blade_hunter: {
+        name: "Chasseur de Vampires",
+        prompt: "Black tactical leather armor, long combat coat, katana on the back, silver firearms, sunglasses, Athletic vampire hunter with dark skin, serious expression, disciplined posture, aura of controlled aggression, hybrid nature barely visible, relentless and efficient warrior, inspired by Blade (film), vampire hunter style"
+      },
+      wendigo: {
+        name: "Créature Maudite",
+        prompt: "Skeletal emaciated body, exposed ribs, antlered skull head, clawed hands, no clothing, Tall horrifying creature with unnatural proportions, glowing hollow eyes, feral posture, aura of hunger and madness, frozen death presence, embodiment of curse and starvation, inspired by Wendigo creature, folklore horror style"
+      },
+      witcher: {
+        name: "Chasseur de Monstres",
+        prompt: "Worn leather witcher armor, silver sword and steel sword on back, wolf medallion, potions on belt, White-haired warrior with scarred face, glowing yellow eyes, calm and stoic expression, battle-hardened posture, aura of solitude and professionalism, mutated but human presence, inspired by Geralt of The Witcher, dark fantasy hunter style"
       }
     }
   },
@@ -169,6 +209,26 @@ const AVATAR_THEMES = {
       creature: {
         name: "Créature magique",
         prompt: "ultra-detailed magical creature humanoid,mythical being, phoenix angel hybrid, feathered wings on back, glittering sparkles, brilliant glowing aura, iridescent accents, mystical eyes, background: cathedral-like hall with gargoyles, radiant volumetric light, video game character render"
+      },
+      dark_wizard: {
+        name: "Sorcier Noir",
+        prompt: "Long black flowing robes, dark magic staff, serpent-themed rings, hood partially covering head, Pale thin sorcerer with snake-like features, cold emotionless eyes, rigid posture, aura of death and forbidden magic, presence of absolute cruelty and ambition, inspired by Voldemort, dark wizard style"
+      },
+      mystic_sorcerer: {
+        name: "Sorcier Mystique",
+        prompt: "High-collared red cloak, arcane artifacts, glowing magic circles around hands, mystical amulet, Confident sorcerer with sharp gaze, precise hand gestures, calm mastery of magic, posture of control and intelligence, aura of dimensional power, inspired by Doctor Strange, mystic sorcerer style"
+      },
+      necromancer: {
+        name: "Nécromancien",
+        prompt: "Black necromancer robes, skull staff with green glow, bone talismans, dark hood, Gaunt spellcaster surrounded by green necrotic energy, hollow eyes, slow commanding posture, aura of death and decay, master of undead forces, inspired by necromancer archetype, dark fantasy style"
+      },
+      druid: {
+        name: "Druide",
+        prompt: "Nature robes made of leaves and leather, wooden staff, animal charms, moss-covered cloak, Bearded nature mage with calm eyes, weathered skin, grounded posture, aura of balance and primal magic, embodiment of forest wisdom, inspired by druid archetype, nature magic style"
+      },
+      red_witch: {
+        name: "Sorcière Rouge",
+        prompt: "Flowing crimson robes, hooded cloak, ritual dagger, glowing red magical aura, Elegant sorceress with intense gaze, calm but dangerous expression, aura of prophecy and fire magic, commanding posture, mysterious and feared presence, inspired by Red Witch (Game of Thrones), dark magic style"
       } 
     }
   },
@@ -203,6 +263,18 @@ const AVATAR_THEMES = {
       barbarian: {
         name: "Barbare",
         prompt: "ultra-detailed barbarian warrior,fur and leather primitive clothing, Conan style savage warrior, dirty face with war paint, long wild hair, fur shoulder mantle, massive greatsword strapped on back, scars, background: lava rivers + golden treasure mountains, harsh cinematic lighting, video game character render"
+      },
+      warrior_woman: {
+        name: "Guerrière",
+        prompt: "Leather and bronze battle armor, round chakram weapon, sword, armored boots, Muscular female warrior with fierce expression, battle scars, confident stance, aura of strength and honor, legendary battlefield presence, inspired by Xena, warrior heroine style"
+      },
+      war_god: {
+        name: "Dieu de Guerre",
+        prompt: "Bare upper body with war tattoos, chained blades, heavy armored boots, scars covering skin, Massive muscular warrior with ash-colored skin, red war markings, furious expression, posture of unstoppable rage, aura of divine violence, inspired by Kratos, god of war style"
+      },
+      elven_queen: {
+        name: "Reine Elfe",
+        prompt: "Elegant silver elven armor, flowing silk robes, crystal crown, glowing elven staff, Tall graceful elf woman with luminous eyes, flawless features, regal posture, aura of ancient wisdom and serenity, embodiment of immortal beauty and authority, inspired by elven queen archetype, high fantasy style"
       }
     }
   }
