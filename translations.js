@@ -5941,148 +5941,346 @@ const TRANSLATIONS = {
       }
     },
     
+    // Noms des thèmes d'avatars
+    themes: {
+      spatial: {
+        fr: "Spatial", en: "Space", es: "Espacial", it: "Spaziale", de: "Weltraum", pt: "Espacial", nl: "Ruimte"
+      },
+      werewolf: {
+        fr: "Loup-Garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf"
+      },
+      wizard: {
+        fr: "Sorciers", en: "Wizards", es: "Magos", it: "Maghi", de: "Zauberer", pt: "Magos", nl: "Tovenaars"
+      },
+      mythic: {
+        fr: "Mythique", en: "Mythical", es: "Mítico", it: "Mitico", de: "Mythisch", pt: "Mítico", nl: "Mythisch"
+      }
+    },
+    
+    // Presets de style
+    presets: {
+      balanced: {
+        fr: "⚖️ Équilibré", en: "⚖️ Balanced", es: "⚖️ Equilibrado", it: "⚖️ Equilibrato", de: "⚖️ Ausgewogen", pt: "⚖️ Equilibrado", nl: "⚖️ Gebalanceerd"
+      },
+      realistic: {
+        fr: "👤 Réaliste", en: "👤 Realistic", es: "👤 Realista", it: "👤 Realistico", de: "👤 Realistisch", pt: "👤 Realista", nl: "👤 Realistisch"
+      },
+      stylized: {
+        fr: "🎨 Stylisé", en: "🎨 Stylized", es: "🎨 Estilizado", it: "🎨 Stilizzato", de: "🎨 Stilisiert", pt: "🎨 Estilizado", nl: "🎨 Gestileerd"
+      },
+      extreme: {
+        fr: "🔥 Extrême", en: "🔥 Extreme", es: "🔥 Extremo", it: "🔥 Estremo", de: "🔥 Extrem", pt: "🔥 Extremo", nl: "🔥 Extreem"
+      },
+      custom: {
+        fr: "⭐ Mon style", en: "⭐ My Style", es: "⭐ Mi Estilo", it: "⭐ Il Mio Stile", de: "⭐ Mein Stil", pt: "⭐ Meu Estilo", nl: "⭐ Mijn Stijl"
+      }
+    },
+    
+    // Sliders
+    sliders: {
+      styleTitle: {
+        fr: "🔧 STYLE DE RENDU", en: "🔧 RENDER STYLE", es: "🔧 ESTILO DE RENDERIZADO", it: "🔧 STILE DI RENDERING", de: "🔧 RENDER-STIL", pt: "🔧 ESTILO DE RENDERIZAÇÃO", nl: "🔧 RENDERSTIJL"
+      },
+      resemblance: {
+        fr: "👤 Ressemblance au visage", en: "👤 Face Resemblance", es: "👤 Parecido facial", it: "👤 Somiglianza facciale", de: "👤 Gesichtsähnlichkeit", pt: "👤 Semelhança facial", nl: "👤 Gezichtsgelijkenis"
+      },
+      styleStrength: {
+        fr: "🎨 Force du style/prompt", en: "🎨 Style/Prompt Strength", es: "🎨 Fuerza del estilo/prompt", it: "🎨 Forza stile/prompt", de: "🎨 Stil-/Prompt-Stärke", pt: "🎨 Força do estilo/prompt", nl: "🎨 Stijl/Prompt Sterkte"
+      },
+      transformation: {
+        fr: "🔄 Niveau de transformation", en: "🔄 Transformation Level", es: "🔄 Nivel de transformación", it: "🔄 Livello di trasformazione", de: "🔄 Transformationsstufe", pt: "🔄 Nível de transformação", nl: "🔄 Transformatieniveau"
+      },
+      structure: {
+        fr: "📐 Conservation de la structure", en: "📐 Structure Preservation", es: "📐 Conservación de estructura", it: "📐 Conservazione struttura", de: "📐 Strukturerhaltung", pt: "📐 Conservação da estrutura", nl: "📐 Structuurbehoud"
+      },
+      hints: {
+        stylized: {
+          fr: "Stylisé", en: "Stylized", es: "Estilizado", it: "Stilizzato", de: "Stilisiert", pt: "Estilizado", nl: "Gestileerd"
+        },
+        faithful: {
+          fr: "Fidèle", en: "Faithful", es: "Fiel", it: "Fedele", de: "Getreu", pt: "Fiel", nl: "Getrouw"
+        },
+        subtle: {
+          fr: "Subtil", en: "Subtle", es: "Sutil", it: "Sottile", de: "Subtil", pt: "Sutil", nl: "Subtiel"
+        },
+        intense: {
+          fr: "Intense", en: "Intense", es: "Intenso", it: "Intenso", de: "Intensiv", pt: "Intenso", nl: "Intens"
+        },
+        original: {
+          fr: "Original", en: "Original", es: "Original", it: "Originale", de: "Original", pt: "Original", nl: "Origineel"
+        },
+        transformed: {
+          fr: "Transformé", en: "Transformed", es: "Transformado", it: "Trasformato", de: "Transformiert", pt: "Transformado", nl: "Getransformeerd"
+        },
+        free: {
+          fr: "Libre", en: "Free", es: "Libre", it: "Libero", de: "Frei", pt: "Livre", nl: "Vrij"
+        }
+      }
+    },
+    
     // Noms des personnages d'avatars par thème
     characters: {
-      // Thème Spatial (default)
       default: {
-        astronaut: {
-          fr: "Astronaute", en: "Astronaut", es: "Astronauta", it: "Astronauta", de: "Astronaut", pt: "Astronauta", nl: "Astronaut"
-        },
-        alien: {
-          fr: "Alien", en: "Alien", es: "Alienígena", it: "Alieno", de: "Außerirdischer", pt: "Alienígena", nl: "Buitenaards wezen"
-        },
-        bounty_hunter: {
-          fr: "Chasseur de primes", en: "Bounty Hunter", es: "Cazarrecompensas", it: "Cacciatore di taglie", de: "Kopfgeldjäger", pt: "Caçador de recompensas", nl: "Premiejager"
-        },
-        cyborg: {
-          fr: "Robot/Cyborg", en: "Robot/Cyborg", es: "Robot/Cyborg", it: "Robot/Cyborg", de: "Roboter/Cyborg", pt: "Robô/Ciborgue", nl: "Robot/Cyborg"
-        },
-        captain: {
-          fr: "Capitaine", en: "Captain", es: "Capitán", it: "Capitano", de: "Kapitän", pt: "Capitão", nl: "Kapitein"
-        },
-        dark_lord: {
-          fr: "Seigneur Noir", en: "Dark Lord", es: "Señor Oscuro", it: "Signore Oscuro", de: "Dunkler Herr", pt: "Senhor das Trevas", nl: "Duistere Heer"
-        },
-        space_corsair: {
-          fr: "Corsaire Spatial", en: "Space Corsair", es: "Corsario Espacial", it: "Corsaro Spaziale", de: "Weltraumpirat", pt: "Corsário Espacial", nl: "Ruimtecorsaar"
-        },
-        tree_guardian: {
-          fr: "Gardien Arbre", en: "Tree Guardian", es: "Guardián Árbol", it: "Guardiano Albero", de: "Baumwächter", pt: "Guardião Árvore", nl: "Boom Beschermer"
-        },
-        cyborg_warrior: {
-          fr: "Cyborg Guerrière", en: "Cyborg Warrior", es: "Guerrera Cyborg", it: "Guerriera Cyborg", de: "Cyborg Kriegerin", pt: "Guerreira Ciborgue", nl: "Cyborg Strijdster"
-        }
+        astronaut: { fr: "Astronaute", en: "Astronaut", es: "Astronauta", it: "Astronauta", de: "Astronaut", pt: "Astronauta", nl: "Astronaut" },
+        alien: { fr: "Alien", en: "Alien", es: "Alienígena", it: "Alieno", de: "Außerirdischer", pt: "Alienígena", nl: "Buitenaards wezen" },
+        bounty_hunter: { fr: "Chasseur de primes", en: "Bounty Hunter", es: "Cazarrecompensas", it: "Cacciatore di taglie", de: "Kopfgeldjäger", pt: "Caçador de recompensas", nl: "Premiejager" },
+        cyborg: { fr: "Robot/Cyborg", en: "Robot/Cyborg", es: "Robot/Cyborg", it: "Robot/Cyborg", de: "Roboter/Cyborg", pt: "Robô/Ciborgue", nl: "Robot/Cyborg" },
+        captain: { fr: "Capitaine", en: "Captain", es: "Capitán", it: "Capitano", de: "Kapitän", pt: "Capitão", nl: "Kapitein" },
+        dark_lord: { fr: "Seigneur Noir", en: "Dark Lord", es: "Señor Oscuro", it: "Signore Oscuro", de: "Dunkler Herr", pt: "Senhor das Trevas", nl: "Duistere Heer" },
+        space_corsair: { fr: "Corsaire Spatial", en: "Space Corsair", es: "Corsario Espacial", it: "Corsaro Spaziale", de: "Weltraumpirat", pt: "Corsário Espacial", nl: "Ruimtecorsaar" },
+        tree_guardian: { fr: "Gardien Arbre", en: "Tree Guardian", es: "Guardián Árbol", it: "Guardiano Albero", de: "Baumwächter", pt: "Guardião Árvore", nl: "Boom Beschermer" },
+        cyborg_warrior: { fr: "Cyborg Guerrière", en: "Cyborg Warrior", es: "Guerrera Cyborg", it: "Guerriera Cyborg", de: "Cyborg Kriegerin", pt: "Guerreira Ciborgue", nl: "Cyborg Strijdster" }
       },
-      
-      // Thème Loup-Garou (werewolf)
       werewolf: {
-        werewolf: {
-          fr: "Loup-garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf"
-        },
-        vampire: {
-          fr: "Vampire", en: "Vampire", es: "Vampiro", it: "Vampiro", de: "Vampir", pt: "Vampiro", nl: "Vampier"
-        },
-        mayor: {
-          fr: "Maire du village", en: "Village Mayor", es: "Alcalde del pueblo", it: "Sindaco del villaggio", de: "Bürgermeister", pt: "Prefeito da aldeia", nl: "Burgemeester"
-        },
-        peasant: {
-          fr: "Paysan", en: "Peasant", es: "Campesino", it: "Contadino", de: "Bauer", pt: "Camponês", nl: "Boer"
-        },
-        witch: {
-          fr: "Sorcière", en: "Witch", es: "Bruja", it: "Strega", de: "Hexe", pt: "Bruxa", nl: "Heks"
-        },
-        hunter: {
-          fr: "Chasseur", en: "Hunter", es: "Cazador", it: "Cacciatore", de: "Jäger", pt: "Caçador", nl: "Jager"
-        },
-        vampire_lord: {
-          fr: "Seigneur Vampire", en: "Vampire Lord", es: "Señor Vampiro", it: "Signore Vampiro", de: "Vampirfürst", pt: "Senhor Vampiro", nl: "Vampierheer"
-        },
-        banshee: {
-          fr: "Esprit", en: "Banshee", es: "Espíritu", it: "Spirito", de: "Geist", pt: "Espírito", nl: "Geest"
-        },
-        demon: {
-          fr: "Démon", en: "Demon", es: "Demonio", it: "Demone", de: "Dämon", pt: "Demônio", nl: "Demon"
-        },
-        blade_hunter: {
-          fr: "Chasseur de Vampires", en: "Vampire Hunter", es: "Cazador de Vampiros", it: "Cacciatore di Vampiri", de: "Vampirjäger", pt: "Caçador de Vampiros", nl: "Vampier Jager"
-        },
-        wendigo: {
-          fr: "Créature Maudite", en: "Cursed Creature", es: "Criatura Maldita", it: "Creatura Maledetta", de: "Verfluchte Kreatur", pt: "Criatura Amaldiçoada", nl: "Vervloekt Wezen"
-        },
-        witcher: {
-          fr: "Chasseur de Monstres", en: "Monster Hunter", es: "Cazador de Monstruos", it: "Cacciatore di Mostri", de: "Monsterjäger", pt: "Caçador de Monstros", nl: "Monster Jager"
-        }
+        werewolf: { fr: "Loup-garou", en: "Werewolf", es: "Hombre Lobo", it: "Lupo Mannaro", de: "Werwolf", pt: "Lobisomem", nl: "Weerwolf" },
+        vampire: { fr: "Vampire", en: "Vampire", es: "Vampiro", it: "Vampiro", de: "Vampir", pt: "Vampiro", nl: "Vampier" },
+        mayor: { fr: "Maire du village", en: "Village Mayor", es: "Alcalde del pueblo", it: "Sindaco del villaggio", de: "Bürgermeister", pt: "Prefeito da aldeia", nl: "Burgemeester" },
+        peasant: { fr: "Paysan", en: "Peasant", es: "Campesino", it: "Contadino", de: "Bauer", pt: "Camponês", nl: "Boer" },
+        witch: { fr: "Sorcière", en: "Witch", es: "Bruja", it: "Strega", de: "Hexe", pt: "Bruxa", nl: "Heks" },
+        hunter: { fr: "Chasseur", en: "Hunter", es: "Cazador", it: "Cacciatore", de: "Jäger", pt: "Caçador", nl: "Jager" },
+        vampire_lord: { fr: "Seigneur Vampire", en: "Vampire Lord", es: "Señor Vampiro", it: "Signore Vampiro", de: "Vampirfürst", pt: "Senhor Vampiro", nl: "Vampierheer" },
+        banshee: { fr: "Esprit", en: "Banshee", es: "Espíritu", it: "Spirito", de: "Geist", pt: "Espírito", nl: "Geest" },
+        demon: { fr: "Démon", en: "Demon", es: "Demonio", it: "Demone", de: "Dämon", pt: "Demônio", nl: "Demon" },
+        blade_hunter: { fr: "Chasseur de Vampires", en: "Vampire Hunter", es: "Cazador de Vampiros", it: "Cacciatore di Vampiri", de: "Vampirjäger", pt: "Caçador de Vampiros", nl: "Vampier Jager" },
+        wendigo: { fr: "Créature Maudite", en: "Cursed Creature", es: "Criatura Maldita", it: "Creatura Maledetta", de: "Verfluchte Kreatur", pt: "Criatura Amaldiçoada", nl: "Vervloekt Wezen" },
+        witcher: { fr: "Chasseur de Monstres", en: "Monster Hunter", es: "Cazador de Monstruos", it: "Cacciatore di Mostri", de: "Monsterjäger", pt: "Caçador de Monstros", nl: "Monster Jager" }
       },
-      
-      // Thème Sorciers (wizard-academy)
       "wizard-academy": {
-        wizard: {
-          fr: "Sorcier/Sorcière", en: "Wizard", es: "Mago/Maga", it: "Mago/Maga", de: "Zauberer/in", pt: "Mago/Maga", nl: "Tovenaar"
-        },
-        house_elf: {
-          fr: "Elfe de maison", en: "House Elf", es: "Elfo doméstico", it: "Elfo domestico", de: "Hauself", pt: "Elfo doméstico", nl: "Huiself"
-        },
-        goblin: {
-          fr: "Gobelin", en: "Goblin", es: "Duende", it: "Goblin", de: "Kobold", pt: "Goblin", nl: "Goblin"
-        },
-        ghost: {
-          fr: "Fantôme", en: "Ghost", es: "Fantasma", it: "Fantasma", de: "Geist", pt: "Fantasma", nl: "Spook"
-        },
-        professor: {
-          fr: "Professeur", en: "Professor", es: "Profesor", it: "Professore", de: "Professor", pt: "Professor", nl: "Professor"
-        },
-        creature: {
-          fr: "Créature magique", en: "Magical Creature", es: "Criatura mágica", it: "Creatura magica", de: "Magisches Wesen", pt: "Criatura mágica", nl: "Magisch wezen"
-        },
-        dark_wizard: {
-          fr: "Sorcier Noir", en: "Dark Wizard", es: "Mago Oscuro", it: "Mago Oscuro", de: "Schwarzmagier", pt: "Mago Negro", nl: "Duistere Tovenaar"
-        },
-        mystic_sorcerer: {
-          fr: "Sorcier Mystique", en: "Mystic Sorcerer", es: "Hechicero Místico", it: "Stregone Mistico", de: "Mystischer Zauberer", pt: "Feiticeiro Místico", nl: "Mystieke Tovenaar"
-        },
-        necromancer: {
-          fr: "Nécromancien", en: "Necromancer", es: "Nigromante", it: "Negromante", de: "Nekromant", pt: "Necromante", nl: "Necromant"
-        },
-        druid: {
-          fr: "Druide", en: "Druid", es: "Druida", it: "Druido", de: "Druide", pt: "Druida", nl: "Druïde"
-        },
-        red_witch: {
-          fr: "Sorcière Rouge", en: "Red Witch", es: "Bruja Roja", it: "Strega Rossa", de: "Rote Hexe", pt: "Bruxa Vermelha", nl: "Rode Heks"
-        }
+        wizard: { fr: "Sorcier/Sorcière", en: "Wizard", es: "Mago/Maga", it: "Mago/Maga", de: "Zauberer/in", pt: "Mago/Maga", nl: "Tovenaar" },
+        house_elf: { fr: "Elfe de maison", en: "House Elf", es: "Elfo doméstico", it: "Elfo domestico", de: "Hauself", pt: "Elfo doméstico", nl: "Huiself" },
+        goblin: { fr: "Gobelin", en: "Goblin", es: "Duende", it: "Goblin", de: "Kobold", pt: "Goblin", nl: "Goblin" },
+        ghost: { fr: "Fantôme", en: "Ghost", es: "Fantasma", it: "Fantasma", de: "Geist", pt: "Fantasma", nl: "Spook" },
+        professor: { fr: "Professeur", en: "Professor", es: "Profesor", it: "Professore", de: "Professor", pt: "Professor", nl: "Professor" },
+        creature: { fr: "Créature magique", en: "Magical Creature", es: "Criatura mágica", it: "Creatura magica", de: "Magisches Wesen", pt: "Criatura mágica", nl: "Magisch wezen" },
+        dark_wizard: { fr: "Sorcier Noir", en: "Dark Wizard", es: "Mago Oscuro", it: "Mago Oscuro", de: "Schwarzmagier", pt: "Mago Negro", nl: "Duistere Tovenaar" },
+        mystic_sorcerer: { fr: "Sorcier Mystique", en: "Mystic Sorcerer", es: "Hechicero Místico", it: "Stregone Mistico", de: "Mystischer Zauberer", pt: "Feiticeiro Místico", nl: "Mystieke Tovenaar" },
+        necromancer: { fr: "Nécromancien", en: "Necromancer", es: "Nigromante", it: "Negromante", de: "Nekromant", pt: "Necromante", nl: "Necromant" },
+        druid: { fr: "Druide", en: "Druid", es: "Druida", it: "Druido", de: "Druide", pt: "Druida", nl: "Druïde" },
+        red_witch: { fr: "Sorcière Rouge", en: "Red Witch", es: "Bruja Roja", it: "Strega Rossa", de: "Rote Hexe", pt: "Bruxa Vermelha", nl: "Rode Heks" }
       },
-      
-      // Thème Mythique (mythic-realms)
       "mythic-realms": {
-        knight: {
-          fr: "Chevalier", en: "Knight", es: "Caballero", it: "Cavaliere", de: "Ritter", pt: "Cavaleiro", nl: "Ridder"
-        },
-        dragon: {
-          fr: "Dragon humanoïde", en: "Dragon Humanoid", es: "Dragón humanoide", it: "Drago umanoide", de: "Drachen-Humanoide", pt: "Dragão humanoide", nl: "Draak Humanoïde"
-        },
-        dwarf: {
-          fr: "Nain guerrier", en: "Dwarf Warrior", es: "Enano guerrero", it: "Nano guerriero", de: "Zwerg Krieger", pt: "Anão guerreiro", nl: "Dwerg Krijger"
-        },
-        elf: {
-          fr: "Elfe archer", en: "Elven Archer", es: "Elfo arquero", it: "Elfo arciere", de: "Elfen Bogenschütze", pt: "Elfo arqueiro", nl: "Elfen Boogschutter"
-        },
-        orc: {
-          fr: "Orque", en: "Orc", es: "Orco", it: "Orco", de: "Ork", pt: "Orco", nl: "Ork"
-        },
-        royalty: {
-          fr: "Roi/Reine", en: "King/Queen", es: "Rey/Reina", it: "Re/Regina", de: "König/in", pt: "Rei/Rainha", nl: "Koning/in"
-        },
-        barbarian: {
-          fr: "Barbare", en: "Barbarian", es: "Bárbaro", it: "Barbaro", de: "Barbar", pt: "Bárbaro", nl: "Barbaar"
-        },
-        warrior_woman: {
-          fr: "Guerrière", en: "Warrior Woman", es: "Guerrera", it: "Guerriera", de: "Kriegerin", pt: "Guerreira", nl: "Krijgsvrouw"
-        },
-        war_god: {
-          fr: "Dieu de Guerre", en: "God of War", es: "Dios de la Guerra", it: "Dio della Guerra", de: "Kriegsgott", pt: "Deus da Guerra", nl: "Oorlogsgod"
-        },
-        elven_queen: {
-          fr: "Reine Elfe", en: "Elven Queen", es: "Reina Elfa", it: "Regina Elfica", de: "Elfenkönigin", pt: "Rainha Élfica", nl: "Elfen Koningin"
-        }
+        knight: { fr: "Chevalier", en: "Knight", es: "Caballero", it: "Cavaliere", de: "Ritter", pt: "Cavaleiro", nl: "Ridder" },
+        dragon: { fr: "Dragon humanoïde", en: "Dragon Humanoid", es: "Dragón humanoide", it: "Drago umanoide", de: "Drachen-Humanoide", pt: "Dragão humanoide", nl: "Draak Humanoïde" },
+        dwarf: { fr: "Nain guerrier", en: "Dwarf Warrior", es: "Enano guerrero", it: "Nano guerriero", de: "Zwerg Krieger", pt: "Anão guerreiro", nl: "Dwerg Krijger" },
+        elf: { fr: "Elfe archer", en: "Elven Archer", es: "Elfo arquero", it: "Elfo arciere", de: "Elfen Bogenschütze", pt: "Elfo arqueiro", nl: "Elfen Boogschutter" },
+        orc: { fr: "Orque", en: "Orc", es: "Orco", it: "Orco", de: "Ork", pt: "Orco", nl: "Ork" },
+        royalty: { fr: "Roi/Reine", en: "King/Queen", es: "Rey/Reina", it: "Re/Regina", de: "König/in", pt: "Rei/Rainha", nl: "Koning/in" },
+        barbarian: { fr: "Barbare", en: "Barbarian", es: "Bárbaro", it: "Barbaro", de: "Barbar", pt: "Bárbaro", nl: "Barbaar" },
+        warrior_woman: { fr: "Guerrière", en: "Warrior Woman", es: "Guerrera", it: "Guerriera", de: "Kriegerin", pt: "Guerreira", nl: "Krijgsvrouw" },
+        war_god: { fr: "Dieu de Guerre", en: "God of War", es: "Dios de la Guerra", it: "Dio della Guerra", de: "Kriegsgott", pt: "Deus da Guerra", nl: "Oorlogsgod" },
+        elven_queen: { fr: "Reine Elfe", en: "Elven Queen", es: "Reina Elfa", it: "Regina Elfica", de: "Elfenkönigin", pt: "Rainha Élfica", nl: "Elfen Koningin" }
+      }
+    }
+  },
+
+  // ============================================================================
+  // PACK FAMILLE - MODAL ET GESTION
+  // ============================================================================
+  familyPack: {
+    // Titre et étapes
+    title: {
+      fr: "👨‍👩‍👧‍👦 Pack Famille",
+      en: "👨‍👩‍👧‍👦 Family Pack",
+      es: "👨‍👩‍👧‍👦 Pack Familiar",
+      it: "👨‍👩‍👧‍👦 Pacchetto Famiglia",
+      de: "👨‍👩‍👧‍👦 Familienpaket",
+      pt: "👨‍👩‍👧‍👦 Pacote Família",
+      nl: "👨‍👩‍👧‍👦 Gezinspakket"
+    },
+    
+    // Étape 1: Entrer le code
+    step1: {
+      description: {
+        fr: "Vous avez reçu un code Pack Famille par email après votre achat Stripe ? Entrez-le ci-dessous pour activer votre pack.",
+        en: "Did you receive a Family Pack code by email after your Stripe purchase? Enter it below to activate your pack.",
+        es: "¿Recibiste un código de Pack Familiar por correo después de tu compra en Stripe? Ingrésalo abajo para activar tu pack.",
+        it: "Hai ricevuto un codice Pacchetto Famiglia via email dopo il tuo acquisto su Stripe? Inseriscilo qui sotto per attivare il tuo pacchetto.",
+        de: "Haben Sie nach Ihrem Stripe-Kauf einen Familienpaket-Code per E-Mail erhalten? Geben Sie ihn unten ein, um Ihr Paket zu aktivieren.",
+        pt: "Você recebeu um código de Pacote Família por e-mail após sua compra no Stripe? Insira-o abaixo para ativar seu pacote.",
+        nl: "Heb je na je Stripe-aankoop een Gezinspakket-code per e-mail ontvangen? Voer deze hieronder in om je pakket te activeren."
+      },
+      codeLabel: {
+        fr: "CODE PACK FAMILLE",
+        en: "FAMILY PACK CODE",
+        es: "CÓDIGO PACK FAMILIAR",
+        it: "CODICE PACCHETTO FAMIGLIA",
+        de: "FAMILIENPAKET-CODE",
+        pt: "CÓDIGO PACOTE FAMÍLIA",
+        nl: "GEZINSPAKKET CODE"
+      },
+      codePlaceholder: {
+        fr: "FAM-XXXX-XXXX",
+        en: "FAM-XXXX-XXXX",
+        es: "FAM-XXXX-XXXX",
+        it: "FAM-XXXX-XXXX",
+        de: "FAM-XXXX-XXXX",
+        pt: "FAM-XXXX-XXXX",
+        nl: "FAM-XXXX-XXXX"
+      },
+      validateButton: {
+        fr: "✅ Valider le code",
+        en: "✅ Validate code",
+        es: "✅ Validar código",
+        it: "✅ Convalida codice",
+        de: "✅ Code bestätigen",
+        pt: "✅ Validar código",
+        nl: "✅ Valideer code"
+      },
+      cancelButton: {
+        fr: "❌ Annuler",
+        en: "❌ Cancel",
+        es: "❌ Cancelar",
+        it: "❌ Annulla",
+        de: "❌ Abbrechen",
+        pt: "❌ Cancelar",
+        nl: "❌ Annuleren"
+      },
+      noCodeYet: {
+        fr: "Pas encore de code ?",
+        en: "No code yet?",
+        es: "¿Aún no tienes código?",
+        it: "Non hai ancora un codice?",
+        de: "Noch kein Code?",
+        pt: "Ainda não tem código?",
+        nl: "Nog geen code?"
+      },
+      buyLink: {
+        fr: "Acheter un Pack Famille (9,99€/mois)",
+        en: "Buy a Family Pack (€9.99/month)",
+        es: "Comprar un Pack Familiar (9,99€/mes)",
+        it: "Acquista un Pacchetto Famiglia (9,99€/mese)",
+        de: "Familienpaket kaufen (9,99€/Monat)",
+        pt: "Comprar um Pacote Família (9,99€/mês)",
+        nl: "Koop een Gezinspakket (€9,99/maand)"
+      }
+    },
+    
+    // Étape 2: Entrer les emails
+    step2: {
+      codeValid: {
+        fr: "✅ Code valide !",
+        en: "✅ Valid code!",
+        es: "✅ ¡Código válido!",
+        it: "✅ Codice valido!",
+        de: "✅ Gültiger Code!",
+        pt: "✅ Código válido!",
+        nl: "✅ Geldige code!"
+      },
+      enterEmails: {
+        fr: "Entrez les 8 emails des membres de votre Pack Famille. Ils recevront un email d'invitation.",
+        en: "Enter the 8 emails of your Family Pack members. They will receive an invitation email.",
+        es: "Ingresa los 8 correos de los miembros de tu Pack Familiar. Recibirán un correo de invitación.",
+        it: "Inserisci le 8 email dei membri del tuo Pacchetto Famiglia. Riceveranno un'email di invito.",
+        de: "Geben Sie die 8 E-Mails der Mitglieder Ihres Familienpakets ein. Sie erhalten eine Einladungs-E-Mail.",
+        pt: "Insira os 8 e-mails dos membros do seu Pacote Família. Eles receberão um e-mail de convite.",
+        nl: "Voer de 8 e-mails in van de leden van je Gezinspakket. Ze ontvangen een uitnodigingsmail."
+      },
+      activateButton: {
+        fr: "🚀 Activer le Pack",
+        en: "🚀 Activate Pack",
+        es: "🚀 Activar Pack",
+        it: "🚀 Attiva Pacchetto",
+        de: "🚀 Paket aktivieren",
+        pt: "🚀 Ativar Pacote",
+        nl: "🚀 Activeer Pakket"
+      },
+      backButton: {
+        fr: "← Retour",
+        en: "← Back",
+        es: "← Volver",
+        it: "← Indietro",
+        de: "← Zurück",
+        pt: "← Voltar",
+        nl: "← Terug"
+      },
+      importantTitle: {
+        fr: "⚠️ Important :",
+        en: "⚠️ Important:",
+        es: "⚠️ Importante:",
+        it: "⚠️ Importante:",
+        de: "⚠️ Wichtig:",
+        pt: "⚠️ Importante:",
+        nl: "⚠️ Belangrijk:"
+      },
+      oneTimeUse: {
+        fr: "Ce code ne peut être utilisé qu'une seule fois",
+        en: "This code can only be used once",
+        es: "Este código solo se puede usar una vez",
+        it: "Questo codice può essere utilizzato solo una volta",
+        de: "Dieser Code kann nur einmal verwendet werden",
+        pt: "Este código só pode ser usado uma vez",
+        nl: "Deze code kan maar één keer worden gebruikt"
+      },
+      cancelable: {
+        fr: "Abonnement résiliable chaque mois",
+        en: "Subscription cancelable every month",
+        es: "Suscripción cancelable cada mes",
+        it: "Abbonamento cancellabile ogni mese",
+        de: "Abonnement monatlich kündbar",
+        pt: "Assinatura cancelável a cada mês",
+        nl: "Abonnement elke maand opzegbaar"
+      },
+      afterCancellation: {
+        fr: "À la résiliation : comptes → gratuit, avatars conservés 1 mois",
+        en: "After cancellation: accounts → free, avatars kept for 1 month",
+        es: "Tras la cancelación: cuentas → gratis, avatares guardados 1 mes",
+        it: "Dopo la cancellazione: account → gratuiti, avatar conservati 1 mese",
+        de: "Nach Kündigung: Konten → kostenlos, Avatare 1 Monat gespeichert",
+        pt: "Após o cancelamento: contas → gratuitas, avatares mantidos por 1 mês",
+        nl: "Na annulering: accounts → gratis, avatars 1 maand bewaard"
+      }
+    },
+    
+    // Étape 3: Confirmation
+    step3: {
+      activated: {
+        fr: "Pack Famille Activé !",
+        en: "Family Pack Activated!",
+        es: "¡Pack Familiar Activado!",
+        it: "Pacchetto Famiglia Attivato!",
+        de: "Familienpaket Aktiviert!",
+        pt: "Pacote Família Ativado!",
+        nl: "Gezinspakket Geactiveerd!"
+      },
+      invitationsSent: {
+        fr: "Tous les membres ont reçu un email d'invitation. Profitez de la vidéo illimitée en famille !",
+        en: "All members have received an invitation email. Enjoy unlimited video with your family!",
+        es: "Todos los miembros han recibido un correo de invitación. ¡Disfruta del video ilimitado en familia!",
+        it: "Tutti i membri hanno ricevuto un'email di invito. Goditi il video illimitato con la tua famiglia!",
+        de: "Alle Mitglieder haben eine Einladungs-E-Mail erhalten. Genießen Sie unbegrenztes Video mit Ihrer Familie!",
+        pt: "Todos os membros receberam um e-mail de convite. Aproveite o vídeo ilimitado com sua família!",
+        nl: "Alle leden hebben een uitnodigingsmail ontvangen. Geniet van onbeperkte video met je gezin!"
+      },
+      letsGoButton: {
+        fr: "🎮 C'est parti !",
+        en: "🎮 Let's go!",
+        es: "🎮 ¡Vamos!",
+        it: "🎮 Andiamo!",
+        de: "🎮 Los geht's!",
+        pt: "🎮 Vamos lá!",
+        nl: "🎮 Laten we gaan!"
+      }
+    },
+    
+    // Étape 4: Gestion (propriétaire)
+    step4: {
+      ownerMessage: {
+        fr: "✅ Vous êtes propriétaire de ce Pack Famille",
+        en: "✅ You are the owner of this Family Pack",
+        es: "✅ Eres el propietario de este Pack Familiar",
+        it: "✅ Sei il proprietario di questo Pacchetto Famiglia",
+        de: "✅ Sie sind der Besitzer dieses Familienpakets",
+        pt: "✅ Você é o proprietário deste Pacote Família",
+        nl: "✅ Je bent de eigenaar van dit Gezinspakket"
+      },
+      changesThisMonth: {
+        fr: "Changements ce mois :",
+        en: "Changes this month:",
+        es: "Cambios este mes:",
+        it: "Modifiche questo mese:",
+        de: "Änderungen diesen Monat:",
+        pt: "Mudanças este mês:",
+        nl: "Wijzigingen deze maand:"
       }
     }
   },

@@ -1,0 +1,2652 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="default">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎭 LES SABOTEURS - Jeu de Déduction Sociale</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="description" content="Saboteur - Un jeu multijoueur de déduction sociale avec vidéo intégrée.">
+  <meta name="theme-color" content="#00ffff">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icons/icon-192x192.webp">
+  <!-- V40 FIX: Désactiver la requête automatique du favicon pour éviter l'erreur 503 -->
+  <link rel="icon" href="data:,">
+
+  <link rel="stylesheet" href="auth-themes.css">
+  
+  <style>
+    /* Particules animées */
+    .particles {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--neon-main);
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: twinkle 3s infinite;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 1; }
+    }
+
+    /* Liens Premium */
+    .premium-links {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+    
+    .premium-link {
+      background: linear-gradient(135deg, #ff6600, #ff9900);
+      color: #000 !important;
+      text-decoration: none;
+      font-size: 1.1em;
+      font-weight: bold;
+      padding: 12px 20px;
+      border-radius: 10px;
+      transition: all 0.3s ease;
+      position: relative;
+      box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+    }
+    
+    .premium-link:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(255, 102, 0, 0.5);
+    }
+    
+    /* Tooltip au survol */
+    .premium-link::after {
+      content: attr(title);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.95);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.75em;
+      font-weight: normal;
+      white-space: nowrap;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+      pointer-events: none;
+      border: 1px solid #ff6600;
+      z-index: 1000;
+    }
+    
+    .premium-link:hover::after {
+      opacity: 1;
+      visibility: visible;
+      bottom: calc(100% + 10px);
+    }
+    
+    .premium-separator {
+      display: none;
+    }
+
+    /* Container principal */
+    .main-container {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      padding-top: 80px;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo-title {
+      font-family: var(--font-title);
+      font-size: clamp(2rem, 8vw, 3.5rem);
+      color: var(--neon-main);
+      letter-spacing: 4px;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      font-size: 1rem;
+      color: var(--neon-green);
+      letter-spacing: 2px;
+    }
+
+    /* Carte auth */
+    .auth-card {
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.9) 100%);
+      border: 2px solid var(--metal-grey);
+      border-radius: calc(var(--border-radius) + 10px);
+      padding: 40px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.5), inset 0 0 60px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      margin-bottom: 30px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: var(--border-radius);
+      padding: 5px;
+      border: 1px solid var(--metal-grey);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-radius: calc(var(--border-radius) - 2px);
+      transition: all 0.3s;
+      font-family: var(--font-title);
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+    }
+
+    .tab.active {
+      background: var(--btn-gradient);
+      color: var(--btn-text);
+    }
+
+    .tab:hover:not(.active) {
+      color: var(--neon-main);
+    }
+
+    /* Forms */
+    .form-container {
+      display: none;
+    }
+
+    .form-container.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .btn-full {
+      width: 100%;
+      padding: 16px;
+      font-size: 1.1rem;
+      margin-top: 10px;
+    }
+
+    .btn-guest {
+      background: linear-gradient(135deg, var(--neon-purple) 0%, #6b21a8 100%);
+      color: white;
+      width: 100%;
+      padding: 16px;
+      margin-top: 15px;
+      border: none;
+      border-radius: var(--border-radius);
+      font-family: var(--font-title);
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-guest:hover {
+      box-shadow: 0 5px 30px rgba(157, 78, 221, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    .btn-guest-subtitle {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.8em;
+      margin: 5px 0 10px 0;
+    }
+    
+    .btn-explanation {
+      background: transparent;
+      border: 1px dashed rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.6);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85em;
+      cursor: pointer;
+      margin-top: 10px;
+      width: 100%;
+      transition: all 0.2s;
+    }
+    .btn-explanation:hover {
+      border-color: var(--neon-main);
+      color: var(--neon-main);
+      background: rgba(0, 255, 255, 0.05);
+    }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 25px 0;
+      color: var(--text-muted);
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--metal-grey);
+    }
+
+    .divider span {
+      padding: 0 15px;
+      font-size: 0.85rem;
+    }
+
+    /* User info */
+    .user-info {
+      display: none;
+      text-align: center;
+      padding: 25px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--neon-green);
+      margin-bottom: 20px;
+    }
+
+    .user-info.show { display: block; }
+
+    .user-avatar {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid var(--neon-main);
+      margin: 0 auto 15px;
+      object-fit: cover;
+      display: none;
+    }
+
+    .user-avatar.show { display: block; }
+
+    .user-info .username {
+      font-family: var(--font-title);
+      font-size: 1.3rem;
+      color: var(--neon-main);
+      margin-bottom: 8px;
+    }
+
+    .user-info .credits {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* Verification banner */
+    .verification-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(255, 107, 53, 0.15) 0%, rgba(255, 0, 85, 0.15) 100%);
+      border: 1px solid var(--neon-orange);
+      border-radius: var(--border-radius);
+      padding: 18px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .verification-banner.show { display: block; }
+
+    .verification-banner p {
+      color: var(--neon-orange);
+      margin-bottom: 12px;
+    }
+
+    .verification-banner button {
+      background: var(--neon-orange);
+      color: var(--primary-bg);
+      border: none;
+      padding: 10px 24px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Home screen */
+    .home-screen {
+      display: none;
+    }
+
+    .home-screen.show {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.98) 0%, rgba(26, 31, 53, 0.95) 100%);
+      border: 2px solid var(--neon-main);
+      border-radius: calc(var(--border-radius) + 10px);
+      padding: 30px;
+      max-width: 400px;
+      width: 90%;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.2);
+    }
+
+    .modal-content h3 {
+      font-family: var(--font-title);
+      color: var(--neon-main);
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .modal-buttons .btn {
+      flex: 1;
+    }
+    
+    /* Modal scrollable pour mobile */
+    .modal-scrollable {
+      max-height: 85vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    @media (max-width: 600px) {
+      .modal-scrollable {
+        max-height: 80vh;
+        padding: 20px;
+      }
+    }
+
+    /* Features */
+    .features {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--metal-grey);
+    }
+
+    .features h3 {
+      color: var(--neon-main);
+      font-family: var(--font-title);
+      font-size: 0.85rem;
+      margin-bottom: 18px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .feature-item .icon { font-size: 1.3rem; }
+
+    /* Promo */
+    .promo-section { margin-top: 15px; }
+
+    .promo-toggle {
+      color: var(--neon-purple);
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-align: center;
+      display: block;
+    }
+
+    .promo-toggle:hover { text-decoration: underline; }
+
+    .promo-input {
+      display: none;
+      margin-top: 12px;
+    }
+
+    .promo-input.show { display: block; }
+
+    @media (max-width: 480px) {
+      .auth-card { padding: 25px 20px; }
+      .feature-grid { grid-template-columns: 1fr; }
+      .theme-selector-mini {
+        top: 10px;
+        right: 10px;
+        padding: 6px 10px;
+      }
+      .theme-btn-mini {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+      }
+    }
+    
+    /* V35: MATCHMAKING STYLES */
+    /* V35: MATCHMAKING STYLES - NEW UI */
+    .btn-main-action {
+      font-size: 1.1em !important;
+      padding: 18px !important;
+    }
+    .btn-subtitle {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 0.85em;
+      margin: -5px 0 15px 0;
+    }
+    .btn-public {
+      background: linear-gradient(135deg, #00cc88, #00aa66) !important;
+      color: #000 !important;
+    }
+    .btn-public:hover {
+      background: linear-gradient(135deg, #00dd99, #00bb77) !important;
+    }
+    .home-separator {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.15);
+      margin: 20px 0;
+    }
+    
+    /* Page Rooms Publiques */
+    .public-rooms-header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .public-rooms-header h2 {
+      margin: 0;
+      font-size: 1.3em;
+      color: var(--neon-main);
+    }
+    .btn-back {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      padding: 8px 15px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9em;
+      transition: all 0.2s;
+    }
+    .btn-back:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--neon-main);
+    }
+    
+    /* Section création room */
+    .create-room-section {
+      background: rgba(0, 200, 100, 0.1);
+      border: 1px solid rgba(0, 200, 100, 0.3);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    .create-room-section h3 {
+      margin: 0 0 12px 0;
+      color: #00cc88;
+      font-size: 1em;
+    }
+    .create-room-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .form-row {
+      width: 100%;
+    }
+    .room-type-selector {
+      display: flex;
+      gap: 10px;
+    }
+    .room-type-btn {
+      flex: 1;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid transparent;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      font-size: 1em;
+      transition: all 0.2s;
+    }
+    .room-type-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+    .room-type-btn.active {
+      border-color: #00cc88;
+      background: rgba(0, 200, 100, 0.2);
+    }
+    /* V35: Player count selector */
+    .player-count-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-secondary);
+      font-size: 0.9em;
+      margin-bottom: 8px;
+    }
+    .player-count-value {
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      color: #000;
+      padding: 4px 12px;
+      border-radius: 15px;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .player-count-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .player-count-btn {
+      width: 36px;
+      height: 36px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 50%;
+      color: white;
+      font-size: 1.3em;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .player-count-btn:hover {
+      border-color: #00cc88;
+      background: rgba(0, 200, 100, 0.2);
+    }
+    #playerCountSlider {
+      flex: 1;
+      height: 8px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      outline: none;
+    }
+    #playerCountSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    #playerCountSlider::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    .player-count-hint {
+      color: #00cc88;
+      font-size: 0.8em;
+      margin-top: 8px;
+      opacity: 0.8;
+    }
+    #createRoomComment {
+      width: 100%;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      font-size: 0.95em;
+      box-sizing: border-box;
+    }
+    #createRoomComment:focus {
+      outline: none;
+      border-color: #00cc88;
+    }
+    .btn-create-room {
+      background: linear-gradient(135deg, #00cc88, #00aa66);
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      color: #000;
+      font-weight: bold;
+      font-size: 1em;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .btn-create-room:hover {
+      transform: translateY(-2px);
+    }
+    
+    /* Section liste rooms */
+    .rooms-list-section {
+      margin-bottom: 15px;
+    }
+    .rooms-list-section h3 {
+      margin: 0 0 10px 0;
+      color: var(--neon-main);
+      font-size: 1em;
+    }
+    .rooms-list-section h3 span:last-child {
+      color: rgba(255, 255, 255, 0.5);
+      font-weight: normal;
+    }
+    .rooms-list {
+      max-height: 300px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .loading-text {
+      text-align: center;
+      color: rgba(255, 255, 255, 0.5);
+      padding: 20px;
+    }
+    
+    /* Room card */
+    .room-card {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s;
+    }
+    .room-card:hover {
+      border-color: var(--neon-main);
+    }
+    .room-card.room-full {
+      opacity: 0.5;
+    }
+    .room-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .room-card-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 0;
+    }
+    .room-theme-icon {
+      font-size: 1.5em;
+    }
+    .room-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .room-name {
+      font-weight: bold;
+      font-size: 1em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .room-meta {
+      font-size: 0.8em;
+      color: rgba(255, 255, 255, 0.6);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .room-type-badge {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75em;
+    }
+    .room-type-badge.video { background: rgba(255, 0, 128, 0.3); }
+    .room-type-badge.chat { background: rgba(0, 128, 255, 0.3); }
+    .room-card-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .room-players {
+      font-weight: bold;
+      font-size: 0.95em;
+      white-space: nowrap;
+    }
+    .room-players.full { color: #ff4444; }
+    .btn-join-room {
+      padding: 8px 16px;
+      background: var(--neon-main);
+      border: none;
+      border-radius: 6px;
+      color: #000;
+      font-weight: bold;
+      font-size: 0.9em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .btn-join-room:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+    
+    /* Commentaire de room */
+    .room-comment {
+      font-size: 0.85em;
+      color: rgba(255, 255, 255, 0.7);
+      font-style: italic;
+      padding: 6px 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 6px;
+      border-left: 3px solid var(--neon-main);
+    }
+    
+    /* No rooms message */
+    .no-rooms-message {
+      text-align: center;
+      padding: 30px 20px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+    .no-rooms-message p {
+      margin: 0 0 5px 0;
+    }
+    
+    /* Stats */
+    .matchmaking-stats {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      padding: 10px;
+      font-size: 0.8em;
+      color: rgba(255, 255, 255, 0.5);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 10px;
+    }
+    
+    /* Countdown overlay */
+    .countdown-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .countdown-box {
+      text-align: center;
+      padding: 30px;
+      background: rgba(0, 0, 0, 0.9);
+      border: 2px solid var(--neon-main);
+      border-radius: 15px;
+    }
+    .countdown-number {
+      font-size: 3.5em;
+      font-weight: bold;
+      color: var(--neon-main);
+      text-shadow: 0 0 15px var(--neon-main);
+    }
+    
+    @media (max-width: 500px) {
+      .public-rooms-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .room-type-selector {
+        flex-direction: column;
+      }
+      .room-card-top {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .room-card-right {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="particles" id="particles"></div>
+
+  <!-- Sélecteur de thème amélioré -->
+  <div class="theme-selector-panel">
+    <div class="theme-selector-header">
+      <span class="theme-selector-title" data-i18n="index.themeSelector.title">🎨 CHOISIS TON UNIVERS</span>
+      <span class="theme-selector-subtitle" data-i18n="index.themeSelector.subtitle">Ce thème sera appliqué à ta partie</span>
+    </div>
+    <div class="theme-buttons-row">
+      <button class="theme-btn-large active" data-theme="default" title="Infiltration Spatiale">
+        <span class="theme-emoji">🚀</span>
+        <span class="theme-name" data-i18n="index.themes.spatial">Spatial</span>
+      </button>
+      <button class="theme-btn-large" data-theme="werewolf" title="Village des Loups-Garous">
+        <span class="theme-emoji">🐺</span>
+        <span class="theme-name" data-i18n="index.themes.werewolf">Loup-Garou</span>
+      </button>
+      <button class="theme-btn-large" data-theme="wizard-academy" title="Académie des Sorciers">
+        <span class="theme-emoji">🧙</span>
+        <span class="theme-name" data-i18n="index.themes.wizardAcademy">Sorciers</span>
+      </button>
+      <button class="theme-btn-large" data-theme="mythic-realms" title="Royaumes Mythiques">
+        <span class="theme-emoji">⚔️</span>
+        <span class="theme-name" data-i18n="index.themes.mythicRealms">Mythique</span>
+      </button>
+    </div>
+    <div class="theme-selected-indicator" id="themeIndicator">
+      <span data-i18n="index.themeSelector.selected">✨ Thème sélectionné : </span><strong id="selectedThemeName">Spatial</strong>
+    </div>
+    
+    <!-- Sélecteur de langue -->
+    <div class="language-selector-container">
+      <div class="language-selector" id="languageSelector">
+        <button class="lang-flag" data-lang="fr" title="Français" onclick="changeLanguage('fr')">
+          <svg viewBox="0 0 36 36" width="24" height="24"><path fill="#002654" d="M4 5C1.791 5 0 6.791 0 9v18c0 2.209 1.791 4 4 4h8V5H4z"/><path fill="#FFF" d="M12 5h12v26H12z"/><path fill="#CE1126" d="M24 5h8c2.209 0 4 1.791 4 4v18c0 2.209-1.791 4-4 4h-8V5z"/></svg>
+        </button>
+        <button class="lang-flag" data-lang="en" title="English" onclick="changeLanguage('en')">
+          <svg viewBox="0 0 36 36" width="24" height="24"><path fill="#00247D" d="M0 9.059V13h5.628zM4.664 31H13v-5.837zM23 25.164V31h8.335zM0 23v3.941L5.63 23zM31.337 5H23v5.837zM36 26.942V23h-5.631zM36 13V9.059L30.371 13zM13 5H4.664L13 10.837z"/><path fill="#CF1B2B" d="M25.14 23l9.712 6.801c.471-.479.808-1.082.992-1.749L28.627 23H25.14zM13 23h-2.141l-9.711 6.8c.521.53 1.189.909 1.938 1.085L13 23.943V23zm10-10h2.141l9.711-6.8c-.521-.53-1.188-.909-1.937-1.085L23 12.057V13zm-10 0h-2.141L1.148 6.2C.677 6.68.34 7.282.156 7.949L7.372 13h3.487z"/><path fill="#EEE" d="M36 21H21v10h2v-5.836L31.335 31H32c1.117 0 2.126-.461 2.852-1.199L25.14 23h3.487l7.449 5.22c.072-.273.124-.556.124-.852V21zm-21 0H0v5.941L5.63 23h3.488l-9.711 6.8c.155.159.322.307.503.441C.256 30.496.706 30.728 1.2 30.88L13 23.943V31h2V21zM21 5v10h15v-4c0-1.118-.461-2.126-1.199-2.852L27.598 13h-3.487l9.711-6.8C33.303 5.678 32.635 5.3 31.886 5.124L21 13V5h-2zm-6 0h-2v5.837L4.664 5H4c-1.118 0-2.126.461-2.852 1.2l9.711 6.8H7.372L.148 7.949C.066 8.254 0 8.571 0 8.9V15h15V5z"/><path fill="#CF1B2B" d="M21 15V5h-6v10H0v6h15v10h6V21h15v-6z"/></svg>
+        </button>
+        <button class="lang-flag" data-lang="es" title="Español" onclick="changeLanguage('es')">
+          <svg viewBox="0 0 36 36" width="24" height="24"><path fill="#C60A1D" d="M36 27c0 2.209-1.791 4-4 4H4c-2.209 0-4-1.791-4-4V9c0-2.209 1.791-4 4-4h28c2.209 0 4 1.791 4 4v18z"/><path fill="#FFC400" d="M0 12h36v12H0z"/></svg>
+        </button>
+        <button class="lang-flag" data-lang="it" title="Italiano" onclick="changeLanguage('it')">
+          <svg viewBox="0 0 36 36" width="24" height="24"><path fill="#009246" d="M4 5C1.791 5 0 6.791 0 9v18c0 2.209 1.791 4 4 4h8V5H4z"/><path fill="#FFF" d="M12 5h12v26H12z"/><path fill="#CE2B37" d="M24 5h8c2.209 0 4 1.791 4 4v18c0 2.209-1.791 4-4 4h-8V5z"/></svg>
+        </button>
+        <button class="lang-flag" data-lang="de" title="Deutsch" onclick="changeLanguage('de')">
+          <svg viewBox="0 0 36 36" width="24" height="24"><path fill="#FFCD05" d="M0 27c0 2.209 1.791 4 4 4h28c2.209 0 4-1.791 4-4v-4H0v4z"/><path fill="#ED1F24" d="M0 14h36v9H0z"/><path fill="#141414" d="M32 5H4C1.791 5 0 6.791 0 9v5h36V9c0-2.209-1.791-4-4-4z"/></svg>
+        </button>
+        <button class="lang-flag" data-lang="pt" title="Português" onclick="changeLanguage('pt')">
+          <svg viewBox="0 0 36 36" width="24" height="24"><path fill="#060" d="M0 27c0 2.209 1.791 4 4 4h10V5H4C1.791 5 0 6.791 0 9v18z"/><path fill="#FF2B2B" d="M32 5H14v26h18c2.209 0 4-1.791 4-4V9c0-2.209-1.791-4-4-4z"/><circle fill="#FF0" cx="14" cy="18" r="6"/><path fill="#060" d="M12 15v4c0 1.105.895 2 2 2s2-.895 2-2v-4h-4z"/><path fill="#FFF" d="M13 15h2v4c0 .552-.448 1-1 1s-1-.448-1-1v-4z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* ===== STYLES MOBILE (par défaut) ===== */
+    .theme-selector-panel {
+      position: relative;
+      top: auto;
+      right: auto;
+      margin: 10px auto 20px auto;
+      width: calc(100% - 30px);
+      max-width: 320px;
+      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.95) 100%);
+      border: 2px solid var(--neon-main, #00ffff);
+      border-radius: 12px;
+      padding: 12px;
+      z-index: 1000;
+      box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    }
+    
+    .theme-selector-header {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    
+    .theme-selector-title {
+      display: block;
+      font-family: var(--font-title, 'Orbitron', sans-serif);
+      font-size: 0.85rem;
+      color: var(--neon-main, #00ffff);
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+    }
+    
+    .theme-selector-subtitle {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--text-secondary, #8892b0);
+      opacity: 0.8;
+    }
+    
+    .theme-buttons-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      justify-items: center;
+      margin-bottom: 8px;
+    }
+    
+    .theme-btn-large {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 90px;
+      height: 55px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 2px solid var(--metal-grey, #3d4663);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: 6px 4px;
+      overflow: hidden;
+    }
+    
+    .theme-btn-large:hover {
+      background: rgba(0, 255, 255, 0.1);
+      border-color: var(--neon-main, #00ffff);
+      transform: scale(1.03);
+    }
+    
+    .theme-btn-large.active {
+      background: rgba(0, 255, 255, 0.2);
+      border-color: var(--neon-main, #00ffff);
+      box-shadow: 0 0 12px rgba(0, 255, 255, 0.4);
+    }
+    
+    .theme-emoji {
+      font-size: 1.4rem;
+      margin-bottom: 2px;
+    }
+    
+    .theme-name {
+      font-size: 0.65rem;
+      color: var(--text-secondary, #8892b0);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      text-align: center;
+      max-width: 85px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.1;
+    }
+    
+    .theme-btn-large.active .theme-name {
+      color: var(--neon-main, #00ffff);
+    }
+    
+    .theme-selected-indicator {
+      text-align: center;
+      font-size: 0.65rem;
+      color: var(--neon-green, #50fa7b);
+      padding: 5px;
+      background: rgba(80, 250, 123, 0.1);
+      border-radius: 6px;
+      border: 1px solid rgba(80, 250, 123, 0.3);
+    }
+    
+    .theme-selected-indicator strong {
+      color: var(--neon-main, #00ffff);
+    }
+    
+    /* Sélecteur de langue */
+    .language-selector-container {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(0, 255, 255, 0.2);
+    }
+    
+    .language-selector {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      justify-items: center;
+    }
+    
+    .lang-flag {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 5px;
+      padding: 4px 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .lang-flag svg {
+      display: block;
+      width: 20px;
+      height: 20px;
+      border-radius: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+    
+    .lang-flag:hover {
+      background: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: scale(1.1);
+    }
+    
+    .lang-flag.active {
+      border-color: var(--neon-main, #00ffff);
+      background: rgba(0, 255, 255, 0.15);
+      box-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+    }
+    
+    /* ===== STYLES PC (écrans > 480px) ===== */
+    @media (min-width: 481px) {
+      .theme-selector-panel {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        margin: 0;
+        width: auto;
+        max-width: 340px;
+        padding: 18px 22px;
+        border-radius: 16px;
+      }
+      
+      .theme-selector-title {
+        font-size: 1rem;
+        letter-spacing: 2px;
+        margin-bottom: 5px;
+      }
+      
+      .theme-selector-subtitle {
+        font-size: 0.8rem;
+      }
+      
+      .theme-selector-header {
+        margin-bottom: 15px;
+      }
+      
+      .theme-buttons-row {
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      
+      .theme-btn-large {
+        width: 140px;
+        height: 70px;
+        border-radius: 10px;
+        padding: 8px;
+      }
+      
+      .theme-emoji {
+        font-size: 1.8rem;
+        margin-bottom: 4px;
+      }
+      
+      .theme-name {
+        font-size: 0.75rem;
+        max-width: 130px;
+        letter-spacing: 0.5px;
+      }
+      
+      .theme-selected-indicator {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+      
+      .language-selector-container {
+        margin-top: 14px;
+        padding-top: 14px;
+      }
+      
+      .language-selector {
+        gap: 8px;
+      }
+      
+      .lang-flag {
+        padding: 6px 10px;
+        border-radius: 6px;
+      }
+      
+      .lang-flag svg {
+        width: 26px;
+        height: 26px;
+        border-radius: 3px;
+      }
+    }
+    
+    /* V23: Password visibility toggle */
+    .password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+    .password-wrapper input {
+      flex: 1;
+      padding-right: 45px;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      padding: 5px;
+      color: var(--text-secondary, #aaa);
+    }
+    .password-toggle:hover {
+      opacity: 1;
+    }
+    
+    .forgot-password-link {
+      display: block;
+      text-align: right;
+      margin-top: 8px;
+      font-size: 0.85em;
+      color: var(--neon-main, #00ffff);
+      text-decoration: none;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    
+    .forgot-password-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  </style>
+
+  <div class="main-container">
+    <div class="header">
+      <h1 class="logo-title" data-i18n="index.title">LES SABOTEURS</h1>
+      <p class="subtitle">⚡ <span data-i18n="index.subtitle">JEU DE DÉDUCTION SOCIALE</span> ⚡</p>
+    </div>
+
+    <div class="auth-card">
+      <div class="message error" id="errorMessage"></div>
+      <div class="message success" id="successMessage"></div>
+
+      <div class="verification-banner" id="verificationBanner">
+        <p>📧 Vérifie ton email pour débloquer les <strong>2 parties vidéo gratuites</strong> !</p>
+        <button onclick="resendVerification()">Renvoyer l'email</button>
+      </div>
+
+      <div class="user-info" id="userInfo">
+        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23333'/%3E%3Ctext x='50' y='65' text-anchor='middle' fill='%2300ffff' font-size='40'%3E👤%3C/text%3E%3C/svg%3E" alt="Avatar" class="user-avatar" id="userAvatar">
+        <div class="username" id="displayUsername">Joueur</div>
+        <div class="credits" id="displayCredits">🎬 2 parties vidéo disponibles</div>
+      </div>
+
+      <div class="tabs" id="authTabs">
+        <div class="tab active" data-tab="login" data-i18n="index.auth.login">CONNEXION</div>
+        <div class="tab" data-tab="register" data-i18n="index.auth.register">INSCRIPTION</div>
+      </div>
+
+      <!-- Login Form -->
+      <div class="form-container active" id="loginForm">
+        <div class="form-group">
+          <label data-i18n="index.auth.email">EMAIL</label>
+          <input type="email" id="loginEmail" data-i18n-placeholder="index.auth.emailPlaceholder" placeholder="ton@email.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label data-i18n="index.auth.password">MOT DE PASSE</label>
+          <div class="password-wrapper">
+            <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="password-toggle" onclick="togglePassword('loginPassword', this)">👁️</button>
+          </div>
+          <a href="#" class="forgot-password-link" onclick="showForgotPassword(); return false;" data-i18n="index.auth.forgotPassword">🔑 Mot de passe oublié ?</a>
+        </div>
+        <button class="btn btn-primary btn-full" id="loginBtn" onclick="login()" data-i18n="index.auth.loginButton">
+          🚀 CONNEXION
+        </button>
+        <div class="divider"><span data-i18n="index.auth.or">OU</span></div>
+        <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
+          🎮 Jouer en tant qu'invité
+        </button>
+        <p class="btn-guest-subtitle"><span data-i18n="index.auth.guestInfo">room privée • chat sans visio • sans compte</span></p>
+        
+        <button class="btn-explanation" onclick="showRoomExplanation()">
+          ❓ <span data-i18n="index.explanation.button">Différence room privée / publique</span>
+        </button>
+        
+        <!-- Liens Premium -->
+        <div class="premium-links">
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" data-i18n="index.premium.offers" data-i18n-title="index.premium.offersTitle" title="Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois">
+            🌟 Offres Premium
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" data-i18n="index.premium.pack" data-i18n-title="index.premium.packTitle" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
+            📦 Pack vidéo + avatars
+          </a>
+        </div>
+      </div>
+
+      <!-- Register Form -->
+      <div class="form-container" id="registerForm">
+        <div class="form-group">
+          <label data-i18n="index.auth.username">PSEUDO</label>
+          <input type="text" id="registerUsername" data-i18n-placeholder="index.auth.usernamePlaceholder" placeholder="Ton pseudo de joueur" maxlength="20">
+        </div>
+        <div class="form-group">
+          <label data-i18n="index.auth.email">EMAIL</label>
+          <input type="email" id="registerEmail" data-i18n-placeholder="index.auth.emailPlaceholder" placeholder="ton@email.com">
+        </div>
+        <div class="form-group">
+          <label data-i18n="index.auth.password">MOT DE PASSE</label>
+          <div class="password-wrapper">
+            <input type="password" id="registerPassword" placeholder="Minimum 6 caractères">
+            <button type="button" class="password-toggle" onclick="togglePassword('registerPassword', this)">👁️</button>
+          </div>
+        </div>
+        
+        <div class="promo-section">
+          <span class="promo-toggle" onclick="togglePromo()">🎁 J'ai un code promo</span>
+          <div class="promo-input" id="promoInput">
+            <div class="form-group" style="margin-bottom: 0;">
+              <input type="text" id="promoCode" placeholder="CODE-PROMO">
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="registerBtn" onclick="register()" data-i18n="index.auth.registerButton">
+          🚀 CRÉER MON COMPTE
+        </button>
+        <div class="divider"><span data-i18n="index.auth.or">OU</span></div>
+        <button class="btn-guest" onclick="playAsGuest()" data-i18n="index.auth.playAsGuest">
+          🎮 Jouer en tant qu'invité
+        </button>
+        <p class="btn-guest-subtitle"><span data-i18n="index.auth.guestInfo">room privée • chat sans visio • sans compte</span></p>
+        
+        <button class="btn-explanation" onclick="showRoomExplanation()">
+          ❓ <span data-i18n="index.explanation.button">Différence room privée / publique</span>
+        </button>
+        
+        <!-- Liens Premium -->
+        <div class="premium-links">
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" data-i18n="index.premium.offers" data-i18n-title="index.premium.offersTitle" title="Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois">
+            🌟 Offres Premium
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" data-i18n="index.premium.pack" data-i18n-title="index.premium.packTitle" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
+            📦 Pack vidéo + avatars
+          </a>
+        </div>
+      </div>
+
+      <!-- Home Screen -->
+      <div class="home-screen" id="homeScreen">
+        
+        <!-- Boutons principaux -->
+        <button class="btn btn-primary btn-full btn-main-action" onclick="goToGame()" data-i18n="index.profile.playNow">
+          🎮 JOUER MAINTENANT
+        </button>
+        <p class="btn-subtitle" data-i18n="index.matchmaking.privateGame">Partie privée avec code</p>
+        
+        <button class="btn btn-public btn-full btn-main-action" onclick="showPublicRoomsScreen()" data-i18n="index.matchmaking.playPublic">
+          🌐 JOUER EN ROOM PUBLIQUE
+        </button>
+        
+        <div class="home-separator"></div>
+        
+        <button class="btn btn-secondary btn-full" onclick="goToAvatars()" data-i18n="index.profile.createAvatar">🎨 CRÉER MON AVATAR IA</button>
+        <button class="btn btn-secondary btn-full" onclick="showChangePassword()" data-i18n="index.profile.changePassword">🔐 MODIFIER MOT DE PASSE</button>
+        <button class="btn btn-secondary btn-full" onclick="logout()" data-i18n="index.profile.logout">🚪 DÉCONNEXION</button>
+        
+        <!-- Liens Premium -->
+        <div class="premium-links" style="margin-top: 20px;">
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" data-i18n="index.premium.offers" data-i18n-title="index.premium.offersTitle" title="Vidéo illimitée, 4 thèmes, 30 avatars/mois - 1,49€/mois">
+            🌟 Offres Premium
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showPaymentModal(); return false;" class="premium-link" data-i18n="index.premium.pack" data-i18n-title="index.premium.packTitle" title="50 parties vidéo + 50 avatars IA - 4,99€ une fois">
+            📦 Pack vidéo + avatars
+          </a>
+          <span class="premium-separator">•</span>
+          <a href="#" onclick="showFamilyPackModal(); return false;" class="premium-link" data-i18n="index.premium.family" data-i18n-title="index.premium.familyTitle" title="9 comptes, vidéo illimitée - 9,99€/mois">
+            👨‍👩‍👧‍👦 Pack Famille
+          </a>
+        </div>
+      </div>
+      
+      <!-- V35: PAGE ROOMS PUBLIQUES -->
+      <div class="home-screen" id="publicRoomsScreen" style="display:none;">
+        <div class="public-rooms-header">
+          <button class="btn-back" onclick="hidePublicRoomsScreen()">← <span data-i18n="index.matchmaking.back">Retour</span></button>
+          <h2 data-i18n="index.matchmaking.publicRoomsTitle">🌐 ROOMS PUBLIQUES</h2>
+        </div>
+        
+        <!-- Création de room -->
+        <div class="create-room-section">
+          <h3 data-i18n="index.matchmaking.createYourRoom">➕ Créer ta room</h3>
+          
+          <div class="create-room-form">
+            <div class="form-row">
+              <div class="room-type-selector">
+                <button type="button" class="room-type-btn active" data-type="video" onclick="selectRoomType('video')">
+                  🎥 <span data-i18n="index.matchmaking.videoRoom">Vidéo</span>
+                </button>
+                <button type="button" class="room-type-btn" data-type="chat" onclick="selectRoomType('chat')">
+                  💬 <span data-i18n="index.matchmaking.chatRoom">Chat only</span>
+                </button>
+              </div>
+            </div>
+            
+            <!-- V35: Sélecteur nombre de joueurs -->
+            <div class="form-row">
+              <label class="player-count-label">
+                <span data-i18n="index.matchmaking.playerCount">👥 Nombre de joueurs</span>
+                <span id="playerCountDisplay" class="player-count-value">6</span>
+              </label>
+              <div class="player-count-selector">
+                <button type="button" class="player-count-btn" onclick="adjustPlayerCount(-1)">−</button>
+                <input type="range" id="playerCountSlider" min="6" max="12" value="6" 
+                       oninput="updatePlayerCountDisplay(this.value)">
+                <button type="button" class="player-count-btn" onclick="adjustPlayerCount(1)">+</button>
+              </div>
+              <p class="player-count-hint" data-i18n="index.matchmaking.autoStartHint">⚡ La partie démarre automatiquement quand le nombre est atteint</p>
+            </div>
+            
+            <div class="form-row">
+              <input type="text" id="createRoomComment" maxlength="50" 
+                     data-i18n-placeholder="index.matchmaking.commentPlaceholder"
+                     placeholder="Message pour les joueurs (optionnel)">
+            </div>
+            
+            <button class="btn btn-create-room" onclick="createPublicRoomFromPage()">
+              <span data-i18n="index.matchmaking.createMyRoom">🚀 Créer ma room</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Liste des rooms -->
+        <div class="rooms-list-section">
+          <h3><span data-i18n="index.matchmaking.waitingRooms">📋 Rooms en attente</span> <span id="roomsCount">(0)</span></h3>
+          <div id="publicRoomsList" class="rooms-list">
+            <p class="loading-text" data-i18n="index.matchmaking.loading">Chargement...</p>
+          </div>
+        </div>
+        
+        <!-- Stats -->
+        <div id="matchmakingStats" class="matchmaking-stats"></div>
+      </div>
+
+      <!-- V35: Modal Explication Room Privée/Publique -->
+      <div class="modal" id="roomExplanationModal" style="display:none;">
+        <div class="modal-content modal-scrollable" style="max-width: 500px;">
+          <h3 style="color: var(--neon-cyan);" data-i18n="index.explanation.title">❓ Room Privée vs Publique</h3>
+          
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #9d4edd; margin-bottom: 10px;" data-i18n="index.explanation.privateTitle">🔒 Room Privée</h4>
+            <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+              <li data-i18n="index.explanation.private1">Tu crées une room avec un <strong>code à 4 chiffres</strong></li>
+              <li data-i18n="index.explanation.private2">Tu partages ce code avec tes amis</li>
+              <li data-i18n="index.explanation.private3">Seuls ceux qui ont le code peuvent rejoindre</li>
+              <li data-i18n="index.explanation.private4">Idéal pour jouer <strong>entre amis</strong></li>
+              <li data-i18n="index.explanation.private5">Accessible à tous (invités et comptes)</li>
+            </ul>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #00cc88; margin-bottom: 10px;" data-i18n="index.explanation.publicTitle">🌐 Room Publique</h4>
+            <ul style="color: var(--text-secondary); line-height: 1.8; padding-left: 20px;">
+              <li data-i18n="index.explanation.public1">Ta room apparaît dans la <strong>liste publique</strong></li>
+              <li data-i18n="index.explanation.public2">N'importe qui peut la rejoindre</li>
+              <li data-i18n="index.explanation.public3">Parfait pour <strong>rencontrer de nouveaux joueurs</strong></li>
+              <li data-i18n="index.explanation.public4">Tu peux ajouter un message pour attirer les joueurs</li>
+              <li data-i18n="index.explanation.public5">Nécessite un <strong>compte vérifié</strong> pour créer</li>
+            </ul>
+          </div>
+          
+          <div style="background: rgba(0, 255, 255, 0.1); padding: 12px; border-radius: 8px; border-left: 3px solid var(--neon-cyan);">
+            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9em;" data-i18n="index.explanation.tip">💡 <strong>Conseil :</strong> Crée un compte gratuit pour accéder aux rooms publiques et garder ton historique de parties !</p>
+          </div>
+          
+          <button class="btn btn-primary btn-full" style="margin-top: 20px;" onclick="hideRoomExplanation()" data-i18n="index.explanation.gotIt">
+            👍 Compris !
+          </button>
+        </div>
+      </div>
+
+      <!-- V35: Modal Pack Famille -->
+      <div class="modal" id="familyPackModal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+          <h3 style="color: var(--neon-cyan);" data-i18n="familyPack.title">👨‍👩‍👧‍👦 Pack Famille</h3>
+          
+          <!-- Étape 1: Entrer le code -->
+          <div id="familyStep1">
+            <p style="color: var(--text-secondary); margin-bottom: 15px;" data-i18n="familyPack.step1.description">
+              Vous avez reçu un code Pack Famille par email après votre achat Stripe ?<br>
+              Entrez-le ci-dessous pour activer votre pack.
+            </p>
+            <div class="form-group">
+              <label data-i18n="familyPack.step1.codeLabel">CODE PACK FAMILLE</label>
+              <input type="text" id="familyCode" data-i18n-placeholder="familyPack.step1.codePlaceholder" placeholder="FAM-XXXX-XXXX" style="text-transform: uppercase; letter-spacing: 2px; text-align: center; font-size: 1.2rem;">
+            </div>
+            <div id="familyCodeError" style="color: var(--neon-red); margin-bottom: 10px; display: none;"></div>
+            <div class="modal-buttons">
+              <button class="btn btn-primary" onclick="validateFamilyCode()" data-i18n="familyPack.step1.validateButton">✅ Valider le code</button>
+              <button class="btn btn-secondary" onclick="hideFamilyPackModal()" data-i18n="familyPack.step1.cancelButton">❌ Annuler</button>
+            </div>
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--neon-cyan);">
+              <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                <span data-i18n="familyPack.step1.noCodeYet">Pas encore de code ?</span> <a href="#" onclick="buyFamilyPack(); return false;" style="color: var(--neon-cyan);" data-i18n="familyPack.step1.buyLink">Acheter un Pack Famille (9,99€/mois)</a>
+              </p>
+            </div>
+          </div>
+          
+          <!-- Étape 2: Entrer les 8 emails -->
+          <div id="familyStep2" style="display: none;">
+            <p style="color: var(--neon-green); margin-bottom: 10px;" data-i18n="familyPack.step2.codeValid">✅ Code valide !</p>
+            <p style="color: var(--text-secondary); margin-bottom: 15px;" data-i18n="familyPack.step2.enterEmails">
+              Entrez les <strong>8 emails</strong> des membres de votre Pack Famille.<br>
+              Ils recevront un email d'invitation.
+            </p>
+            <div id="familyEmailsContainer">
+              <!-- Les 8 champs email seront générés ici -->
+            </div>
+            <div id="familyEmailsError" style="color: var(--neon-red); margin-bottom: 10px; display: none;"></div>
+            <div class="modal-buttons">
+              <button class="btn btn-primary" onclick="activateFamilyPack()" data-i18n="familyPack.step2.activateButton">🚀 Activer le Pack</button>
+              <button class="btn btn-secondary" onclick="backToFamilyStep1()" data-i18n="familyPack.step2.backButton">← Retour</button>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); border-radius: 5px;">
+              <strong style="color: var(--neon-orange);" data-i18n="familyPack.step2.importantTitle">⚠️ Important :</strong>
+              <ul style="margin: 5px 0 0 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                <li data-i18n="familyPack.step2.oneTimeUse">Ce code ne peut être utilisé qu'une seule fois</li>
+                <li data-i18n="familyPack.step2.cancelable">Abonnement résiliable chaque mois</li>
+                <li data-i18n="familyPack.step2.afterCancellation">À la résiliation : comptes → gratuit, avatars conservés 1 mois</li>
+              </ul>
+            </div>
+          </div>
+          
+          <!-- Étape 3: Confirmation -->
+          <div id="familyStep3" style="display: none;">
+            <div style="text-align: center;">
+              <div style="font-size: 4rem; margin-bottom: 15px;">🎉</div>
+              <h3 style="color: var(--neon-green);" data-i18n="familyPack.step3.activated">Pack Famille Activé !</h3>
+              <p style="color: var(--text-secondary);" data-i18n="familyPack.step3.invitationsSent">
+                Tous les membres ont reçu un email d'invitation.<br>
+                Profitez de la vidéo illimitée en famille !
+              </p>
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+              <button class="btn btn-primary" onclick="hideFamilyPackModal(); location.reload();" data-i18n="familyPack.step3.letsGoButton">🎮 C'est parti !</button>
+            </div>
+          </div>
+          
+          <!-- V35: Étape 4 - Gestion des membres (propriétaire) -->
+          <div id="familyStep4" style="display: none;">
+            <p style="color: var(--neon-green); margin-bottom: 10px;" data-i18n="familyPack.step4.ownerMessage">✅ Vous êtes propriétaire de ce Pack Famille</p>
+            
+            <div style="background: rgba(0,255,255,0.1); border: 1px solid var(--neon-cyan); border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+              <p style="margin: 0; color: var(--text-secondary);">
+                <strong style="color: var(--neon-cyan);" data-i18n="familyPack.step4.changesThisMonth">Changements ce mois :</strong> <span id="familyChangesCount">0</span>/2
+              </p>
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin-bottom: 10px;">📋 Membres actuels :</h4>
+            <div id="familyMembersList" style="max-height: 200px; overflow-y: auto; margin-bottom: 15px;">
+              <!-- Liste générée dynamiquement -->
+            </div>
+            
+            <h4 style="color: var(--text-primary); margin-bottom: 10px;">🔄 Modifier un membre :</h4>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <select id="familyOldEmail" style="width: 100%;">
+                <option value="">-- Sélectionner le membre à remplacer --</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <input type="email" id="familyNewEmail" placeholder="Nouvel email" style="width: 100%;">
+            </div>
+            <div id="familyChangeError" style="color: var(--neon-red); margin-bottom: 10px; display: none;"></div>
+            <div id="familyChangeSuccess" style="color: var(--neon-green); margin-bottom: 10px; display: none;"></div>
+            
+            <div style="background: rgba(255,165,0,0.1); border-left: 3px solid var(--neon-orange); padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+              <strong style="color: var(--neon-orange);">⚠️ Attention :</strong>
+              <ul style="margin: 5px 0 0 15px; font-size: 0.9rem; color: var(--text-secondary);">
+                <li>Le nouveau membre hérite des avatars créés</li>
+                <li>L'ancien membre perd son accès immédiatement</li>
+                <li>Maximum 2 changements par mois</li>
+              </ul>
+            </div>
+            
+            <div class="modal-buttons">
+              <button class="btn btn-primary" onclick="changeFamilyMember()">🔄 Modifier</button>
+              <button class="btn btn-secondary" onclick="hideFamilyPackModal()">❌ Fermer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal changement mot de passe -->
+      <div class="modal" id="passwordModal">
+        <div class="modal-content">
+          <h3>🔐 Changer le mot de passe</h3>
+          <div class="form-group">
+            <label>MOT DE PASSE ACTUEL</label>
+            <div class="password-wrapper">
+              <input type="password" id="currentPassword" placeholder="••••••••">
+              <button type="button" class="password-toggle" onclick="togglePassword('currentPassword', this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>NOUVEAU MOT DE PASSE</label>
+            <div class="password-wrapper">
+              <input type="password" id="newPassword" placeholder="Minimum 6 caractères">
+              <button type="button" class="password-toggle" onclick="togglePassword('newPassword', this)">👁️</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>CONFIRMER</label>
+            <div class="password-wrapper">
+              <input type="password" id="confirmPassword" placeholder="Retape le nouveau mot de passe">
+              <button type="button" class="password-toggle" onclick="togglePassword('confirmPassword', this)">👁️</button>
+            </div>
+          </div>
+          <div class="modal-buttons">
+            <button class="btn btn-primary" onclick="changePassword()">✅ Valider</button>
+            <button class="btn btn-secondary" onclick="hideChangePassword()">❌ Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="features" id="featuresBox">
+        <h3 data-i18n="index.features.title">✨ AVANTAGES DU COMPTE GRATUIT</h3>
+        <div class="feature-grid">
+          <div class="feature-item"><span class="icon">🎬</span><span data-i18n="index.features.videoGames">2 parties vidéo</span></div>
+          <div class="feature-item"><span class="icon">🎨</span><span data-i18n="index.features.aiAvatar">1 avatar IA</span></div>
+          <div class="feature-item"><span class="icon">🚀</span><span data-i18n="index.features.themes">2 thèmes</span></div>
+          <div class="feature-item"><span class="icon">💬</span><span data-i18n="index.features.unlimitedChat">Chat illimité</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script de traductions -->
+  <script src="translations.js"></script>
+  
+  <script>
+    const API_URL = '';
+    let currentUser = null;
+
+    // V23: Toggle password visibility
+    function togglePassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+
+    // Theme - noms traduits dynamiquement
+    function getThemeNames() {
+      const lang = getCurrentLanguage();
+      return {
+        'default': t('index.themes.spatial', lang),
+        'werewolf': t('index.themes.werewolf', lang),
+        'wizard-academy': t('index.themes.wizardAcademy', lang),
+        'mythic-realms': t('index.themes.mythicRealms', lang)
+      };
+    }
+    
+    function initTheme() {
+      const saved = localStorage.getItem('saboteur_theme') || 'default';
+      setTheme(saved);
+      updateThemeAccess();
+    }
+    
+    // Initialisation de la langue
+    function initLanguage() {
+      const lang = getCurrentLanguage();
+      
+      // Marquer le drapeau actif
+      document.querySelectorAll('.lang-flag').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.lang === lang);
+      });
+      
+      // Traduire la page
+      translatePage(lang);
+      
+      // Mettre à jour le nom du thème sélectionné
+      const currentTheme = localStorage.getItem('saboteur_theme') || 'default';
+      const themeNames = getThemeNames();
+      document.getElementById('selectedThemeName').textContent = themeNames[currentTheme] || themeNames['default'];
+    }
+    
+    // Surcharger changeLanguage pour mettre à jour le nom du thème
+    const originalChangeLanguage = changeLanguage;
+    changeLanguage = function(langCode) {
+      originalChangeLanguage(langCode);
+      
+      // Mettre à jour le nom du thème après changement de langue
+      const currentTheme = localStorage.getItem('saboteur_theme') || 'default';
+      const themeNames = getThemeNames();
+      document.getElementById('selectedThemeName').textContent = themeNames[currentTheme] || themeNames['default'];
+      
+      // V33: Mettre à jour les crédits vidéo
+      if (currentUser && typeof updateVideoCreditsDisplay === 'function') {
+        updateVideoCreditsDisplay(currentUser.videoCredits);
+      }
+    };
+
+    // V32: Thèmes premium (nécessitent un compte pack/subscriber/admin)
+    const PREMIUM_THEMES = ['wizard-academy', 'mythic-realms'];
+    const BASIC_THEMES = ['default', 'werewolf'];
+
+    function canAccessPremiumThemes() {
+      const user = JSON.parse(localStorage.getItem('saboteur_user') || 'null');
+      if (!user) return false;
+      const allowedTypes = ['pack', 'subscriber', 'family', 'admin'];
+      return allowedTypes.includes(user.accountType);
+    }
+
+    function updateThemeAccess() {
+      const canAccess = canAccessPremiumThemes();
+      document.querySelectorAll('.theme-btn-large').forEach(btn => {
+        const theme = btn.dataset.theme;
+        if (PREMIUM_THEMES.includes(theme)) {
+          if (canAccess) {
+            btn.classList.remove('locked');
+            btn.style.opacity = '1';
+            btn.title = btn.title.replace(' (Premium)', '');
+          } else {
+            btn.classList.add('locked');
+            btn.style.opacity = '0.5';
+            if (!btn.title.includes('Premium')) {
+              btn.title += ' (Premium)';
+            }
+          }
+        }
+      });
+    }
+
+    function setTheme(name) {
+      // V32: Bloquer les thèmes premium si pas accès
+      if (PREMIUM_THEMES.includes(name) && !canAccessPremiumThemes()) {
+        showError('Ce thème nécessite un compte Premium ou Pack');
+        name = 'default'; // Revenir au thème par défaut
+      }
+      
+      document.documentElement.setAttribute('data-theme', name);
+      localStorage.setItem('saboteur_theme', name);
+      
+      // Mettre à jour les boutons (ancien et nouveau format)
+      document.querySelectorAll('.theme-btn-mini, .theme-btn-large').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === name);
+      });
+      
+      // Mettre à jour l'indicateur
+      const indicator = document.getElementById('selectedThemeName');
+      if (indicator) {
+        const themeNames = getThemeNames();
+        indicator.textContent = themeNames[name] || name;
+      }
+      
+      createParticles();
+    }
+
+    // Event listeners pour les deux formats de boutons
+    document.querySelectorAll('.theme-btn-mini, .theme-btn-large').forEach(btn => {
+      btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+    });
+
+    // Particles
+    function createParticles() {
+      const c = document.getElementById('particles');
+      c.innerHTML = '';
+      for (let i = 0; i < 80; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.top = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 5 + 's';
+        c.appendChild(p);
+      }
+    }
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        document.querySelectorAll('.form-container').forEach(f => f.classList.remove('active'));
+        document.getElementById(tab.dataset.tab + 'Form').classList.add('active');
+        hideMessages();
+      });
+    });
+
+    // Messages
+    // V35: Traduire les messages d'erreur
+    function translateIndexError(msg) {
+      if (!msg) return msg;
+      const lang = getCurrentLanguage ? getCurrentLanguage() : 'fr';
+      const toasts = window.TRANSLATIONS?.index?.toasts;
+      if (!toasts) return msg;
+      
+      const errorMappings = {
+        'Email et mot de passe requis': 'emailPasswordRequired',
+        'Email ou mot de passe incorrect': 'invalidCredentials',
+        'Tous les champs requis': 'allFieldsRequired',
+        'Mot de passe trop court': 'passwordTooShort',
+        'Erreur réseau': 'networkError',
+        'Ce thème nécessite un compte Premium': 'premiumRequired',
+        'Ce thème nécessite un compte Premium ou Pack': 'premiumRequired',
+        'Un compte vérifié est requis': 'verifiedRequired',
+        'Remplis tous les champs': 'allFieldsRequired',
+        'Le nouveau mot de passe doit faire au moins 6 caractères': 'newPasswordTooShort',
+        'Les mots de passe ne correspondent pas': 'passwordMismatch',
+        'Email invalide': 'invalidEmail',
+        'Cet email est déjà utilisé': 'emailAlreadyUsed',
+        'Ce nom d\'utilisateur est déjà pris': 'usernameTaken',
+        'Compte non vérifié': 'accountNotVerified',
+        'Email renvoyé': 'emailResent'
+      };
+      
+      for (const [pattern, key] of Object.entries(errorMappings)) {
+        if (msg.includes(pattern)) {
+          const translated = toasts[key]?.[lang] || toasts[key]?.fr;
+          if (translated) return translated;
+        }
+      }
+      return msg;
+    }
+
+    function showError(msg) {
+      const translatedMsg = translateIndexError(msg);
+      document.getElementById('errorMessage').textContent = translatedMsg;
+      document.getElementById('errorMessage').classList.add('show');
+      document.getElementById('successMessage').classList.remove('show');
+    }
+
+    function showSuccess(msg) {
+      document.getElementById('successMessage').textContent = msg;
+      document.getElementById('successMessage').classList.add('show');
+      document.getElementById('errorMessage').classList.remove('show');
+    }
+
+    function hideMessages() {
+      document.getElementById('errorMessage').classList.remove('show');
+      document.getElementById('successMessage').classList.remove('show');
+    }
+
+    function togglePromo() {
+      document.getElementById('promoInput').classList.toggle('show');
+    }
+
+    // Forgot Password Modal
+    function showForgotPassword() {
+      // Fermer si déjà ouvert
+      closeForgotPassword();
+      
+      // V35: Textes traduits
+      const lang = getCurrentLanguage ? getCurrentLanguage() : 'fr';
+      const fp = window.TRANSLATIONS?.index?.forgotPassword;
+      const title = fp?.title?.[lang] || fp?.title?.fr || '🔑 Mot de passe oublié';
+      const subtitle = fp?.subtitle?.[lang] || fp?.subtitle?.fr || 'Entre ton email pour recevoir un lien de réinitialisation';
+      const placeholder = fp?.placeholder?.[lang] || fp?.placeholder?.fr || 'ton@email.com';
+      const sendButton = fp?.sendButton?.[lang] || fp?.sendButton?.fr || '📧 Envoyer le lien';
+      const backLink = fp?.backLink?.[lang] || fp?.backLink?.fr || '← Retour à la connexion';
+      
+      const modal = document.createElement('div');
+      modal.id = 'forgot-password-modal';
+      modal.innerHTML = `
+        <div style="
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.85);
+          display: flex; align-items: center; justify-content: center;
+          z-index: 10000; padding: 20px;
+        " onclick="if(event.target === this) closeForgotPassword()">
+          <div style="
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 20px; padding: 30px; max-width: 420px; width: 100%;
+            border: 2px solid rgba(0,255,255,0.3);
+          ">
+            <h2 style="text-align: center; margin-bottom: 10px;">${title}</h2>
+            <p style="text-align: center; color: rgba(255,255,255,0.7); margin-bottom: 25px;">
+              ${subtitle}
+            </p>
+            
+            <input type="email" id="forgotEmail" placeholder="${placeholder}" style="
+              width: 100%; padding: 14px; border-radius: 10px;
+              border: 1px solid #444; background: rgba(0,0,0,0.5);
+              color: #fff; font-size: 1em; margin-bottom: 15px;
+            ">
+            
+            <button onclick="sendResetEmail()" style="
+              width: 100%; padding: 14px; border-radius: 10px;
+              background: linear-gradient(135deg, #00ffff, #0099cc);
+              color: #000; font-weight: bold; font-size: 1em;
+              border: none; cursor: pointer;
+            ">
+              ${sendButton}
+            </button>
+            
+            <div id="forgotResult" style="
+              margin-top: 15px; padding: 12px; border-radius: 8px;
+              text-align: center; display: none;
+            "></div>
+            
+            <p style="text-align: center; margin-top: 20px;">
+              <a href="#" onclick="closeForgotPassword(); return false;" style="color: #888;">${backLink}</a>
+            </p>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+    }
+    
+    function closeForgotPassword() {
+      const modal = document.getElementById('forgot-password-modal');
+      if (modal) modal.remove();
+    }
+    
+    async function sendResetEmail() {
+      const email = document.getElementById('forgotEmail').value.trim();
+      const resultDiv = document.getElementById('forgotResult');
+      
+      // V35: Textes traduits
+      const lang = getCurrentLanguage ? getCurrentLanguage() : 'fr';
+      const fp = window.TRANSLATIONS?.index?.forgotPassword;
+      const emailRequiredText = fp?.emailRequired?.[lang] || fp?.emailRequired?.fr || 'Email requis';
+      const emailSentText = fp?.emailSent?.[lang] || fp?.emailSent?.fr || '✅ Email envoyé ! Vérifie ta boîte mail.';
+      const networkErrorText = fp?.networkError?.[lang] || fp?.networkError?.fr || 'Erreur réseau';
+      
+      if (!email) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'rgba(255,68,68,0.2)';
+        resultDiv.style.border = '1px solid #ff4444';
+        resultDiv.style.color = '#ff4444';
+        resultDiv.textContent = emailRequiredText;
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        
+        resultDiv.style.display = 'block';
+        if (data.success) {
+          resultDiv.style.background = 'rgba(0,255,136,0.2)';
+          resultDiv.style.border = '1px solid #00ff88';
+          resultDiv.style.color = '#00ff88';
+          resultDiv.textContent = emailSentText;
+        } else {
+          resultDiv.style.background = 'rgba(255,68,68,0.2)';
+          resultDiv.style.border = '1px solid #ff4444';
+          resultDiv.style.color = '#ff4444';
+          resultDiv.textContent = translateIndexError(data.error) || 'Erreur';
+        }
+      } catch (e) {
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'rgba(255,68,68,0.2)';
+        resultDiv.style.border = '1px solid #ff4444';
+        resultDiv.style.color = '#ff4444';
+        resultDiv.textContent = networkErrorText;
+      }
+    }
+
+    // API
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) return showError('Email et mot de passe requis');
+
+      const btn = document.getElementById('loginBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Connexion...';
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('saboteur_token', data.token);
+          localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+          currentUser = data.user;
+          showLoggedInState();
+          showSuccess(window.t ? window.t('index.toasts.loginSuccess') : 'Connexion réussie !');
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) { showError('Erreur réseau'); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = '🚀 CONNEXION';
+      }
+    }
+
+    async function register() {
+      const username = document.getElementById('registerUsername').value.trim();
+      const email = document.getElementById('registerEmail').value.trim();
+      const password = document.getElementById('registerPassword').value;
+      const promo = document.getElementById('promoCode').value.trim();
+
+      if (!username || !email || !password) return showError('Tous les champs requis');
+      if (password.length < 6) return showError('Mot de passe trop court');
+
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Création...';
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username, password, promoCode: promo, lang: getCurrentLanguage() })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('saboteur_token', data.token);
+          localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+          currentUser = data.user;
+          showLoggedInState();
+          showSuccess(t('index.toasts.registerSuccess'));
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) { showError(t('index.toasts.networkError')); }
+      finally {
+        btn.disabled = false;
+        btn.innerHTML = t('index.auth.registerButton');
+      }
+    }
+
+    async function resendVerification() {
+      if (!currentUser) return;
+      try {
+        const res = await fetch(`${API_URL}/api/auth/resend-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: currentUser.email, lang: getCurrentLanguage() })
+        });
+        const data = await res.json();
+        data.success ? showSuccess('Email renvoyé ! (pense à vérifier tes spams)') : showError(data.error);
+      } catch (e) { showError('Erreur'); }
+    }
+
+    // States
+    function showLoggedInState() {
+      document.getElementById('authTabs').style.display = 'none';
+      document.getElementById('loginForm').classList.remove('active');
+      document.getElementById('registerForm').classList.remove('active');
+      document.getElementById('featuresBox').style.display = 'none';
+      document.getElementById('userInfo').classList.add('show');
+      document.getElementById('homeScreen').classList.add('show');
+
+      // V32: Mettre à jour l'accès aux thèmes
+      updateThemeAccess();
+
+      if (currentUser) {
+        document.getElementById('displayUsername').textContent = currentUser.username;
+        if (currentUser.currentAvatar) {
+          const av = document.getElementById('userAvatar');
+          // V31: Vérifier si c'est une URL/chemin d'image ou un emoji
+          const isImageUrl = currentUser.currentAvatar.startsWith('http') || 
+                             currentUser.currentAvatar.startsWith('/') || 
+                             currentUser.currentAvatar.startsWith('data:');
+          if (isImageUrl) {
+            av.src = currentUser.currentAvatar;
+            av.style.display = '';
+            // Supprimer l'emoji si présent
+            const emojiEl = document.getElementById('userAvatarEmoji');
+            if (emojiEl) emojiEl.remove();
+          } else {
+            // C'est un emoji classique
+            av.style.display = 'none';
+            // Créer ou mettre à jour l'élément emoji
+            let emojiEl = document.getElementById('userAvatarEmoji');
+            if (!emojiEl) {
+              emojiEl = document.createElement('span');
+              emojiEl.id = 'userAvatarEmoji';
+              emojiEl.className = 'user-avatar-emoji';
+              emojiEl.style.cssText = 'font-size: 3rem; display: flex; align-items: center; justify-content: center; width: 80px; height: 80px; border-radius: 50%; background: rgba(0,0,0,0.3); border: 3px solid var(--neon-cyan, #00ffff);';
+              av.parentNode.insertBefore(emojiEl, av);
+            }
+            emojiEl.textContent = currentUser.currentAvatar;
+          }
+          av.classList.add('show');
+        }
+        const c = currentUser.videoCredits;
+        updateVideoCreditsDisplay(c);
+        document.getElementById('verificationBanner').classList.toggle('show', !currentUser.emailVerified);
+      }
+    }
+    
+    // V33: Fonction pour mettre à jour l'affichage des crédits vidéo (appelée aussi lors du changement de langue)
+    function updateVideoCreditsDisplay(credits) {
+      const c = credits !== undefined ? credits : (currentUser ? currentUser.videoCredits : 0);
+      let unlimitedText = 'Vidéo illimitée';
+      let creditsText = 'partie(s) vidéo';
+      try {
+        if (window.t) {
+          const ut = window.t('index.profile.videoUnlimited');
+          const ct = window.t('index.profile.videoCredits');
+          if (ut && !ut.includes('index.profile')) unlimitedText = ut;
+          if (ct && !ct.includes('index.profile')) creditsText = ct;
+        }
+      } catch(e) { console.warn('Translation error:', e); }
+      const el = document.getElementById('displayCredits');
+      if (el) {
+        el.textContent = (c === '∞' || c > 1000) ? `🎬 ${unlimitedText}` : `🎬 ${c} ${creditsText}`;
+      }
+    }
+    
+    // V33: Écouter les changements de langue pour mettre à jour les crédits vidéo
+    window.addEventListener('languageChanged', () => {
+      if (currentUser) {
+        updateVideoCreditsDisplay(currentUser.videoCredits);
+      }
+    });
+
+    function showLoggedOutState() {
+      document.getElementById('authTabs').style.display = 'flex';
+      document.getElementById('loginForm').classList.add('active');
+      document.getElementById('registerForm').classList.remove('active');
+      document.getElementById('featuresBox').style.display = 'block';
+      document.getElementById('userInfo').classList.remove('show');
+      document.getElementById('homeScreen').classList.remove('show');
+      document.getElementById('verificationBanner').classList.remove('show');
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector('.tab[data-tab="login"]').classList.add('active');
+      
+      // V32: Mettre à jour l'accès aux thèmes (bloqués pour non-connectés)
+      updateThemeAccess();
+    }
+
+    // Navigation
+    function playAsGuest() {
+      localStorage.removeItem('saboteur_token');
+      localStorage.removeItem('saboteur_user');
+      // V32: Forcer un thème basique pour les invités
+      let theme = localStorage.getItem('saboteur_theme') || 'default';
+      if (PREMIUM_THEMES.includes(theme)) {
+        theme = 'default';
+        localStorage.setItem('saboteur_theme', theme);
+      }
+      window.location.href = '/game.html?mode=guest&theme=' + theme;
+    }
+    
+    // V35: Modal explication room privée/publique
+    function showRoomExplanation() {
+      document.getElementById('roomExplanationModal').style.display = 'flex';
+    }
+    
+    function hideRoomExplanation() {
+      document.getElementById('roomExplanationModal').style.display = 'none';
+    }
+
+    function goToGame() { 
+      let theme = localStorage.getItem('saboteur_theme') || 'default';
+      // V32: Vérifier l'accès aux thèmes premium
+      if (PREMIUM_THEMES.includes(theme) && !canAccessPremiumThemes()) {
+        showError('Ce thème nécessite un compte Premium ou Pack');
+        theme = 'default';
+        localStorage.setItem('saboteur_theme', theme);
+        setTheme(theme);
+      }
+      window.location.href = '/game.html?theme=' + theme; 
+    }
+    function goToAvatars() { window.location.href = '/avatar.html'; }
+
+    // V35: Matchmaking - Gestion des screens
+    let selectedRoomType = 'video';
+    let selectedPlayerCount = 6; // V35: Nombre de joueurs par défaut
+    
+    function showPublicRoomsScreen() {
+      document.getElementById('homeScreen').style.display = 'none';
+      document.getElementById('publicRoomsScreen').style.display = 'block';
+      // Initialiser le matchmaking
+      if (typeof Matchmaking !== 'undefined') {
+        Matchmaking.init();
+      }
+    }
+    
+    function hidePublicRoomsScreen() {
+      document.getElementById('publicRoomsScreen').style.display = 'none';
+      document.getElementById('homeScreen').style.display = 'block';
+    }
+    
+    function selectRoomType(type) {
+      selectedRoomType = type;
+      document.querySelectorAll('.room-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === type);
+      });
+    }
+    
+    // V35: Fonctions pour le sélecteur de nombre de joueurs
+    function updatePlayerCountDisplay(value) {
+      selectedPlayerCount = parseInt(value);
+      document.getElementById('playerCountDisplay').textContent = value;
+    }
+    
+    function adjustPlayerCount(delta) {
+      const slider = document.getElementById('playerCountSlider');
+      let newValue = parseInt(slider.value) + delta;
+      newValue = Math.max(6, Math.min(12, newValue)); // Clamp entre 6 et 12
+      slider.value = newValue;
+      updatePlayerCountDisplay(newValue);
+    }
+    
+    function createPublicRoomFromPage() {
+      // Vérifier si compte vérifié
+      const user = JSON.parse(localStorage.getItem('saboteur_user') || 'null');
+      if (!user || !user.emailVerified) {
+        showError('Un compte vérifié est requis pour créer une room publique');
+        return;
+      }
+      
+      const comment = document.getElementById('createRoomComment')?.value.trim() || '';
+      const theme = localStorage.getItem('saboteur_theme') || 'default';
+      
+      // Vérifier accès thème premium
+      if (PREMIUM_THEMES.includes(theme) && !canAccessPremiumThemes()) {
+        showError('Ce thème nécessite un compte Premium');
+        return;
+      }
+      
+      const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent) || window.innerWidth <= 768;
+      
+      const params = new URLSearchParams({
+        theme,
+        public: 'true',
+        roomName: user.username ? `Room de ${user.username}` : 'Room publique',
+        roomType: selectedRoomType,
+        comment: comment,
+        isMobile: isMobile ? 'true' : 'false',
+        maxPlayers: selectedPlayerCount.toString() // V35: Nombre de joueurs choisi
+      });
+      
+      window.location.href = `/game.html?${params.toString()}`;
+    }
+
+    function showChangePassword() {
+      document.getElementById('passwordModal').classList.add('show');
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
+    }
+
+    function hideChangePassword() {
+      document.getElementById('passwordModal').classList.remove('show');
+    }
+
+    async function changePassword() {
+      const currentPassword = document.getElementById('currentPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        showError('Remplis tous les champs');
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        showError('Le nouveau mot de passe doit faire au moins 6 caractères');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        showError('Les mots de passe ne correspondent pas');
+        return;
+      }
+
+      try {
+        const token = localStorage.getItem('saboteur_token');
+        const res = await fetch(`${API_URL}/api/auth/change-password`, {
+          method: 'POST',
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          showSuccess(data.message);
+          hideChangePassword();
+        } else {
+          showError(data.error || 'Erreur');
+        }
+      } catch (e) {
+        showError('Erreur réseau');
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('saboteur_token');
+      localStorage.removeItem('saboteur_user');
+      currentUser = null;
+      showLoggedOutState();
+      showSuccess('Déconnexion réussie');
+    }
+
+    // Init
+    async function init() {
+      initTheme();
+      initLanguage(); // Initialiser les traductions
+      createParticles();
+
+      const token = localStorage.getItem('saboteur_token');
+      const saved = localStorage.getItem('saboteur_user');
+
+      if (token && saved) {
+        try {
+          const res = await fetch(`${API_URL}/api/auth/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+            showLoggedInState();
+          } else {
+            localStorage.removeItem('saboteur_token');
+            localStorage.removeItem('saboteur_user');
+            showLoggedOutState();
+          }
+        } catch (e) {
+          currentUser = JSON.parse(saved);
+          showLoggedInState();
+        }
+      } else {
+        showLoggedOutState();
+      }
+    }
+
+    document.getElementById('loginPassword').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('registerPassword').addEventListener('keypress', e => { if (e.key === 'Enter') register(); });
+
+    // ============================================================================
+    // V35: PACK FAMILLE
+    // ============================================================================
+    
+    let familyValidatedCode = null;
+    
+    async function showFamilyPackModal() {
+      document.getElementById('familyPackModal').style.display = 'flex';
+      document.getElementById('familyStep1').style.display = 'none';
+      document.getElementById('familyStep2').style.display = 'none';
+      document.getElementById('familyStep3').style.display = 'none';
+      document.getElementById('familyStep4').style.display = 'none';
+      document.getElementById('familyCode').value = '';
+      document.getElementById('familyCodeError').style.display = 'none';
+      familyValidatedCode = null;
+      
+      // Vérifier si l'utilisateur est déjà propriétaire d'un pack
+      if (currentUser && localStorage.getItem('authToken')) {
+        try {
+          const res = await fetch('/api/family/my-pack', {
+            headers: { 'Authorization': 'Bearer ' + localStorage.getItem('authToken') }
+          });
+          const data = await res.json();
+          
+          if (data.ok && data.hasFamilyPack && data.isOwner) {
+            // Afficher l'étape 4 (gestion des membres)
+            document.getElementById('familyStep4').style.display = 'block';
+            document.getElementById('familyChangesCount').textContent = data.pack.changesThisMonth || 0;
+            
+            // Remplir la liste des membres
+            const listEl = document.getElementById('familyMembersList');
+            const selectEl = document.getElementById('familyOldEmail');
+            listEl.innerHTML = '';
+            selectEl.innerHTML = '<option value="">-- Sélectionner le membre à remplacer --</option>';
+            
+            if (data.pack.members && data.pack.members.length > 0) {
+              data.pack.members.forEach((email, i) => {
+                // Ne pas afficher le propriétaire dans la liste modifiable
+                if (email.toLowerCase() !== data.pack.ownerEmail.toLowerCase()) {
+                  listEl.innerHTML += `<div style="padding: 8px; background: rgba(255,255,255,0.05); margin-bottom: 5px; border-radius: 5px;">
+                    ${i + 1}. ${email}
+                  </div>`;
+                  selectEl.innerHTML += `<option value="${email}">${email}</option>`;
+                }
+              });
+            }
+            
+            return;
+          }
+        } catch (err) {
+          console.log('Pas de pack famille existant');
+        }
+      }
+      
+      // Sinon afficher l'étape 1 (entrer un code)
+      document.getElementById('familyStep1').style.display = 'block';
+    }
+    
+    function hideFamilyPackModal() {
+      document.getElementById('familyPackModal').style.display = 'none';
+    }
+    
+    function backToFamilyStep1() {
+      document.getElementById('familyStep1').style.display = 'block';
+      document.getElementById('familyStep2').style.display = 'none';
+    }
+    
+    async function validateFamilyCode() {
+      const code = document.getElementById('familyCode').value.trim().toUpperCase();
+      const errorEl = document.getElementById('familyCodeError');
+      
+      if (!code || !code.startsWith('FAM-')) {
+        errorEl.textContent = 'Code invalide. Format: FAM-XXXX-XXXX';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/family/validate-code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          familyValidatedCode = code;
+          errorEl.style.display = 'none';
+          
+          // Générer les 8 champs email
+          const container = document.getElementById('familyEmailsContainer');
+          container.innerHTML = '';
+          for (let i = 1; i <= 8; i++) {
+            container.innerHTML += `
+              <div class="form-group" style="margin-bottom: 10px;">
+                <input type="email" id="familyEmail${i}" placeholder="Email membre ${i}" style="width: 100%;">
+              </div>
+            `;
+          }
+          
+          document.getElementById('familyStep1').style.display = 'none';
+          document.getElementById('familyStep2').style.display = 'block';
+        } else {
+          errorEl.textContent = data.error || 'Code invalide ou déjà utilisé';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Erreur de connexion';
+        errorEl.style.display = 'block';
+      }
+    }
+    
+    async function activateFamilyPack() {
+      const errorEl = document.getElementById('familyEmailsError');
+      const emails = [];
+      
+      for (let i = 1; i <= 8; i++) {
+        const email = document.getElementById(`familyEmail${i}`).value.trim().toLowerCase();
+        if (!email || !email.includes('@')) {
+          errorEl.textContent = `Email ${i} invalide`;
+          errorEl.style.display = 'block';
+          return;
+        }
+        if (emails.includes(email)) {
+          errorEl.textContent = `Email en double: ${email}`;
+          errorEl.style.display = 'block';
+          return;
+        }
+        emails.push(email);
+      }
+      
+      try {
+        const res = await fetch('/api/family/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: familyValidatedCode, memberEmails: emails })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          errorEl.style.display = 'none';
+          document.getElementById('familyStep2').style.display = 'none';
+          document.getElementById('familyStep3').style.display = 'block';
+        } else {
+          errorEl.textContent = data.error || 'Erreur lors de l\'activation';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Erreur de connexion';
+        errorEl.style.display = 'block';
+      }
+    }
+    
+    function buyFamilyPack() {
+      // Rediriger vers le paiement Stripe Pack Famille
+      if (!currentUser) {
+        alert('Connectez-vous d\'abord pour acheter un Pack Famille');
+        return;
+      }
+      
+      fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceType: 'family',
+          userId: currentUser.id,
+          userEmail: currentUser.email
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert(data.error || 'Erreur Stripe');
+        }
+      })
+      .catch(err => {
+        alert('Erreur de connexion');
+      });
+    }
+    
+    async function changeFamilyMember() {
+      const oldEmail = document.getElementById('familyOldEmail').value;
+      const newEmail = document.getElementById('familyNewEmail').value.trim().toLowerCase();
+      const errorEl = document.getElementById('familyChangeError');
+      const successEl = document.getElementById('familyChangeSuccess');
+      
+      errorEl.style.display = 'none';
+      successEl.style.display = 'none';
+      
+      if (!oldEmail) {
+        errorEl.textContent = 'Sélectionnez un membre à remplacer';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      if (!newEmail || !newEmail.includes('@')) {
+        errorEl.textContent = 'Entrez un email valide';
+        errorEl.style.display = 'block';
+        return;
+      }
+      
+      try {
+        const res = await fetch('/api/family/change-member', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + localStorage.getItem('authToken')
+          },
+          body: JSON.stringify({ oldEmail, newEmail })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          successEl.textContent = data.message;
+          successEl.style.display = 'block';
+          document.getElementById('familyNewEmail').value = '';
+          
+          // Mettre à jour le compteur
+          document.getElementById('familyChangesCount').textContent = 2 - data.changesRemaining;
+          
+          // Rafraîchir la liste après 2 secondes
+          setTimeout(() => showFamilyPackModal(), 2000);
+        } else {
+          errorEl.textContent = data.error || 'Erreur lors de la modification';
+          errorEl.style.display = 'block';
+        }
+      } catch (err) {
+        errorEl.textContent = 'Erreur de connexion';
+        errorEl.style.display = 'block';
+      }
+    }
+
+    init();
+  </script>
+
+  <!-- Bouton APP en bas à gauche -->
+  <div id="installAppContainer" style="
+    position: fixed; left: 10px; bottom: 20px; z-index: 9998; display: none;
+  ">
+    <button id="installAppBtn" type="button" style="
+      padding: 10px 14px; border-radius: 12px; font-weight: 800;
+      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, rgba(10,14,26,0.95) 0%, rgba(0,255,255,0.15) 100%);
+      border: 2px solid var(--neon-cyan, #00ffff);
+      color: var(--neon-cyan, #00ffff);
+      cursor: pointer;
+      box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+      font-family: inherit;
+      font-size: 0.9rem;
+    ">
+      <img src="/icons/icon-192x192.webp" alt="App" style="width: 28px; height: 28px; border-radius: 6px;">
+      <span>APP</span>
+      <span style="font-size: 1.2rem;">⬇️</span>
+    </button>
+  </div>
+
+  <script>
+    // PWA Install
+    console.log('[PWA] Script chargé');
+    
+    let deferredPrompt;
+    const installContainer = document.getElementById('installAppContainer');
+    const installBtn = document.getElementById('installAppBtn');
+    
+    console.log('[PWA] Container:', installContainer);
+    console.log('[PWA] Button:', installBtn);
+    
+    // Détecter mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log('[PWA] isMobile:', isMobile);
+    
+    // Vérifier si déjà installé en standalone
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
+    console.log('[PWA] isStandalone:', isStandalone);
+    
+    // Afficher le bouton (mobile OU PC, sauf si déjà installé)
+    if (!isStandalone && installContainer) {
+      console.log('[PWA] Affichage du bouton');
+      installContainer.style.display = 'block';
+    }
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+      console.log('[PWA] beforeinstallprompt reçu !');
+      e.preventDefault();
+      deferredPrompt = e;
+    });
+
+    installBtn?.addEventListener('click', async () => {
+      console.log('[PWA] Clic sur bouton, deferredPrompt:', !!deferredPrompt);
+      
+      if (deferredPrompt) {
+        // Prompt natif disponible
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log('[PWA] Install outcome:', outcome);
+        deferredPrompt = null;
+        if (outcome === 'accepted') {
+          installContainer.style.display = 'none';
+        }
+      } else if (isMobile) {
+        // Pas de prompt natif sur mobile - afficher instructions
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isIOS) {
+          alert(t('index.pwa.installMobileIOS'));
+        } else {
+          alert(t('index.pwa.installMobileAndroid'));
+        }
+      } else {
+        // PC sans prompt
+        alert(t('index.pwa.installPC'));
+      }
+    });
+
+    window.addEventListener('appinstalled', () => {
+      console.log('[PWA] App installée !');
+      installContainer.style.display = 'none';
+      deferredPrompt = null;
+    });
+  </script>
+  
+  <!-- Module de paiement Stripe -->
+  <script src="payment-modal.js"></script>
+  <link rel="stylesheet" href="payment-modal.css">
+  
+  <!-- V35: Matchmaking Public -->
+  <script src="matchmaking-client.js"></script>
+  <script>
+    // Init matchmaking quand homeScreen visible
+    function initMatchmakingIfReady() {
+      if (typeof Matchmaking !== 'undefined' && document.getElementById('homeScreen')?.classList.contains('show')) {
+        Matchmaking.init();
+      }
+    }
+    
+    // Observer pour détecter quand homeScreen devient visible
+    document.addEventListener('DOMContentLoaded', () => {
+      const homeScreen = document.getElementById('homeScreen');
+      if (homeScreen) {
+        const observer = new MutationObserver(() => {
+          if (homeScreen.classList.contains('show')) initMatchmakingIfReady();
+        });
+        observer.observe(homeScreen, { attributes: true, attributeFilter: ['class'] });
+      }
+      // Check après délai au cas où déjà connecté
+      setTimeout(initMatchmakingIfReady, 1500);
+    });
+  </script>
+</body>
+</html>
