@@ -26,7 +26,13 @@ let bcrypt, jwt, initSqlJs, sharp, Replicate, Resend, multer, stripe;
 try { bcrypt = require("bcryptjs"); } catch(e) { console.log("⚠️ bcryptjs non installé"); }
 try { jwt = require("jsonwebtoken"); } catch(e) { console.log("⚠️ jsonwebtoken non installé"); }
 try { initSqlJs = require("sql.js"); } catch(e) { console.log("⚠️ sql.js non installé"); }
-try { sharp = require("sharp"); } catch(e) { console.log("⚠️ sharp non installé"); }
+try { 
+  sharp = require("sharp"); 
+  console.log(`✅ sharp ${sharp.versions?.sharp || 'chargé'} - WebP disponible`);
+} catch(e) { 
+  console.log("⚠️ sharp non installé:", e.message); 
+  console.log("   → Les avatars seront sauvegardés en PNG au lieu de WebP");
+}
 try { Replicate = require("replicate"); } catch(e) { console.log("⚠️ replicate non installé"); }
 try { Resend = require("resend").Resend; } catch(e) { console.log("⚠️ resend non installé"); }
 try { multer = require("multer"); } catch(e) { console.log("⚠️ multer non installé"); }
@@ -4590,28 +4596,31 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
 
       if (sharp) {
         try {
+          console.log(`🔄 Conversion WebP avec sharp...`);
           await sharp(imageData)
             .resize(512, 512, { fit: "cover" })
             .webp({ quality: 90 })
             .toFile(avatarPath);
           localAvatarUrl = `/avatars/${avatarFilename}`;
-          console.log(`💾 Avatar sauvegardé (sharp): ${localAvatarUrl}`);
+          console.log(`💾 Avatar sauvegardé en WebP (sharp): ${localAvatarUrl}`);
         } catch (sharpError) {
-          console.error("⚠️ Erreur sharp, sauvegarde brute:", sharpError.message);
+          console.error("⚠️ Erreur sharp lors de la conversion WebP:", sharpError.message);
+          console.error("   Stack:", sharpError.stack);
           // Fallback: sauvegarder le fichier brut avec extension correcte
           const rawFilename = `avatar_${user.id}_${Date.now()}.png`;
           const rawPath = path.join(AVATARS_DIR, rawFilename);
           fs.writeFileSync(rawPath, imageData);
           localAvatarUrl = `/avatars/${rawFilename}`;
-          console.log(`💾 Avatar sauvegardé (brut): ${localAvatarUrl}`);
+          console.log(`💾 Avatar sauvegardé en PNG (fallback): ${localAvatarUrl}`);
         }
       } else {
         // Pas de sharp: sauvegarder le fichier brut
+        console.log(`⚠️ Sharp non disponible, sauvegarde en PNG`);
         const rawFilename = `avatar_${user.id}_${Date.now()}.png`;
         const rawPath = path.join(AVATARS_DIR, rawFilename);
         fs.writeFileSync(rawPath, imageData);
         localAvatarUrl = `/avatars/${rawFilename}`;
-        console.log(`💾 Avatar sauvegardé (sans sharp): ${localAvatarUrl}`);
+        console.log(`💾 Avatar sauvegardé en PNG (sans sharp): ${localAvatarUrl}`);
       }
     } catch (downloadError) {
       console.error("⚠️ Erreur sauvegarde locale:", downloadError.message);

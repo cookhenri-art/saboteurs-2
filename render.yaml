@@ -3,7 +3,7 @@ services:
     name: infiltration-spatiale
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install && npm rebuild sharp
     startCommand: npm start
     autoDeploy: false
     envVars:
