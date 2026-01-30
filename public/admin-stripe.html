@@ -856,6 +856,23 @@
     const API_BASE = window.location.origin;
     const urlParams = new URLSearchParams(window.location.search);
     const secretCode = urlParams.get('secretCode');
+
+  // ========================================
+  // CORRECTIF: Intercepteur fetch global pour ajouter secretCode automatiquement
+  // ========================================
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    // Si l'URL est relative et commence par /api/admin/
+    if (typeof url === 'string' && url.startsWith('/api/admin/')) {
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
+    }
+    
+    return originalFetch(url, options);
+  };
+  
+  console.log('✅ Intercepteur fetch activé - secretCode ajouté automatiquement');
+
     
     // ========================================
     // TABS
@@ -2373,5 +2390,185 @@ if (typeof loadWorkflows === 'function') {
 </script>
 
 
+
+  <!-- Section Messages -->
+  <div id="section-messages" class="admin-section" style="display: none;">
+    <h2>📧 Messages de Contact</h2>
+    
+    <div class="stats-grid" style="margin-bottom: 2rem;">
+      <div class="stat-card">
+        <div class="stat-label">Total Messages</div>
+        <div class="stat-value" id="stats-total-messages">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Non Lus</div>
+        <div class="stat-value" id="stats-unread-messages">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Aujourd'hui</div>
+        <div class="stat-value" id="stats-today-messages">0</div>
+      </div>
+    </div>
+    
+    <div class="section-actions">
+      <button onclick="loadMessages()" class="btn-refresh">🔄 Actualiser</button>
+      <button onclick="markAllAsRead()" class="btn-secondary">✅ Tout marquer comme lu</button>
+    </div>
+    
+    <div id="messages-list" class="data-table-container">
+      <p style="text-align: center; color: #666;">Chargement des messages...</p>
+    </div>
+  </div>
+  
+  <script>
+  // Fonction pour charger les messages
+  async function loadMessages() {
+    try {
+      const response = await fetch('/api/admin/contact-messages', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      });
+      
+      if (!response.ok) throw new Error('Erreur chargement');
+      
+      const messages = await response.json();
+      
+      // Mettre à jour les stats
+      document.getElementById('stats-total-messages').textContent = messages.length;
+      document.getElementById('stats-unread-messages').textContent = 
+        messages.filter(m => !m.read).length;
+      
+      const today = new Date().toDateString();
+      document.getElementById('stats-today-messages').textContent = 
+        messages.filter(m => new Date(m.created_at).toDateString() === today).length;
+      
+      // Afficher la liste
+      displayMessages(messages);
+      
+    } catch (error) {
+      console.error('Erreur:', error);
+      alert('Erreur lors du chargement des messages');
+    }
+  }
+  
+  function displayMessages(messages) {
+    const container = document.getElementById('messages-list');
+    
+    if (messages.length === 0) {
+      container.innerHTML = '<p style="text-align: center; color: #666;">Aucun message</p>';
+      return;
+    }
+    
+    let html = '<table class="data-table"><thead><tr>';
+    html += '<th>Date</th><th>Nom</th><th>Email</th><th>Sujet</th><th>Message</th><th>Statut</th><th>Actions</th>';
+    html += '</tr></thead><tbody>';
+    
+    messages.forEach(msg => {
+      const date = new Date(msg.created_at).toLocaleString('fr-FR');
+      const readClass = msg.read ? '' : 'unread';
+      
+      html += `<tr class="${readClass}">`;
+      html += `<td>${date}</td>`;
+      html += `<td>${escapeHtml(msg.name)}</td>`;
+      html += `<td><a href="mailto:${msg.email}">${escapeHtml(msg.email)}</a></td>`;
+      html += `<td>${escapeHtml(msg.subject || 'Aucun')}</td>`;
+      html += `<td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(msg.message).substring(0, 100)}...</td>`;
+      html += `<td>${msg.read ? '✅ Lu' : '⭕ Non lu'}</td>`;
+      html += `<td>
+        <button onclick="viewMessage(${msg.id})" class="btn-small">👁️ Voir</button>
+        ${!msg.read ? `<button onclick="markAsRead(${msg.id})" class="btn-small">✅ Marquer lu</button>` : ''}
+        <button onclick="deleteMessage(${msg.id})" class="btn-small btn-danger">🗑️</button>
+      </td>`;
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+  
+  function viewMessage(id) {
+    // Trouver le message
+    fetch(`/api/admin/contact-messages/${id}`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+    })
+    .then(r => r.json())
+    .then(msg => {
+      const modal = `
+        <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center;" onclick="this.remove()">
+          <div style="background: white; padding: 2rem; border-radius: 10px; max-width: 600px; width: 90%; color: #333;" onclick="event.stopPropagation()">
+            <h3>Message de ${escapeHtml(msg.name)}</h3>
+            <p><strong>Email:</strong> <a href="mailto:${msg.email}">${escapeHtml(msg.email)}</a></p>
+            <p><strong>Sujet:</strong> ${escapeHtml(msg.subject || 'Aucun')}</p>
+            <p><strong>Date:</strong> ${new Date(msg.created_at).toLocaleString('fr-FR')}</p>
+            <hr>
+            <p style="white-space: pre-wrap;">${escapeHtml(msg.message)}</p>
+            <hr>
+            <button onclick="this.closest('div[style*=fixed]').remove()" class="btn-primary">Fermer</button>
+            <button onclick="replyToMessage('${msg.email}', '${escapeHtml(msg.subject)}')" class="btn-secondary">↩️ Répondre</button>
+          </div>
+        </div>
+      `;
+      document.body.insertAdjacentHTML('beforeend', modal);
+      
+      // Marquer comme lu
+      if (!msg.read) {
+        markAsRead(id);
+      }
+    });
+  }
+  
+  async function markAsRead(id) {
+    try {
+      await fetch(`/api/admin/contact-messages/${id}/read`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      });
+      loadMessages();
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  }
+  
+  async function markAllAsRead() {
+    if (!confirm('Marquer tous les messages comme lus ?')) return;
+    
+    try {
+      await fetch('/api/admin/contact-messages/mark-all-read', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      });
+      loadMessages();
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  }
+  
+  async function deleteMessage(id) {
+    if (!confirm('Supprimer ce message ?')) return;
+    
+    try {
+      await fetch(`/api/admin/contact-messages/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      });
+      loadMessages();
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  }
+  
+  function replyToMessage(email, subject) {
+    const mailtoLink = `mailto:${email}?subject=Re: ${encodeURIComponent(subject)}`;
+    window.open(mailtoLink, '_blank');
+  }
+  
+  // Charger les messages quand on affiche la section
+  const originalShowSection = showSection;
+  showSection = function(section) {
+    originalShowSection(section);
+    if (section === 'messages') {
+      loadMessages();
+    }
+  };
+  </script>
 </body>
 </html>
