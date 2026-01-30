@@ -3367,16 +3367,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             `, [startDay, getCurrentMonth(), session.customer, session.subscription, stripeUserId]);
             console.log(`[Stripe] User ${stripeUserId} upgradé en subscriber (reset jour ${startDay})`);
             
-            // 🆕 TRIGGER: Paiement réussi (abonnement)
-            await executeWorkflows('payment_succeeded', {
-              user_id: parseInt(stripeUserId),
-              payment_type: 'subscription',
-              amount: session.amount_total / 100,
-              customer_id: session.customer,
-              subscription_id: session.subscription,
-              session_id: session.id
-            });
-            
           } else if (priceType === 'family') {
             // V35: Pack Famille - générer code unique et créer l'entrée
             const familyCode = generateFamilyCode();
@@ -3392,18 +3382,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             sendFamilyCodeEmail(ownerEmail, familyCode);
             
             console.log(`[Stripe] Pack Famille créé: ${familyCode} pour ${ownerEmail}`);
-            
-            // 🆕 TRIGGER: Paiement réussi (pack famille)
-            await executeWorkflows('payment_succeeded', {
-              user_id: null, // Pas encore de user_id car en attente d'activation
-              payment_type: 'family',
-              amount: session.amount_total / 100,
-              customer_id: session.customer,
-              customer_email: ownerEmail,
-              subscription_id: session.subscription,
-              family_code: familyCode,
-              session_id: session.id
-            });
             
           } else if (priceType === 'pack') {
             // Pack crédits 4.99€ : +50 vidéos + 50 avatars bonus
@@ -3422,15 +3400,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                 WHERE id = ?
               `, [session.customer, stripeUserId]);
               console.log(`[Stripe] User ${stripeUserId} upgradé en pack (50 vidéos + 50 avatars bonus)`);
-              
-              // 🆕 TRIGGER: Paiement réussi (pack)
-              await executeWorkflows('payment_succeeded', {
-                user_id: parseInt(stripeUserId),
-                payment_type: 'pack',
-                amount: session.amount_total / 100, // Convertir centimes en euros
-                customer_id: session.customer,
-                session_id: session.id
-              });
             } else {
               // Subscriber/family/admin/pack → juste ajouter le bonus
               dbRun(`
@@ -3441,16 +3410,6 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                 WHERE id = ?
               `, [session.customer, stripeUserId]);
               console.log(`[Stripe] User ${stripeUserId} (${currentType}) a reçu +50 avatars bonus`);
-              
-              // 🆕 TRIGGER: Paiement réussi (pack bonus)
-              await executeWorkflows('payment_succeeded', {
-                user_id: parseInt(stripeUserId),
-                payment_type: 'pack',
-                amount: session.amount_total / 100, // Convertir centimes en euros
-                customer_id: session.customer,
-                session_id: session.id,
-                is_bonus: true // Pour différencier bonus vs nouveau pack
-              });
             }
           }
           
@@ -6673,6 +6632,57 @@ app.post('/api/admin/stripe/cleanup-orphans', verifyAdmin, async (req, res) => {
     
   } catch (error) {
     console.error('[Admin] Erreur cleanup:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Nettoyer les avatars orphelins (sans user_id)
+app.post('/api/admin/cleanup-orphan-avatars', verifyAdmin, async (req, res) => {
+  try {
+    // 1. Récupérer tous les avatars orphelins
+    const orphanAvatars = dbAll(`
+      SELECT id, avatar_url, created_at 
+      FROM avatars 
+      WHERE user_id IS NULL
+    `);
+    
+    if (!orphanAvatars || orphanAvatars.length === 0) {
+      return res.json({
+        success: true,
+        count: 0,
+        message: 'Aucun avatar orphelin trouvé'
+      });
+    }
+    
+    // 2. Supprimer les fichiers physiques
+    let filesDeleted = 0;
+    for (const avatar of orphanAvatars) {
+      if (avatar.avatar_url) {
+        const filePath = path.join(__dirname, 'public', avatar.avatar_url);
+        try {
+          await fsPromises.unlink(filePath);
+          filesDeleted++;
+        } catch (err) {
+          // Fichier déjà supprimé ou introuvable
+          console.log(`[Cleanup] Fichier introuvable: ${filePath}`);
+        }
+      }
+    }
+    
+    // 3. Supprimer les entrées de la DB
+    dbRun('DELETE FROM avatars WHERE user_id IS NULL');
+    
+    console.log(`[Admin] ${orphanAvatars.length} avatars orphelins supprimés (${filesDeleted} fichiers)`);
+    
+    res.json({
+      success: true,
+      count: orphanAvatars.length,
+      filesDeleted: filesDeleted,
+      message: `${orphanAvatars.length} avatars orphelins supprimés (${filesDeleted} fichiers)`
+    });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur cleanup avatars:', error);
     res.status(500).json({ error: error.message });
   }
 });
