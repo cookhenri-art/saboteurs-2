@@ -588,7 +588,7 @@ async function initAuthDatabase() {
     // Récompense 1: Première partie
     authDb.run(`
       INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
-      VALUES ('Première Partie', 'Félicitations pour ta première partie !', 'first_game', 3, 50, 1, ${Date.now()})
+      VALUES ('Première Partie', 'Bravo pour ta première partie !', 'first_game', 3, 50, 1, ${Date.now()})
     `);
     
     // Récompense 2: 10 parties
@@ -606,7 +606,7 @@ async function initAuthDatabase() {
     // Récompense 4: Parrainage
     authDb.run(`
       INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
-      VALUES ('Parrainage Réussi', 'Merci d''avoir invité un ami !', 'referral_completed', 10, 200, 1, ${Date.now()})
+      VALUES ('Parrainage Réussi', 'Merci pour le parrainage !', 'referral_completed', 10, 200, 1, ${Date.now()})
     `);
     
     console.log('✅ Récompenses créées');
@@ -5900,6 +5900,51 @@ app.patch('/api/admin/stripe/promotions/:id', verifyAdmin, async (req, res) => {
   }
 });
 
+// Modifier une promotion
+app.put('/api/admin/stripe/promotions/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, type, trigger_event, bonus_avatars, bonus_video_credits, discount_percent, duration_days } = req.body;
+    
+    dbRun(`
+      UPDATE promotions 
+      SET name = ?, type = ?, trigger_event = ?, 
+          bonus_avatars = ?, bonus_video_credits = ?, 
+          discount_percent = ?, duration_days = ?
+      WHERE id = ?
+    `, [
+      name, type, trigger_event,
+      bonus_avatars || 0, bonus_video_credits || 0,
+      discount_percent || 0, duration_days || null,
+      id
+    ]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur modification promotion:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Supprimer une promotion
+app.delete('/api/admin/stripe/promotions/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Supprimer aussi les utilisations de cette promotion
+    dbRun('DELETE FROM user_promotions WHERE promotion_id = ?', [id]);
+    dbRun('DELETE FROM promotions WHERE id = ?', [id]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur suppression promotion:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // Liste des coupons Stripe
 app.get('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
   try {
@@ -6040,6 +6085,49 @@ app.patch('/api/admin/stripe/rewards/:id', verifyAdmin, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Modifier une récompense
+app.put('/api/admin/stripe/rewards/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, trigger_event, avatar_bonus, video_bonus } = req.body;
+    
+    dbRun(`
+      UPDATE rewards 
+      SET name = ?, description = ?, trigger_event = ?, 
+          avatar_bonus = ?, video_bonus = ?
+      WHERE id = ?
+    `, [
+      name, description || '', trigger_event,
+      avatar_bonus || 0, video_bonus || 0,
+      id
+    ]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur modification récompense:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Supprimer une récompense
+app.delete('/api/admin/stripe/rewards/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Supprimer aussi les utilisations de cette récompense
+    dbRun('DELETE FROM user_rewards WHERE reward_id = ?', [id]);
+    dbRun('DELETE FROM rewards WHERE id = ?', [id]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur suppression récompense:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // Test connexion Stripe
 app.get('/api/admin/stripe/test-connection', verifyAdmin, async (req, res) => {
