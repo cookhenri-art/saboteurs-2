@@ -68,8 +68,9 @@ async function handleLogin(event) {
       localStorage.setItem('token', result.token);
       localStorage.setItem('saboteur_token', result.token);
       
-      alert('Connexion réussie ! Redirection...');
-      window.location.href = '/index.html';
+      alert('Connexion réussie !');
+      closeLoginModal();
+      window.location.reload(); // Recharger pour mettre à jour l'interface
     } else {
       alert('Erreur: ' + (result.error || 'Identifiants invalides'));
     }
@@ -216,7 +217,10 @@ function checkAuthStatus() {
     if (loginBtn) {
       loginBtn.textContent = 'Mon Compte';
       loginBtn.onclick = function() {
-        window.location.href = '/index.html';
+        // TODO: Ouvrir un menu déroulant avec options : Profil, Abonnements, Déconnexion
+        alert('Fonctionnalité "Mon Compte" à venir');
+        // Pour l'instant, on peut rediriger vers une page compte sur la vitrine
+        // window.location.href = '/account.html';
       };
     }
   }

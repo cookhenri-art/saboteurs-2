@@ -41,8 +41,8 @@
         <p class="product-tagline">Infiltration • Déduction • Multijoueur</p>
         
         <div class="product-cta">
-          <a href="/index.html" class="btn btn-primary btn-large">
-            🎮 Jouer Gratuitement
+          <a href="https://saboteurs.roronoa-games.com" class="btn btn-primary btn-large">
+            🎮 Jouer Maintenant
           </a>
           <button class="btn btn-outline btn-large" onclick="openLoginModal()">
             💎 Découvrir les Packs
@@ -71,7 +71,7 @@
         <div class="desc-features">
           <div class="feature-box">
             <div class="feature-icon">👥</div>
-            <h3>6-12 Joueurs</h3>
+            <h3>4-20 Joueurs</h3>
             <p>Parties intenses en temps réel</p>
           </div>
           
@@ -169,42 +169,6 @@
     </div>
   </section>
 
-  <!-- Section Salles Visio -->
-  <section class="game-desc" style="background: var(--darker);">
-    <div class="container">
-      <div class="section-header">
-        <div class="section-badge">Visio Intégrée</div>
-        <h2 class="section-title">Salles Publiques & Privées</h2>
-      </div>
-      
-      <div class="desc-features">
-        <div class="feature-box">
-          <div class="feature-icon">🌐</div>
-          <h3>Salles Publiques</h3>
-          <p>Rejoignez des parties animées avec des joueurs du monde entier. Matchmaking intelligent pour des parties équilibrées.</p>
-        </div>
-        
-        <div class="feature-box">
-          <div class="feature-icon">🔒</div>
-          <h3>Parties Privées</h3>
-          <p>Créez votre salle privée avec code d'accès. Invitez vos amis pour des parties entre vous en visio intégrée.</p>
-        </div>
-        
-        <div class="feature-box">
-          <div class="feature-icon">🎥</div>
-          <h3>Visio Native</h3>
-          <p>Aucun logiciel tiers requis ! La visioconférence est intégrée directement dans l'application. Plug & Play.</p>
-        </div>
-        
-        <div class="feature-box">
-          <div class="feature-icon">💬</div>
-          <h3>Mode Chat</h3>
-          <p>Pas de caméra ? Jouez en mode chat text uniquement. Gratuit et accessible à tous.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- Pricing -->
   <section class="pricing">
     <div class="container">
@@ -224,10 +188,10 @@
             </div>
           </div>
           <ul class="pricing-features">
-            <li>✅ Parties illimitées (Chat uniquement)</li>
-            <li>❌ Pas d'avatars IA (mode gratuit)</li>
-            <li>❌ Pas de visio (chat uniquement)</li>
-            <li>✅ 2 thèmes (Spatial + Loup-Garou)</li>
+            <li>✅ Parties illimitées</li>
+            <li>✅ 2 avatars IA/mois</li>
+            <li>✅ 2 parties vidéo/mois</li>
+            <li>✅ Tous les thèmes</li>
             <li>✅ Mode hors ligne</li>
           </ul>
           <a href="/index.html" class="btn btn-outline">
@@ -262,14 +226,13 @@
           <div class="pricing-header">
             <h3>Premium</h3>
             <div class="price">
-              <span class="currency">1,49€</span>
+              <span class="currency">9,99€</span>
               <span class="period">/mois</span>
             </div>
           </div>
           <ul class="pricing-features">
-            <li>✅ 30 avatars IA/mois</li>
-            <li>✅ Visio illimitée intégrée</li>
-            <li>✅ 4 thèmes complets (Spatial, Loup-Garou, Sorciers, Mythique)</li>
+            <li>✅ Avatars IA illimités</li>
+            <li>✅ Parties vidéo illimitées</li>
             <li>✅ Badge exclusif</li>
             <li>✅ Accès anticipé nouveautés</li>
             <li>✅ Support VIP 24/7</li>
@@ -284,17 +247,15 @@
           <div class="pricing-header">
             <h3>Pack Famille</h3>
             <div class="price">
-              <span class="currency">9,99€</span>
+              <span class="currency">39,99€</span>
               <span class="period">/mois</span>
             </div>
           </div>
           <ul class="pricing-features">
             <li>✅ Jusqu'à 9 comptes</li>
-            <li>✅ 30 avatars IA/mois par utilisateur</li>
-            <li>✅ 4 thèmes complets pour tous</li>
-            <li>✅ Visio illimitée pour tous</li>
+            <li>✅ Avantages Premium pour tous</li>
             <li>✅ Gestion centralisée</li>
-            <li>✅ Économie de 85% (vs 9 comptes individuels)</li>
+            <li>✅ Économie de 60%</li>
             <li>✅ Support prioritaire</li>
           </ul>
           <button class="btn btn-outline" onclick="openLoginModal()">
@@ -312,8 +273,8 @@
         <h2>Prêt à Jouer ?</h2>
         <p>Rejoignez des milliers de joueurs dans l'aventure la plus intense !</p>
         <div class="cta-buttons">
-          <a href="/index.html" class="btn btn-primary btn-large">
-            🎮 Jouer Gratuitement
+          <a href="https://saboteurs.roronoa-games.com" class="btn btn-primary btn-large">
+            🎮 Jouer Maintenant
           </a>
           <button class="btn btn-outline btn-large" onclick="openLoginModal()">
             💎 Voir les Offres Premium
@@ -386,5 +347,260 @@
   </div>
 
   <script src="roronoa-games.js"></script>
-</body>
+\n\n<!-- ============================================================================
+   MODAL PACKS - À AJOUTER DANS index-site.html AVANT </body>
+   ============================================================================ -->
+
+<!-- Modal Packs Premium -->
+<div id="modal-packs" class="modal" style="display: none;">
+  <div class="modal-overlay" onclick="closePacksModal()"></div>
+  <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <button class="modal-close" onclick="closePacksModal()">×</button>
+    
+    <div class="modal-header">
+      <h2 style="color: var(--green-bright); margin: 0;">💎 Nos Packs Premium</h2>
+      <p style="color: #aaa; margin-top: 10px;">Compte vérifié requis pour accéder aux packs</p>
+    </div>
+    
+    <div class="packs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 30px;">
+      
+      <!-- Pack 50+50 -->
+      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid var(--green-main); border-radius: 15px; padding: 25px; position: relative; overflow: hidden;">
+        <div class="pack-badge" style="position: absolute; top: 15px; right: 15px; background: var(--green-bright); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+          PONCTUEL
+        </div>
+        
+        <div class="pack-icon" style="font-size: 48px; margin-bottom: 15px;">🎮</div>
+        <h3 style="color: var(--green-bright); margin: 0 0 10px 0;">Pack 50+50</h3>
+        <div class="pack-price" style="font-size: 36px; font-weight: bold; color: #fff; margin: 15px 0;">
+          4,99€
+          <span style="font-size: 16px; color: #aaa; font-weight: normal;">une fois</span>
+        </div>
+        
+        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #ccc; line-height: 1.8;">
+          <li>✅ 50 crédits vidéo</li>
+          <li>✅ 50 avatars IA</li>
+          <li>✅ Valables 12 mois</li>
+          <li>✅ Tous les thèmes</li>
+          <li>✅ Support prioritaire</li>
+        </ul>
+        
+        <button class="btn btn-primary" onclick="buyPack('pack50')" style="width: 100%; margin-top: 20px;">
+          🛒 Acheter maintenant
+        </button>
+      </div>
+      
+      <!-- Premium -->
+      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 3px solid var(--green-bright); border-radius: 15px; padding: 25px; position: relative; overflow: hidden; box-shadow: 0 0 30px rgba(107, 157, 58, 0.3);">
+        <div class="pack-badge" style="position: absolute; top: 15px; right: 15px; background: gold; color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+          ⭐ POPULAIRE
+        </div>
+        
+        <div class="pack-icon" style="font-size: 48px; margin-bottom: 15px;">🌟</div>
+        <h3 style="color: var(--green-bright); margin: 0 0 10px 0;">Premium</h3>
+        <div class="pack-price" style="font-size: 36px; font-weight: bold; color: #fff; margin: 15px 0;">
+          1,49€
+          <span style="font-size: 16px; color: #aaa; font-weight: normal;">/mois</span>
+        </div>
+        
+        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #ccc; line-height: 1.8;">
+          <li>✅ Visio illimitée</li>
+          <li>✅ 30 avatars IA/mois</li>
+          <li>✅ 4 thèmes complets</li>
+          <li>✅ Badge exclusif</li>
+          <li>✅ Support VIP 24/7</li>
+          <li>✅ Accès anticipé nouveautés</li>
+        </ul>
+        
+        <button class="btn btn-primary" onclick="buyPack('premium')" style="width: 100%; margin-top: 20px; background: var(--green-bright); color: #000;">
+          🚀 S'abonner
+        </button>
+      </div>
+      
+      <!-- Pack Famille -->
+      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid var(--green-main); border-radius: 15px; padding: 25px; position: relative; overflow: hidden;">
+        <div class="pack-badge" style="position: absolute; top: 15px; right: 15px; background: #ff6b6b; color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">
+          FAMILLE
+        </div>
+        
+        <div class="pack-icon" style="font-size: 48px; margin-bottom: 15px;">👨‍👩‍👧‍👦</div>
+        <h3 style="color: var(--green-bright); margin: 0 0 10px 0;">Pack Famille</h3>
+        <div class="pack-price" style="font-size: 36px; font-weight: bold; color: #fff; margin: 15px 0;">
+          9,99€
+          <span style="font-size: 16px; color: #aaa; font-weight: normal;">/mois</span>
+        </div>
+        
+        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #ccc; line-height: 1.8;">
+          <li>✅ Jusqu'à 9 comptes</li>
+          <li>✅ Visio illimitée pour tous</li>
+          <li>✅ 30 avatars/mois par utilisateur</li>
+          <li>✅ 4 thèmes complets</li>
+          <li>✅ Gestion centralisée</li>
+          <li>✅ Économie de 85%</li>
+        </ul>
+        
+        <button class="btn btn-primary" onclick="buyPack('family')" style="width: 100%; margin-top: 20px;">
+          👨‍👩‍👧‍👦 S'abonner en famille
+        </button>
+      </div>
+      
+    </div>
+    
+    <div class="modal-footer" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; text-align: center; color: #aaa;">
+      <p style="margin: 0;">
+        💡 <strong>Compte vérifié requis</strong> pour accéder aux packs. 
+        <a href="#" onclick="closePacksModal(); openLoginModal(); return false;" style="color: var(--green-bright);">Se connecter</a> ou 
+        <a href="#" onclick="closePacksModal(); openLoginModal(); return false;" style="color: var(--green-bright);">créer un compte</a>.
+      </p>
+      <p style="margin-top: 15px; font-size: 14px;">
+        🔒 Paiement sécurisé via Stripe • 💳 CB, Apple Pay, Google Pay acceptés • 🔄 Annulation à tout moment
+      </p>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Styles pour le modal packs */
+.packs-grid {
+  animation: fadeInUp 0.5s ease;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pack-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.pack-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(107, 157, 58, 0.2);
+}
+
+.pack-card ul li {
+  padding: 5px 0;
+}
+
+.pack-card .btn {
+  transition: all 0.3s ease;
+}
+
+.pack-card .btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(107, 157, 58, 0.4);
+}
+</style>
+
+<script>
+// ============================================================================
+// FONCTIONS MODAL PACKS
+// ============================================================================
+
+function openPacksModal() {
+  document.getElementById('modal-packs').style.display = 'flex';
+  document.body.style.overflow = 'hidden'; // Empêcher scroll
+}
+
+function closePacksModal() {
+  document.getElementById('modal-packs').style.display = 'none';
+  document.body.style.overflow = 'auto'; // Réactiver scroll
+}
+
+// Fonction d'achat de pack
+async function buyPack(packType) {
+  // Vérifier si l'utilisateur est connecté
+  const token = localStorage.getItem('token') || localStorage.getItem('saboteur_token');
+  
+  if (!token) {
+    alert('⚠️ Vous devez être connecté pour acheter un pack.\n\nCréez un compte ou connectez-vous pour continuer.');
+    closePacksModal();
+    openLoginModal();
+    return;
+  }
+  
+  // Vérifier si l'utilisateur a vérifié son email
+  try {
+    const response = await fetch('/api/auth/me', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error('Non authentifié');
+    }
+    
+    const user = await response.json();
+    
+    if (!user.email_verified) {
+      alert('⚠️ Veuillez vérifier votre email avant d\'acheter un pack.\n\nUn email de vérification vous a été envoyé lors de votre inscription.');
+      return;
+    }
+    
+    // Rediriger vers Stripe selon le type de pack
+    let checkoutUrl;
+    
+    switch(packType) {
+      case 'pack50':
+        checkoutUrl = '/api/stripe/create-checkout-session?pack=50';
+        break;
+      case 'premium':
+        checkoutUrl = '/api/stripe/create-checkout-session?subscription=premium';
+        break;
+      case 'family':
+        checkoutUrl = '/api/stripe/create-checkout-session?subscription=family';
+        break;
+      default:
+        alert('Pack inconnu');
+        return;
+    }
+    
+    // Créer la session Stripe
+    const checkoutResponse = await fetch(checkoutUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!checkoutResponse.ok) {
+      throw new Error('Erreur lors de la création de la session de paiement');
+    }
+    
+    const { url } = await checkoutResponse.json();
+    
+    // Rediriger vers Stripe
+    window.location.href = url;
+    
+  } catch (error) {
+    console.error('Erreur:', error);
+    alert('❌ Erreur lors de l\'achat. Veuillez réessayer ou contacter le support.');
+  }
+}
+
+// Fermer le modal si on clique en dehors
+document.addEventListener('click', function(e) {
+  const modal = document.getElementById('modal-packs');
+  if (e.target === modal) {
+    closePacksModal();
+  }
+});
+
+// Fermer avec Échap
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closePacksModal();
+  }
+});
+</script>
+\n\n</body>
 </html>
