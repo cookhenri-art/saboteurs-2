@@ -858,34 +858,25 @@
     const urlParams = new URLSearchParams(window.location.search);
     const secretCode = urlParams.get('secretCode');
   
-  // Intercepteur fetch pour ajouter secretCode
+  // ========================================
+  // Intercepteur fetch global pour ajouter secretCode automatiquement
+  // ========================================
   if (typeof secretCode !== 'undefined' && secretCode) {
     const originalFetch = window.fetch;
     window.fetch = function(url, options = {}) {
+      // Ajouter secretCode SEULEMENT si pas déjà présent dans l'URL
       if (typeof url === 'string' && url.startsWith('/api/admin/')) {
-        const separator = url.includes('?') ? '&' : '?';
-        url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
+        if (!url.includes('secretCode=')) {
+          const separator = url.includes('?') ? '&' : '?';
+          url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
+        }
       }
+      
       return originalFetch(url, options);
     };
-  }
-
-
-  // ========================================
-  // CORRECTIF: Intercepteur fetch global pour ajouter secretCode automatiquement
-  // ========================================
-  const originalFetch = window.fetch;
-  window.fetch = function(url, options = {}) {
-    // Si l'URL est relative et commence par /api/admin/
-    if (typeof url === 'string' && url.startsWith('/api/admin/')) {
-      const separator = url.includes('?') ? '&' : '?';
-      url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
-    }
     
-    return originalFetch(url, options);
-  };
-  
-  console.log('✅ Intercepteur fetch activé - secretCode ajouté automatiquement');
+    console.log('✅ Intercepteur fetch activé (sans duplication)');
+  }
 
     
     // ========================================
