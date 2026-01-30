@@ -520,10 +520,11 @@
                 <td><span class="badge badge-${u.account_type}">${u.account_type}</span></td>
                 <td class="${u.email_verified ? 'verified' : 'not-verified'}">${u.email_verified ? '✅' : '❌'}</td>
                 <td>${u.video_credits === 999999 ? '∞' : u.video_credits}</td>
-                <td>${u.avatars_used || 0}</td>
+                <td>${u.avatars_remaining === Infinity ? '∞' : `<span style="color: ${u.avatars_remaining === 0 ? '#ff4444' : u.avatars_remaining <= 5 ? '#ffaa00' : '#44ff44'}">${u.avatars_remaining}/${u.avatars_total}</span>`}</td>
                 <td>${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
                 <td>
                   <button class="btn-success action-btn" onclick="quickUpgrade('${u.email}', 'subscriber')">Sub</button>
+                  <button class="btn-warning action-btn" onclick="giftAvatars('${u.email}')" title="Offrir des avatars">🎁</button>
                   <button class="btn-danger action-btn" onclick="quickDelete('${u.email}')">🗑️</button>
                 </td>
               </tr>
@@ -688,6 +689,33 @@
         });
     }
     
+    
+    function giftAvatars(email) {
+      const amount = prompt('Combien d\'avatars offrir ? (1-100)', '5');
+      if (!amount || isNaN(amount) || amount < 1 || amount > 100) {
+        alert('Montant invalide (doit être entre 1 et 100)');
+        return;
+      }
+      
+      const reason = prompt('Raison (optionnel)', 'Cadeau admin');
+      
+      if (!confirm(`Offrir ${amount} avatars à ${email} ?`)) return;
+      
+      fetch('/api/admin/gift-avatars', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, amount: parseInt(amount), reason, secretCode: adminSecret })
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.ok) {
+            alert(`✅ ${amount} avatars offerts à ${email}`);
+            loadUsers();
+          } else {
+            alert('❌ ' + data.error);
+          }
+        });
+    }
     function quickDelete(email) {
       if (!confirm(`Supprimer définitivement ${email} ?`)) return;
       
