@@ -8062,7 +8062,8 @@ async function initWorkflowsDatabase() {
 // Liste tous les workflows
 app.get('/api/admin/workflows', verifyAdmin, (req, res) => {
   try {
-    const workflows = authDb.prepare(`
+    // Récupérer les workflows depuis authDb
+    const workflowsResult = authDb.exec(`
       SELECT 
         w.*,
         COUNT(we.id) as total_executions,
@@ -8071,7 +8072,17 @@ app.get('/api/admin/workflows', verifyAdmin, (req, res) => {
       LEFT JOIN workflow_executions we ON w.id = we.workflow_id
       GROUP BY w.id
       ORDER BY w.created_at DESC
-    `).all();
+    `);
+    
+    const workflows = [];
+    if (workflowsResult && workflowsResult[0]) {
+      const columns = workflowsResult[0].columns;
+      workflowsResult[0].values.forEach(row => {
+        const obj = {};
+        columns.forEach((col, i) => obj[col] = row[i]);
+        workflows.push(obj);
+      });
+    }
     
     res.json(workflows || []);
   } catch (error) {
@@ -8085,16 +8096,16 @@ app.post('/api/admin/workflows', verifyAdmin, (req, res) => {
   try {
     const { name, description, trigger_type, conditions, actions, communication, enabled } = req.body;
     
+    console.log('[Workflows] Données reçues:', { name, description, trigger_type, conditions, actions, communication, enabled });
+    
     if (!name || !trigger_type || !actions) {
       return res.status(400).json({ error: 'Champs requis manquants' });
     }
     
-    const stmt = authDb.prepare(`
+    authDb.run(`
       INSERT INTO workflows (name, description, trigger_type, conditions, actions, communication, enabled)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-    
-    const result = stmt.run(
+    `, [
       name,
       description || '',
       trigger_type,
@@ -8102,10 +8113,16 @@ app.post('/api/admin/workflows', verifyAdmin, (req, res) => {
       JSON.stringify(actions),
       JSON.stringify(communication || { popup: false, email: false, social: false }),
       enabled !== false ? 1 : 0
-    );
+    ]);
     
-    console.log(`✅ [Workflows] Créé: ${name} (ID: ${result.lastInsertRowid})`);
-    res.json({ success: true, id: result.lastInsertRowid });
+    // Récupérer le dernier ID inséré
+    const idResult = authDb.exec("SELECT last_insert_rowid() as id");
+    const lastId = idResult[0]?.values[0]?.[0] || 0;
+    
+    saveAuthDatabase();
+    
+    console.log(`✅ [Workflows] Créé: ${name} (ID: ${lastId})`);
+    res.json({ success: true, id: lastId });
     
   } catch (error) {
     console.error('[Workflows] Erreur création:', error);
@@ -8166,8 +8183,8 @@ app.delete('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
   try {
     const { id } = req.params;
     
-    authDb.prepare('DELETE FROM workflow_executions WHERE workflow_id = ?').run(id);
-    authDb.prepare('DELETE FROM workflows WHERE id = ?').run(id);
+    authDb.run('DELETE FROM workflow_executions WHERE workflow_id = ?', [id]);
+    authDb.run('DELETE FROM workflows WHERE id = ?', [id]);
     
     res.json({ success: true });
     
@@ -8180,7 +8197,7 @@ app.delete('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
 // Toggle actif/inactif
 app.patch('/api/admin/workflows/:id/toggle', verifyAdmin, (req, res) => {
   try {
-    authDb.prepare('UPDATE workflows SET enabled = NOT enabled WHERE id = ?').run(req.params.id);
+    authDb.run('UPDATE workflows SET enabled = NOT enabled WHERE id = ?', [req.params.id]);
     res.json({ success: true });
   } catch (error) {
     console.error('[Workflows] Erreur toggle:', error);
