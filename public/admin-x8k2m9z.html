@@ -256,7 +256,7 @@
       
       <!-- Admin Stripe Button -->
       <div style="text-align: center; margin: 20px 0 30px 0;">
-        <a href="admin-stripe.html" style="
+        <a href="#" onclick="goToStripeAdmin(); return false;" style="
           display: inline-block;
           padding: 15px 30px;
           background: linear-gradient(135deg, #00ffff 0%, #00ccff 100%);
@@ -459,6 +459,14 @@
       document.getElementById('loginScreen').style.display = 'block';
       document.getElementById('adminPanel').style.display = 'none';
       document.getElementById('secretInput').value = '';
+    }
+    
+    function goToStripeAdmin() {
+      if (!adminSecret) {
+        alert('Vous devez être connecté pour accéder à l'admin Stripe');
+        return;
+      }
+      window.location.href = `admin-stripe.html?secretCode=${encodeURIComponent(adminSecret)}`;
     }
     
     function showResult(elementId, message, success) {

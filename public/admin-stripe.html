@@ -840,7 +840,8 @@
     // ========================================
     
     const API_BASE = window.location.origin;
-    const token = localStorage.getItem('adminToken');
+    const urlParams = new URLSearchParams(window.location.search);
+    const secretCode = urlParams.get('secretCode');
     
     // ========================================
     // TABS
@@ -918,10 +919,13 @@
     // ========================================
     
     async function apiCall(endpoint, method = 'GET', data = null) {
+      // Ajouter le secretCode dans l'URL
+      const separator = endpoint.includes('?') ? '&' : '?';
+      const urlWithSecret = `${endpoint}${separator}secretCode=${encodeURIComponent(secretCode)}`;
+      
       const options = {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       };
@@ -930,7 +934,7 @@
         options.body = JSON.stringify(data);
       }
       
-      const response = await fetch(`${API_BASE}${endpoint}`, options);
+      const response = await fetch(`${API_BASE}${urlWithSecret}`, options);
       
       if (!response.ok) {
         throw new Error(`API Error: ${response.statusText}`);
@@ -1473,7 +1477,7 @@
     // ========================================
     
     // Vérifier le token
-    if (!token) {
+    if (!secretCode) {
       window.location.href = 'admin-x8k2m9z.html';
     }
     
