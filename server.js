@@ -3559,6 +3559,31 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
+// ============================================================================
+// MIDDLEWARE - ROUTAGE PAR DOMAINE (vitrine vs app)
+// ============================================================================
+
+app.use((req, res, next) => {
+  const host = req.hostname;
+  
+  // Site vitrine (roronoa-games.com)
+  if (host === 'roronoa-games.com' || host === 'www.roronoa-games.com') {
+    if (req.path === '/' || req.path === '/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
+    }
+  }
+  
+  // App Saboteur (saboteurs.roronoa-games.com)
+  if (host === 'saboteurs.roronoa-games.com') {
+    if (req.path === '/' || req.path === '/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+  }
+  
+  // Pour tous les autres fichiers, continuer normalement
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/avatars", express.static(AVATARS_DIR)); // Servir les avatars
 
