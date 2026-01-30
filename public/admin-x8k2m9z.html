@@ -463,7 +463,7 @@
     
     function goToStripeAdmin() {
       if (!adminSecret) {
-        alert('Vous devez être connecté pour accéder à l'admin Stripe');
+        alert('Vous devez etre connecte pour acceder a l admin Stripe');
         return;
       }
       window.location.href = `admin-stripe.html?secretCode=${encodeURIComponent(adminSecret)}`;
