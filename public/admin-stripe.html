@@ -653,6 +653,19 @@
           </a>
         </div>
       </div>
+      
+      <div class="section">
+        <h3>🧹 Maintenance</h3>
+        <p style="margin-bottom: 15px; color: rgba(255,255,255,0.7);">
+          Nettoyer les données incohérentes (comptes Premium/Pack Famille sans abonnement Stripe actif)
+        </p>
+        <button onclick="cleanupOrphans()" class="btn btn-warning" style="width: 100%;">
+          🧹 Nettoyer les Données Orphelines
+        </button>
+        <p style="margin-top: 10px; font-size: 0.85em; color: rgba(255,255,255,0.5);">
+          Utilisez cette fonction pour downgrader en FREE les comptes marqués Premium/Pack Famille mais sans abonnement Stripe.
+        </p>
+      </div>
     </div>
   </div>
   
@@ -893,6 +906,10 @@
     
     function openCreateRewardModal() {
       document.getElementById('modal-create-reward').classList.add('active');
+    }
+    
+    function openModal(modalId) {
+      document.getElementById(modalId).classList.add('active');
     }
     
     function closeModal(modalId) {
@@ -1553,6 +1570,30 @@
       } catch (error) {
         console.error('Erreur test connexion:', error);
         showAlert('❌ Erreur de connexion', 'error');
+      }
+    }
+    
+    async function cleanupOrphans() {
+      if (!confirm('⚠️ ATTENTION ⚠️\n\nCette action va :\n• Downgrader en FREE les comptes Premium sans abonnement Stripe\n• Désactiver les Packs Famille sans abonnement Stripe\n• Downgrader en FREE les membres de packs orphelins\n\nContinuer ?')) {
+        return;
+      }
+      
+      try {
+        showAlert('🧹 Nettoyage en cours...', 'info');
+        
+        const result = await apiCall('/api/admin/stripe/cleanup-orphans', 'POST');
+        
+        if (result.success) {
+          showAlert(`✅ ${result.message}`, 'success');
+          // Recharger le dashboard pour voir les nouvelles stats
+          loadDashboard();
+        } else {
+          showAlert('❌ Erreur lors du nettoyage', 'error');
+        }
+        
+      } catch (error) {
+        console.error('Erreur cleanup:', error);
+        showAlert('❌ Erreur lors du nettoyage', 'error');
       }
     }
     
