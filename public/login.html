@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion - Saboteurs</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: rgba(20, 20, 40, 0.95);
+      border: 2px solid #00ffff;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 450px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(0, 255, 255, 0.3);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .logo h1 {
+      color: #00ffff;
+      font-size: 32px;
+      font-weight: bold;
+      text-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+      margin-bottom: 10px;
+    }
+
+    .logo p {
+      color: #888;
+      font-size: 14px;
+    }
+
+    /* Message d'alerte */
+    .alert {
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+      font-size: 14px;
+    }
+
+    .alert.info {
+      background: rgba(255, 235, 59, 0.2);
+      border: 1px solid #ffeb3b;
+      color: #ffeb3b;
+    }
+
+    .alert.success {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid #4caf50;
+      color: #4caf50;
+    }
+
+    .alert.error {
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid #f44336;
+      color: #f44336;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      color: #00ffff;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      background: rgba(10, 10, 30, 0.8);
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .form-group input:focus {
+      outline: none;
+      border-color: #00ffff;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+
+    .form-group input::placeholder {
+      color: #666;
+    }
+
+    /* Toggle visibilité mot de passe */
+    .password-toggle {
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #00ffff;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .password-toggle:hover {
+      color: #00cccc;
+    }
+
+    .form-group input[type="password"] {
+      padding-right: 50px;
+    }
+
+    /* Lien mot de passe oublié */
+    .forgot-password {
+      text-align: right;
+      margin-top: -10px;
+      margin-bottom: 20px;
+    }
+
+    .forgot-password a {
+      color: #00ffff;
+      text-decoration: none;
+      font-size: 13px;
+      transition: color 0.3s ease;
+    }
+
+    .forgot-password a:hover {
+      color: #00cccc;
+      text-decoration: underline;
+    }
+
+    /* Bouton */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #00ffff 0%, #00cccc 100%);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Séparateur */
+    .separator {
+      text-align: center;
+      margin: 30px 0;
+      color: #666;
+      font-size: 14px;
+      position: relative;
+    }
+
+    .separator::before,
+    .separator::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #333;
+    }
+
+    .separator::before {
+      left: 0;
+    }
+
+    .separator::after {
+      right: 0;
+    }
+
+    /* Lien inscription */
+    .signup-link {
+      text-align: center;
+      margin-top: 20px;
+      color: #888;
+      font-size: 14px;
+    }
+
+    .signup-link a {
+      color: #00ffff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .signup-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Loader */
+    .loader {
+      display: none;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(0, 255, 255, 0.3);
+      border-top-color: #00ffff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .container {
+        padding: 30px 20px;
+      }
+
+      .logo h1 {
+        font-size: 28px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Logo -->
+    <div class="logo">
+      <h1>🎮 SABOTEURS</h1>
+      <p>Connexion à votre compte</p>
+    </div>
+
+    <!-- Message d'alerte (paramètre URL) -->
+    <div id="alert-message" class="alert"></div>
+
+    <!-- Formulaire de connexion -->
+    <form id="login-form">
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email" 
+          placeholder="votre@email.com"
+          required
+          autocomplete="email"
+        >
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <div class="input-wrapper">
+          <input 
+            type="password" 
+            id="password" 
+            name="password" 
+            placeholder="••••••••"
+            required
+            autocomplete="current-password"
+          >
+          <button type="button" class="password-toggle" id="toggle-password" aria-label="Afficher le mot de passe">
+            👁️
+          </button>
+        </div>
+      </div>
+
+      <!-- Mot de passe oublié -->
+      <div class="forgot-password">
+        <a href="#" id="forgot-password-link">Mot de passe oublié ?</a>
+      </div>
+
+      <!-- Bouton connexion -->
+      <button type="submit" class="btn" id="submit-btn">
+        <span id="btn-text">Se connecter</span>
+        <div class="loader" id="loader"></div>
+      </button>
+    </form>
+
+    <!-- Séparateur -->
+    <div class="separator">OU</div>
+
+    <!-- Lien inscription -->
+    <div class="signup-link">
+      Pas encore de compte ? <a href="/signup.html">Créer un compte</a>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // GESTION DES MESSAGES
+    // ==========================================
+
+    // Afficher message depuis paramètre URL
+    function showMessage() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const message = urlParams.get('message');
+      const type = urlParams.get('type') || 'info';
+
+      if (message) {
+        const alertDiv = document.getElementById('alert-message');
+        alertDiv.textContent = decodeURIComponent(message);
+        alertDiv.className = `alert ${type}`;
+        alertDiv.style.display = 'block';
+      }
+    }
+
+    // Afficher message custom
+    function displayMessage(message, type = 'error') {
+      const alertDiv = document.getElementById('alert-message');
+      alertDiv.textContent = message;
+      alertDiv.className = `alert ${type}`;
+      alertDiv.style.display = 'block';
+
+      // Auto-hide après 5 secondes pour les succès
+      if (type === 'success') {
+        setTimeout(() => {
+          alertDiv.style.display = 'none';
+        }, 5000);
+      }
+    }
+
+    // ==========================================
+    // TOGGLE VISIBILITÉ MOT DE PASSE
+    // ==========================================
+
+    const passwordInput = document.getElementById('password');
+    const toggleBtn = document.getElementById('toggle-password');
+
+    toggleBtn.addEventListener('click', function() {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleBtn.textContent = '🙈';
+      } else {
+        passwordInput.type = 'password';
+        toggleBtn.textContent = '👁️';
+      }
+    });
+
+    // ==========================================
+    // GESTION FORMULAIRE DE CONNEXION
+    // ==========================================
+
+    const loginForm = document.getElementById('login-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const btnText = document.getElementById('btn-text');
+    const loader = document.getElementById('loader');
+
+    loginForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      // Récupérer les valeurs
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      // Validation basique
+      if (!email || !password) {
+        displayMessage('Veuillez remplir tous les champs', 'error');
+        return;
+      }
+
+      // Loader
+      submitBtn.disabled = true;
+      btnText.style.display = 'none';
+      loader.style.display = 'block';
+
+      try {
+        // Appel API de connexion
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.token) {
+          // Connexion réussie
+          localStorage.setItem('authToken', data.token);
+
+          // Afficher message de succès
+          displayMessage('Connexion réussie ! Redirection...', 'success');
+
+          // Redirection intelligente
+          setTimeout(() => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect');
+
+            if (redirectUrl) {
+              window.location.href = redirectUrl;
+            } else {
+              window.location.href = '/';
+            }
+          }, 1000);
+
+        } else {
+          // Erreur de connexion
+          displayMessage(data.error || 'Email ou mot de passe incorrect', 'error');
+          
+          // Réactiver le bouton
+          submitBtn.disabled = false;
+          btnText.style.display = 'inline';
+          loader.style.display = 'none';
+        }
+
+      } catch (error) {
+        console.error('Erreur connexion:', error);
+        displayMessage('Erreur de connexion. Veuillez réessayer.', 'error');
+        
+        // Réactiver le bouton
+        submitBtn.disabled = false;
+        btnText.style.display = 'inline';
+        loader.style.display = 'none';
+      }
+    });
+
+    // ==========================================
+    // MOT DE PASSE OUBLIÉ
+    // ==========================================
+
+    document.getElementById('forgot-password-link').addEventListener('click', function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+
+      if (!email) {
+        displayMessage('Veuillez saisir votre email pour réinitialiser votre mot de passe', 'info');
+        document.getElementById('email').focus();
+        return;
+      }
+
+      // TODO: Implémenter la fonctionnalité de réinitialisation
+      // Pour l'instant, afficher un message
+      displayMessage('Un email de réinitialisation a été envoyé à ' + email, 'info');
+
+      // Appel API (à implémenter)
+      /*
+      fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      */
+    });
+
+    // ==========================================
+    // VÉRIFICATION SI DÉJÀ CONNECTÉ
+    // ==========================================
+
+    function checkIfLoggedIn() {
+      const token = localStorage.getItem('authToken');
+      
+      if (token) {
+        try {
+          // Décoder le JWT pour vérifier l'expiration
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const expirationDate = payload.exp * 1000;
+          
+          if (Date.now() < expirationDate) {
+            // Token valide, rediriger
+            const urlParams = new URLSearchParams(window.location.search);
+            const redirectUrl = urlParams.get('redirect') || '/';
+            window.location.href = redirectUrl;
+          } else {
+            // Token expiré
+            localStorage.removeItem('authToken');
+          }
+        } catch (error) {
+          // Token invalide
+          localStorage.removeItem('authToken');
+        }
+      }
+    }
+
+    // ==========================================
+    // INITIALISATION
+    // ==========================================
+
+    // Vérifier si déjà connecté
+    checkIfLoggedIn();
+
+    // Afficher message si présent dans URL
+    showMessage();
+
+    // Focus automatique sur le champ email
+    document.getElementById('email').focus();
+  </script>
+</body>
+</html>
