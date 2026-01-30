@@ -35,6 +35,8 @@ try {
 }
 try { Replicate = require("replicate"); } catch(e) { console.log("⚠️ replicate non installé"); }
 try { Resend = require("resend").Resend; } catch(e) { console.log("⚠️ resend non installé"); }
+let nodemailer;  // IONOS SMTP
+try { nodemailer = require("nodemailer"); } catch(e) { console.log("⚠️ nodemailer non installé - installer avec: npm install nodemailer"); }
 try { multer = require("multer"); } catch(e) { console.log("⚠️ multer non installé"); }
 try { 
   if (process.env.STRIPE_SECRET_KEY) {
@@ -65,6 +67,58 @@ fs.mkdirSync(AVATARS_DIR, { recursive: true });
 // Clients API (optionnels)
 const replicate = (REPLICATE_API_TOKEN && Replicate) ? new Replicate({ auth: REPLICATE_API_TOKEN }) : null;
 const resend = (RESEND_API_KEY && Resend) ? new Resend(RESEND_API_KEY) : null;
+
+// ============================================================================
+// CONFIGURATION IONOS SMTP
+// ============================================================================
+
+let ionosTransporter = null;
+
+if (nodemailer) {
+  ionosTransporter = nodemailer.createTransport({
+    host: process.env.IONOS_SMTP_HOST || 'smtp.ionos.fr',
+    port: parseInt(process.env.IONOS_SMTP_PORT) || 587,
+    secure: false, // true pour port 465, false pour 587
+    auth: {
+      user: process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com',
+      pass: process.env.IONOS_APP_PASSWORD
+    }
+  });
+
+  // Vérifier la configuration au démarrage
+  ionosTransporter.verify((error, success) => {
+    if (error) {
+      console.error('❌ [IONOS] Erreur configuration SMTP:', error.message);
+    } else {
+      console.log('✅ [IONOS] SMTP prêt à envoyer des emails');
+    }
+  });
+}
+
+// Fonction helper pour envoyer des emails via IONOS
+async function sendEmailIONOS({ from, to, subject, html, text }) {
+  if (!ionosTransporter) {
+    console.error('❌ [IONOS] nodemailer non configuré');
+    throw new Error('IONOS SMTP non disponible');
+  }
+  
+  try {
+    const info = await ionosTransporter.sendMail({
+      from: from || process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com',
+      to: to,
+      subject: subject,
+      html: html,
+      text: text || html.replace(/<[^>]*>/g, '') // Fallback texte brut
+    });
+    
+    console.log('✅ [IONOS] Email envoyé:', info.messageId, 'à', to);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ [IONOS] Erreur envoi email:', error.message);
+    throw error;
+  }
+}
+
 
 // ============================================================================
 // SECTION AUTH: LIMITES COMPTES ET DOMAINES BLOQUÉS
@@ -1052,8 +1106,9 @@ async function sendVerificationEmail(email, username, token, lang = 'fr') {
 </body>
 </html>`;
 
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>",
+    // Envoyer via IONOS SMTP
+    await sendEmailIONOS({
+      from: `Saboteur Game <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
       to: email,
       subject: t('subject'),
       html: htmlTemplate
@@ -3473,13 +3528,13 @@ app.post('/api/contact', async (req, res) => {
       VALUES (?, ?, ?, ?, datetime('now'))
     `, [name, email, subject || 'Aucun sujet', message]);
     
-    // Optionnel: Envoyer un email via Resend
-    if (resend && process.env.RESEND_API_KEY) {
+    // Envoyer un email via IONOS SMTP
+    if (ionosTransporter) {
       try {
-        await resend.emails.send({
-          from: 'contact@roronoa-games.com',
-          to: process.env.ADMIN_EMAIL || 'admin@roronoa-games.com',
-          subject: `[Contact Site] ${subject || 'Nouveau message'}`,
+        await sendEmailIONOS({
+          from: process.env.IONOS_VITRINE_EMAIL || 'contact@roronoa-games.com',
+          to: process.env.IONOS_VITRINE_EMAIL || 'contact@roronoa-games.com', // Tu reçois sur la même adresse
+          subject: `[Site de contact] ${subject || 'Nouveau message'}`,
           html: `
             <h2>Nouveau message de contact</h2>
             <p><strong>Nom:</strong> ${name}</p>
@@ -3489,6 +3544,7 @@ app.post('/api/contact', async (req, res) => {
             <p>${message}</p>
           `
         });
+        console.log('[Contact] Email envoyé avec succès');
       } catch (emailError) {
         console.error('[Contact] Erreur envoi email:', emailError);
         // On continue même si l'email échoue
@@ -3512,14 +3568,14 @@ app.use("/avatars", express.static(AVATARS_DIR)); // Servir les avatars
 
 // Envoyer email avec le code Pack Famille
 async function sendFamilyCodeEmail(email, code) {
-  if (!resend) {
-    console.log(`[Family] Email non envoyé (Resend non configuré): ${code} à ${email}`);
+  if (!ionosTransporter) {
+    console.log(`[Family] Email non envoyé (IONOS non configuré): ${code} à ${email}`);
     return;
   }
   
   try {
-    await resend.emails.send({
-      from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
+    await sendEmailIONOS({
+      from: `Saboteur <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
       to: email,
       subject: '🎮 Votre code Pack Famille Saboteur',
       html: `
@@ -3534,7 +3590,7 @@ async function sendFamilyCodeEmail(email, code) {
           
           <h3 style="color: #ffa500;">📋 Comment activer votre Pack Famille :</h3>
           <ol style="line-height: 2; color: #ccc;">
-            <li>Connectez-vous sur <a href="https://saboteurs-loup-garou.com" style="color: #00ffff;">saboteurs-loup-garou.com</a></li>
+            <li>Connectez-vous sur <a href="https://saboteurs.roronoa-games.com" style="color: #00ffff;">saboteurs.roronoa-games.com</a></li>
             <li>Cliquez sur "Activer Pack Famille" dans votre profil</li>
             <li>Entrez le code ci-dessus</li>
             <li>Renseignez les 8 emails de vos invités</li>
@@ -3673,8 +3729,8 @@ async function sendFamilyActivationEmail(email, ownerEmail, isOwner, hasExisting
   }
   
   try {
-    await resend.emails.send({
-      from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
+    await sendEmailIONOS({
+      from: `Saboteur <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
       to: email,
       subject: subject,
       html: htmlContent
@@ -3687,11 +3743,11 @@ async function sendFamilyActivationEmail(email, ownerEmail, isOwner, hasExisting
 
 // Envoyer email de résiliation aux membres
 async function sendFamilyCancellationEmail(email, ownerEmail, wasExisting) {
-  if (!resend) return;
+  if (!ionosTransporter) return;
   
   try {
-    await resend.emails.send({
-      from: 'Saboteur <noreply@saboteurs-loup-garou.com>',
+    await sendEmailIONOS({
+      from: `Saboteur <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
       to: email,
       subject: '😢 Pack Famille Saboteur résilié',
       html: `
@@ -3717,7 +3773,7 @@ async function sendFamilyCancellationEmail(email, ownerEmail, wasExisting) {
           </div>
           
           <p style="text-align: center;">
-            <a href="https://saboteurs-loup-garou.com" style="display: inline-block; background: #00ffff; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+            <a href="https://saboteurs.roronoa-games.com" style="display: inline-block; background: #00ffff; color: #000; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
               Reprendre un abonnement
             </a>
           </p>
@@ -4637,11 +4693,11 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     
     
     // Envoyer email
-    if (resend) {
+    if (ionosTransporter) {
       const resetUrl = `${APP_URL}/reset-password.html?token=${resetToken}`;
       
-      await resend.emails.send({
-        from: process.env.EMAIL_FROM || "Saboteur Game <noreply@saboteurs-loup-garou.com>",
+      await sendEmailIONOS({
+        from: `Saboteur Game <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
         to: user.email,
         subject: "🔑 Réinitialisation de ton mot de passe - Saboteur",
         html: `
