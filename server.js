@@ -7907,7 +7907,7 @@ async function initWorkflowsDatabase() {
     CREATE INDEX IF NOT EXISTS idx_user_notifications_read ON user_notifications(read);
   `;
   
-  db.exec(workflowsSchema);
+  authDb.exec(workflowsSchema);
   console.log('✅ [Workflows] Tables créées/vérifiées');
 }
 
@@ -7918,7 +7918,7 @@ async function initWorkflowsDatabase() {
 // Liste tous les workflows
 app.get('/api/admin/workflows', verifyAdmin, (req, res) => {
   try {
-    const workflows = db.prepare(`
+    const workflows = authDb.prepare(`
       SELECT 
         w.*,
         COUNT(we.id) as total_executions,
@@ -7945,7 +7945,7 @@ app.post('/api/admin/workflows', verifyAdmin, (req, res) => {
       return res.status(400).json({ error: 'Champs requis manquants' });
     }
     
-    const stmt = db.prepare(`
+    const stmt = authDb.prepare(`
       INSERT INTO workflows (name, description, trigger_type, conditions, actions, communication, enabled)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
@@ -8006,7 +8006,7 @@ app.patch('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
     updates.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
     
-    const stmt = db.prepare(`UPDATE workflows SET ${updates.join(', ')} WHERE id = ?`);
+    const stmt = authDb.prepare(`UPDATE workflows SET ${updates.join(', ')} WHERE id = ?`);
     stmt.run(...values);
     
     res.json({ success: true });
@@ -8022,8 +8022,8 @@ app.delete('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
   try {
     const { id } = req.params;
     
-    db.prepare('DELETE FROM workflow_executions WHERE workflow_id = ?').run(id);
-    db.prepare('DELETE FROM workflows WHERE id = ?').run(id);
+    authDb.prepare('DELETE FROM workflow_executions WHERE workflow_id = ?').run(id);
+    authDb.prepare('DELETE FROM workflows WHERE id = ?').run(id);
     
     res.json({ success: true });
     
@@ -8036,7 +8036,7 @@ app.delete('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
 // Toggle actif/inactif
 app.patch('/api/admin/workflows/:id/toggle', verifyAdmin, (req, res) => {
   try {
-    db.prepare('UPDATE workflows SET enabled = NOT enabled WHERE id = ?').run(req.params.id);
+    authDb.prepare('UPDATE workflows SET enabled = NOT enabled WHERE id = ?').run(req.params.id);
     res.json({ success: true });
   } catch (error) {
     console.error('[Workflows] Erreur toggle:', error);
@@ -8050,7 +8050,7 @@ app.get('/api/admin/workflows/:id/executions', verifyAdmin, (req, res) => {
     const { id } = req.params;
     const limit = parseInt(req.query.limit) || 50;
     
-    const executions = db.prepare(`
+    const executions = authDb.prepare(`
       SELECT * FROM workflow_executions
       WHERE workflow_id = ?
       ORDER BY executed_at DESC
@@ -8067,7 +8067,7 @@ app.get('/api/admin/workflows/:id/executions', verifyAdmin, (req, res) => {
 // Récupérer un workflow
 app.get('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
   try {
-    const workflow = db.prepare('SELECT * FROM workflows WHERE id = ?').get(req.params.id);
+    const workflow = authDb.prepare('SELECT * FROM workflows WHERE id = ?').get(req.params.id);
     if (!workflow) {
       return res.status(404).json({ error: 'Workflow non trouvé' });
     }
@@ -8087,7 +8087,7 @@ app.get('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
  */
 async function executeWorkflows(triggerType, data) {
   try {
-    const workflows = db.prepare(`
+    const workflows = authDb.prepare(`
       SELECT * FROM workflows 
       WHERE trigger_type = ? AND enabled = 1
     `).all(triggerType);
@@ -8110,7 +8110,7 @@ async function executeWorkflows(triggerType, data) {
         const conditionsMet = await evaluateConditions(conditions, data);
         
         // Logger l'exécution
-        const executionStmt = db.prepare(`
+        const executionStmt = authDb.prepare(`
           INSERT INTO workflow_executions 
           (workflow_id, trigger_data, status, conditions_met)
           VALUES (?, ?, ?, ?)
@@ -8137,7 +8137,7 @@ async function executeWorkflows(triggerType, data) {
           // Mettre à jour l'exécution
           const executionTime = Date.now() - startTime;
           
-          db.prepare(`
+          authDb.prepare(`
             UPDATE workflow_executions 
             SET status = 'success', 
                 actions_executed = ?,
@@ -8146,7 +8146,7 @@ async function executeWorkflows(triggerType, data) {
           `).run(JSON.stringify(results), executionTime, executionId);
           
           // Incrémenter le compteur
-          db.prepare(`
+          authDb.prepare(`
             UPDATE workflows 
             SET execution_count = execution_count + 1,
                 last_executed_at = CURRENT_TIMESTAMP
@@ -8160,7 +8160,7 @@ async function executeWorkflows(triggerType, data) {
           
           const executionTime = Date.now() - startTime;
           
-          db.prepare(`
+          authDb.prepare(`
             UPDATE workflow_executions 
             SET status = 'skipped',
                 execution_time_ms = ?
@@ -8171,7 +8171,7 @@ async function executeWorkflows(triggerType, data) {
       } catch (error) {
         console.error(`❌ [Workflows] Erreur ${workflow.name}:`, error);
         
-        db.prepare(`
+        authDb.prepare(`
           UPDATE workflow_executions 
           SET status = 'failed', 
               error_message = ?
@@ -8214,7 +8214,7 @@ async function evaluateSingleCondition(condition, triggerData) {
   try {
     switch (type) {
       case 'customer_count': {
-        const result = db.prepare('SELECT COUNT(*) as count FROM users WHERE stripeCustomerId IS NOT NULL').get();
+        const result = authDb.prepare('SELECT COUNT(*) as count FROM users WHERE stripeCustomerId IS NOT NULL').get();
         const count = result.count;
         return compareValues(count, operator, value);
       }
@@ -8222,7 +8222,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_avatars_created': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const result = db.prepare('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?').get(userId);
+        const result = authDb.prepare('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?').get(userId);
         return compareValues(result.count, operator, value);
       }
       
@@ -8230,14 +8230,14 @@ async function evaluateSingleCondition(condition, triggerData) {
         const userId = triggerData.user_id;
         if (!userId) return false;
         // Assumer qu'il y a une table games ou parties_played
-        const result = db.prepare('SELECT COUNT(*) as count FROM games WHERE user_id = ?').get(userId);
+        const result = authDb.prepare('SELECT COUNT(*) as count FROM games WHERE user_id = ?').get(userId);
         return compareValues(result.count || 0, operator, value);
       }
       
       case 'user_inactive_days': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const user = db.prepare('SELECT last_login FROM users WHERE id = ?').get(userId);
+        const user = authDb.prepare('SELECT last_login FROM users WHERE id = ?').get(userId);
         if (!user || !user.last_login) return false;
         
         const daysSince = Math.floor((Date.now() - new Date(user.last_login).getTime()) / (1000 * 60 * 60 * 24));
@@ -8247,7 +8247,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_account_type': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const user = db.prepare('SELECT account_type FROM users WHERE id = ?').get(userId);
+        const user = authDb.prepare('SELECT account_type FROM users WHERE id = ?').get(userId);
         if (!user) return false;
         return compareValues(user.account_type, operator, value);
       }
@@ -8257,7 +8257,7 @@ async function evaluateSingleCondition(condition, triggerData) {
         if (!userId) return false;
         // Calculer le total dépensé (invoices Stripe)
         // Pour simplifier, on suppose qu'on a un champ total_spent
-        const user = db.prepare('SELECT total_spent FROM users WHERE id = ?').get(userId);
+        const user = authDb.prepare('SELECT total_spent FROM users WHERE id = ?').get(userId);
         const totalSpent = user?.total_spent || 0;
         return compareValues(totalSpent, operator, value);
       }
@@ -8265,7 +8265,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_signup_days_ago': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const user = db.prepare('SELECT created_at FROM users WHERE id = ?').get(userId);
+        const user = authDb.prepare('SELECT created_at FROM users WHERE id = ?').get(userId);
         if (!user) return false;
         
         const daysSince = Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24));
@@ -8273,7 +8273,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       }
       
       case 'custom_sql': {
-        const result = db.prepare(condition.query).get();
+        const result = authDb.prepare(condition.query).get();
         return result ? true : false;
       }
       
@@ -8340,7 +8340,7 @@ async function executeSingleAction(action, triggerData) {
       const userId = triggerData.user_id;
       const amount = params.amount || 5;
       
-      db.prepare(`
+      authDb.prepare(`
         UPDATE users 
         SET bonus_avatars = COALESCE(bonus_avatars, 0) + ?
         WHERE id = ?
@@ -8353,7 +8353,7 @@ async function executeSingleAction(action, triggerData) {
       const userId = triggerData.user_id;
       const amount = params.amount || 50;
       
-      db.prepare(`
+      authDb.prepare(`
         UPDATE users 
         SET video_credits = CASE 
           WHEN video_credits < 999999 THEN video_credits + ?
@@ -8367,13 +8367,13 @@ async function executeSingleAction(action, triggerData) {
     
     case 'double_avatars': {
       const userId = triggerData.user_id;
-      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+      const user = authDb.prepare('SELECT * FROM users WHERE id = ?').get(userId);
       
       if (user) {
         const limits = getUserLimits(user);
         const baseAvatars = limits.avatars === Infinity ? 30 : limits.avatars;
         
-        db.prepare(`
+        authDb.prepare(`
           UPDATE users 
           SET bonus_avatars = COALESCE(bonus_avatars, 0) + ?
           WHERE id = ?
@@ -8389,7 +8389,7 @@ async function executeSingleAction(action, triggerData) {
       const userId = triggerData.user_id;
       const newType = params.account_type || 'subscriber';
       
-      db.prepare(`
+      authDb.prepare(`
         UPDATE users 
         SET account_type = ?
         WHERE id = ?
@@ -8399,7 +8399,7 @@ async function executeSingleAction(action, triggerData) {
     }
     
     case 'log_event': {
-      db.prepare(`
+      authDb.prepare(`
         INSERT INTO business_events (event_type, data, created_at)
         VALUES (?, ?, ?)
       `).run(
@@ -8424,13 +8424,13 @@ async function sendCommunications(communication, triggerData, workflow) {
   const userId = triggerData.user_id;
   if (!userId) return;
   
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const user = authDb.prepare('SELECT * FROM users WHERE id = ?').get(userId);
   if (!user) return;
   
   // 1. Pop-up sur écran (stocké en DB pour affichage au prochain login)
   if (communication.popup && communication.popup_message) {
     try {
-      db.prepare(`
+      authDb.prepare(`
         INSERT INTO user_notifications (user_id, type, message, created_at)
         VALUES (?, 'workflow', ?, ?)
       `).run(userId, communication.popup_message, Date.now());
@@ -8461,7 +8461,7 @@ async function sendCommunications(communication, triggerData, workflow) {
     try {
       // Stocker la publication en attente
       // Tu configureras les liens API plus tard
-      db.prepare(`
+      authDb.prepare(`
         INSERT INTO social_posts (user_id, workflow_id, message, status, created_at)
         VALUES (?, ?, ?, 'pending', ?)
       `).run(userId, workflow.id, communication.social_message, Date.now());
@@ -8488,7 +8488,7 @@ app.post('/webhook-stripe', async (req, res) => {
   
   switch (event.type) {
     case 'invoice.payment_succeeded':
-      const userPayment = db.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
+      const userPayment = authDb.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
       if (userPayment) {
         await executeWorkflows('payment_succeeded', {
           user_id: userPayment.id,
@@ -8500,11 +8500,11 @@ app.post('/webhook-stripe', async (req, res) => {
       break;
       
     case 'customer.subscription.created':
-      const userSub = db.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
+      const userSub = authDb.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
       if (userSub) {
         
       // Vérifier si c'est une réactivation
-      const hadSubscriptionBefore = db.prepare(`
+      const hadSubscriptionBefore = authDb.prepare(`
         SELECT COUNT(*) as count FROM business_events 
         WHERE event_type = 'subscription_canceled' AND data LIKE ?
       `).get(`%${userSub.id}%`);
@@ -8527,7 +8527,7 @@ app.post('/webhook-stripe', async (req, res) => {
       break;
       
     case 'customer.subscription.deleted':
-      const userCancel = db.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
+      const userCancel = authDb.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
       if (userCancel) {
         await executeWorkflows('subscription_canceled', {
           user_id: userCancel.id,
