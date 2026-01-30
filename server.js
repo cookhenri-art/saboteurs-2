@@ -3437,6 +3437,72 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
 });
 
 app.use(express.json()); // Pour parser le JSON des requêtes auth
+
+// ============================================================================
+// ROUTES SITE VITRINE RORONOA GAMES
+// ============================================================================
+
+// Page d'accueil du site (vitrine)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
+});
+
+// Page produits
+app.get('/products.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'products.html'));
+});
+
+// L'application de jeu reste accessible via /app ou /index.html
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Route de contact (pour le formulaire du site)
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body;
+    
+    // Valider les données
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: 'Tous les champs sont requis' });
+    }
+    
+    // Enregistrer dans la DB
+    dbRun(`
+      INSERT INTO contact_messages (name, email, subject, message, created_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `, [name, email, subject || 'Aucun sujet', message]);
+    
+    // Optionnel: Envoyer un email via Resend
+    if (resend && process.env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: 'contact@roronoa-games.com',
+          to: process.env.ADMIN_EMAIL || 'admin@roronoa-games.com',
+          subject: `[Contact Site] ${subject || 'Nouveau message'}`,
+          html: `
+            <h2>Nouveau message de contact</h2>
+            <p><strong>Nom:</strong> ${name}</p>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Sujet:</strong> ${subject || 'Aucun'}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message}</p>
+          `
+        });
+      } catch (emailError) {
+        console.error('[Contact] Erreur envoi email:', emailError);
+        // On continue même si l'email échoue
+      }
+    }
+    
+    res.json({ success: true, message: 'Message envoyé' });
+    
+  } catch (error) {
+    console.error('[Contact] Erreur:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/avatars", express.static(AVATARS_DIR)); // Servir les avatars
 
@@ -5631,7 +5697,20 @@ function checkAdminRateLimit(ip) {
 // Middleware de vérification admin
 function verifyAdmin(req, res, next) {
   const ip = getClientIP(req);
-  const secretCode = req.body.secretCode || req.query.secretCode;
+  
+  // Accepter le secretCode depuis plusieurs sources:
+  // 1. Body (req.body.secretCode)
+  // 2. Query (req.query.secretCode)
+  // 3. Header Authorization (Bearer TOKEN)
+  let secretCode = req.body.secretCode || req.query.secretCode;
+  
+  // Si pas trouvé, vérifier le header Authorization
+  if (!secretCode) {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      secretCode = authHeader.substring(7); // Enlever "Bearer "
+    }
+  }
   
   if (!checkAdminRateLimit(ip)) {
     logger.warn("admin_rate_limited", { ip });
@@ -5639,7 +5718,7 @@ function verifyAdmin(req, res, next) {
   }
   
   if (secretCode !== ADMIN_SECRET) {
-    logger.warn("admin_invalid_secret", { ip });
+    logger.warn("admin_invalid_secret", { ip, hasCode: !!secretCode });
     return res.status(403).json({ ok: false, error: "Code secret invalide" });
   }
   
@@ -6648,6 +6727,71 @@ app.post('/api/stripe/create-portal-session', authenticateToken, async (req, res
 });
 
 // ===================================================
+
+
+
+// ============================================================================
+// API ADMIN - GESTION DES MESSAGES DE CONTACT
+// ============================================================================
+
+// Récupérer tous les messages (admin)
+app.get('/api/admin/contact-messages', verifyAdmin, (req, res) => {
+  try {
+    const messages = dbAll('SELECT * FROM contact_messages ORDER BY created_at DESC');
+    res.json(messages || []);
+  } catch (error) {
+    console.error('[Admin] Erreur récupération messages:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Récupérer un message spécifique (admin)
+app.get('/api/admin/contact-messages/:id', verifyAdmin, (req, res) => {
+  try {
+    const message = dbGet('SELECT * FROM contact_messages WHERE id = ?', [req.params.id]);
+    if (!message) {
+      return res.status(404).json({ error: 'Message non trouvé' });
+    }
+    res.json(message);
+  } catch (error) {
+    console.error('[Admin] Erreur récupération message:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Marquer un message comme lu (admin)
+app.post('/api/admin/contact-messages/:id/read', verifyAdmin, (req, res) => {
+  try {
+    dbRun('UPDATE contact_messages SET read = 1 WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[Admin] Erreur marquage message:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Marquer tous les messages comme lus (admin)
+app.post('/api/admin/contact-messages/mark-all-read', verifyAdmin, (req, res) => {
+  try {
+    dbRun('UPDATE contact_messages SET read = 1');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[Admin] Erreur marquage messages:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// Supprimer un message (admin)
+app.delete('/api/admin/contact-messages/:id', verifyAdmin, (req, res) => {
+  try {
+    dbRun('DELETE FROM contact_messages WHERE id = ?', [req.params.id]);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[Admin] Erreur suppression message:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
