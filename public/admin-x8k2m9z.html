@@ -407,12 +407,13 @@
                 <th>Type</th>
                 <th>Vérifié</th>
                 <th>Crédits</th>
+                <th>Avatars</th>
                 <th>Inscrit le</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="usersBody">
-              <tr><td colspan="8" style="text-align: center; color: #666;">Clique sur "Rafraîchir" pour charger</td></tr>
+              <tr><td colspan="9" style="text-align: center; color: #666;">Clique sur "Rafraîchir" pour charger</td></tr>
             </tbody>
           </table>
         </div>
@@ -507,7 +508,7 @@
           if (data.ok) {
             const tbody = document.getElementById('usersBody');
             if (data.users.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">Aucun utilisateur</td></tr>';
+              tbody.innerHTML = '<tr><td colspan="9" style="text-align: center;">Aucun utilisateur</td></tr>';
               return;
             }
             
@@ -519,6 +520,7 @@
                 <td><span class="badge badge-${u.account_type}">${u.account_type}</span></td>
                 <td class="${u.email_verified ? 'verified' : 'not-verified'}">${u.email_verified ? '✅' : '❌'}</td>
                 <td>${u.video_credits === 999999 ? '∞' : u.video_credits}</td>
+                <td>${u.avatars_used || 0}</td>
                 <td>${new Date(u.created_at).toLocaleDateString('fr-FR')}</td>
                 <td>
                   <button class="btn-success action-btn" onclick="quickUpgrade('${u.email}', 'subscriber')">Sub</button>
