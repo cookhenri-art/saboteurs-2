@@ -25,6 +25,7 @@
     "sharp": "^0.33.2",
     "replicate": "^0.25.2",
     "resend": "^3.2.0",
-    "stripe": "^14.0.0"
+    "stripe": "^14.0.0",
+    "nodemailer": "^6.9.7"
   }
 }
