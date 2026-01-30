@@ -462,6 +462,7 @@
       <button class="tab-btn" onclick="switchTab('promotions')">🎁 Promotions</button>
       <button class="tab-btn" onclick="switchTab('coupons')">💎 Codes Promo</button>
       <button class="tab-btn" onclick="switchTab('workflows')">⚡ Workflows</button>
+      <button class="tab-btn" onclick="switchTab('messages')">📧 Messages</button>
       <button class="tab-btn" onclick="switchTab('rewards')">🏆 Récompenses</button>
       <button class="tab-btn" onclick="switchTab('config')">⚙️ Configuration</button>
     </div>
@@ -856,6 +857,19 @@
     const API_BASE = window.location.origin;
     const urlParams = new URLSearchParams(window.location.search);
     const secretCode = urlParams.get('secretCode');
+  
+  // Intercepteur fetch pour ajouter secretCode
+  if (typeof secretCode !== 'undefined' && secretCode) {
+    const originalFetch = window.fetch;
+    window.fetch = function(url, options = {}) {
+      if (typeof url === 'string' && url.startsWith('/api/admin/')) {
+        const separator = url.includes('?') ? '&' : '?';
+        url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
+      }
+      return originalFetch(url, options);
+    };
+  }
+
 
   // ========================================
   // CORRECTIF: Intercepteur fetch global pour ajouter secretCode automatiquement
