@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon Compte - Saboteur Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #333;
+    }
+    
+    h1 {
+      color: #00ffff;
+      font-size: 2em;
+    }
+    
+    .back-btn {
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #00ffff;
+      color: #00ffff;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+    
+    .back-btn:hover {
+      background: rgba(0, 255, 255, 0.2);
+      transform: translateY(-2px);
+    }
+    
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    
+    .tab {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .tab.active {
+      background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
+      border-color: #00ffff;
+      color: #000;
+    }
+    
+    /* Sections */
+    .section {
+      display: none;
+    }
+    
+    .section.active {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* Cards */
+    .card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .card h2 {
+      color: #00ffff;
+      margin-bottom: 20px;
+      font-size: 1.5em;
+    }
+    
+    /* Form */
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 14px;
+    }
+    
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: #fff;
+      font-size: 16px;
+    }
+    
+    .form-group input:focus {
+      outline: none;
+      border-color: #00ffff;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+    }
+    
+    .form-group input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    /* Buttons */
+    .btn {
+      background: linear-gradient(135deg, #00ffff 0%, #0099ff 100%);
+      border: none;
+      color: #000;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0, 255, 255, 0.4);
+    }
+    
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+    
+    .btn-danger {
+      background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+      color: #fff;
+    }
+    
+    /* Subscription Card */
+    .subscription-card {
+      background: linear-gradient(135deg, rgba(0, 255, 255, 0.1) 0%, rgba(0, 153, 255, 0.1) 100%);
+      border: 2px solid rgba(0, 255, 255, 0.3);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    
+    .subscription-card.active {
+      border-color: #00ffff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+    
+    .subscription-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    
+    .subscription-title {
+      font-size: 1.5em;
+      font-weight: 700;
+      color: #00ffff;
+    }
+    
+    .subscription-status {
+      background: #4caf50;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .subscription-status.inactive {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .subscription-price {
+      font-size: 2em;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+    
+    .subscription-price span {
+      font-size: 0.5em;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .subscription-features {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+    
+    .subscription-features li {
+      padding: 8px 0;
+      color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .subscription-features li:before {
+      content: "✓ ";
+      color: #00ffff;
+      font-weight: bold;
+      margin-right: 8px;
+    }
+    
+    /* Pack Card */
+    .pack-card {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(238, 90, 111, 0.1) 100%);
+      border: 2px solid rgba(255, 107, 107, 0.3);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    
+    .pack-icon {
+      font-size: 4em;
+      margin-bottom: 16px;
+    }
+    
+    .pack-title {
+      font-size: 1.5em;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    
+    .pack-description {
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 20px;
+    }
+    
+    .pack-stats {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 20px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+    
+    .pack-stat {
+      text-align: center;
+    }
+    
+    .pack-stat-value {
+      font-size: 2em;
+      font-weight: 700;
+      color: #00ffff;
+    }
+    
+    .pack-stat-label {
+      font-size: 0.85em;
+      color: rgba(255, 255, 255, 0.6);
+      margin-top: 4px;
+    }
+    
+    /* History Table */
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .history-table th {
+      background: rgba(0, 255, 255, 0.1);
+      color: #00ffff;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    
+    .history-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .history-table tr:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .invoice-btn {
+      background: rgba(0, 255, 255, 0.2);
+      border: 1px solid #00ffff;
+      color: #00ffff;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .invoice-btn:hover {
+      background: rgba(0, 255, 255, 0.3);
+    }
+    
+    /* Alert */
+    .alert {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .alert.success {
+      background: rgba(76, 175, 80, 0.2);
+      border: 1px solid #4caf50;
+      color: #4caf50;
+    }
+    
+    .alert.error {
+      background: rgba(244, 67, 54, 0.2);
+      border: 1px solid #f44336;
+      color: #f44336;
+    }
+    
+    .alert.info {
+      background: rgba(0, 255, 255, 0.2);
+      border: 1px solid #00ffff;
+      color: #00ffff;
+    }
+    
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+    
+    .loading:after {
+      content: '...';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 { font-size: 1.5em; }
+      .tabs { flex-direction: column; }
+      .tab { width: 100%; text-align: center; }
+      .subscription-header { flex-direction: column; gap: 10px; }
+      .pack-stats { flex-direction: column; gap: 10px; }
+      .history-table { font-size: 14px; }
+      .history-table th, .history-table td { padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>👤 Mon Compte</h1>
+      <a href="/" class="back-btn">← Retour à l'accueil</a>
+    </header>
+    
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showSection('profile')">
+        👤 Mon Profil
+      </button>
+      <button class="tab" onclick="showSection('subscription')">
+        💳 Abonnements
+      </button>
+      <button class="tab" onclick="showSection('packs')">
+        🎁 Packs
+      </button>
+      <button class="tab" onclick="showSection('history')">
+        📊 Historique
+      </button>
+    </div>
+    
+    <!-- Section: Profile -->
+    <div id="section-profile" class="section active">
+      <div class="card">
+        <h2>👤 Informations du Profil</h2>
+        
+        <div id="alert-profile"></div>
+        
+        <form id="form-profile" onsubmit="updateProfile(event)">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="profile-email" disabled>
+          </div>
+          
+          <div class="form-group">
+            <label>Nom d'utilisateur</label>
+            <input type="text" id="profile-username" required minlength="3" maxlength="20">
+          </div>
+          
+          <button type="submit" class="btn">💾 Enregistrer les modifications</button>
+        </form>
+      </div>
+      
+      <div class="card">
+        <h2>🔒 Changer le Mot de Passe</h2>
+        
+        <div id="alert-password"></div>
+        
+        <form id="form-password" onsubmit="updatePassword(event)">
+          <div class="form-group">
+            <label>Mot de passe actuel</label>
+            <input type="password" id="current-password" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Nouveau mot de passe</label>
+            <input type="password" id="new-password" required minlength="8">
+          </div>
+          
+          <div class="form-group">
+            <label>Confirmer le nouveau mot de passe</label>
+            <input type="password" id="confirm-password" required minlength="8">
+          </div>
+          
+          <button type="submit" class="btn">🔒 Changer le mot de passe</button>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Section: Subscription -->
+    <div id="section-subscription" class="section">
+      <div class="subscription-card" id="subscription-premium">
+        <div class="subscription-header">
+          <div class="subscription-title">⭐ Premium</div>
+          <div class="subscription-status" id="premium-status">Inactif</div>
+        </div>
+        <div class="subscription-price">5€ <span>/mois</span></div>
+        <ul class="subscription-features">
+          <li>Avatars IA illimités</li>
+          <li>Crédits vidéo illimités</li>
+          <li>Accès prioritaire aux nouveautés</li>
+          <li>Support prioritaire</li>
+        </ul>
+        <button id="btn-premium" class="btn" onclick="managePremium()">
+          S'abonner
+        </button>
+      </div>
+      
+      <div class="subscription-card" id="subscription-family">
+        <div class="subscription-header">
+          <div class="subscription-title">👨‍👩‍👧‍👦 Pack Famille</div>
+          <div class="subscription-status inactive" id="family-status">Inactif</div>
+        </div>
+        <div class="subscription-price">10€ <span>/mois</span></div>
+        <ul class="subscription-features">
+          <li>Jusqu'à 5 membres</li>
+          <li>Tous les avantages Premium</li>
+          <li>Code de partage unique</li>
+          <li>Gestion centralisée</li>
+        </ul>
+        <button id="btn-family" class="btn" onclick="manageFamily()">
+          S'abonner
+        </button>
+        
+        <div id="family-code-section" style="display: none; margin-top: 20px;">
+          <div style="background: rgba(0, 255, 255, 0.1); padding: 16px; border-radius: 8px;">
+            <p style="margin-bottom: 8px; color: rgba(255, 255, 255, 0.7);">Code de partage :</p>
+            <p style="font-size: 1.5em; font-weight: 700; color: #00ffff;" id="family-code"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Section: Packs -->
+    <div id="section-packs" class="section">
+      <div class="pack-card">
+        <div class="pack-icon">🎁</div>
+        <div class="pack-title">Pack 50+50</div>
+        <div class="pack-description">
+          50 crédits vidéo + 50 avatars IA bonus
+        </div>
+        
+        <div class="pack-stats">
+          <div class="pack-stat">
+            <div class="pack-stat-value" id="video-credits">0</div>
+            <div class="pack-stat-label">Crédits Vidéo</div>
+          </div>
+          <div class="pack-stat">
+            <div class="pack-stat-value" id="bonus-avatars">0</div>
+            <div class="pack-stat-label">Avatars Bonus</div>
+          </div>
+        </div>
+        
+        <button class="btn" onclick="buyPack()">
+          Acheter - 4,99€
+        </button>
+      </div>
+      
+      <div class="card" style="margin-top: 20px;">
+        <h2>📊 Utilisation Mensuelle</h2>
+        <div style="margin-top: 20px;">
+          <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>Avatars créés ce mois</span>
+              <span id="monthly-avatars">0 / 2</span>
+            </div>
+            <div style="background: rgba(0, 0, 0, 0.3); height: 8px; border-radius: 4px; overflow: hidden;">
+              <div id="progress-avatars" style="background: linear-gradient(90deg, #00ffff, #0099ff); height: 100%; width: 0%; transition: width 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Section: History -->
+    <div id="section-history" class="section">
+      <div class="card">
+        <h2>📊 Historique des Achats</h2>
+        
+        <div id="history-content">
+          <div class="loading">Chargement de l'historique</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    
+    let currentUser = null;
+    
+    // ==========================================
+    // INITIALIZATION
+    // ==========================================
+    
+    async function init() {
+      // Vérifier si l'utilisateur est connecté
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+      
+      // Charger les données utilisateur
+      await loadUserData();
+    }
+    
+    async function loadUserData() {
+      try {
+        const response = await fetch('/api/account/profile', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 401) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login.html';
+            return;
+          }
+          throw new Error('Erreur chargement profil');
+        }
+        
+        currentUser = await response.json();
+        
+        // Remplir les données
+        document.getElementById('profile-email').value = currentUser.email || '';
+        document.getElementById('profile-username').value = currentUser.username || '';
+        
+        // Mettre à jour les stats
+        updateSubscriptionUI();
+        updatePacksUI();
+        
+      } catch (error) {
+        console.error('Erreur:', error);
+        showAlert('alert-profile', 'Erreur de chargement des données', 'error');
+      }
+    }
+    
+    function updateSubscriptionUI() {
+      if (!currentUser) return;
+      
+      const accountType = currentUser.account_type || 'free';
+      
+      // Premium
+      if (accountType === 'subscriber' || accountType === 'admin') {
+        document.getElementById('premium-status').textContent = 'Actif';
+        document.getElementById('premium-status').classList.remove('inactive');
+        document.getElementById('subscription-premium').classList.add('active');
+        document.getElementById('btn-premium').textContent = 'Gérer l\'abonnement';
+      }
+      
+      // Famille
+      if (accountType === 'family' || accountType === 'admin') {
+        document.getElementById('family-status').textContent = 'Actif';
+        document.getElementById('family-status').classList.remove('inactive');
+        document.getElementById('subscription-family').classList.add('active');
+        document.getElementById('btn-family').textContent = 'Gérer le Pack Famille';
+        
+        // Afficher le code famille si disponible
+        if (currentUser.family_code) {
+          document.getElementById('family-code-section').style.display = 'block';
+          document.getElementById('family-code').textContent = currentUser.family_code;
+        }
+      }
+    }
+    
+    function updatePacksUI() {
+      if (!currentUser) return;
+      
+      // Crédits
+      document.getElementById('video-credits').textContent = currentUser.video_credits || 0;
+      document.getElementById('bonus-avatars').textContent = currentUser.bonus_avatars || 0;
+      
+      // Avatars mensuels
+      const avatarsUsed = currentUser.avatars_used || 0;
+      const avatarsLimit = getAvatarLimit(currentUser.account_type);
+      document.getElementById('monthly-avatars').textContent = `${avatarsUsed} / ${avatarsLimit}`;
+      
+      const progress = avatarsLimit === Infinity ? 0 : (avatarsUsed / avatarsLimit) * 100;
+      document.getElementById('progress-avatars').style.width = `${Math.min(progress, 100)}%`;
+    }
+    
+    function getAvatarLimit(accountType) {
+      switch(accountType) {
+        case 'subscriber':
+        case 'family':
+        case 'admin':
+          return Infinity;
+        case 'pack':
+          return 10;
+        default:
+          return 2;
+      }
+    }
+    
+    // ==========================================
+    // TABS NAVIGATION
+    // ==========================================
+    
+    function showSection(sectionName) {
+      // Masquer toutes les sections
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      
+      // Afficher la section demandée
+      document.getElementById(`section-${sectionName}`).classList.add('active');
+      event.target.classList.add('active');
+      
+      // Charger les données spécifiques
+      if (sectionName === 'history') {
+        loadHistory();
+      }
+    }
+    
+    // ==========================================
+    // PROFILE
+    // ==========================================
+    
+    async function updateProfile(event) {
+      event.preventDefault();
+      
+      const username = document.getElementById('profile-username').value;
+      
+      try {
+        const response = await fetch('/api/account/update-profile', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({ username })
+        });
+        
+        if (!response.ok) throw new Error('Erreur mise à jour');
+        
+        showAlert('alert-profile', '✅ Profil mis à jour avec succès', 'success');
+        
+        // Recharger les données
+        await loadUserData();
+        
+      } catch (error) {
+        console.error('Erreur:', error);
+        showAlert('alert-profile', '❌ Erreur lors de la mise à jour', 'error');
+      }
+    }
+    
+    async function updatePassword(event) {
+      event.preventDefault();
+      
+      const currentPassword = document.getElementById('current-password').value;
+      const newPassword = document.getElementById('new-password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      
+      if (newPassword !== confirmPassword) {
+        showAlert('alert-password', '❌ Les mots de passe ne correspondent pas', 'error');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/account/update-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          },
+          body: JSON.stringify({ currentPassword, newPassword })
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Erreur');
+        }
+        
+        showAlert('alert-password', '✅ Mot de passe modifié avec succès', 'success');
+        
+        // Réinitialiser le formulaire
+        document.getElementById('form-password').reset();
+        
+      } catch (error) {
+        console.error('Erreur:', error);
+        showAlert('alert-password', `❌ ${error.message}`, 'error');
+      }
+    }
+    
+    // ==========================================
+    // SUBSCRIPTIONS
+    // ==========================================
+    
+    async function managePremium() {
+      const accountType = currentUser?.account_type || 'free';
+      
+      if (accountType === 'subscriber' || accountType === 'admin') {
+        // Gérer l'abonnement existant (Stripe Billing Portal)
+        window.location.href = '/api/stripe/billing-portal';
+      } else {
+        // S'abonner (Stripe Checkout)
+        window.location.href = '/api/stripe/checkout?product=premium';
+      }
+    }
+    
+    async function manageFamily() {
+      const accountType = currentUser?.account_type || 'free';
+      
+      if (accountType === 'family' || accountType === 'admin') {
+        // Gérer le pack famille
+        window.location.href = '/api/stripe/billing-portal';
+      } else {
+        // S'abonner au pack famille
+        window.location.href = '/api/stripe/checkout?product=family';
+      }
+    }
+    
+    // ==========================================
+    // PACKS
+    // ==========================================
+    
+    async function buyPack() {
+      // Rediriger vers Stripe Checkout pour le pack
+      window.location.href = '/api/stripe/checkout?product=pack';
+    }
+    
+    // ==========================================
+    // HISTORY
+    // ==========================================
+    
+    async function loadHistory() {
+      const historyContent = document.getElementById('history-content');
+      
+      try {
+        const response = await fetch('/api/account/history', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          }
+        });
+        
+        if (!response.ok) throw new Error('Erreur chargement historique');
+        
+        const data = await response.json();
+        
+        if (!data.purchases || data.purchases.length === 0) {
+          historyContent.innerHTML = '<p style="text-align: center; color: rgba(255,255,255,0.6); padding: 40px;">Aucun achat pour le moment</p>';
+          return;
+        }
+        
+        let html = `
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Produit</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Facture</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        
+        data.purchases.forEach(purchase => {
+          html += `
+            <tr>
+              <td>${formatDate(purchase.date)}</td>
+              <td>${purchase.product}</td>
+              <td>${purchase.amount}€</td>
+              <td>${purchase.status === 'paid' ? '✅ Payé' : '⏳ En attente'}</td>
+              <td>
+                ${purchase.invoice_url ? `<a href="${purchase.invoice_url}" target="_blank" class="invoice-btn">📄 Voir</a>` : '-'}
+              </td>
+            </tr>
+          `;
+        });
+        
+        html += `
+            </tbody>
+          </table>
+        `;
+        
+        historyContent.innerHTML = html;
+        
+      } catch (error) {
+        console.error('Erreur:', error);
+        historyContent.innerHTML = '<p style="text-align: center; color: #f44336; padding: 40px;">❌ Erreur de chargement</p>';
+      }
+    }
+    
+    // ==========================================
+    // UTILITIES
+    // ==========================================
+    
+    function showAlert(containerId, message, type) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = `<div class="alert ${type}">${message}</div>`;
+      
+      setTimeout(() => {
+        container.innerHTML = '';
+      }, 5000);
+    }
+    
+    function formatDate(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    
+    // ==========================================
+    // INIT
+    // ==========================================
+    
+    init();
+  </script>
+</body>
+</html>
