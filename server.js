@@ -7875,6 +7875,36 @@ async function initWorkflowsDatabase() {
     CREATE INDEX IF NOT EXISTS idx_workflows_trigger ON workflows(trigger_type, enabled);
     CREATE INDEX IF NOT EXISTS idx_workflow_executions_workflow ON workflow_executions(workflow_id);
     CREATE INDEX IF NOT EXISTS idx_workflow_executions_date ON workflow_executions(executed_at);
+
+    -- Table pour les notifications pop-up
+    CREATE TABLE IF NOT EXISTS user_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      message TEXT NOT NULL,
+      read INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+
+    -- Table pour les publications sociales
+    CREATE TABLE IF NOT EXISTS social_posts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      workflow_id INTEGER,
+      message TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      facebook_url TEXT,
+      instagram_url TEXT,
+      created_at INTEGER NOT NULL,
+      posted_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (workflow_id) REFERENCES workflows(id)
+    );
+
+    -- Index pour les notifications
+    CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications(user_id);
+    CREATE INDEX IF NOT EXISTS idx_user_notifications_read ON user_notifications(read);
   `;
   
   db.exec(workflowsSchema);
@@ -8443,35 +8473,6 @@ async function sendCommunications(communication, triggerData, workflow) {
   }
 }
 
-// Table pour les notifications pop-up
-db.exec(`
-  CREATE TABLE IF NOT EXISTS user_notifications (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    message TEXT NOT NULL,
-    read INTEGER DEFAULT 0,
-    created_at INTEGER NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id)
-  )
-`);
-
-// Table pour les publications sociales
-db.exec(`
-  CREATE TABLE IF NOT EXISTS social_posts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    workflow_id INTEGER,
-    message TEXT NOT NULL,
-    status TEXT DEFAULT 'pending',
-    facebook_url TEXT,
-    instagram_url TEXT,
-    created_at INTEGER NOT NULL,
-    posted_at INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (workflow_id) REFERENCES workflows(id)
-  )
-`);
 
 // ========================================
 // 4. INTÉGRATION DANS LES TRIGGERS
