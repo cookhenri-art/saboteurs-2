@@ -338,108 +338,115 @@
    MODAL PACKS - À AJOUTER DANS index-site.html AVANT </body>
    ============================================================================ -->
 
+<!-- ============================================================================
+   MODAL PACKS V2 - CORRIGÉ - À AJOUTER DANS index-site.html AVANT </body>
+   ============================================================================ -->
+
 <!-- Modal Packs Premium -->
 <div id="modal-packs" class="modal" style="display: none;">
   <div class="modal-overlay" onclick="closePacksModal()"></div>
-  <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+  <div class="modal-content" style="max-width: 1100px; max-height: 90vh; overflow-y: auto;">
     <button class="modal-close" onclick="closePacksModal()">×</button>
     
-    <div class="modal-header">
+    <div class="modal-header" style="text-align: center;">
       <h2 style="color: var(--green-bright); margin: 0;">💎 Nos Packs Premium</h2>
       <p style="color: #aaa; margin-top: 10px;">Compte vérifié requis pour accéder aux packs</p>
     </div>
     
-    <div class="packs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 30px;">
+    <div class="packs-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; margin-top: 40px; padding: 0 20px;">
       
       <!-- Pack 50+50 -->
-      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid var(--green-main); border-radius: 15px; padding: 25px; position: relative; overflow: hidden;">
+      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid var(--green-main); border-radius: 15px; padding: 30px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center;">
         <div class="pack-badge" style="position: absolute; top: 15px; right: 15px; background: var(--green-bright); color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">
           PONCTUEL
         </div>
         
-        <div class="pack-icon" style="font-size: 48px; margin-bottom: 15px;">🎮</div>
-        <h3 style="color: var(--green-bright); margin: 0 0 10px 0;">Pack 50+50</h3>
-        <div class="pack-price" style="font-size: 36px; font-weight: bold; color: #fff; margin: 15px 0;">
+        <div class="pack-icon" style="font-size: 56px; margin-bottom: 20px;">🎮</div>
+        <h3 style="color: var(--green-bright); margin: 0 0 15px 0; font-size: 24px;">Pack 50+50</h3>
+        
+        <div class="pack-price" style="font-size: 42px; font-weight: bold; color: #fff; margin: 20px 0;">
           4,99€
-          <span style="font-size: 16px; color: #aaa; font-weight: normal;">une fois</span>
+          <span style="font-size: 16px; color: #aaa; font-weight: normal; display: block; margin-top: 5px;">une fois</span>
         </div>
         
-        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #ccc; line-height: 1.8;">
-          <li>✅ 50 crédits vidéo</li>
-          <li>✅ 50 avatars IA</li>
-          <li>✅ Valables 12 mois</li>
-          <li>✅ Tous les thèmes</li>
-          <li>✅ Support prioritaire</li>
+        <ul style="list-style: none; padding: 0; margin: 25px 0; color: #ccc; line-height: 2; text-align: left; width: 100%;">
+          <li style="padding: 5px 0;">✅ 50 crédits vidéo</li>
+          <li style="padding: 5px 0;">✅ 50 avatars IA</li>
+          <li style="padding: 5px 0;">✅ Valables 12 mois</li>
+          <li style="padding: 5px 0;">✅ Tous les thèmes</li>
+          <li style="padding: 5px 0;">✅ Support prioritaire</li>
         </ul>
         
-        <button class="btn btn-primary" onclick="buyPack('pack50')" style="width: 100%; margin-top: 20px;">
+        <button class="btn btn-primary" onclick="buyPack('pack50')" style="width: 100%; margin-top: auto; padding: 15px; font-size: 16px; font-weight: bold; background: var(--green-main); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
           🛒 Acheter maintenant
         </button>
       </div>
       
       <!-- Premium -->
-      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 3px solid var(--green-bright); border-radius: 15px; padding: 25px; position: relative; overflow: hidden; box-shadow: 0 0 30px rgba(107, 157, 58, 0.3);">
+      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 3px solid var(--green-bright); border-radius: 15px; padding: 30px; position: relative; overflow: hidden; box-shadow: 0 0 30px rgba(107, 157, 58, 0.3); display: flex; flex-direction: column; align-items: center; text-align: center;">
         <div class="pack-badge" style="position: absolute; top: 15px; right: 15px; background: gold; color: #000; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">
           ⭐ POPULAIRE
         </div>
         
-        <div class="pack-icon" style="font-size: 48px; margin-bottom: 15px;">🌟</div>
-        <h3 style="color: var(--green-bright); margin: 0 0 10px 0;">Premium</h3>
-        <div class="pack-price" style="font-size: 36px; font-weight: bold; color: #fff; margin: 15px 0;">
+        <div class="pack-icon" style="font-size: 56px; margin-bottom: 20px;">🌟</div>
+        <h3 style="color: var(--green-bright); margin: 0 0 15px 0; font-size: 24px;">Premium</h3>
+        
+        <div class="pack-price" style="font-size: 42px; font-weight: bold; color: #fff; margin: 20px 0;">
           1,49€
-          <span style="font-size: 16px; color: #aaa; font-weight: normal;">/mois</span>
+          <span style="font-size: 16px; color: #aaa; font-weight: normal; display: block; margin-top: 5px;">/mois</span>
         </div>
         
-        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #ccc; line-height: 1.8;">
-          <li>✅ Visio illimitée</li>
-          <li>✅ 30 avatars IA/mois</li>
-          <li>✅ 4 thèmes complets</li>
-          <li>✅ Badge exclusif</li>
-          <li>✅ Support VIP 24/7</li>
-          <li>✅ Accès anticipé nouveautés</li>
+        <ul style="list-style: none; padding: 0; margin: 25px 0; color: #ccc; line-height: 2; text-align: left; width: 100%;">
+          <li style="padding: 5px 0;">✅ Visio illimitée</li>
+          <li style="padding: 5px 0;">✅ 30 avatars IA/mois</li>
+          <li style="padding: 5px 0;">✅ 4 thèmes complets</li>
+          <li style="padding: 5px 0;">✅ Badge exclusif</li>
+          <li style="padding: 5px 0;">✅ Support VIP 24/7</li>
+          <li style="padding: 5px 0;">✅ Accès anticipé nouveautés</li>
         </ul>
         
-        <button class="btn btn-primary" onclick="buyPack('premium')" style="width: 100%; margin-top: 20px; background: var(--green-bright); color: #000;">
+        <button class="btn btn-primary" onclick="buyPack('premium')" style="width: 100%; margin-top: auto; padding: 15px; font-size: 16px; font-weight: bold; background: var(--green-bright); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
           🚀 S'abonner
         </button>
       </div>
       
       <!-- Pack Famille -->
-      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid var(--green-main); border-radius: 15px; padding: 25px; position: relative; overflow: hidden;">
+      <div class="pack-card" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border: 2px solid var(--green-main); border-radius: 15px; padding: 30px; position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: center; text-align: center;">
         <div class="pack-badge" style="position: absolute; top: 15px; right: 15px; background: #ff6b6b; color: #fff; padding: 5px 15px; border-radius: 20px; font-size: 12px; font-weight: bold;">
           FAMILLE
         </div>
         
-        <div class="pack-icon" style="font-size: 48px; margin-bottom: 15px;">👨‍👩‍👧‍👦</div>
-        <h3 style="color: var(--green-bright); margin: 0 0 10px 0;">Pack Famille</h3>
-        <div class="pack-price" style="font-size: 36px; font-weight: bold; color: #fff; margin: 15px 0;">
+        <div class="pack-icon" style="font-size: 56px; margin-bottom: 20px;">👨‍👩‍👧‍👦</div>
+        <h3 style="color: var(--green-bright); margin: 0 0 15px 0; font-size: 24px;">Pack Famille</h3>
+        
+        <div class="pack-price" style="font-size: 42px; font-weight: bold; color: #fff; margin: 20px 0;">
           9,99€
-          <span style="font-size: 16px; color: #aaa; font-weight: normal;">/mois</span>
+          <span style="font-size: 16px; color: #aaa; font-weight: normal; display: block; margin-top: 5px;">/mois</span>
         </div>
         
-        <ul style="list-style: none; padding: 0; margin: 20px 0; color: #ccc; line-height: 1.8;">
-          <li>✅ Jusqu'à 9 comptes</li>
-          <li>✅ Visio illimitée pour tous</li>
-          <li>✅ 30 avatars/mois par utilisateur</li>
-          <li>✅ 4 thèmes complets</li>
-          <li>✅ Gestion centralisée</li>
-          <li>✅ Économie de 85%</li>
+        <ul style="list-style: none; padding: 0; margin: 25px 0; color: #ccc; line-height: 2; text-align: left; width: 100%;">
+          <li style="padding: 5px 0;">✅ Jusqu'à 9 comptes</li>
+          <li style="padding: 5px 0;">✅ Visio illimitée pour tous</li>
+          <li style="padding: 5px 0;">✅ 30 avatars/mois par utilisateur</li>
+          <li style="padding: 5px 0;">✅ 4 thèmes complets</li>
+          <li style="padding: 5px 0;">✅ Gestion centralisée</li>
+          <li style="padding: 5px 0;">✅ Économie de 85%</li>
         </ul>
         
-        <button class="btn btn-primary" onclick="buyPack('family')" style="width: 100%; margin-top: 20px;">
+        <button class="btn btn-primary" onclick="buyPack('family')" style="width: 100%; margin-top: auto; padding: 15px; font-size: 16px; font-weight: bold; background: var(--green-main); color: #fff; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
           👨‍👩‍👧‍👦 S'abonner en famille
         </button>
       </div>
       
     </div>
     
-    <div class="modal-footer" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #333; text-align: center; color: #aaa;">
-      <p style="margin: 0;">
+    <div class="modal-footer" style="margin-top: 40px; padding: 25px 20px; border-top: 1px solid #333; text-align: center; color: #aaa;">
+      <p style="margin: 0; font-size: 16px;">
         💡 <strong>Compte vérifié requis</strong> pour accéder aux packs. 
-        <a href="#" onclick="closePacksModal(); openLoginModal(); return false;" style="color: var(--green-bright);">Se connecter</a> ou 
-        <a href="#" onclick="closePacksModal(); openLoginModal(); return false;" style="color: var(--green-bright);">créer un compte</a>.
+        <a href="#" onclick="closePacksModal(); openLoginModal(); return false;" style="color: var(--green-bright); text-decoration: none;">Se connecter</a> ou 
+        <a href="#" onclick="closePacksModal(); openLoginModal(); return false;" style="color: var(--green-bright); text-decoration: none;">créer un compte</a>.
       </p>
-      <p style="margin-top: 15px; font-size: 14px;">
+      <p style="margin-top: 20px; font-size: 14px; color: #888;">
         🔒 Paiement sécurisé via Stripe • 💳 CB, Apple Pay, Google Pay acceptés • 🔄 Annulation à tout moment
       </p>
     </div>
@@ -447,7 +454,7 @@
 </div>
 
 <style>
-/* Styles pour le modal packs */
+/* Styles pour le modal packs V2 */
 .packs-grid {
   animation: fadeInUp 0.5s ease;
 }
@@ -465,15 +472,12 @@
 
 .pack-card {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 550px;
 }
 
 .pack-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(107, 157, 58, 0.2);
-}
-
-.pack-card ul li {
-  padding: 5px 0;
+  transform: translateY(-10px);
+  box-shadow: 0 15px 40px rgba(107, 157, 58, 0.3);
 }
 
 .pack-card .btn {
@@ -482,13 +486,31 @@
 
 .pack-card .btn:hover {
   transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(107, 157, 58, 0.4);
+  box-shadow: 0 8px 20px rgba(107, 157, 58, 0.5);
+  filter: brightness(1.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .packs-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  
+  .modal-content {
+    max-width: 95% !important;
+    margin: 20px auto !important;
+  }
+  
+  .pack-card {
+    min-height: auto;
+  }
 }
 </style>
 
 <script>
 // ============================================================================
-// FONCTIONS MODAL PACKS
+// FONCTIONS MODAL PACKS V2
 // ============================================================================
 
 function openPacksModal() {
@@ -532,6 +554,12 @@ async function buyPack(packType) {
       return;
     }
     
+    // Afficher un loader
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '⏳ Chargement...';
+    button.disabled = true;
+    
     // Rediriger vers Stripe selon le type de pack
     let checkoutUrl;
     
@@ -546,6 +574,8 @@ async function buyPack(packType) {
         checkoutUrl = '/api/stripe/create-checkout-session?subscription=family';
         break;
       default:
+        button.innerHTML = originalText;
+        button.disabled = false;
         alert('Pack inconnu');
         return;
     }
@@ -571,13 +601,19 @@ async function buyPack(packType) {
   } catch (error) {
     console.error('Erreur:', error);
     alert('❌ Erreur lors de l\'achat. Veuillez réessayer ou contacter le support.');
+    
+    // Réactiver le bouton
+    if (event && event.target) {
+      event.target.innerHTML = originalText;
+      event.target.disabled = false;
+    }
   }
 }
 
 // Fermer le modal si on clique en dehors
 document.addEventListener('click', function(e) {
   const modal = document.getElementById('modal-packs');
-  if (e.target === modal) {
+  if (modal && e.target === modal) {
     closePacksModal();
   }
 });
@@ -585,10 +621,14 @@ document.addEventListener('click', function(e) {
 // Fermer avec Échap
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    closePacksModal();
+    const modal = document.getElementById('modal-packs');
+    if (modal && modal.style.display === 'flex') {
+      closePacksModal();
+    }
   }
 });
 </script>
+
 
 
 </body>
