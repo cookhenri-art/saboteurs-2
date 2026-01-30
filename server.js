@@ -606,7 +606,7 @@ async function initAuthDatabase() {
     // Récompense 4: Parrainage
     authDb.run(`
       INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
-      VALUES ('Parrainage Réussi', 'Merci d\'avoir invité un ami !', 'referral_completed', 10, 200, 1, ${Date.now()})
+      VALUES ('Parrainage Réussi', 'Merci d''avoir invité un ami !', 'referral_completed', 10, 200, 1, ${Date.now()})
     `);
     
     console.log('✅ Récompenses créées');
