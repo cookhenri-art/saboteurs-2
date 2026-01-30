@@ -3497,20 +3497,6 @@ app.use(express.json()); // Pour parser le JSON des requêtes auth
 // ROUTES SITE VITRINE RORONOA GAMES
 // ============================================================================
 
-// Page d'accueil du site (vitrine)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
-});
-
-// Page produits
-app.get('/products.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'products.html'));
-});
-
-// L'application de jeu reste accessible via /app ou /index.html
-app.get('/app', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 // Route de contact (pour le formulaire du site)
 app.post('/api/contact', async (req, res) => {
@@ -3560,19 +3546,28 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // ============================================================================
-// ROUTE RACINE - Routage par sous-domaine
+// MIDDLEWARE - ROUTAGE PAR DOMAINE (vitrine vs app)
 // ============================================================================
 
-app.get('/', (req, res) => {
-  const hostname = req.hostname;
+app.use((req, res, next) => {
+  const host = req.hostname;
   
-  // App Saboteur : Si commence par "saboteurs." OU contient "onrender"
-  if (hostname.startsWith('saboteurs.') || hostname.includes('onrender')) {
-    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  // Site vitrine (roronoa-games.com)
+  if (host === 'roronoa-games.com' || host === 'www.roronoa-games.com') {
+    if (req.path === '/' || req.path === '/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
+    }
   }
   
-  // Site vitrine : Tout le reste (roronoa-games.com, www.roronoa-games.com, etc.)
-  return res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
+  // App Saboteur (saboteurs.roronoa-games.com)
+  if (host === 'saboteurs.roronoa-games.com') {
+    if (req.path === '/' || req.path === '/index.html') {
+      return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+  }
+  
+  // Pour tous les autres fichiers, continuer normalement
+  next();
 });
 
 app.use(express.static(path.join(__dirname, "public")));
