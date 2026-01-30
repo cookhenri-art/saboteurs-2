@@ -857,26 +857,22 @@
     const API_BASE = window.location.origin;
     const urlParams = new URLSearchParams(window.location.search);
     const secretCode = urlParams.get('secretCode');
-  
+
   // ========================================
-  // Intercepteur fetch global pour ajouter secretCode automatiquement
+  // CORRECTIF: Intercepteur fetch global pour ajouter secretCode automatiquement
   // ========================================
-  if (typeof secretCode !== 'undefined' && secretCode) {
-    const originalFetch = window.fetch;
-    window.fetch = function(url, options = {}) {
-      // Ajouter secretCode SEULEMENT si pas déjà présent dans l'URL
-      if (typeof url === 'string' && url.startsWith('/api/admin/')) {
-        if (!url.includes('secretCode=')) {
-          const separator = url.includes('?') ? '&' : '?';
-          url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
-        }
-      }
-      
-      return originalFetch(url, options);
-    };
+  const originalFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    // Si l'URL est relative et commence par /api/admin/
+    if (typeof url === 'string' && url.startsWith('/api/admin/')) {
+      const separator = url.includes('?') ? '&' : '?';
+      url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
+    }
     
-    console.log('✅ Intercepteur fetch activé (sans duplication)');
-  }
+    return originalFetch(url, options);
+  };
+  
+  console.log('✅ Intercepteur fetch activé - secretCode ajouté automatiquement');
 
     
     // ========================================
@@ -1758,6 +1754,7 @@
           <option value="avatar_created">🎨 Avatar Créé</option>
           <option value="game_played">🎮 Partie Jouée</option>
           <option value="email_verified">✅ Email Vérifié</option>
+          <option value="client_site">🌐 Nouveau Client Site</option>
           <option value="user_reactivation">🔄 Réactivation</option>
         </select>
       </div>
@@ -2355,6 +2352,7 @@ function getTriggerName(code) {
     'avatar_created': '🎨 Avatar Créé',
     'game_played': '🎮 Partie Jouée',
     'email_verified': '✅ Email Vérifié',
+    'client_site': '🌐 Nouveau Client Site',
     'user_reactivation': '🔄 Réactivation'
   };
   return triggers[code] || code;
@@ -2575,5 +2573,76 @@ if (typeof loadWorkflows === 'function') {
     }
   };
   </script>
+
+  <script>
+  // ==================== FONCTIONS MESSAGES ====================
+  
+  async function loadContactMessages() {
+    try {
+      const response = await fetch('/api/admin/contact-messages?secretCode=' + encodeURIComponent(secretCode));
+      if (!response.ok) {
+        throw new Error('Erreur ' + response.status);
+      }
+      
+      const messages = await response.json();
+      const container = document.getElementById('contact-messages-list');
+      
+      if (!messages || messages.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #666;">Aucun message</p>';
+        return;
+      }
+      
+      let html = '<table class="data-table"><thead><tr>';
+      html += '<th>Date</th>';
+      html += '<th>Nom</th>';
+      html += '<th>Email</th>';
+      html += '<th>Message</th>';
+      html += '<th>Actions</th>';
+      html += '</tr></thead><tbody>';
+      
+      messages.forEach(msg => {
+        const date = new Date(msg.created_at).toLocaleString('fr-FR');
+        const name = (msg.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const email = (msg.email || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const message = (msg.message || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        
+        html += '<tr>';
+        html += '<td>' + date + '</td>';
+        html += '<td>' + name + '</td>';
+        html += '<td><a href="mailto:' + email + '">' + email + '</a></td>';
+        html += '<td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">' + message.substring(0, 100) + '...</td>';
+        html += '<td><button onclick="deleteContactMessage(' + msg.id + ')" class="btn btn-sm btn-danger">🗑️</button></td>';
+        html += '</tr>';
+      });
+      
+      html += '</tbody></table>';
+      container.innerHTML = html;
+      
+    } catch (error) {
+      console.error('[Messages] Erreur chargement:', error);
+      document.getElementById('contact-messages-list').innerHTML = '<p style="color: red;">Erreur de chargement</p>';
+    }
+  }
+  
+  async function deleteContactMessage(id) {
+    if (!confirm('Supprimer ce message ?')) return;
+    
+    try {
+      const response = await fetch('/api/admin/contact-messages/' + id + '?secretCode=' + encodeURIComponent(secretCode), {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        loadContactMessages();
+      } else {
+        alert('Erreur lors de la suppression');
+      }
+    } catch (error) {
+      console.error('[Messages] Erreur suppression:', error);
+      alert('Erreur lors de la suppression');
+    }
+  }
+  </script>
+
 </body>
 </html>
