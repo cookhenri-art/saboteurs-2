@@ -1156,9 +1156,17 @@
                     </span>
                   </td>
                   <td>
+                    <button class="btn btn-sm btn-primary" 
+                            onclick="editPromotion(${p.id})" title="Modifier">
+                      ✏️
+                    </button>
                     <button class="btn btn-sm ${p.active ? 'btn-warning' : 'btn-success'}" 
-                            onclick="togglePromotion(${p.id}, ${p.active})">
-                      ${p.active ? '⏸️ Désactiver' : '▶️ Activer'}
+                            onclick="togglePromotion(${p.id}, ${p.active})" title="${p.active ? 'Désactiver' : 'Activer'}">
+                      ${p.active ? '⏸️' : '▶️'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" 
+                            onclick="deletePromotion(${p.id}, '${p.name}')" title="Supprimer">
+                      🗑️
                     </button>
                   </td>
                 </tr>
@@ -1207,6 +1215,74 @@
       } catch (error) {
         console.error('Erreur toggle promotion:', error);
         showAlert('Erreur lors de la mise à jour', 'error');
+      }
+    }
+    
+    async function editPromotion(id) {
+      try {
+        // Récupérer toutes les promotions
+        const promotions = await apiCall('/api/admin/stripe/promotions');
+        const promo = promotions.find(p => p.id === id);
+        
+        if (!promo) {
+          showAlert('Promotion introuvable', 'error');
+          return;
+        }
+        
+        // Pré-remplir le formulaire
+        const form = document.getElementById('form-create-promo');
+        form.elements['name'].value = promo.name;
+        form.elements['type'].value = promo.type;
+        form.elements['trigger_event'].value = promo.trigger_event;
+        form.elements['bonus_avatars'].value = promo.bonus_avatars || '';
+        form.elements['bonus_video_credits'].value = promo.bonus_video_credits || '';
+        form.elements['discount_percent'].value = promo.discount_percent || '';
+        form.elements['duration_days'].value = promo.duration_days || '';
+        
+        // Changer le titre et l'action du formulaire
+        document.querySelector('#modal-create-promo .modal-header h3').textContent = '✏️ Modifier la Promotion';
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData);
+          
+          try {
+            await apiCall(`/api/admin/stripe/promotions/${id}`, 'PUT', data);
+            showAlert('Promotion modifiée avec succès !', 'success');
+            closeModal('modal-create-promo');
+            loadPromotions();
+            
+            // Restaurer le formulaire de création
+            document.querySelector('#modal-create-promo .modal-header h3').textContent = '🎁 Créer une Promotion';
+            form.onsubmit = createPromotion;
+          } catch (error) {
+            console.error('Erreur modification promotion:', error);
+            showAlert('Erreur lors de la modification', 'error');
+          }
+        };
+        
+        // Ouvrir la modale
+        openModal('modal-create-promo');
+        
+      } catch (error) {
+        console.error('Erreur edit promotion:', error);
+        showAlert('Erreur lors du chargement', 'error');
+      }
+    }
+    
+    async function deletePromotion(id, name) {
+      if (!confirm(`Êtes-vous sûr de vouloir supprimer la promotion "${name}" ?\n\nCette action est irréversible !`)) {
+        return;
+      }
+      
+      try {
+        await apiCall(`/api/admin/stripe/promotions/${id}`, 'DELETE');
+        showAlert('Promotion supprimée', 'success');
+        loadPromotions();
+        
+      } catch (error) {
+        console.error('Erreur suppression promotion:', error);
+        showAlert('Erreur lors de la suppression', 'error');
       }
     }
     
@@ -1332,9 +1408,17 @@
                     </span>
                   </td>
                   <td>
+                    <button class="btn btn-sm btn-primary" 
+                            onclick="editReward(${r.id})" title="Modifier">
+                      ✏️
+                    </button>
                     <button class="btn btn-sm ${r.active ? 'btn-warning' : 'btn-success'}" 
-                            onclick="toggleReward(${r.id}, ${r.active})">
-                      ${r.active ? '⏸️ Désactiver' : '▶️ Activer'}
+                            onclick="toggleReward(${r.id}, ${r.active})" title="${r.active ? 'Désactiver' : 'Activer'}">
+                      ${r.active ? '⏸️' : '▶️'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" 
+                            onclick="deleteReward(${r.id}, '${r.name}')" title="Supprimer">
+                      🗑️
                     </button>
                   </td>
                 </tr>
@@ -1383,6 +1467,72 @@
       } catch (error) {
         console.error('Erreur toggle récompense:', error);
         showAlert('Erreur lors de la mise à jour', 'error');
+      }
+    }
+    
+    async function editReward(id) {
+      try {
+        // Récupérer toutes les récompenses
+        const rewards = await apiCall('/api/admin/stripe/rewards');
+        const reward = rewards.find(r => r.id === id);
+        
+        if (!reward) {
+          showAlert('Récompense introuvable', 'error');
+          return;
+        }
+        
+        // Pré-remplir le formulaire
+        const form = document.getElementById('form-create-reward');
+        form.elements['name'].value = reward.name;
+        form.elements['description'].value = reward.description || '';
+        form.elements['trigger_event'].value = reward.trigger_event;
+        form.elements['avatar_bonus'].value = reward.avatar_bonus;
+        form.elements['video_bonus'].value = reward.video_bonus;
+        
+        // Changer le titre et l'action du formulaire
+        document.querySelector('#modal-create-reward .modal-header h3').textContent = '✏️ Modifier la Récompense';
+        form.onsubmit = async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData);
+          
+          try {
+            await apiCall(`/api/admin/stripe/rewards/${id}`, 'PUT', data);
+            showAlert('Récompense modifiée avec succès !', 'success');
+            closeModal('modal-create-reward');
+            loadRewards();
+            
+            // Restaurer le formulaire de création
+            document.querySelector('#modal-create-reward .modal-header h3').textContent = '🏆 Créer une Récompense';
+            form.onsubmit = createReward;
+          } catch (error) {
+            console.error('Erreur modification récompense:', error);
+            showAlert('Erreur lors de la modification', 'error');
+          }
+        };
+        
+        // Ouvrir la modale
+        openModal('modal-create-reward');
+        
+      } catch (error) {
+        console.error('Erreur edit récompense:', error);
+        showAlert('Erreur lors du chargement', 'error');
+      }
+    }
+    
+    async function deleteReward(id, name) {
+      if (!confirm(`Êtes-vous sûr de vouloir supprimer la récompense "${name}" ?\n\nCette action est irréversible !`)) {
+        return;
+      }
+      
+      try {
+        await apiCall(`/api/admin/stripe/rewards/${id}`, 'DELETE');
+        showAlert('Récompense supprimée', 'success');
+        loadRewards();
+        
+      } catch (error) {
+        console.error('Erreur suppression récompense:', error);
+        showAlert('Erreur lors de la suppression', 'error');
       }
     }
     
