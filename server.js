@@ -3497,20 +3497,6 @@ app.use(express.json()); // Pour parser le JSON des requêtes auth
 // ROUTES SITE VITRINE RORONOA GAMES
 // ============================================================================
 
-// Page d'accueil du site (vitrine)
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
-});
-
-// Page produits
-app.get('/products.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'products.html'));
-});
-
-// L'application de jeu reste accessible via /app ou /index.html
-app.get('/app', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
 
 // Route de contact (pour le formulaire du site)
 app.post('/api/contact', async (req, res) => {
@@ -3557,6 +3543,32 @@ app.post('/api/contact', async (req, res) => {
     console.error('[Contact] Erreur:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
+});
+
+// ============================================================================
+// MIDDLEWARE - ROUTAGE PAR DOMAINE
+// ============================================================================
+
+app.use((req, res, next) => {
+  const hostname = req.hostname;
+  const path_url = req.path;
+  
+  // Routing uniquement pour "/"
+  if (path_url === '/' || path_url === '/index.html') {
+    
+    // SITE VITRINE : roronoa-games.com (avec ou sans www)
+    if (hostname === 'roronoa-games.com' || hostname === 'www.roronoa-games.com') {
+      return res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
+    }
+    
+    // APP SABOTEUR : saboteurs.roronoa-games.com
+    if (hostname === 'saboteurs.roronoa-games.com' || hostname.includes('onrender.com')) {
+      return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    }
+  }
+  
+  // Pour tous les autres chemins, laisser express.static gérer
+  next();
 });
 
 app.use(express.static(path.join(__dirname, "public")));
