@@ -4209,6 +4209,51 @@ app.post("/api/auth/login", async (req, res) => {
     
     // Recharger l'utilisateur après sync éventuel
     user = dbGet("SELECT * FROM users WHERE id = ?", [user.id]);
+    
+    // 🎁 PROMO AUTO : Cadeau si 0 avatars restants (UNE SEULE FOIS)
+    const limits = getUserLimits(user);
+    if (limits.avatars !== Infinity) {
+      const totalAvatars = limits.avatars + (user.bonus_avatars || 0);
+      const avatarsRemaining = Math.max(0, totalAvatars - (user.avatars_used || 0));
+      
+      // Si 0 avatars restants
+      if (avatarsRemaining === 0) {
+        // Vérifier si l'user a déjà reçu un cadeau auto
+        const alreadyGifted = dbGet(`
+          SELECT id FROM business_events
+          WHERE event_type = 'auto_gift_avatars'
+            AND JSON_EXTRACT(data, '$.user_id') = ?
+          LIMIT 1
+        `, [user.id]);
+        
+        // Donner le cadeau SEULEMENT si jamais reçu avant
+        if (!alreadyGifted) {
+          dbRun('UPDATE users SET bonus_avatars = bonus_avatars + 5 WHERE id = ?', [user.id]);
+          
+          console.log(`🎁 [Promo Auto] User ${user.id} (${user.email}) a reçu 5 avatars bonus (PREMIER cadeau)`);
+          
+          // Logger dans business_events
+          dbRun(`
+            INSERT INTO business_events (event_type, data, created_at)
+            VALUES (?, ?, ?)
+          `, [
+            'auto_gift_avatars',
+            JSON.stringify({ 
+              user_id: user.id, 
+              email: user.email,
+              avatars: 5, 
+              reason: 'first_zero_remaining',
+              account_type: user.account_type
+            }),
+            Date.now()
+          ]);
+          
+          // Recharger l'user avec les nouveaux bonus
+          user = dbGet("SELECT * FROM users WHERE id = ?", [user.id]);
+        }
+      }
+    }
+    }
 
     dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [user.id]);
 
@@ -5504,9 +5549,24 @@ app.post("/api/admin/add-credits", verifyAdmin, (req, res) => {
 });
 
 // Lister tous les utilisateurs
+// Lister tous les utilisateurs
 app.get("/api/admin/users", verifyAdmin, (req, res) => {
-  const users = dbAll("SELECT id, email, username, account_type, email_verified, video_credits, avatars_used, stripeCustomerId, created_at, last_login FROM users ORDER BY created_at DESC");
-  res.json({ ok: true, count: users.length, users });
+  const users = dbAll("SELECT id, email, username, account_type, email_verified, video_credits, avatars_used, bonus_avatars, stripeCustomerId, created_at, last_login FROM users ORDER BY created_at DESC");
+  
+  // Calculer les avatars restants pour chaque user
+  const usersWithAvatarsRemaining = users.map(u => {
+    const limits = getUserLimits(u);
+    const totalAvatars = limits.avatars === Infinity ? Infinity : (limits.avatars + (u.bonus_avatars || 0));
+    const avatarsRemaining = totalAvatars === Infinity ? Infinity : Math.max(0, totalAvatars - (u.avatars_used || 0));
+    
+    return {
+      ...u,
+      avatars_remaining: avatarsRemaining,
+      avatars_total: totalAvatars
+    };
+  });
+  
+  res.json({ ok: true, count: usersWithAvatarsRemaining.length, users: usersWithAvatarsRemaining });
 });
 
 // Infos d'un utilisateur
@@ -5554,6 +5614,56 @@ app.post("/api/admin/clear-ip-logs", verifyAdmin, (req, res) => {
   logger.info("admin_clear_ip_logs");
   
   res.json({ ok: true, message: "Logs IP et limites création de compte effacés" });
+});
+
+
+// Donner des avatars bonus à un user (manuel)
+app.post("/api/admin/gift-avatars", verifyAdmin, (req, res) => {
+  try {
+    const { email, amount, reason } = req.body;
+    
+    if (!email || !amount) {
+      return res.status(400).json({ ok: false, error: "Email et montant requis" });
+    }
+    
+    if (amount < 1 || amount > 100) {
+      return res.status(400).json({ ok: false, error: "Montant doit être entre 1 et 100" });
+    }
+    
+    const user = dbGet("SELECT * FROM users WHERE email = ?", [email.toLowerCase()]);
+    if (!user) {
+      return res.status(404).json({ ok: false, error: "Utilisateur introuvable" });
+    }
+    
+    // Ajouter les avatars bonus
+    dbRun("UPDATE users SET bonus_avatars = bonus_avatars + ? WHERE id = ?", [amount, user.id]);
+    
+    console.log(`🎁 [Admin Gift] ${amount} avatars donnés à user ${user.id} (${email})`);
+    
+    // Logger dans business_events
+    dbRun(`
+      INSERT INTO business_events (event_type, data, created_at)
+      VALUES (?, ?, ?)
+    `, [
+      'admin_gift_avatars',
+      JSON.stringify({ 
+        user_id: user.id, 
+        email: user.email,
+        avatars: amount, 
+        reason: reason || 'manual_admin',
+        account_type: user.account_type
+      }),
+      Date.now()
+    ]);
+    
+    logger.info("admin_gift_avatars", { email, amount, reason });
+    
+    res.json({ ok: true, message: `${amount} avatars ajoutés à ${email}` });
+    
+  } catch (error) {
+    console.error("[Admin] Erreur gift avatars:", error);
+    res.status(500).json({ ok: false, error: error.message });
+  }
 });
 
 // V35: Reset avatars et/ou vidéo d'un joueur + suppression fichiers avatars
@@ -5722,11 +5832,15 @@ app.get('/api/admin/stripe/stats', verifyAdmin, async (req, res) => {
     const subscribers = dbGet(`
       SELECT COUNT(*) as count FROM users 
       WHERE account_type = 'subscriber'
+        AND stripeSubscriptionId IS NOT NULL
+        AND stripeSubscriptionId != ''
     `);
     
     const familyPacks = dbGet(`
       SELECT COUNT(*) as count FROM family_packs 
       WHERE status = 'active'
+        AND stripe_subscription_id IS NOT NULL
+        AND stripe_subscription_id != ''
     `);
     
     const mrr = ((subscribers?.count || 0) * 4.99) + ((familyPacks?.count || 0) * 9.99);
@@ -6148,6 +6262,71 @@ app.get('/api/admin/stripe/test-connection', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[Admin] Erreur test Stripe:', error);
     res.json({ success: false, message: error.message });
+  }
+});
+
+// Nettoyer les données orphelines (sans Stripe)
+app.post('/api/admin/stripe/cleanup-orphans', verifyAdmin, async (req, res) => {
+  try {
+    // 1. Compter les orphelins
+    const orphanSubscribers = dbGet(`
+      SELECT COUNT(*) as count FROM users 
+      WHERE account_type = 'subscriber'
+        AND (stripeSubscriptionId IS NULL OR stripeSubscriptionId = '')
+    `);
+    
+    const orphanPacks = dbGet(`
+      SELECT COUNT(*) as count FROM family_packs 
+      WHERE status = 'active'
+        AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')
+    `);
+    
+    const orphanFamilyMembers = dbGet(`
+      SELECT COUNT(*) as count FROM users 
+      WHERE account_type = 'family'
+        AND family_pack_id IS NULL
+    `);
+    
+    // 2. Downgrade les subscribers orphelins en free
+    dbRun(`
+      UPDATE users 
+      SET account_type = 'free', 
+          video_credits = 2
+      WHERE account_type = 'subscriber'
+        AND (stripeSubscriptionId IS NULL OR stripeSubscriptionId = '')
+    `);
+    
+    // 3. Désactiver les packs famille orphelins
+    dbRun(`
+      UPDATE family_packs 
+      SET status = 'cancelled'
+      WHERE status = 'active'
+        AND (stripe_subscription_id IS NULL OR stripe_subscription_id = '')
+    `);
+    
+    // 4. Downgrade les membres de packs orphelins
+    dbRun(`
+      UPDATE users 
+      SET account_type = 'free',
+          family_pack_id = NULL,
+          video_credits = 2
+      WHERE account_type = 'family'
+        AND family_pack_id IS NULL
+    `);
+    
+    res.json({ 
+      success: true,
+      cleaned: {
+        subscribers: orphanSubscribers?.count || 0,
+        packs: orphanPacks?.count || 0,
+        family_members: orphanFamilyMembers?.count || 0
+      },
+      message: `Nettoyage terminé : ${(orphanSubscribers?.count || 0) + (orphanPacks?.count || 0) + (orphanFamilyMembers?.count || 0)} entrées nettoyées`
+    });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur cleanup:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
