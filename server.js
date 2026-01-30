@@ -3497,6 +3497,20 @@ app.use(express.json()); // Pour parser le JSON des requêtes auth
 // ROUTES SITE VITRINE RORONOA GAMES
 // ============================================================================
 
+// Page d'accueil du site (vitrine)
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index-site.html'));
+});
+
+// Page produits
+app.get('/products.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'products.html'));
+});
+
+// L'application de jeu reste accessible via /app ou /index.html
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // Route de contact (pour le formulaire du site)
 app.post('/api/contact', async (req, res) => {
