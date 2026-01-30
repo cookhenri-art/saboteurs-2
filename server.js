@@ -5131,7 +5131,7 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     );
     
     // 🆕 TRIGGER: Avatar créé
-    const avatarCount = db.prepare('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?').get(user.id);
+    const avatarCount = dbGet('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?', [user.id]);
     await executeWorkflows('avatar_created', {
       user_id: user.id,
       avatar_count: avatarCount ? avatarCount.count : 1
@@ -8316,10 +8316,10 @@ app.get('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
  */
 async function executeWorkflows(triggerType, data) {
   try {
-    const workflows = authDb.prepare(`
+    const workflows = dbAll(`
       SELECT * FROM workflows 
       WHERE trigger_type = ? AND enabled = 1
-    `).all(triggerType);
+    `, [triggerType]);
     
     if (!workflows || workflows.length === 0) {
       return;
