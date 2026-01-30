@@ -457,6 +457,166 @@ async function initAuthDatabase() {
       FOREIGN KEY (family_id) REFERENCES family_packs(id)
     )
   `);
+// ============================================================================
+// CODE À AJOUTER DANS server.js APRÈS LA TABLE family_members (ligne ~460)
+// ============================================================================
+
+  // Tables Stripe Admin (créées automatiquement au démarrage)
+  
+  // Table pour les événements business (analytics)
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS business_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_type TEXT NOT NULL,
+      data TEXT,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  // Index pour améliorer les performances des requêtes analytics
+  authDb.run(`CREATE INDEX IF NOT EXISTS idx_business_events_type ON business_events(event_type)`);
+  authDb.run(`CREATE INDEX IF NOT EXISTS idx_business_events_created ON business_events(created_at)`);
+
+  // Table des promotions
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS promotions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      trigger_event TEXT NOT NULL,
+      discount_percent INTEGER DEFAULT 0,
+      discount_amount INTEGER DEFAULT 0,
+      bonus_avatars INTEGER DEFAULT 0,
+      bonus_video_credits INTEGER DEFAULT 0,
+      duration_days INTEGER,
+      max_uses INTEGER,
+      uses_count INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1,
+      start_date INTEGER,
+      end_date INTEGER,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  // Table de tracking des promotions utilisées par utilisateur
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS user_promotions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      promotion_id INTEGER NOT NULL,
+      applied_at INTEGER NOT NULL,
+      expires_at INTEGER,
+      UNIQUE(user_id, promotion_id)
+    )
+  `);
+
+  // Table des récompenses
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS rewards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      trigger_event TEXT NOT NULL,
+      avatar_bonus INTEGER DEFAULT 0,
+      video_bonus INTEGER DEFAULT 0,
+      active INTEGER DEFAULT 1,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  // Table de tracking des récompenses réclamées
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS user_rewards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      reward_id INTEGER NOT NULL,
+      claimed_at INTEGER NOT NULL,
+      UNIQUE(user_id, reward_id)
+    )
+  `);
+
+  // Table des crédits expirables
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS user_credits (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      amount INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      expires_at INTEGER,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  // Table du programme de parrainage
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS referrals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      referrer_id INTEGER NOT NULL,
+      referred_id INTEGER NOT NULL,
+      referral_code TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      reward_granted_at INTEGER,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
+  // Insérer les promotions par défaut si la table est vide
+  const existingPromos = dbGet('SELECT COUNT(*) as count FROM promotions');
+  if (!existingPromos || existingPromos.count === 0) {
+    console.log('📊 Création des promotions par défaut...');
+    
+    // Promotion 1: Bonus de bienvenue
+    authDb.run(`
+      INSERT INTO promotions (name, type, trigger_event, bonus_avatars, bonus_video_credits, active, created_at)
+      VALUES ('Bonus de Bienvenue', 'bonus_credits', 'first_signup', 5, 100, 1, ${Date.now()})
+    `);
+    
+    // Promotion 2: Réactivation -50%
+    authDb.run(`
+      INSERT INTO promotions (name, type, trigger_event, discount_percent, duration_days, active, created_at)
+      VALUES ('Réactivation -50%', 'discount', 'reactivation', 50, 90, 1, ${Date.now()})
+    `);
+    
+    console.log('✅ Promotions créées');
+  }
+
+  // Insérer les récompenses par défaut si la table est vide
+  const existingRewards = dbGet('SELECT COUNT(*) as count FROM rewards');
+  if (!existingRewards || existingRewards.count === 0) {
+    console.log('🏆 Création des récompenses par défaut...');
+    
+    // Récompense 1: Première partie
+    authDb.run(`
+      INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
+      VALUES ('Première Partie', 'Félicitations pour ta première partie !', 'first_game', 3, 50, 1, ${Date.now()})
+    `);
+    
+    // Récompense 2: 10 parties
+    authDb.run(`
+      INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
+      VALUES ('Joueur Régulier', 'Tu as joué 10 parties !', '10_games', 5, 100, 1, ${Date.now()})
+    `);
+    
+    // Récompense 3: 50 parties
+    authDb.run(`
+      INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
+      VALUES ('Joueur Passionné', 'Incroyable ! 50 parties !', '50_games', 10, 500, 1, ${Date.now()})
+    `);
+    
+    // Récompense 4: Parrainage
+    authDb.run(`
+      INSERT INTO rewards (name, description, trigger_event, avatar_bonus, video_bonus, active, created_at)
+      VALUES ('Parrainage Réussi', 'Merci d\'avoir invité un ami !', 'referral_completed', 10, 200, 1, ${Date.now()})
+    `);
+    
+    console.log('✅ Récompenses créées');
+  }
+
+  console.log('✅ Tables Stripe Admin initialisées');
+
+// ============================================================================
+// FIN DU CODE À AJOUTER
+// ============================================================================
 
   // V32: Migration - Ajouter colonne custom_avatar si elle n'existe pas
   try {
@@ -5549,6 +5709,359 @@ function formatUptime(seconds) {
   if (minutes > 0) return `${minutes}m ${secs}s`;
   return `${secs}s`;
 }
+
+// ============================================================================
+// ADMIN STRIPE ROUTES
+// ============================================================================
+// À ajouter dans server.js après la route /api/admin/stats (ligne ~5550)
+
+// Stats Dashboard Stripe
+app.get('/api/admin/stripe/stats', verifyAdmin, async (req, res) => {
+  try {
+    // MRR (Monthly Recurring Revenue)
+    const subscribers = dbGet(`
+      SELECT COUNT(*) as count FROM users 
+      WHERE account_type = 'subscriber'
+    `);
+    
+    const familyPacks = dbGet(`
+      SELECT COUNT(*) as count FROM family_packs 
+      WHERE status = 'active'
+    `);
+    
+    const mrr = ((subscribers?.count || 0) * 4.99) + ((familyPacks?.count || 0) * 9.99);
+    
+    // Churn rate (30 derniers jours)
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    const cancelledLast30Days = dbGet(`
+      SELECT COUNT(*) as count FROM business_events
+      WHERE event_type = 'subscription_cancelled'
+        AND created_at > ?
+    `, [thirtyDaysAgo]);
+    
+    const churnRate = subscribers?.count > 0 
+      ? ((cancelledLast30Days?.count || 0) / subscribers.count) * 100 
+      : 0;
+    
+    // LTV (Lifetime Value) - estimation basée sur 6 mois
+    const ltv = 4.99 * 6;
+    
+    // Nouveaux abonnés (30 jours)
+    const newSubscribers = dbGet(`
+      SELECT COUNT(*) as count FROM business_events
+      WHERE event_type = 'subscription_created'
+        AND created_at > ?
+    `, [thirtyDaysAgo]);
+    
+    res.json({
+      mrr: mrr.toFixed(2),
+      subscribers: subscribers?.count || 0,
+      familyPacks: familyPacks?.count || 0,
+      churnRate: churnRate.toFixed(2),
+      ltv: ltv.toFixed(2),
+      newSubscribers: newSubscribers?.count || 0
+    });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur stats Stripe:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Événements récents
+app.get('/api/admin/stripe/events', verifyAdmin, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    
+    const events = dbAll(`
+      SELECT * FROM business_events
+      ORDER BY created_at DESC
+      LIMIT ?
+    `, [limit]);
+    
+    res.json(events || []);
+    
+  } catch (error) {
+    console.error('[Admin] Erreur événements:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Liste des abonnés
+app.get('/api/admin/stripe/subscribers', verifyAdmin, async (req, res) => {
+  try {
+    const subscribers = dbAll(`
+      SELECT id, username, email, account_type, video_credits, 
+             avatars_used, created_at
+      FROM users
+      WHERE account_type IN ('subscriber', 'family')
+      ORDER BY created_at DESC
+    `);
+    
+    res.json(subscribers || []);
+    
+  } catch (error) {
+    console.error('[Admin] Erreur abonnés:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Historique des paiements
+app.get('/api/admin/stripe/payments', verifyAdmin, async (req, res) => {
+  try {
+    const payments = dbAll(`
+      SELECT * FROM business_events
+      WHERE event_type LIKE '%payment%'
+         OR event_type LIKE '%subscription%'
+      ORDER BY created_at DESC
+      LIMIT 50
+    `);
+    
+    // Parser les données JSON
+    const formattedPayments = (payments || []).map(p => {
+      let parsedData = {};
+      try {
+        parsedData = JSON.parse(p.data || '{}');
+      } catch (e) {}
+      
+      return {
+        event_type: p.event_type,
+        amount: parsedData.amount || 0,
+        status: parsedData.status || 'unknown',
+        created_at: p.created_at
+      };
+    });
+    
+    res.json(formattedPayments);
+    
+  } catch (error) {
+    console.error('[Admin] Erreur paiements:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Liste des promotions
+app.get('/api/admin/stripe/promotions', verifyAdmin, async (req, res) => {
+  try {
+    const promotions = dbAll('SELECT * FROM promotions ORDER BY created_at DESC');
+    res.json(promotions || []);
+    
+  } catch (error) {
+    console.error('[Admin] Erreur promotions:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Créer une promotion
+app.post('/api/admin/stripe/promotions', verifyAdmin, async (req, res) => {
+  try {
+    const { 
+      name, type, trigger_event, 
+      bonus_avatars, bonus_video_credits, 
+      discount_percent, duration_days 
+    } = req.body;
+    
+    dbRun(`
+      INSERT INTO promotions (
+        name, type, trigger_event, 
+        bonus_avatars, bonus_video_credits, 
+        discount_percent, duration_days,
+        active, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+    `, [
+      name, type, trigger_event,
+      bonus_avatars || 0, bonus_video_credits || 0,
+      discount_percent || 0, duration_days || null,
+      Date.now()
+    ]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur création promotion:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Toggle promotion
+app.patch('/api/admin/stripe/promotions/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active } = req.body;
+    
+    dbRun('UPDATE promotions SET active = ? WHERE id = ?', [active ? 1 : 0, id]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur toggle promotion:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Liste des coupons Stripe
+app.get('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe non configuré' });
+    }
+    
+    const coupons = await stripe.coupons.list({ limit: 100 });
+    const promoCodes = await stripe.promotionCodes.list({ limit: 100 });
+    
+    // Combiner coupons et codes promo
+    const formatted = promoCodes.data.map(pc => {
+      const coupon = coupons.data.find(c => c.id === pc.coupon.id) || pc.coupon;
+      
+      return {
+        code: pc.code,
+        name: coupon?.name || 'Sans nom',
+        percent_off: coupon?.percent_off || null,
+        amount_off: coupon?.amount_off || null,
+        duration: coupon?.duration || 'once',
+        duration_in_months: coupon?.duration_in_months || null,
+        times_redeemed: pc.times_redeemed || 0,
+        max_redemptions: pc.max_redemptions || null,
+        valid: pc.active && coupon?.valid
+      };
+    });
+    
+    res.json(formatted);
+    
+  } catch (error) {
+    console.error('[Admin] Erreur coupons:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Créer un coupon Stripe
+app.post('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe non configuré' });
+    }
+    
+    const { 
+      code, name, discount_type, 
+      percent_off, amount_off, 
+      duration, duration_in_months, 
+      max_redemptions 
+    } = req.body;
+    
+    // Créer le coupon
+    const couponData = {
+      name: name,
+      duration: duration
+    };
+    
+    if (discount_type === 'percent') {
+      couponData.percent_off = parseInt(percent_off);
+    } else {
+      couponData.amount_off = Math.round(parseFloat(amount_off) * 100);
+      couponData.currency = 'eur';
+    }
+    
+    if (duration === 'repeating') {
+      couponData.duration_in_months = parseInt(duration_in_months);
+    }
+    
+    const coupon = await stripe.coupons.create(couponData);
+    
+    // Créer le code promo
+    const promoCodeData = {
+      coupon: coupon.id,
+      code: code.toUpperCase()
+    };
+    
+    if (max_redemptions) {
+      promoCodeData.max_redemptions = parseInt(max_redemptions);
+    }
+    
+    const promoCode = await stripe.promotionCodes.create(promoCodeData);
+    
+    res.json({ success: true, promoCode });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur création coupon:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Liste des récompenses
+app.get('/api/admin/stripe/rewards', verifyAdmin, async (req, res) => {
+  try {
+    const rewards = dbAll('SELECT * FROM rewards ORDER BY created_at DESC');
+    res.json(rewards || []);
+    
+  } catch (error) {
+    console.error('[Admin] Erreur récompenses:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Créer une récompense
+app.post('/api/admin/stripe/rewards', verifyAdmin, async (req, res) => {
+  try {
+    const { name, description, trigger_event, avatar_bonus, video_bonus } = req.body;
+    
+    dbRun(`
+      INSERT INTO rewards (
+        name, description, trigger_event, 
+        avatar_bonus, video_bonus, 
+        active, created_at
+      ) VALUES (?, ?, ?, ?, ?, 1, ?)
+    `, [
+      name, description || '', trigger_event,
+      parseInt(avatar_bonus) || 0, parseInt(video_bonus) || 0,
+      Date.now()
+    ]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur création récompense:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Toggle récompense
+app.patch('/api/admin/stripe/rewards/:id', verifyAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { active } = req.body;
+    
+    dbRun('UPDATE rewards SET active = ? WHERE id = ?', [active ? 1 : 0, id]);
+    
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur toggle récompense:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Test connexion Stripe
+app.get('/api/admin/stripe/test-connection', verifyAdmin, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.json({ success: false, message: 'Stripe non configuré' });
+    }
+    
+    // Tester en récupérant la balance
+    const balance = await stripe.balance.retrieve();
+    
+    res.json({ 
+      success: true, 
+      mode: process.env.STRIPE_SECRET_KEY?.includes('test') ? 'test' : 'live',
+      balance: balance.available
+    });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur test Stripe:', error);
+    res.json({ success: false, message: error.message });
+  }
+});
 
 // ============================================================================
 // STRIPE PAYMENT ROUTES
