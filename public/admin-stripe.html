@@ -668,6 +668,18 @@
           Utilisez cette fonction pour downgrader en FREE les comptes marqués Premium/Pack Famille mais sans abonnement Stripe.
         </p>
       </div>
+      
+      <div class="section">
+        <h3>🗑️ Nettoyage Avatars Orphelins</h3>
+        <p style="margin-bottom: 15px; color: rgba(255,255,255,0.7);">
+          Supprime tous les avatars qui n'ont pas de propriétaire (user_id = NULL).<br>
+          <small style="color: rgba(255,255,255,0.5);">Utile pour nettoyer les avatars créés avant inscription ou après suppression de comptes.</small>
+        </p>
+        <button onclick="cleanupOrphanAvatars()" class="btn btn-warning" style="width: 100%;">
+          🗑️ Purger les Avatars Orphelins
+        </button>
+        <div id="cleanup-avatars-result" style="margin-top: 15px; padding: 10px; border-radius: 4px; display: none;"></div>
+      </div>
     </div>
   </div>
   
@@ -1613,6 +1625,42 @@
       } catch (error) {
         console.error('Erreur cleanup:', error);
         showAlert('❌ Erreur lors du nettoyage', 'error');
+      }
+    }
+    
+    async function cleanupOrphanAvatars() {
+      const resultDiv = document.getElementById('cleanup-avatars-result');
+      
+      // Confirmation
+      if (!confirm('⚠️ ATTENTION ⚠️\n\nÊtes-vous sûr de vouloir supprimer TOUS les avatars orphelins ?\n\n• Supprime tous les avatars sans propriétaire (user_id = NULL)\n• Supprime les fichiers physiques du disque\n• Cette action est IRRÉVERSIBLE\n\nContinuer ?')) {
+        return;
+      }
+      
+      try {
+        showAlert('🗑️ Nettoyage des avatars en cours...', 'info');
+        
+        const result = await apiCall('/api/admin/cleanup-orphan-avatars', 'POST');
+        
+        if (result.success) {
+          resultDiv.style.display = 'block';
+          resultDiv.style.background = '#4caf50';
+          resultDiv.style.color = 'white';
+          resultDiv.innerHTML = `
+            ✅ ${result.message}<br>
+            <small>Avatars supprimés: ${result.count} | Fichiers supprimés: ${result.filesDeleted}</small>
+          `;
+          showAlert(`✅ ${result.message}`, 'success');
+        } else {
+          throw new Error(result.error || 'Erreur inconnue');
+        }
+        
+      } catch (error) {
+        console.error('Erreur cleanup avatars:', error);
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = '#f44336';
+        resultDiv.style.color = 'white';
+        resultDiv.innerHTML = `❌ Erreur: ${error.message}`;
+        showAlert('❌ Erreur lors du nettoyage des avatars', 'error');
       }
     }
     
