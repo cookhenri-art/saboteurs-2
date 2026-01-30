@@ -3945,7 +3945,7 @@ app.post('/api/family/activate', async (req, res) => {
     
     
     // 🆕 TRIGGER: Pack Famille activé
-    const ownerUser = db.prepare('SELECT id FROM users WHERE email = ?').get(familyPack.owner_email);
+    const ownerUser = dbGet('SELECT id FROM users WHERE email = ?', [familyPack.owner_email]);
     if (ownerUser) {
       await executeWorkflows('pack_family_activated', {
         user_id: ownerUser.id,
@@ -4538,19 +4538,19 @@ app.get('/api/notifications', async (req, res) => {
     const userId = decoded.id;
     
     // Récupérer les notifications non lues
-    const notifications = db.prepare(`
+    const notifications = dbAll(`
       SELECT * FROM user_notifications 
       WHERE user_id = ? AND read = 0
       ORDER BY created_at DESC
-    `).all(userId);
+    `, [userId]);
     
     // Marquer comme lues
     if (notifications.length > 0) {
-      db.prepare(`
+      dbRun(`
         UPDATE user_notifications 
         SET read = 1 
         WHERE user_id = ? AND read = 0
-      `).run(userId);
+      `, [userId]);
     }
     
     res.json(notifications);
@@ -5131,7 +5131,7 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     );
     
     // 🆕 TRIGGER: Avatar créé
-    const avatarCount = db.prepare('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?').get(user.id);
+    const avatarCount = dbGet('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?', [user.id]);
     await executeWorkflows('avatar_created', {
       user_id: user.id,
       avatar_count: avatarCount ? avatarCount.count : 1
@@ -6684,6 +6684,248 @@ app.post('/api/admin/cleanup-orphan-avatars', verifyAdmin, async (req, res) => {
   } catch (error) {
     console.error('[Admin] Erreur cleanup avatars:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ============================================================================
+// ACCOUNT ROUTES
+// ============================================================================
+
+// Middleware pour vérifier le token JWT
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token manquant' });
+  }
+  
+  const token = authHeader.substring(7);
+  
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.userId = decoded.userId;
+    next();
+  } catch (error) {
+    return res.status(401).json({ error: 'Token invalide' });
+  }
+}
+
+// GET /api/account/profile - Récupérer les données du profil
+app.get('/api/account/profile', verifyToken, (req, res) => {
+  try {
+    const user = dbGet(`
+      SELECT 
+        id,
+        username,
+        email,
+        account_type,
+        video_credits,
+        bonus_avatars,
+        avatars_used,
+        stripeCustomerId,
+        stripeSubscriptionId
+      FROM users 
+      WHERE id = ?
+    `, [req.userId]);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+    
+    // Si Pack Famille, récupérer le code
+    if (user.account_type === 'family') {
+      const familyPack = dbGet(`
+        SELECT code 
+        FROM family_packs 
+        WHERE owner_email = ? AND status = 'active'
+      `, [user.email]);
+      
+      user.family_code = familyPack?.code || null;
+    }
+    
+    // Masquer les infos sensibles
+    delete user.stripeCustomerId;
+    delete user.stripeSubscriptionId;
+    
+    res.json(user);
+    
+  } catch (error) {
+    console.error('[Account] Erreur récupération profil:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/account/update-profile - Mettre à jour le profil
+app.post('/api/account/update-profile', verifyToken, (req, res) => {
+  try {
+    const { username } = req.body;
+    
+    if (!username || username.length < 3 || username.length > 20) {
+      return res.status(400).json({ error: 'Nom d\'utilisateur invalide (3-20 caractères)' });
+    }
+    
+    // Vérifier que le username n'est pas déjà pris
+    const existing = dbGet('SELECT id FROM users WHERE username = ? AND id != ?', [username, req.userId]);
+    if (existing) {
+      return res.status(400).json({ error: 'Ce nom d\'utilisateur est déjà pris' });
+    }
+    
+    // Mettre à jour
+    dbRun('UPDATE users SET username = ? WHERE id = ?', [username, req.userId]);
+    
+    res.json({ success: true, message: 'Profil mis à jour' });
+    
+  } catch (error) {
+    console.error('[Account] Erreur mise à jour profil:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// POST /api/account/update-password - Changer le mot de passe
+app.post('/api/account/update-password', verifyToken, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Mots de passe requis' });
+    }
+    
+    if (newPassword.length < 8) {
+      return res.status(400).json({ error: 'Le nouveau mot de passe doit faire au moins 8 caractères' });
+    }
+    
+    // Récupérer l'utilisateur
+    const user = dbGet('SELECT password FROM users WHERE id = ?', [req.userId]);
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+    
+    // Vérifier le mot de passe actuel
+    const isValid = await bcrypt.compare(currentPassword, user.password);
+    if (!isValid) {
+      return res.status(400).json({ error: 'Mot de passe actuel incorrect' });
+    }
+    
+    // Hasher le nouveau mot de passe
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    // Mettre à jour
+    dbRun('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, req.userId]);
+    
+    res.json({ success: true, message: 'Mot de passe modifié' });
+    
+  } catch (error) {
+    console.error('[Account] Erreur changement mot de passe:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// GET /api/account/history - Récupérer l'historique des achats
+app.get('/api/account/history', verifyToken, (req, res) => {
+  try {
+    const user = dbGet('SELECT stripeCustomerId FROM users WHERE id = ?', [req.userId]);
+    
+    if (!user || !user.stripeCustomerId) {
+      return res.json({ purchases: [] });
+    }
+    
+    // Pour l'instant, retourner un tableau vide
+    // TODO: Implémenter avec stripe.charges.list() ou stripe.invoices.list()
+    res.json({ 
+      purchases: []
+    });
+    
+  } catch (error) {
+    console.error('[Account] Erreur récupération historique:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
+// GET /api/stripe/billing-portal - Rediriger vers le portail de gestion Stripe
+app.get('/api/stripe/billing-portal', verifyToken, async (req, res) => {
+  try {
+    const user = dbGet('SELECT stripeCustomerId FROM users WHERE id = ?', [req.userId]);
+    
+    if (!user || !user.stripeCustomerId) {
+      return res.redirect('/account.html?error=no-subscription');
+    }
+    
+    // Créer une session Stripe Billing Portal
+    // Note: Nécessite stripe SDK configuré
+    // const session = await stripe.billingPortal.sessions.create({
+    //   customer: user.stripeCustomerId,
+    //   return_url: `${APP_URL}/account.html`,
+    // });
+    // res.redirect(session.url);
+    
+    // Pour l'instant, rediriger vers Stripe dashboard
+    res.redirect(`https://dashboard.stripe.com/test/customers/${user.stripeCustomerId}`);
+    
+  } catch (error) {
+    console.error('[Stripe] Erreur billing portal:', error);
+    res.redirect('/account.html?error=stripe-error');
+  }
+});
+
+// GET /api/stripe/checkout - Créer une session de paiement
+app.get('/api/stripe/checkout', verifyToken, async (req, res) => {
+  try {
+    const { product } = req.query;
+    const user = dbGet('SELECT id, email FROM users WHERE id = ?', [req.userId]);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur introuvable' });
+    }
+    
+    let priceId;
+    let priceType;
+    
+    switch(product) {
+      case 'premium':
+        priceId = process.env.STRIPE_PRICE_PREMIUM;
+        priceType = 'subscription';
+        break;
+      case 'family':
+        priceId = process.env.STRIPE_PRICE_FAMILY;
+        priceType = 'family';
+        break;
+      case 'pack':
+        priceId = process.env.STRIPE_PRICE_PACK;
+        priceType = 'pack';
+        break;
+      default:
+        return res.status(400).json({ error: 'Produit invalide' });
+    }
+    
+    if (!priceId) {
+      return res.status(500).json({ error: 'Prix non configuré' });
+    }
+    
+    // Créer une session Checkout Stripe
+    // Note: Nécessite stripe SDK configuré
+    // const session = await stripe.checkout.sessions.create({
+    //   customer_email: user.email,
+    //   client_reference_id: user.id.toString(),
+    //   line_items: [{
+    //     price: priceId,
+    //     quantity: 1,
+    //   }],
+    //   mode: priceType === 'pack' ? 'payment' : 'subscription',
+    //   success_url: `${APP_URL}/account.html?success=true`,
+    //   cancel_url: `${APP_URL}/account.html?canceled=true`,
+    //   metadata: {
+    //     userId: user.id.toString(),
+    //     priceType: priceType
+    //   }
+    // });
+    // res.redirect(session.url);
+    
+    // Pour l'instant, rediriger vers la page de prix
+    res.redirect('/products.html');
+    
+  } catch (error) {
+    console.error('[Stripe] Erreur checkout:', error);
+    res.redirect('/account.html?error=stripe-error');
   }
 });
 
@@ -8286,7 +8528,7 @@ app.patch('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
     updates.push('updated_at = CURRENT_TIMESTAMP');
     values.push(id);
     
-    const stmt = authDb.prepare(`UPDATE workflows SET ${updates.join(', ')} WHERE id = ?`);
+    dbRun(`UPDATE workflows SET ${updates.join(', ')} WHERE id = ?`);
     stmt.run(...values);
     
     res.json({ success: true });
@@ -8330,7 +8572,7 @@ app.get('/api/admin/workflows/:id/executions', verifyAdmin, (req, res) => {
     const { id } = req.params;
     const limit = parseInt(req.query.limit) || 50;
     
-    const executions = authDb.prepare(`
+    const executions = dbAll(`
       SELECT * FROM workflow_executions
       WHERE workflow_id = ?
       ORDER BY executed_at DESC
@@ -8347,7 +8589,7 @@ app.get('/api/admin/workflows/:id/executions', verifyAdmin, (req, res) => {
 // Récupérer un workflow
 app.get('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
   try {
-    const workflow = authDb.prepare('SELECT * FROM workflows WHERE id = ?').get(req.params.id);
+    const workflow = dbGet('SELECT * FROM workflows WHERE id = ?', [req.params.id]);
     if (!workflow) {
       return res.status(404).json({ error: 'Workflow non trouvé' });
     }
@@ -8367,10 +8609,10 @@ app.get('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
  */
 async function executeWorkflows(triggerType, data) {
   try {
-    const workflows = authDb.prepare(`
+    const workflows = dbAll(`
       SELECT * FROM workflows 
       WHERE trigger_type = ? AND enabled = 1
-    `).all(triggerType);
+    `, [triggerType]);
     
     if (!workflows || workflows.length === 0) {
       return;
@@ -8390,7 +8632,7 @@ async function executeWorkflows(triggerType, data) {
         const conditionsMet = await evaluateConditions(conditions, data);
         
         // Logger l'exécution
-        const executionStmt = authDb.prepare(`
+        dbRun(`
           INSERT INTO workflow_executions 
           (workflow_id, trigger_data, status, conditions_met)
           VALUES (?, ?, ?, ?)
@@ -8494,7 +8736,7 @@ async function evaluateSingleCondition(condition, triggerData) {
   try {
     switch (type) {
       case 'customer_count': {
-        const result = authDb.prepare('SELECT COUNT(*) as count FROM users WHERE stripeCustomerId IS NOT NULL').get();
+        const result = dbGet('SELECT COUNT(*) as count FROM users WHERE stripeCustomerId IS NOT NULL', []);
         const count = result.count;
         return compareValues(count, operator, value);
       }
@@ -8502,7 +8744,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_avatars_created': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const result = authDb.prepare('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?').get(userId);
+        const result = dbGet('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?', [userId]);
         return compareValues(result.count, operator, value);
       }
       
@@ -8510,14 +8752,14 @@ async function evaluateSingleCondition(condition, triggerData) {
         const userId = triggerData.user_id;
         if (!userId) return false;
         // Assumer qu'il y a une table games ou parties_played
-        const result = authDb.prepare('SELECT COUNT(*) as count FROM games WHERE user_id = ?').get(userId);
+        const result = dbGet('SELECT COUNT(*) as count FROM games WHERE user_id = ?', [userId]);
         return compareValues(result.count || 0, operator, value);
       }
       
       case 'user_inactive_days': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const user = authDb.prepare('SELECT last_login FROM users WHERE id = ?').get(userId);
+        const user = dbGet('SELECT last_login FROM users WHERE id = ?', [userId]);
         if (!user || !user.last_login) return false;
         
         const daysSince = Math.floor((Date.now() - new Date(user.last_login).getTime()) / (1000 * 60 * 60 * 24));
@@ -8527,7 +8769,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_account_type': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const user = authDb.prepare('SELECT account_type FROM users WHERE id = ?').get(userId);
+        const user = dbGet('SELECT account_type FROM users WHERE id = ?', [userId]);
         if (!user) return false;
         return compareValues(user.account_type, operator, value);
       }
@@ -8537,7 +8779,7 @@ async function evaluateSingleCondition(condition, triggerData) {
         if (!userId) return false;
         // Calculer le total dépensé (invoices Stripe)
         // Pour simplifier, on suppose qu'on a un champ total_spent
-        const user = authDb.prepare('SELECT total_spent FROM users WHERE id = ?').get(userId);
+        const user = dbGet('SELECT total_spent FROM users WHERE id = ?', [userId]);
         const totalSpent = user?.total_spent || 0;
         return compareValues(totalSpent, operator, value);
       }
@@ -8545,7 +8787,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_signup_days_ago': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        const user = authDb.prepare('SELECT created_at FROM users WHERE id = ?').get(userId);
+        const user = dbGet('SELECT created_at FROM users WHERE id = ?', [userId]);
         if (!user) return false;
         
         const daysSince = Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24));
@@ -8553,7 +8795,7 @@ async function evaluateSingleCondition(condition, triggerData) {
       }
       
       case 'custom_sql': {
-        const result = authDb.prepare(condition.query).get();
+        const result = dbGet(condition.query, []);
         return result ? true : false;
       }
       
@@ -8620,11 +8862,11 @@ async function executeSingleAction(action, triggerData) {
       const userId = triggerData.user_id;
       const amount = params.amount || 5;
       
-      authDb.prepare(`
+      dbRun(`
         UPDATE users 
         SET bonus_avatars = COALESCE(bonus_avatars, 0) + ?
         WHERE id = ?
-      `).run(amount, userId);
+      `, [amount, userId]);
       
       return { userId, avatars_added: amount };
     }
@@ -8633,31 +8875,31 @@ async function executeSingleAction(action, triggerData) {
       const userId = triggerData.user_id;
       const amount = params.amount || 50;
       
-      authDb.prepare(`
+      dbRun(`
         UPDATE users 
         SET video_credits = CASE 
           WHEN video_credits < 999999 THEN video_credits + ?
           ELSE video_credits 
         END
         WHERE id = ?
-      `).run(amount, userId);
+      `, [amount, userId]);
       
       return { userId, credits_added: amount };
     }
     
     case 'double_avatars': {
       const userId = triggerData.user_id;
-      const user = authDb.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+      const user = dbGet('SELECT * FROM users WHERE id = ?', [userId]);
       
       if (user) {
         const limits = getUserLimits(user);
         const baseAvatars = limits.avatars === Infinity ? 30 : limits.avatars;
         
-        authDb.prepare(`
+        dbRun(`
           UPDATE users 
           SET bonus_avatars = COALESCE(bonus_avatars, 0) + ?
           WHERE id = ?
-        `).run(baseAvatars, userId);
+        `, [baseAvatars, userId]);
         
         return { userId, avatars_doubled: baseAvatars };
       }
@@ -8669,24 +8911,24 @@ async function executeSingleAction(action, triggerData) {
       const userId = triggerData.user_id;
       const newType = params.account_type || 'subscriber';
       
-      authDb.prepare(`
+      dbRun(`
         UPDATE users 
         SET account_type = ?
         WHERE id = ?
-      `).run(newType, userId);
+      `, [newType, userId]);
       
       return { userId, upgraded_to: newType };
     }
     
     case 'log_event': {
-      authDb.prepare(`
+      dbRun(`
         INSERT INTO business_events (event_type, data, created_at)
         VALUES (?, ?, ?)
-      `).run(
+      `, [
         params.event_type || 'workflow_action',
         JSON.stringify(triggerData),
         Date.now()
-      );
+      ]);
       
       return { event_logged: params.event_type };
     }
@@ -8704,16 +8946,16 @@ async function sendCommunications(communication, triggerData, workflow) {
   const userId = triggerData.user_id;
   if (!userId) return;
   
-  const user = authDb.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  const user = dbGet('SELECT * FROM users WHERE id = ?', [userId]);
   if (!user) return;
   
   // 1. Pop-up sur écran (stocké en DB pour affichage au prochain login)
   if (communication.popup && communication.popup_message) {
     try {
-      authDb.prepare(`
+      dbRun(`
         INSERT INTO user_notifications (user_id, type, message, created_at)
         VALUES (?, 'workflow', ?, ?)
-      `).run(userId, communication.popup_message, Date.now());
+      `, [userId, communication.popup_message, Date.now()]);
       
       console.log(`📢 [Workflows] Pop-up programmé pour user ${userId}`);
     } catch (error) {
@@ -8741,10 +8983,10 @@ async function sendCommunications(communication, triggerData, workflow) {
     try {
       // Stocker la publication en attente
       // Tu configureras les liens API plus tard
-      authDb.prepare(`
+      dbRun(`
         INSERT INTO social_posts (user_id, workflow_id, message, status, created_at)
         VALUES (?, ?, ?, 'pending', ?)
-      `).run(userId, workflow.id, communication.social_message, Date.now());
+      `, [userId, workflow.id, communication.social_message, Date.now()]);
       
       console.log(`📱 [Workflows] Publication sociale programmée`);
     } catch (error) {
@@ -8768,7 +9010,7 @@ app.post('/webhook-stripe', async (req, res) => {
   
   switch (event.type) {
     case 'invoice.payment_succeeded':
-      const userPayment = authDb.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
+      const userPayment = dbGet('SELECT id FROM users WHERE stripeCustomerId = ?', [event.data.object.customer]);
       if (userPayment) {
         await executeWorkflows('payment_succeeded', {
           user_id: userPayment.id,
@@ -8780,14 +9022,14 @@ app.post('/webhook-stripe', async (req, res) => {
       break;
       
     case 'customer.subscription.created':
-      const userSub = authDb.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
+      const userSub = dbGet('SELECT id FROM users WHERE stripeCustomerId = ?', [event.data.object.customer]);
       if (userSub) {
         
       // Vérifier si c'est une réactivation
-      const hadSubscriptionBefore = authDb.prepare(`
+      const hadSubscriptionBefore = dbGet(`
         SELECT COUNT(*) as count FROM business_events 
         WHERE event_type = 'subscription_canceled' AND data LIKE ?
-      `).get(`%${userSub.id}%`);
+      `, [`%${userSub.id}%`]);
       
       if (hadSubscriptionBefore && hadSubscriptionBefore.count > 0) {
         // 🆕 TRIGGER: Réactivation
@@ -8807,7 +9049,7 @@ app.post('/webhook-stripe', async (req, res) => {
       break;
       
     case 'customer.subscription.deleted':
-      const userCancel = authDb.prepare('SELECT id FROM users WHERE stripeCustomerId = ?').get(event.data.object.customer);
+      const userCancel = dbGet('SELECT id FROM users WHERE stripeCustomerId = ?', [event.data.object.customer]);
       if (userCancel) {
         await executeWorkflows('subscription_canceled', {
           user_id: userCancel.id,
