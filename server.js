@@ -3367,6 +3367,16 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             `, [startDay, getCurrentMonth(), session.customer, session.subscription, stripeUserId]);
             console.log(`[Stripe] User ${stripeUserId} upgradé en subscriber (reset jour ${startDay})`);
             
+            // 🆕 TRIGGER: Paiement réussi (abonnement)
+            await executeWorkflows('payment_succeeded', {
+              user_id: parseInt(stripeUserId),
+              payment_type: 'subscription',
+              amount: session.amount_total / 100,
+              customer_id: session.customer,
+              subscription_id: session.subscription,
+              session_id: session.id
+            });
+            
           } else if (priceType === 'family') {
             // V35: Pack Famille - générer code unique et créer l'entrée
             const familyCode = generateFamilyCode();
@@ -3382,6 +3392,18 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
             sendFamilyCodeEmail(ownerEmail, familyCode);
             
             console.log(`[Stripe] Pack Famille créé: ${familyCode} pour ${ownerEmail}`);
+            
+            // 🆕 TRIGGER: Paiement réussi (pack famille)
+            await executeWorkflows('payment_succeeded', {
+              user_id: null, // Pas encore de user_id car en attente d'activation
+              payment_type: 'family',
+              amount: session.amount_total / 100,
+              customer_id: session.customer,
+              customer_email: ownerEmail,
+              subscription_id: session.subscription,
+              family_code: familyCode,
+              session_id: session.id
+            });
             
           } else if (priceType === 'pack') {
             // Pack crédits 4.99€ : +50 vidéos + 50 avatars bonus
@@ -3400,6 +3422,15 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                 WHERE id = ?
               `, [session.customer, stripeUserId]);
               console.log(`[Stripe] User ${stripeUserId} upgradé en pack (50 vidéos + 50 avatars bonus)`);
+              
+              // 🆕 TRIGGER: Paiement réussi (pack)
+              await executeWorkflows('payment_succeeded', {
+                user_id: parseInt(stripeUserId),
+                payment_type: 'pack',
+                amount: session.amount_total / 100, // Convertir centimes en euros
+                customer_id: session.customer,
+                session_id: session.id
+              });
             } else {
               // Subscriber/family/admin/pack → juste ajouter le bonus
               dbRun(`
@@ -3410,6 +3441,16 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
                 WHERE id = ?
               `, [session.customer, stripeUserId]);
               console.log(`[Stripe] User ${stripeUserId} (${currentType}) a reçu +50 avatars bonus`);
+              
+              // 🆕 TRIGGER: Paiement réussi (pack bonus)
+              await executeWorkflows('payment_succeeded', {
+                user_id: parseInt(stripeUserId),
+                payment_type: 'pack',
+                amount: session.amount_total / 100, // Convertir centimes en euros
+                customer_id: session.customer,
+                session_id: session.id,
+                is_bonus: true // Pour différencier bonus vs nouveau pack
+              });
             }
           }
           
@@ -5131,7 +5172,7 @@ app.post("/api/avatars/generate", authenticateToken, (req, res, next) => {
     );
     
     // 🆕 TRIGGER: Avatar créé
-    const avatarCount = dbGet('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?', [user.id]);
+    const avatarCount = db.prepare('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?').get(user.id);
     await executeWorkflows('avatar_created', {
       user_id: user.id,
       avatar_count: avatarCount ? avatarCount.count : 1
@@ -8316,10 +8357,10 @@ app.get('/api/admin/workflows/:id', verifyAdmin, (req, res) => {
  */
 async function executeWorkflows(triggerType, data) {
   try {
-    const workflows = dbAll(`
+    const workflows = authDb.prepare(`
       SELECT * FROM workflows 
       WHERE trigger_type = ? AND enabled = 1
-    `, [triggerType]);
+    `).all(triggerType);
     
     if (!workflows || workflows.length === 0) {
       return;
