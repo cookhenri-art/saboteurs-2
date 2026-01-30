@@ -848,6 +848,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="workflow-notifications.css">
 </head>
 <body>
   <div class="particles" id="particles"></div>
@@ -1938,6 +1939,7 @@
         const data = await res.json();
         if (data.success) {
           localStorage.setItem('saboteur_token', data.token);
+          setTimeout(checkWorkflowNotifications, 1000); // Vérifier notifications workflows
           localStorage.setItem('saboteur_user', JSON.stringify(data.user));
           currentUser = data.user;
           showLoggedInState();
@@ -1974,6 +1976,7 @@
         const data = await res.json();
         if (data.success) {
           localStorage.setItem('saboteur_token', data.token);
+          setTimeout(checkWorkflowNotifications, 1000); // Vérifier notifications workflows
           localStorage.setItem('saboteur_user', JSON.stringify(data.user));
           currentUser = data.user;
           showLoggedInState();
@@ -2648,5 +2651,6 @@
       setTimeout(initMatchmakingIfReady, 1500);
     });
   </script>
+  <script src="workflow-notifications.js"></script>
 </body>
 </html>

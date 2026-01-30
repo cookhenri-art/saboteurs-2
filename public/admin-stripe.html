@@ -461,6 +461,7 @@
       <button class="tab-btn" onclick="switchTab('payments')">💰 Paiements</button>
       <button class="tab-btn" onclick="switchTab('promotions')">🎁 Promotions</button>
       <button class="tab-btn" onclick="switchTab('coupons')">💎 Codes Promo</button>
+      <button class="tab-btn" onclick="switchTab('workflows')">⚡ Workflows</button>
       <button class="tab-btn" onclick="switchTab('rewards')">🏆 Récompenses</button>
       <button class="tab-btn" onclick="switchTab('config')">⚙️ Configuration</button>
     </div>
@@ -1675,5 +1676,702 @@
     // Charger le dashboard au démarrage
     loadDashboard();
   </script>
+
+<!-- ONGLET WORKFLOWS -->
+<div class="tab-content" id="tab-workflows">
+  <div class="section-header">
+    <h1>⚡ Workflows Automatisés</h1>
+    <button class="btn-create" onclick="openCreateWorkflowModal()">+ Créer Workflow</button>
+  </div>
+
+  <!-- Liste des workflows -->
+  <table id="workflowsTable">
+    <thead>
+      <tr>
+        <th>Nom</th>
+        <th>Trigger</th>
+        <th>Conditions</th>
+        <th>Actions</th>
+        <th>Communication</th>
+        <th>Exécutions</th>
+        <th>Statut</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="workflowsList"></tbody>
+  </table>
+</div>
+
+<!-- Modal création/édition workflow -->
+<div class="modal" id="modal-create-workflow">
+  <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+    <button class="close-btn" onclick="closeWorkflowModal()">×</button>
+    <h2 id="workflow-modal-title">⚡ Créer un Workflow</h2>
+
+    <form id="form-workflow" onsubmit="saveWorkflow(event)">
+      <input type="hidden" id="workflow-id" name="workflow_id" />
+      
+      <!-- Informations générales -->
+      <div class="form-section">
+        <h3>📋 Informations</h3>
+        
+        <label>Nom du Workflow *</label>
+        <input type="text" id="workflow-name" name="name" required placeholder="Ex: 500 Premiers Clients - Bonus" />
+        
+        <label>Description</label>
+        <textarea id="workflow-description" name="description" rows="2" placeholder="Explique ce que fait ce workflow..."></textarea>
+      </div>
+
+      <!-- Trigger (Déclencheur) -->
+      <div class="form-section">
+        <h3>🔔 Déclencheur (Trigger)</h3>
+        
+        <label>Événement déclencheur *</label>
+        <select id="workflow-trigger" name="trigger_type" required>
+          <option value="">-- Sélectionne un événement --</option>
+          <option value="payment_succeeded">💰 Paiement Réussi</option>
+          <option value="subscription_created">📝 Abonnement Créé</option>
+          <option value="subscription_canceled">❌ Abonnement Annulé</option>
+          <option value="pack_family_activated">👨‍👩‍👧‍👦 Pack Famille Activé</option>
+          <option value="avatar_created">🎨 Avatar Créé</option>
+          <option value="game_played">🎮 Partie Jouée</option>
+          <option value="email_verified">✅ Email Vérifié</option>
+          <option value="user_reactivation">🔄 Réactivation</option>
+        </select>
+      </div>
+
+      <!-- Conditions -->
+      <div class="form-section">
+        <h3>✅ Conditions</h3>
+        <p class="help-text">Le workflow s'exécute SEULEMENT si toutes les conditions sont remplies</p>
+        
+        <div id="conditions-container"></div>
+        <button type="button" onclick="addCondition()" class="btn-secondary">+ Ajouter Condition</button>
+      </div>
+
+      <!-- Actions -->
+      <div class="form-section">
+        <h3>⚙️ Actions</h3>
+        <p class="help-text">Actions sur les crédits/avatars uniquement</p>
+        
+        <div id="actions-container"></div>
+        <button type="button" onclick="addAction()" class="btn-secondary">+ Ajouter Action</button>
+      </div>
+
+      <!-- Communication -->
+      <div class="form-section">
+        <h3>📢 Communication</h3>
+        <p class="help-text">Comment informer l'utilisateur ?</p>
+        
+        <div class="comm-option">
+          <label class="checkbox-container">
+            <input type="checkbox" id="comm-popup" name="comm_popup" onchange="toggleCommField('popup')">
+            <span>📱 Pop-up sur écran</span>
+          </label>
+          <div id="comm-popup-fields" style="display: none; margin-left: 30px; margin-top: 10px;">
+            <label>Message du pop-up</label>
+            <textarea id="comm-popup-message" rows="2" placeholder="🎉 Félicitations ! Tu as reçu un bonus !"></textarea>
+          </div>
+        </div>
+
+        <div class="comm-option">
+          <label class="checkbox-container">
+            <input type="checkbox" id="comm-email" name="comm_email" onchange="toggleCommField('email')">
+            <span>📧 Email automatique</span>
+          </label>
+          <div id="comm-email-fields" style="display: none; margin-left: 30px; margin-top: 10px;">
+            <label>Sujet de l'email</label>
+            <input type="text" id="comm-email-subject" placeholder="🎁 Tu as reçu un bonus !">
+            <label>Corps de l'email (HTML supporté)</label>
+            <textarea id="comm-email-body" rows="4" placeholder="<h1>Félicitations !</h1><p>Tu viens de recevoir un bonus...</p>"></textarea>
+          </div>
+        </div>
+
+        <div class="comm-option">
+          <label class="checkbox-container">
+            <input type="checkbox" id="comm-social" name="comm_social" onchange="toggleCommField('social')">
+            <span>📱 Publication Facebook/Instagram</span>
+          </label>
+          <div id="comm-social-fields" style="display: none; margin-left: 30px; margin-top: 10px;">
+            <label>Message de la publication</label>
+            <textarea id="comm-social-message" rows="3" placeholder="🎉 Un nouveau membre vient de nous rejoindre !"></textarea>
+            <p class="help-text"><small>Les liens API seront configurés plus tard</small></p>
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" id="btn-save-workflow">✅ Créer Workflow</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal historique -->
+<div class="modal" id="modal-workflow-history">
+  <div class="modal-content" style="max-width: 900px;">
+    <button class="close-btn" onclick="closeModal('modal-workflow-history')">×</button>
+    <h2>📊 Historique d'Exécution</h2>
+    
+    <div id="workflow-history-content"></div>
+  </div>
+</div>
+
+<style>
+/* Styles Workflows */
+.form-section {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.form-section h3 {
+  color: #00d4ff;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.help-text {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.condition-item, .action-item {
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #f44336;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.comm-option {
+  margin-bottom: 20px;
+}
+
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkbox-container input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.execution-item {
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border-left: 4px solid #4caf50;
+}
+
+.execution-item.failed {
+  border-left-color: #f44336;
+}
+
+.execution-item.skipped {
+  border-left-color: #ff9800;
+}
+</style>
+
+<script>
+// ========================================
+// GESTION DES WORKFLOWS
+// ========================================
+
+let currentConditionIndex = 0;
+let currentActionIndex = 0;
+let currentEditingWorkflowId = null;
+
+// Charger les workflows
+async function loadWorkflows() {
+  try {
+    const response = await fetch('/api/admin/workflows');
+    const workflows = await response.json();
+    
+    const tbody = document.getElementById('workflowsList');
+    if (!workflows || workflows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #666;">Aucun workflow créé</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = workflows.map(w => {
+      const conditions = JSON.parse(w.conditions || '[]');
+      const actions = JSON.parse(w.actions || '[]');
+      const communication = JSON.parse(w.communication || '{}');
+      
+      const commIcons = [];
+      if (communication.popup) commIcons.push('📱');
+      if (communication.email) commIcons.push('📧');
+      if (communication.social) commIcons.push('📱');
+      
+      return `
+        <tr>
+          <td><strong>${w.name}</strong><br><small style="color: #666;">${w.description || ''}</small></td>
+          <td><span class="badge">${getTriggerName(w.trigger_type)}</span></td>
+          <td>${conditions.length || 'Aucune'}</td>
+          <td>${actions.length}</td>
+          <td>${commIcons.join(' ') || '-'}</td>
+          <td>
+            ${w.execution_count || 0} fois
+            ${w.last_executed_at ? `<br><small>${formatDate(w.last_executed_at)}</small>` : ''}
+          </td>
+          <td>
+            <span class="badge ${w.enabled ? 'active' : 'inactive'}">
+              ${w.enabled ? 'Actif' : 'Inactif'}
+            </span>
+          </td>
+          <td>
+            <button onclick="viewWorkflowHistory(${w.id})" title="Historique">📊</button>
+            <button onclick="toggleWorkflow(${w.id})" title="Toggle">
+              ${w.enabled ? '🔒' : '🔓'}
+            </button>
+            <button onclick="editWorkflow(${w.id})" title="Modifier">✏️</button>
+            <button onclick="deleteWorkflow(${w.id})" title="Supprimer">🗑️</button>
+          </td>
+        </tr>
+      `;
+    }).join('');
+    
+  } catch (error) {
+    console.error('Erreur chargement workflows:', error);
+    showAlert('❌ Erreur chargement workflows', 'error');
+  }
+}
+
+// Créer/Modifier workflow
+async function saveWorkflow(e) {
+  e.preventDefault();
+  
+  const form = e.target;
+  const formData = new FormData(form);
+  const workflowId = formData.get('workflow_id');
+  
+  // Construire les conditions
+  const conditions = [];
+  for (let i = 0; i < currentConditionIndex; i++) {
+    const condDiv = document.getElementById(`condition-${i}`);
+    if (!condDiv) continue;
+    
+    const type = condDiv.querySelector('[name^="condition_type"]').value;
+    const operator = condDiv.querySelector('[name^="condition_operator"]')?.value;
+    const value = condDiv.querySelector('[name^="condition_value"]')?.value;
+    
+    conditions.push({ type, operator, value });
+  }
+  
+  // Construire les actions
+  const actions = [];
+  for (let i = 0; i < currentActionIndex; i++) {
+    const actDiv = document.getElementById(`action-${i}`);
+    if (!actDiv) continue;
+    
+    const type = actDiv.querySelector('[name^="action_type"]').value;
+    const params = {};
+    
+    if (type === 'add_bonus_avatars' || type === 'add_video_credits') {
+      params.amount = parseInt(actDiv.querySelector('[name^="action_amount"]').value);
+    } else if (type === 'upgrade_account') {
+      params.account_type = actDiv.querySelector('[name^="action_account_type"]').value;
+    } else if (type === 'log_event') {
+      params.event_type = actDiv.querySelector('[name^="action_event_type"]').value;
+    }
+    
+    actions.push({ type, params });
+  }
+  
+  // Construire la communication
+  const communication = {
+    popup: document.getElementById('comm-popup').checked,
+    popup_message: document.getElementById('comm-popup-message').value,
+    email: document.getElementById('comm-email').checked,
+    email_subject: document.getElementById('comm-email-subject').value,
+    email_body: document.getElementById('comm-email-body').value,
+    social: document.getElementById('comm-social').checked,
+    social_message: document.getElementById('comm-social-message').value
+  };
+  
+  const data = {
+    name: formData.get('name'),
+    description: formData.get('description'),
+    trigger_type: formData.get('trigger_type'),
+    conditions,
+    actions,
+    communication,
+    enabled: true
+  };
+  
+  try {
+    let response;
+    if (workflowId) {
+      // Modification
+      response = await fetch(`/api/admin/workflows/${workflowId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } else {
+      // Création
+      response = await fetch('/api/admin/workflows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    }
+    
+    if (!response.ok) throw new Error('Erreur sauvegarde');
+    
+    showAlert(workflowId ? '✅ Workflow modifié !' : '✅ Workflow créé !', 'success');
+    closeWorkflowModal();
+    loadWorkflows();
+    
+  } catch (error) {
+    showAlert('❌ Erreur sauvegarde workflow', 'error');
+  }
+}
+
+// Modifier un workflow
+async function editWorkflow(id) {
+  try {
+    const response = await fetch(`/api/admin/workflows/${id}`);
+    const workflow = await response.json();
+    
+    currentEditingWorkflowId = id;
+    document.getElementById('workflow-modal-title').textContent = '✏️ Modifier le Workflow';
+    document.getElementById('btn-save-workflow').textContent = '✅ Enregistrer';
+    
+    // Remplir le formulaire
+    document.getElementById('workflow-id').value = id;
+    document.getElementById('workflow-name').value = workflow.name;
+    document.getElementById('workflow-description').value = workflow.description || '';
+    document.getElementById('workflow-trigger').value = workflow.trigger_type;
+    
+    // Charger les conditions
+    const conditions = JSON.parse(workflow.conditions || '[]');
+    currentConditionIndex = 0;
+    document.getElementById('conditions-container').innerHTML = '';
+    conditions.forEach(cond => {
+      addCondition();
+      const condDiv = document.getElementById(`condition-${currentConditionIndex - 1}`);
+      condDiv.querySelector('[name^="condition_type"]').value = cond.type;
+      condDiv.querySelector('[name^="condition_operator"]').value = cond.operator;
+      condDiv.querySelector('[name^="condition_value"]').value = cond.value;
+    });
+    
+    // Charger les actions
+    const actions = JSON.parse(workflow.actions || '[]');
+    currentActionIndex = 0;
+    document.getElementById('actions-container').innerHTML = '';
+    actions.forEach(act => {
+      addAction();
+      const actDiv = document.getElementById(`action-${currentActionIndex - 1}`);
+      actDiv.querySelector('[name^="action_type"]').value = act.type;
+      updateActionFields(currentActionIndex - 1, act.type);
+      
+      if (act.params.amount) {
+        actDiv.querySelector('[name^="action_amount"]').value = act.params.amount;
+      } else if (act.params.account_type) {
+        actDiv.querySelector('[name^="action_account_type"]').value = act.params.account_type;
+      } else if (act.params.event_type) {
+        actDiv.querySelector('[name^="action_event_type"]').value = act.params.event_type;
+      }
+    });
+    
+    // Charger la communication
+    const communication = JSON.parse(workflow.communication || '{}');
+    document.getElementById('comm-popup').checked = communication.popup || false;
+    document.getElementById('comm-popup-message').value = communication.popup_message || '';
+    toggleCommField('popup');
+    
+    document.getElementById('comm-email').checked = communication.email || false;
+    document.getElementById('comm-email-subject').value = communication.email_subject || '';
+    document.getElementById('comm-email-body').value = communication.email_body || '';
+    toggleCommField('email');
+    
+    document.getElementById('comm-social').checked = communication.social || false;
+    document.getElementById('comm-social-message').value = communication.social_message || '';
+    toggleCommField('social');
+    
+    openCreateWorkflowModal();
+    
+  } catch (error) {
+    showAlert('❌ Erreur chargement workflow', 'error');
+  }
+}
+
+// Ajouter une condition
+function addCondition() {
+  const container = document.getElementById('conditions-container');
+  const index = currentConditionIndex++;
+  
+  const div = document.createElement('div');
+  div.className = 'condition-item';
+  div.id = `condition-${index}`;
+  div.innerHTML = `
+    <button type="button" class="remove-btn" onclick="removeCondition(${index})">×</button>
+    
+    <label>Type de condition</label>
+    <select name="condition_type_${index}">
+      <option value="customer_count">Nombre de clients payants</option>
+      <option value="user_avatars_created">Avatars créés par l'user</option>
+      <option value="user_games_played">Parties jouées par l'user</option>
+      <option value="user_inactive_days">Jours d'inactivité</option>
+      <option value="user_account_type">Type de compte</option>
+      <option value="user_total_spent">Montant total dépensé</option>
+      <option value="user_signup_days_ago">Jours depuis inscription</option>
+    </select>
+    
+    <div style="display: flex; gap: 10px; margin-top: 10px;">
+      <div style="flex: 1;">
+        <label>Opérateur</label>
+        <select name="condition_operator_${index}">
+          <option value="<">< (moins que)</option>
+          <option value="<="><= (moins ou égal)</option>
+          <option value="=">=  (égal)</option>
+          <option value=">=">>= (plus ou égal)</option>
+          <option value=">">> (plus que)</option>
+          <option value="!=">!= (différent)</option>
+        </select>
+      </div>
+      <div style="flex: 1;">
+        <label>Valeur</label>
+        <input type="text" name="condition_value_${index}" required />
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(div);
+}
+
+// Supprimer une condition
+function removeCondition(index) {
+  document.getElementById(`condition-${index}`)?.remove();
+}
+
+// Ajouter une action
+function addAction() {
+  const container = document.getElementById('actions-container');
+  const index = currentActionIndex++;
+  
+  const div = document.createElement('div');
+  div.className = 'action-item';
+  div.id = `action-${index}`;
+  div.innerHTML = `
+    <button type="button" class="remove-btn" onclick="removeAction(${index})">×</button>
+    
+    <label>Type d'action</label>
+    <select name="action_type_${index}" onchange="updateActionFields(${index}, this.value)">
+      <option value="add_bonus_avatars">🎨 Ajouter Avatars Bonus</option>
+      <option value="add_video_credits">📹 Ajouter Crédits Vidéo</option>
+      <option value="double_avatars">✨ Doubler les Avatars</option>
+      <option value="upgrade_account">⬆️ Upgrade Compte</option>
+      <option value="log_event">📝 Logger Événement</option>
+    </select>
+    
+    <div id="action-fields-${index}"></div>
+  `;
+  
+  container.appendChild(div);
+  updateActionFields(index, 'add_bonus_avatars');
+}
+
+// Mettre à jour les champs d'une action
+function updateActionFields(index, type) {
+  const fieldsDiv = document.getElementById(`action-fields-${index}`);
+  
+  let html = '';
+  
+  switch(type) {
+    case 'add_bonus_avatars':
+      html = `
+        <label style="margin-top: 10px;">Nombre d'avatars à ajouter</label>
+        <input type="number" name="action_amount_${index}" value="5" min="1" required />
+      `;
+      break;
+      
+    case 'add_video_credits':
+      html = `
+        <label style="margin-top: 10px;">Nombre de crédits vidéo à ajouter</label>
+        <input type="number" name="action_amount_${index}" value="50" min="1" required />
+      `;
+      break;
+      
+    case 'double_avatars':
+      html = `<p class="help-text" style="margin-top: 10px;">Double les avatars de base de l'utilisateur</p>`;
+      break;
+      
+    case 'upgrade_account':
+      html = `
+        <label style="margin-top: 10px;">Nouveau type de compte</label>
+        <select name="action_account_type_${index}">
+          <option value="subscriber">Premium (subscriber)</option>
+          <option value="pack">Pack 50+50</option>
+          <option value="family">Pack Famille</option>
+        </select>
+      `;
+      break;
+      
+    case 'log_event':
+      html = `
+        <label style="margin-top: 10px;">Type d'événement</label>
+        <input type="text" name="action_event_type_${index}" placeholder="workflow_bonus" required />
+      `;
+      break;
+  }
+  
+  fieldsDiv.innerHTML = html;
+}
+
+// Supprimer une action
+function removeAction(index) {
+  document.getElementById(`action-${index}`)?.remove();
+}
+
+// Toggle champs communication
+function toggleCommField(type) {
+  const checkbox = document.getElementById(`comm-${type}`);
+  const fields = document.getElementById(`comm-${type}-fields`);
+  fields.style.display = checkbox.checked ? 'block' : 'none';
+}
+
+// Toggle workflow
+async function toggleWorkflow(id) {
+  try {
+    await fetch(`/api/admin/workflows/${id}/toggle`, { method: 'PATCH' });
+    loadWorkflows();
+  } catch (error) {
+    console.error('Erreur toggle:', error);
+  }
+}
+
+// Supprimer workflow
+async function deleteWorkflow(id) {
+  if (!confirm('Supprimer ce workflow ?')) return;
+  
+  try {
+    await fetch(`/api/admin/workflows/${id}`, { method: 'DELETE' });
+    showAlert('✅ Workflow supprimé', 'success');
+    loadWorkflows();
+  } catch (error) {
+    showAlert('❌ Erreur suppression', 'error');
+  }
+}
+
+// Voir l'historique
+async function viewWorkflowHistory(id) {
+  try {
+    const response = await fetch(`/api/admin/workflows/${id}/executions?limit=20`);
+    const executions = await response.json();
+    
+    const content = document.getElementById('workflow-history-content');
+    
+    if (executions.length === 0) {
+      content.innerHTML = '<p>Aucune exécution enregistrée.</p>';
+    } else {
+      content.innerHTML = executions.map(e => `
+        <div class="execution-item ${e.status}">
+          <div class="date" style="color: #666; font-size: 12px;">${formatDate(e.executed_at)}</div>
+          <div style="font-weight: bold; margin: 5px 0;">
+            ${e.status === 'success' ? '✅ Réussi' : e.status === 'failed' ? '❌ Échoué' : '⏭️ Ignoré'}
+          </div>
+          ${e.conditions_met ? '<div>✅ Conditions remplies</div>' : '<div>⏭️ Conditions non remplies</div>'}
+          ${e.error_message ? `<div style="color: red;">Erreur: ${e.error_message}</div>` : ''}
+          <details>
+            <summary>Détails</summary>
+            <pre>${JSON.stringify(JSON.parse(e.trigger_data || '{}'), null, 2)}</pre>
+          </details>
+        </div>
+      `).join('');
+    }
+    
+    openModal('modal-workflow-history');
+    
+  } catch (error) {
+    console.error('Erreur historique:', error);
+    showAlert('❌ Erreur chargement historique', 'error');
+  }
+}
+
+// Helpers
+function getTriggerName(code) {
+  const triggers = {
+    'payment_succeeded': '💰 Paiement Réussi',
+    'subscription_created': '📝 Abonnement Créé',
+    'subscription_canceled': '❌ Abonnement Annulé',
+    'pack_family_activated': '👨‍👩‍👧‍👦 Pack Famille Activé',
+    'avatar_created': '🎨 Avatar Créé',
+    'game_played': '🎮 Partie Jouée',
+    'email_verified': '✅ Email Vérifié',
+    'user_reactivation': '🔄 Réactivation'
+  };
+  return triggers[code] || code;
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Jamais';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('fr-FR') + ' ' + date.toLocaleTimeString('fr-FR');
+}
+
+function openCreateWorkflowModal() {
+  // Reset form
+  document.getElementById('form-workflow').reset();
+  document.getElementById('workflow-id').value = '';
+  document.getElementById('workflow-modal-title').textContent = '⚡ Créer un Workflow';
+  document.getElementById('btn-save-workflow').textContent = '✅ Créer Workflow';
+  currentConditionIndex = 0;
+  currentActionIndex = 0;
+  document.getElementById('conditions-container').innerHTML = '';
+  document.getElementById('actions-container').innerHTML = '';
+  document.getElementById('comm-popup-fields').style.display = 'none';
+  document.getElementById('comm-email-fields').style.display = 'none';
+  document.getElementById('comm-social-fields').style.display = 'none';
+  
+  openModal('modal-create-workflow');
+}
+
+function closeWorkflowModal() {
+  closeModal('modal-create-workflow');
+  currentEditingWorkflowId = null;
+}
+
+// Charger au démarrage
+if (typeof loadWorkflows === 'function') {
+  document.addEventListener('DOMContentLoaded', loadWorkflows);
+}
+</script>
+
+
 </body>
 </html>
