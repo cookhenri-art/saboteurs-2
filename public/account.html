@@ -573,7 +573,7 @@
     
     async function init() {
       // Vérifier si l'utilisateur est connecté
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('saboteur_token');
       if (!token) {
         window.location.href = '/login.html';
         return;
@@ -587,13 +587,13 @@
       try {
         const response = await fetch('/api/account/profile', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('saboteur_token')}`
           }
         });
         
         if (!response.ok) {
           if (response.status === 401) {
-            localStorage.removeItem('authToken');
+            localStorage.removeItem('saboteur_token'); localStorage.removeItem('saboteur_user');
             window.location.href = '/login.html';
             return;
           }
@@ -706,7 +706,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('saboteur_token')}`
           },
           body: JSON.stringify({ username })
         });
@@ -741,7 +741,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('saboteur_token')}`
           },
           body: JSON.stringify({ currentPassword, newPassword })
         });
@@ -809,7 +809,7 @@
       try {
         const response = await fetch('/api/account/history', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+            'Authorization': `Bearer ${localStorage.getItem('saboteur_token')}`
           }
         });
         
