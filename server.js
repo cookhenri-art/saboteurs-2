@@ -4253,13 +4253,12 @@ app.post("/api/auth/login", async (req, res) => {
         }
       }
     }
-    }
 
     dbRun("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [user.id]);
 
     const token = jwt.sign({ id: user.id, email: user.email, username: user.username, accountType: user.account_type }, JWT_SECRET, { expiresIn: "30d" });
 
-    const limits = getUserLimits(user);
+    const limitsUpdated = getUserLimits(user);
     const bonusAvatars = user.bonus_avatars || 0;
 
     res.json({
@@ -4273,10 +4272,10 @@ app.post("/api/auth/login", async (req, res) => {
         currentAvatar: user.current_avatar
       },
       limits: {
-        videoCredits: limits.videoCredits,
-        avatars: limits.avatars,
-        avatarsTotal: limits.avatars + bonusAvatars,
-        themes: limits.themes
+        videoCredits: limitsUpdated.videoCredits,
+        avatars: limitsUpdated.avatars,
+        avatarsTotal: limitsUpdated.avatars + bonusAvatars,
+        themes: limitsUpdated.themes
       }
     });
   } catch (error) {
