@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RORONOA GAMES - Créateur de Jeux Vidéoludiques</title>
+  <link rel="stylesheet" href="roronoa-games.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <h1 class="logo">RORONOA <span class="logo-accent">GAMES</span></h1>
+        <div class="logo-subtitle">三刀流 • Santōryū Style</div>
+      </div>
+      <div class="nav-links">
+        <a href="#accueil">Accueil</a>
+        <a href="#a-propos">À Propos</a>
+        <a href="products.html">Produits</a>
+        <a href="#contact">Contact</a>
+        <button class="btn-login" onclick="openLoginModal()">Se Connecter</button>
+      </div>
+      <div class="nav-mobile-toggle" onclick="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="accueil" class="hero">
+    <div class="hero-bg-elements">
+      <div class="slash-element slash-1"></div>
+      <div class="slash-element slash-2"></div>
+      <div class="slash-element slash-3"></div>
+    </div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="hero-badge">Studio de Création Vidéoludique</div>
+        <h1 class="hero-title">
+          L'Art du Combat<br>
+          Rencontre le Jeu
+        </h1>
+        <p class="hero-description">
+          Créateur d'expériences vidéoludiques uniques • Applications Web & Mobile • Jeux de Société Nouvelle Génération
+        </p>
+        <div class="hero-buttons">
+          <a href="products.html" class="btn btn-primary">Découvrir nos Jeux</a>
+          <a href="/index.html" class="btn btn-secondary">Jouer Maintenant</a>
+        </div>
+        <div class="hero-stats">
+          <div class="stat">
+            <div class="stat-number">1</div>
+            <div class="stat-label">Jeu Phare</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">4</div>
+            <div class="stat-label">Univers</div>
+          </div>
+          <div class="stat">
+            <div class="stat-number">∞</div>
+            <div class="stat-label">Possibilités</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- À Propos -->
+  <section id="a-propos" class="about">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Notre Mission</div>
+        <h2 class="section-title">Créateur de Contenu Vidéoludique</h2>
+      </div>
+      
+      <div class="about-grid">
+        <div class="about-card">
+          <div class="card-icon">🎮</div>
+          <h3>Applications Web & Mobile</h3>
+          <p>Des expériences de jeu accessibles partout, sur tous vos appareils. Technologies modernes pour une fluidité optimale.</p>
+        </div>
+        
+        <div class="about-card">
+          <div class="card-icon">🎲</div>
+          <h3>Jeux de Société Digitaux</h3>
+          <p>L'esprit convivial des jeux de société combiné à la puissance du digital. Jouez avec vos amis où que vous soyez.</p>
+        </div>
+        
+        <div class="about-card">
+          <div class="card-icon">⚔️</div>
+          <h3>Univers Immersifs</h3>
+          <p>Des thèmes riches inspirés de vos univers préférés : spatial, fantastique, médiéval. Chaque partie est unique.</p>
+        </div>
+      </div>
+
+      <div class="about-philosophy">
+        <div class="philosophy-text">
+          <h3>Notre Philosophie</h3>
+          <p>
+            Comme un guerrier qui perfectionne son art à travers trois sabres, nous créons des expériences à travers trois piliers : 
+            <strong>Innovation</strong>, <strong>Qualité</strong>, et <strong>Communauté</strong>.
+          </p>
+          <p>
+            Chaque jeu est conçu pour rassembler, divertir et créer des moments inoubliables. 
+            Notre ambition : devenir le studio de référence pour les jeux sociaux nouvelle génération.
+          </p>
+        </div>
+        <div class="philosophy-visual">
+          <div class="three-swords">
+            <div class="sword"></div>
+            <div class="sword"></div>
+            <div class="sword"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Produit Phare -->
+  <section class="featured-game">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Jeu Phare</div>
+        <h2 class="section-title">Saboteurs : Le Jeu Social Ultime</h2>
+      </div>
+      
+      <div class="game-showcase">
+        <div class="game-info">
+          <h3>4 Univers • Stratégie & Déduction</h3>
+          <p class="game-description">
+            Infiltrez-vous dans une équipe, déjouez les saboteurs, et menez votre camp à la victoire. 
+            Un jeu de rôle social addictif qui combine stratégie, bluff et déduction.
+          </p>
+          
+          <div class="game-features">
+            <div class="feature">
+              <span class="feature-icon">🌌</span>
+              <span>Univers Spatial</span>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">🐺</span>
+              <span>Village Loups-Garous</span>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">🧙</span>
+              <span>Académie de Magie</span>
+            </div>
+            <div class="feature">
+              <span class="feature-icon">⚔️</span>
+              <span>Royaumes Mythiques</span>
+            </div>
+          </div>
+          
+          <div class="game-buttons">
+            <a href="products.html" class="btn btn-primary">En Savoir Plus</a>
+            <a href="/index.html" class="btn btn-outline">Jouer Gratuitement</a>
+          </div>
+        </div>
+        
+        <div class="game-visual">
+          <div class="game-card">
+            <div class="card-glow"></div>
+            <div class="card-content">
+              <div class="card-title">SABOTEURS</div>
+              <div class="card-subtitle">Stratégie • Déduction • Social</div>
+              <div class="card-stats">
+                <div class="card-stat">
+                  <span>5-12</span>
+                  <small>Joueurs</small>
+                </div>
+                <div class="card-stat">
+                  <span>15-45</span>
+                  <small>Minutes</small>
+                </div>
+                <div class="card-stat">
+                  <span>12+</span>
+                  <small>Âge</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact -->
+  <section id="contact" class="contact">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Nous Contacter</div>
+        <h2 class="section-title">Rejoignez l'Aventure</h2>
+      </div>
+      
+      <div class="contact-grid">
+        <div class="contact-info">
+          <div class="info-item">
+            <div class="info-icon">📍</div>
+            <div class="info-content">
+              <h4>Adresse</h4>
+              <p>Saintes, Nouvelle-Aquitaine<br>France</p>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <div class="info-icon">📧</div>
+            <div class="info-content">
+              <h4>Email</h4>
+              <p>contact@roronoa-games.fr</p>
+            </div>
+          </div>
+          
+          <div class="info-item">
+            <div class="info-icon">🌐</div>
+            <div class="info-content">
+              <h4>Réseaux Sociaux</h4>
+              <div class="social-links">
+                <a href="#" class="social-link">Facebook</a>
+                <a href="#" class="social-link">Instagram</a>
+                <a href="#" class="social-link">Twitter</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="contact-form">
+          <form id="contactForm" onsubmit="sendContact(event)">
+            <input type="text" name="name" placeholder="Votre nom" required>
+            <input type="email" name="email" placeholder="Votre email" required>
+            <select name="subject" required>
+              <option value="">Sujet du message</option>
+              <option value="support">Support technique</option>
+              <option value="commercial">Question commerciale</option>
+              <option value="partnership">Partenariat</option>
+              <option value="other">Autre</option>
+            </select>
+            <textarea name="message" placeholder="Votre message" rows="5" required></textarea>
+            <button type="submit" class="btn btn-primary">Envoyer</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <h3>RORONOA <span>GAMES</span></h3>
+          <p>Créateur d'expériences vidéoludiques</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Navigation</h4>
+            <a href="#accueil">Accueil</a>
+            <a href="#a-propos">À Propos</a>
+            <a href="products.html">Produits</a>
+            <a href="#contact">Contact</a>
+          </div>
+          <div class="footer-column">
+            <h4>Légal</h4>
+            <a href="#">Mentions Légales</a>
+            <a href="#">CGU</a>
+            <a href="#">Politique de Confidentialité</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 RORONOA GAMES. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Login -->
+  <div id="modal-login" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeLoginModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeLoginModal()">×</button>
+      
+      <div class="modal-header">
+        <h2>Connexion</h2>
+        <p>Accédez à votre compte RORONOA GAMES</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Connexion</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">Inscription</button>
+      </div>
+      
+      <!-- Formulaire Connexion -->
+      <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <button type="submit" class="btn btn-primary">Se Connecter</button>
+      </form>
+      
+      <!-- Formulaire Inscription -->
+      <form id="register-form" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
+        <input type="text" name="username" placeholder="Pseudo" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <input type="password" name="confirm_password" placeholder="Confirmer mot de passe" required>
+        <button type="submit" class="btn btn-primary">S'Inscrire</button>
+      </form>
+      
+      <div class="auth-footer">
+        <p>Compte créé pour accéder aux produits et services RORONOA GAMES</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="roronoa-games.js"></script>
+</body>
+</html>

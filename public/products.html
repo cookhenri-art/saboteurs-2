@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Les Saboteurs - RORONOA GAMES</title>
+  <link rel="stylesheet" href="roronoa-games.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <h1 class="logo">RORONOA <span class="logo-accent">GAMES</span></h1>
+        <div class="logo-subtitle">三刀流 • Santōryū Style</div>
+      </div>
+      <div class="nav-links">
+        <a href="index-site.html#accueil">Accueil</a>
+        <a href="index-site.html#a-propos">À Propos</a>
+        <a href="products.html" class="active">Produits</a>
+        <a href="index-site.html#contact">Contact</a>
+        <button class="btn-login" onclick="openLoginModal()">Se Connecter</button>
+      </div>
+      <div class="nav-mobile-toggle" onclick="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Product Hero -->
+  <section class="product-hero">
+    <div class="container">
+      <div class="product-hero-content">
+        <div class="product-badge">Notre Jeu Phare</div>
+        <h1 class="product-title">LES SABOTEURS</h1>
+        <p class="product-tagline">Infiltration • Déduction • Multijoueur</p>
+        
+        <div class="product-cta">
+          <a href="/index.html" class="btn btn-primary btn-large">
+            🎮 Jouer Gratuitement
+          </a>
+          <button class="btn btn-outline btn-large" onclick="openLoginModal()">
+            💎 Découvrir les Packs
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Game Description -->
+  <section class="game-desc">
+    <div class="container">
+      <div class="desc-content">
+        <h2>Le Jeu</h2>
+        <p>
+          <strong>Les Saboteurs</strong> est un jeu de déduction sociale multijoueur qui plonge 
+          les joueurs dans une station spatiale en perdition. Certains sont des astronautes 
+          innocents cherchant à survivre, d'autres sont des saboteurs infiltrés déterminés 
+          à saboter la mission.
+        </p>
+        <p>
+          Inspiré des meilleurs jeux sociaux, Les Saboteurs offre une expérience unique avec 
+          vidéo intégrée, multiples univers thématiques, et un système de progression addictif.
+        </p>
+        
+        <div class="desc-features">
+          <div class="feature-box">
+            <div class="feature-icon">👥</div>
+            <h3>4-20 Joueurs</h3>
+            <p>Parties intenses en temps réel</p>
+          </div>
+          
+          <div class="feature-box">
+            <div class="feature-icon">🎭</div>
+            <h3>Rôles Variés</h3>
+            <p>Astronautes, Saboteurs, Rôles spéciaux</p>
+          </div>
+          
+          <div class="feature-box">
+            <div class="feature-icon">⏱️</div>
+            <h3>15-45 Minutes</h3>
+            <p>Parties rapides et dynamiques</p>
+          </div>
+          
+          <div class="feature-box">
+            <div class="feature-icon">🌍</div>
+            <h3>7 Langues</h3>
+            <p>FR, EN, ES, IT, DE, PT, JA</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Themes Section -->
+  <section class="themes">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Univers</div>
+        <h2 class="section-title">4 Thèmes Immersifs</h2>
+      </div>
+      
+      <div class="themes-grid">
+        <!-- Spatial -->
+        <div class="theme-card">
+          <div class="theme-icon">🚀</div>
+          <h3>Infiltration Spatiale</h3>
+          <p>
+            L'univers classique : une station spatiale, des astronautes, des saboteurs.
+            Réparez la station avant qu'il ne soit trop tard !
+          </p>
+          <div class="theme-features">
+            <span>🔧 Tâches techniques</span>
+            <span>🚨 Sabotages critiques</span>
+            <span>📡 Communications radio</span>
+          </div>
+        </div>
+        
+        <!-- Loup-Garou -->
+        <div class="theme-card">
+          <div class="theme-icon">🐺</div>
+          <h3>Loup-Garou</h3>
+          <p>
+            Un village médiéval hanté par les loups-garous. Villageois contre créatures 
+            de la nuit dans une bataille épique pour la survie.
+          </p>
+          <div class="theme-features">
+            <span>🌙 Cycle jour/nuit</span>
+            <span>🔮 Pouvoirs spéciaux</span>
+            <span>🏘️ Village mystérieux</span>
+          </div>
+        </div>
+        
+        <!-- Sorciers -->
+        <div class="theme-card">
+          <div class="theme-icon">🧙</div>
+          <h3>Académie des Sorciers</h3>
+          <p>
+            Une école de magie infiltrée par des sorciers noirs. Maîtrisez la magie 
+            et démasquez les traîtres avant qu'ils ne corrompent l'académie.
+          </p>
+          <div class="theme-features">
+            <span>✨ Sorts magiques</span>
+            <span>📚 Bibliothèque ancienne</span>
+            <span>🎓 Salles de classe</span>
+          </div>
+        </div>
+        
+        <!-- Mythique -->
+        <div class="theme-card">
+          <div class="theme-icon">⚔️</div>
+          <h3>Royaumes Mythiques</h3>
+          <p>
+            Un royaume fantasy menacé par des créatures corrompues. Chevaliers, 
+            mages et traîtres s'affrontent pour le contrôle du royaume.
+          </p>
+          <div class="theme-features">
+            <span>🏰 Château royal</span>
+            <span>🗡️ Armes légendaires</span>
+            <span>🐉 Créatures mythiques</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section class="pricing">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-badge">Nos Offres</div>
+        <h2 class="section-title">Plans Tarifaires</h2>
+      </div>
+      
+      <div class="pricing-grid">
+        <!-- Free -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Gratuit</h3>
+            <div class="price">
+              <span class="currency">0€</span>
+              <span class="period">/mois</span>
+            </div>
+          </div>
+          <ul class="pricing-features">
+            <li>✅ Parties illimitées</li>
+            <li>✅ 2 avatars IA/mois</li>
+            <li>✅ 2 parties vidéo/mois</li>
+            <li>✅ Tous les thèmes</li>
+            <li>✅ Mode hors ligne</li>
+          </ul>
+          <a href="/index.html" class="btn btn-outline">
+            Commencer Gratuitement
+          </a>
+        </div>
+        
+        <!-- Pack -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Pack 50+50</h3>
+            <div class="price">
+              <span class="currency">4,99€</span>
+              <span class="period">unique</span>
+            </div>
+          </div>
+          <ul class="pricing-features">
+            <li>✅ 50 avatars IA</li>
+            <li>✅ 50 crédits vidéo</li>
+            <li>✅ Valables 12 mois</li>
+            <li>✅ Tous les avantages Free</li>
+            <li>✅ Support prioritaire</li>
+          </ul>
+          <button class="btn btn-secondary" onclick="openLoginModal()">
+            Acheter le Pack
+          </button>
+        </div>
+        
+        <!-- Premium -->
+        <div class="pricing-card featured">
+          <div class="pricing-badge">Le Plus Populaire</div>
+          <div class="pricing-header">
+            <h3>Premium</h3>
+            <div class="price">
+              <span class="currency">9,99€</span>
+              <span class="period">/mois</span>
+            </div>
+          </div>
+          <ul class="pricing-features">
+            <li>✅ Avatars IA illimités</li>
+            <li>✅ Parties vidéo illimitées</li>
+            <li>✅ Badge exclusif</li>
+            <li>✅ Accès anticipé nouveautés</li>
+            <li>✅ Support VIP 24/7</li>
+          </ul>
+          <button class="btn btn-primary" onclick="openLoginModal()">
+            Devenir Premium
+          </button>
+        </div>
+        
+        <!-- Family -->
+        <div class="pricing-card">
+          <div class="pricing-header">
+            <h3>Pack Famille</h3>
+            <div class="price">
+              <span class="currency">39,99€</span>
+              <span class="period">/mois</span>
+            </div>
+          </div>
+          <ul class="pricing-features">
+            <li>✅ Jusqu'à 9 comptes</li>
+            <li>✅ Avantages Premium pour tous</li>
+            <li>✅ Gestion centralisée</li>
+            <li>✅ Économie de 60%</li>
+            <li>✅ Support prioritaire</li>
+          </ul>
+          <button class="btn btn-outline" onclick="openLoginModal()">
+            Pack Famille
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Prêt à Jouer ?</h2>
+        <p>Rejoignez des milliers de joueurs dans l'aventure la plus intense !</p>
+        <div class="cta-buttons">
+          <a href="/index.html" class="btn btn-primary btn-large">
+            🎮 Jouer Gratuitement
+          </a>
+          <button class="btn btn-outline btn-large" onclick="openLoginModal()">
+            💎 Voir les Offres Premium
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <h3>RORONOA <span>GAMES</span></h3>
+          <p>Créateur d'expériences vidéoludiques</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-column">
+            <h4>Navigation</h4>
+            <a href="index-site.html#accueil">Accueil</a>
+            <a href="index-site.html#a-propos">À Propos</a>
+            <a href="products.html">Produits</a>
+            <a href="index-site.html#contact">Contact</a>
+          </div>
+          <div class="footer-column">
+            <h4>Légal</h4>
+            <a href="#">Mentions Légales</a>
+            <a href="#">CGU</a>
+            <a href="#">Politique de Confidentialité</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 RORONOA GAMES. Tous droits réservés.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Login (même que index-site.html) -->
+  <div id="modal-login" class="modal" style="display: none;">
+    <div class="modal-overlay" onclick="closeLoginModal()"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeLoginModal()">×</button>
+      
+      <div class="modal-header">
+        <h2>Connexion</h2>
+        <p>Accédez à votre compte RORONOA GAMES</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">Connexion</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">Inscription</button>
+      </div>
+      
+      <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <button type="submit" class="btn btn-primary">Se Connecter</button>
+      </form>
+      
+      <form id="register-form" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
+        <input type="text" name="username" placeholder="Pseudo" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Mot de passe" required>
+        <input type="password" name="confirm_password" placeholder="Confirmer mot de passe" required>
+        <button type="submit" class="btn btn-primary">S'Inscrire</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="roronoa-games.js"></script>
+</body>
+</html>
