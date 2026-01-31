@@ -548,9 +548,13 @@ async function buyPack(packType) {
   const token = localStorage.getItem('token') || localStorage.getItem('saboteur_token');
   
   if (!token) {
-    alert('⚠️ Vous devez être connecté pour acheter un pack.\n\nCréez un compte ou connectez-vous pour continuer.');
+    // Pas connecté → Ouvrir le modal de connexion
     closePacksModal();
-    openLoginModal();
+    if (typeof openLoginModal === 'function') {
+      openLoginModal();
+    } else {
+      alert('⚠️ Vous devez être connecté pour acheter un pack.\n\nCréez un compte ou connectez-vous pour continuer.');
+    }
     return;
   }
   
@@ -568,8 +572,8 @@ async function buyPack(packType) {
     
     const user = await response.json();
     
-    if (!user.email_verified) {
-      alert('⚠️ Veuillez vérifier votre email avant d\'acheter un pack.\n\nUn email de vérification vous a été envoyé lors de votre inscription.');
+    if (!user.emailVerified) {
+      alert('⚠️ Veuillez vérifier votre email avant d\'acheter un pack.\n\nUn email de vérification vous a été envoyé lors de votre inscription.\n\nVérifiez votre boîte de réception et vos spams.');
       return;
     }
     

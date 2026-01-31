@@ -339,3 +339,42 @@ function escapeHtml(text) {
 console.log('%c⚔️ RORONOA GAMES ⚔️', 'color: #6B9D3A; font-size: 24px; font-weight: bold;');
 console.log('%c三刀流 Santōryū Style', 'color: #4A7C28; font-size: 14px;');
 console.log('%cBienvenue dans le code source !', 'color: #2D5016; font-size: 12px;');
+
+// ==========================================
+// PREPARE GAME LINK
+// ==========================================
+
+/**
+ * Prépare le lien vers le jeu - vérifie la connexion et ouvre dans une nouvelle fenêtre
+ */
+function prepareGameLink(event) {
+  // Ne pas empêcher l'ouverture du lien, mais afficher un message si pas connecté
+  const token = localStorage.getItem('saboteur_token') || localStorage.getItem('token');
+  
+  if (!token) {
+    // Pas connecté - informer l'utilisateur mais laisser accéder au jeu
+    console.log('[Auth] Utilisateur non connecté - redirection vers le jeu');
+  } else {
+    console.log('[Auth] Utilisateur connecté - ouverture du jeu');
+  }
+  
+  // Le lien s'ouvre normalement avec target="_blank"
+  // Le localStorage est partagé entre les pages du même domaine
+}
+
+/**
+ * Ouvre le modal de connexion pour les non-connectés qui veulent acheter
+ */
+function requireLoginForPurchase(targetUrl) {
+  const token = localStorage.getItem('saboteur_token') || localStorage.getItem('token');
+  
+  if (!token) {
+    // Pas connecté - ouvrir le modal de connexion
+    alert('⚠️ Vous devez être connecté pour effectuer cet achat.');
+    openLoginModal();
+    return false;
+  }
+  
+  // Connecté - autoriser l'achat
+  return true;
+}
