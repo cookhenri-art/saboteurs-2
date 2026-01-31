@@ -25,6 +25,38 @@ function closeLoginModal() {
   }
 }
 
+// Forgot password modal (simple redirect pour l'instant)
+function openForgotPasswordModal() {
+  const email = document.querySelector('#login-form input[name="email"]')?.value || '';
+  
+  if (!email) {
+    alert('Veuillez d\'abord entrer votre email dans le champ ci-dessus.');
+    return;
+  }
+  
+  // Demander confirmation
+  if (confirm(`Un email de réinitialisation sera envoyé à :\n${email}\n\nContinuer ?`)) {
+    // Envoyer la demande de réinitialisation
+    fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        alert('Erreur: ' + data.error);
+      } else {
+        alert('✅ Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.');
+      }
+    })
+    .catch(error => {
+      console.error('Erreur:', error);
+      alert('Erreur de connexion au serveur');
+    });
+  }
+}
+
 // Switch auth tabs
 function switchAuthTab(tab) {
   const loginForm = document.getElementById('login-form');
@@ -36,11 +68,29 @@ function switchAuthTab(tab) {
   if (tab === 'login') {
     tabs[0].classList.add('active');
     loginForm.classList.add('active');
+    loginForm.style.display = 'block';
     registerForm.classList.remove('active');
+    registerForm.style.display = 'none';
   } else {
     tabs[1].classList.add('active');
     loginForm.classList.remove('active');
+    loginForm.style.display = 'none';
     registerForm.classList.add('active');
+    registerForm.style.display = 'block';
+  }
+}
+
+// Toggle password visibility
+function togglePassword(inputId, button) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    button.textContent = '👁️';
   }
 }
 
@@ -49,6 +99,13 @@ async function handleLogin(event) {
   event.preventDefault();
   const form = event.target;
   const formData = new FormData(form);
+  const submitBtn = form.querySelector('button[type="submit"]');
+  
+  // Désactiver le bouton pendant la requête
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Connexion...';
+  }
   
   const data = {
     email: formData.get('email'),
@@ -67,16 +124,28 @@ async function handleLogin(event) {
     if (response.ok) {
       localStorage.setItem('token', result.token);
       localStorage.setItem('saboteur_token', result.token);
+      if (result.user) {
+        localStorage.setItem('saboteur_user', JSON.stringify(result.user));
+      }
       
-      alert('Connexion réussie !');
       closeLoginModal();
-      window.location.reload(); // Recharger pour mettre à jour l'interface
+      
+      // Rediriger vers la page compte
+      window.location.href = '/account.html';
     } else {
       alert('Erreur: ' + (result.error || 'Identifiants invalides'));
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Se Connecter';
+      }
     }
   } catch (error) {
     console.error('Erreur de connexion:', error);
     alert('Erreur de connexion au serveur');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Se Connecter';
+    }
   }
 }
 
@@ -217,12 +286,24 @@ function checkAuthStatus() {
     if (loginBtn) {
       loginBtn.textContent = 'Mon Compte';
       loginBtn.onclick = function() {
-        // TODO: Ouvrir un menu déroulant avec options : Profil, Abonnements, Déconnexion
-        alert('Fonctionnalité "Mon Compte" à venir');
-        // Pour l'instant, on peut rediriger vers une page compte sur la vitrine
-        // window.location.href = '/account.html';
+        // Rediriger vers la page Mon Compte
+        window.location.href = '/account.html';
       };
     }
+  }
+}
+
+// Toggle password visibility
+function togglePasswordVisibility(inputId, button) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  
+  if (input.type === 'password') {
+    input.type = 'text';
+    button.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    button.textContent = '👁️';
   }
 }
 
