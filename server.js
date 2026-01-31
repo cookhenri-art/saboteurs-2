@@ -5815,8 +5815,8 @@ function verifyAdmin(req, res, next) {
   }
   
   if (secretCode !== ADMIN_SECRET) {
-    logger.warn("admin_invalid_secret", { ip, hasCode: !!secretCode, codeLength: secretCode ? secretCode.length : 0 });
-    return res.status(403).json({ ok: false, error: "Code secret invalide", debug: { receivedLength: secretCode ? secretCode.length : 0, expectedLength: ADMIN_SECRET.length } });
+    logger.warn("admin_invalid_secret", { ip, hasCode: !!secretCode });
+    return res.status(403).json({ ok: false, error: "Code secret invalide" });
   }
   
   // Reset le compteur si succès
