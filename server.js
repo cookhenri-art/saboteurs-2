@@ -614,20 +614,6 @@ async function initAuthDatabase() {
     )
   `);
 
-  // Table pour les messages de contact du site vitrine
-  authDb.run(`
-    CREATE TABLE IF NOT EXISTS contact_messages (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL,
-      email TEXT NOT NULL,
-      subject TEXT,
-      message TEXT NOT NULL,
-      read INTEGER DEFAULT 0,
-      replied INTEGER DEFAULT 0,
-      created_at INTEGER NOT NULL
-    )
-  `);
-
   // Insérer les promotions par défaut si la table est vide
   const existingPromos = dbGet('SELECT COUNT(*) as count FROM promotions');
   if (!existingPromos || existingPromos.count === 0) {
@@ -1061,7 +1047,7 @@ function getEmailText(section, key, lang = 'fr') {
   return translations[key][lang] || translations[key]['fr'] || key;
 }
 
-async function sendVerificationEmail(email, username, token, lang = 'fr', source = 'app') {
+async function sendVerificationEmail(email, username, token, lang = 'fr') {
   if (!resend) {
     console.log(`📧 [DEV] Lien vérification: ${APP_URL}/verify-email.html?token=${token}`);
     return { success: true, simulated: true };
@@ -1070,17 +1056,7 @@ async function sendVerificationEmail(email, username, token, lang = 'fr', source
     const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
     const t = (key) => getEmailText('verification', key, lang);
     
-    // Déterminer l'expéditeur selon la source (vitrine ou app)
-    const isVitrine = source === 'vitrine' || source === 'client_site';
-    const fromEmail = isVitrine 
-      ? process.env.IONOS_VITRINE_EMAIL || 'contact@roronoa-games.com'
-      : process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com';
-    const fromName = isVitrine ? 'RORONOA GAMES' : 'Saboteur Game';
-    
-    // Template HTML avec design adapté
-    const brandColor = isVitrine ? '#6B9D3A' : '#00d4ff'; // Vert Roronoa ou Cyan Saboteur
-    const brandName = isVitrine ? 'RORONOA GAMES' : 'Saboteur';
-    
+    // Template HTML avec design gradient multilingue
     const htmlTemplate = `
 <!DOCTYPE html>
 <html>
@@ -1088,34 +1064,33 @@ async function sendVerificationEmail(email, username, token, lang = 'fr', source
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: ${isVitrine ? '#0a0a0a' : '#1a1a2e'};">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e;">
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background: linear-gradient(135deg, ${isVitrine ? '#0a0a0a 0%, #1a1a1a 50%, #2D5016 100%' : '#1a1a2e 0%, #16213e 50%, #0f3460 100%'}); border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); ${isVitrine ? 'border: 1px solid #4A7C28;' : ''}">
+    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
       
       <!-- Logo/Titre -->
       <div style="margin-bottom: 30px;">
-        <span style="font-size: 48px;">${isVitrine ? '⚔️' : '🎮'}</span>
-        <h1 style="color: ${brandColor}; margin: 10px 0; font-size: 28px; text-shadow: 0 0 20px ${isVitrine ? 'rgba(107,157,58,0.5)' : 'rgba(0,212,255,0.5)'};">
-          ${brandName}
+        <span style="font-size: 48px;">🎮</span>
+        <h1 style="color: #00d4ff; margin: 10px 0; font-size: 28px; text-shadow: 0 0 20px rgba(0,212,255,0.5);">
+          ${t('title')}
         </h1>
-        <p style="color: #888; margin: 0; font-size: 14px;">${t('title')}</p>
       </div>
       
       <!-- Message -->
       <p style="color: #e0e0e0; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-        ${t('hello')} <strong style="color: ${brandColor};">${username}</strong> ! 👋<br><br>
-        ${t('message')} <strong style="color: ${isVitrine ? '#6B9D3A' : '#4ade80'};">${t('freeGames')}</strong> !
+        ${t('hello')} <strong style="color: #00d4ff;">${username}</strong> ! 👋<br><br>
+        ${t('message')} <strong style="color: #4ade80;">${t('freeGames')}</strong> !
       </p>
       
       <!-- Bouton -->
-      <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, ${isVitrine ? '#4A7C28 0%, #6B9D3A 100%' : '#4ade80 0%, #22c55e 100%'}); color: ${isVitrine ? '#fff' : '#000'}; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px ${isVitrine ? 'rgba(74,124,40,0.4)' : 'rgba(74,222,128,0.4)'}; transition: transform 0.2s;">
+      <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: #000; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(74,222,128,0.4); transition: transform 0.2s;">
         ${t('button')}
       </a>
       
       <!-- Lien alternatif -->
       <p style="color: #888; font-size: 12px; margin-top: 30px; word-break: break-all;">
         ${t('copyLink')}<br>
-        <a href="${verifyUrl}" style="color: ${brandColor};">${verifyUrl}</a>
+        <a href="${verifyUrl}" style="color: #00d4ff;">${verifyUrl}</a>
       </p>
       
       <!-- Footer -->
@@ -1133,12 +1108,12 @@ async function sendVerificationEmail(email, username, token, lang = 'fr', source
 
     // Envoyer via IONOS SMTP
     await sendEmailIONOS({
-      from: `${fromName} <${fromEmail}>`,
+      from: `Saboteur Game <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
       to: email,
-      subject: `${brandName} - ${t('subject')}`,
+      subject: t('subject'),
       html: htmlTemplate
     });
-    console.log(`📧 Email de vérification envoyé à ${email} (${lang}) via ${fromName}`);
+    console.log(`📧 Email de vérification envoyé à ${email} (${lang})`);
     return { success: true };
   } catch (e) {
     console.error("❌ Erreur email:", e);
@@ -4423,7 +4398,7 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
-    const emailResult = await sendVerificationEmail(email, username, verificationToken, userLang, accountType);
+    const emailResult = await sendVerificationEmail(email, username, verificationToken, userLang);
 
     const token = jwt.sign({ id: newUserId, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
 
@@ -4661,7 +4636,7 @@ app.post("/api/auth/resend-verification", async (req, res) => {
     const verificationToken = generateVerificationToken();
     dbRun("UPDATE users SET verification_token = ?, verification_expires = ? WHERE id = ?",
       [verificationToken, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), user.id]);
-    await sendVerificationEmail(user.email, user.username, verificationToken, userLang, user.account_type);
+    await sendVerificationEmail(user.email, user.username, verificationToken, userLang);
 
     res.json({ success: true, message: "Email renvoyé" });
   } catch (error) {
@@ -4699,7 +4674,7 @@ function checkForgotPasswordRateLimit(email) {
 // Mot de passe oublié
 app.post("/api/auth/forgot-password", async (req, res) => {
   try {
-    const { email } = req.body;
+    const { email, source } = req.body;
     
     if (!email) {
       return res.status(400).json({ success: false, error: "Email requis" });
@@ -4728,34 +4703,63 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     dbRun("UPDATE users SET reset_token = ?, reset_expires = ? WHERE id = ?", 
       [resetToken, resetExpires.toISOString(), user.id]);
     
+    // Déterminer si c'est vitrine ou app
+    const isVitrine = source === 'vitrine';
+    const resetPage = isVitrine ? 'reset-password-vitrine.html' : 'reset-password.html';
+    const resetUrl = `${APP_URL}/${resetPage}?token=${resetToken}`;
     
-    // Envoyer email
+    // Envoyer email avec style différent selon source
     if (ionosTransporter) {
-      const resetUrl = `${APP_URL}/reset-password.html?token=${resetToken}`;
-      
-      await sendEmailIONOS({
-        from: `Saboteur Game <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
-        to: user.email,
-        subject: "🔑 Réinitialisation de ton mot de passe - Saboteur",
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; border-radius: 15px;">
-            <h1 style="text-align: center; color: #00ffff;">🔑 Mot de passe oublié</h1>
-            <p>Salut <strong>${user.username}</strong> !</p>
-            <p>Tu as demandé à réinitialiser ton mot de passe.</p>
-            <p>Clique sur le bouton ci-dessous (valable 1 heure) :</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #00ffff, #0099cc); color: #000; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 1.1em;">
-                🔐 Réinitialiser mon mot de passe
-              </a>
+      if (isVitrine) {
+        // Email style RORONOA GAMES (vert)
+        await sendEmailIONOS({
+          from: `RORONOA GAMES <${process.env.IONOS_VITRINE_EMAIL || process.env.IONOS_APP_EMAIL || 'contact@roronoa-games.com'}>`,
+          to: user.email,
+          subject: "⚔️ Réinitialisation de ton mot de passe - RORONOA GAMES",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #0a0a0a, #1a2e1a); color: #fff; border-radius: 15px; border: 1px solid #6B9D3A;">
+              <h1 style="text-align: center; color: #8BC34A;">⚔️ RORONOA GAMES</h1>
+              <h2 style="text-align: center; color: #6B9D3A;">🔑 Mot de passe oublié</h2>
+              <p>Salut <strong style="color: #8BC34A;">${user.username}</strong> !</p>
+              <p>Tu as demandé à réinitialiser ton mot de passe sur RORONOA GAMES.</p>
+              <p>Clique sur le bouton ci-dessous (valable 1 heure) :</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #6B9D3A, #4A7C28); color: #fff; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 1.1em;">
+                  🔐 Réinitialiser mon mot de passe
+                </a>
+              </div>
+              <p style="color: #888; font-size: 0.9em;">Si tu n'as pas fait cette demande, ignore cet email.</p>
+              <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;">
+              <p style="text-align: center; color: #6B9D3A; font-size: 0.8em;">⚔️ L'équipe RORONOA GAMES</p>
             </div>
-            <p style="color: #888; font-size: 0.9em;">Si tu n'as pas fait cette demande, ignore cet email.</p>
-            <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;">
-            <p style="text-align: center; color: #666; font-size: 0.8em;">🎭 L'équipe Saboteur</p>
-          </div>
-        `
-      });
+          `
+        });
+      } else {
+        // Email style Saboteur Game (cyan)
+        await sendEmailIONOS({
+          from: `Saboteur Game <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
+          to: user.email,
+          subject: "🔑 Réinitialisation de ton mot de passe - Saboteur",
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; border-radius: 15px;">
+              <h1 style="text-align: center; color: #00ffff;">🔑 Mot de passe oublié</h1>
+              <p>Salut <strong>${user.username}</strong> !</p>
+              <p>Tu as demandé à réinitialiser ton mot de passe.</p>
+              <p>Clique sur le bouton ci-dessous (valable 1 heure) :</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetUrl}" style="display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #00ffff, #0099cc); color: #000; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 1.1em;">
+                  🔐 Réinitialiser mon mot de passe
+                </a>
+              </div>
+              <p style="color: #888; font-size: 0.9em;">Si tu n'as pas fait cette demande, ignore cet email.</p>
+              <hr style="border: none; border-top: 1px solid #333; margin: 20px 0;">
+              <p style="text-align: center; color: #666; font-size: 0.8em;">🎭 L'équipe Saboteur</p>
+            </div>
+          `
+        });
+      }
       
-      logger.info("password_reset_sent", { email: user.email });
+      logger.info("password_reset_sent", { email: user.email, source: source || 'app' });
     }
     
     res.json({ success: true, message: "Email envoyé" });
@@ -6666,7 +6670,7 @@ app.post('/api/admin/cleanup-orphan-avatars', verifyAdmin, async (req, res) => {
   try {
     // 1. Récupérer tous les avatars orphelins
     const orphanAvatars = dbAll(`
-      SELECT id, image_url, created_at 
+      SELECT id, avatar_url, created_at 
       FROM avatars 
       WHERE user_id IS NULL
     `);
@@ -6682,8 +6686,8 @@ app.post('/api/admin/cleanup-orphan-avatars', verifyAdmin, async (req, res) => {
     // 2. Supprimer les fichiers physiques
     let filesDeleted = 0;
     for (const avatar of orphanAvatars) {
-      if (avatar.image_url) {
-        const filePath = path.join(__dirname, 'public', avatar.image_url);
+      if (avatar.avatar_url) {
+        const filePath = path.join(__dirname, 'public', avatar.avatar_url);
         try {
           await fsPromises.unlink(filePath);
           filesDeleted++;
@@ -6728,7 +6732,7 @@ function verifyToken(req, res, next) {
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id || decoded.userId; // Support les deux formats
+    req.userId = decoded.userId;
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token invalide' });
