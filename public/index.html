@@ -872,23 +872,32 @@
       const urlParams = new URLSearchParams(window.location.search);
       const authToken = urlParams.get('auth_token');
       if (authToken) {
-        console.log('✅ Token récupéré depuis URL');
+        console.log('✅ Token récupéré depuis URL, longueur:', authToken.length);
         // Nettoyer l'URL pour ne pas exposer le token
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
         
         // Vérifier le token et récupérer les infos user
         try {
+          console.log('🔄 Appel API /api/auth/me...');
           const res = await fetch('/api/auth/me', {
             headers: { 'Authorization': `Bearer ${authToken}` }
           });
+          console.log('📡 Réponse API:', res.status);
+          
           if (res.ok) {
             const data = await res.json();
             localStorage.setItem('saboteur_token', authToken);
             localStorage.setItem('saboteur_user', JSON.stringify(data.user));
             console.log('✅ Connexion automatique réussie:', data.user.username);
+            console.log('🔄 Reload dans 100ms...');
+            // Petit délai pour s'assurer que localStorage est bien écrit
+            setTimeout(() => {
+              window.location.reload();
+            }, 100);
           } else {
-            console.log('❌ Token invalide');
+            const errorData = await res.json().catch(() => ({}));
+            console.log('❌ Token invalide:', res.status, errorData);
           }
         } catch (e) {
           console.log('❌ Erreur vérification token:', e);
