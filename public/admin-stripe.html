@@ -2483,11 +2483,7 @@ if (typeof loadWorkflows === 'function') {
   // Fonction pour charger les messages
   async function loadMessages() {
     try {
-      const response = await fetch('/api/admin/contact-messages?secretCode=' + encodeURIComponent(secretCode));
-      
-      if (!response.ok) throw new Error('Erreur chargement');
-      
-      const messages = await response.json();
+      const messages = await apiCall('/api/admin/contact-messages');
       
       // Mettre à jour les stats si les éléments existent
       const totalEl = document.getElementById('stats-total-messages');
@@ -2547,8 +2543,7 @@ if (typeof loadWorkflows === 'function') {
   
   function viewMessage(id) {
     // Trouver le message
-    fetch(`/api/admin/contact-messages/${id}?secretCode=${encodeURIComponent(secretCode)}`)
-    .then(r => r.json())
+    apiCall(`/api/admin/contact-messages/${id}`)
     .then(msg => {
       const modal = `
         <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center;" onclick="this.remove()">
@@ -2576,9 +2571,7 @@ if (typeof loadWorkflows === 'function') {
   
   async function markAsRead(id) {
     try {
-      await fetch(`/api/admin/contact-messages/${id}/read?secretCode=${encodeURIComponent(secretCode)}`, {
-        method: 'POST'
-      });
+      await apiCall(`/api/admin/contact-messages/${id}/read`, 'POST');
       loadMessages();
     } catch (error) {
       console.error('Erreur:', error);
@@ -2589,9 +2582,7 @@ if (typeof loadWorkflows === 'function') {
     if (!confirm('Marquer tous les messages comme lus ?')) return;
     
     try {
-      await fetch(`/api/admin/contact-messages/mark-all-read?secretCode=${encodeURIComponent(secretCode)}`, {
-        method: 'POST'
-      });
+      await apiCall(`/api/admin/contact-messages/mark-all-read`, 'POST');
       loadMessages();
     } catch (error) {
       console.error('Erreur:', error);
@@ -2602,9 +2593,7 @@ if (typeof loadWorkflows === 'function') {
     if (!confirm('Supprimer ce message ?')) return;
     
     try {
-      await fetch(`/api/admin/contact-messages/${id}?secretCode=${encodeURIComponent(secretCode)}`, {
-        method: 'DELETE'
-      });
+      await apiCall(`/api/admin/contact-messages/${id}`, 'DELETE');
       loadMessages();
     } catch (error) {
       console.error('Erreur:', error);
@@ -2631,12 +2620,7 @@ if (typeof loadWorkflows === 'function') {
   
   async function loadContactMessages() {
     try {
-      const response = await fetch('/api/admin/contact-messages?secretCode=' + encodeURIComponent(secretCode));
-      if (!response.ok) {
-        throw new Error('Erreur ' + response.status);
-      }
-      
-      const messages = await response.json();
+      const messages = await apiCall('/api/admin/contact-messages');
       const container = document.getElementById('contact-messages-list');
       
       if (!messages || messages.length === 0) {
@@ -2680,15 +2664,8 @@ if (typeof loadWorkflows === 'function') {
     if (!confirm('Supprimer ce message ?')) return;
     
     try {
-      const response = await fetch('/api/admin/contact-messages/' + id + '?secretCode=' + encodeURIComponent(secretCode), {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        loadContactMessages();
-      } else {
-        alert('Erreur lors de la suppression');
-      }
+      await apiCall('/api/admin/contact-messages/' + id, 'DELETE');
+      loadContactMessages();
     } catch (error) {
       console.error('[Messages] Erreur suppression:', error);
       alert('Erreur lors de la suppression');
