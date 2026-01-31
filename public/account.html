@@ -1229,7 +1229,7 @@
       if (accountType === 'subscriber' || accountType === 'admin') {
         openBillingPortal();
       } else {
-        window.location.href = '/api/stripe/checkout?product=premium';
+        await startCheckout('subscription');
       }
     }
     
@@ -1239,7 +1239,7 @@
       if (accountType === 'family' || currentUser?.family_pack_id) {
         openBillingPortal();
       } else {
-        window.location.href = '/api/stripe/checkout?product=family';
+        await startCheckout('family');
       }
     }
     
@@ -1254,8 +1254,30 @@
       openBillingPortal();
     }
     
-    function openBillingPortal() {
-      window.location.href = '/api/stripe/billing-portal';
+    async function openBillingPortal() {
+      const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('token');
+      
+      try {
+        const response = await fetch('/api/stripe/create-portal-session', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'Erreur portail de paiement');
+        }
+        
+        const { url } = await response.json();
+        window.location.href = url;
+        
+      } catch (error) {
+        console.error('Erreur:', error);
+        alert('❌ ' + error.message);
+      }
     }
     
     // ==========================================
@@ -1263,7 +1285,42 @@
     // ==========================================
     
     async function buyPack() {
-      window.location.href = '/api/stripe/checkout?product=pack';
+      await startCheckout('pack');
+    }
+    
+    /**
+     * Démarrer un checkout Stripe (même logique que index.html)
+     * @param {string} priceType - 'subscription', 'family', ou 'pack'
+     */
+    async function startCheckout(priceType) {
+      if (!currentUser) {
+        alert('Erreur: Utilisateur non chargé. Rechargez la page.');
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            priceType: priceType,
+            userId: currentUser.id,
+            userEmail: currentUser.email
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert('❌ ' + (data.error || 'Erreur Stripe'));
+        }
+        
+      } catch (error) {
+        console.error('Erreur checkout:', error);
+        alert('❌ Erreur de connexion');
+      }
     }
     
     // ==========================================

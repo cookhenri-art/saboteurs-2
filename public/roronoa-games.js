@@ -154,6 +154,7 @@ async function handleRegister(event) {
   event.preventDefault();
   const form = event.target;
   const formData = new FormData(form);
+  const submitBtn = form.querySelector('button[type="submit"]');
   
   const password = formData.get('password');
   const confirmPassword = formData.get('confirm_password');
@@ -161,6 +162,12 @@ async function handleRegister(event) {
   if (password !== confirmPassword) {
     alert('Les mots de passe ne correspondent pas');
     return;
+  }
+  
+  // Désactiver le bouton pendant la requête
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Inscription...';
   }
   
   const data = {
@@ -180,20 +187,35 @@ async function handleRegister(event) {
     const result = await response.json();
     
     if (response.ok) {
-      alert('Inscription réussie ! Vous allez recevoir un email de vérification.');
-      switchAuthTab('login');
-      
-      // Pré-remplir l'email
-      const loginEmailInput = document.querySelector('#login-form input[name="email"]');
-      if (loginEmailInput) {
-        loginEmailInput.value = data.email;
+      // Stocker le token et les infos utilisateur
+      if (result.token) {
+        localStorage.setItem('token', result.token);
+        localStorage.setItem('saboteur_token', result.token);
       }
+      if (result.user) {
+        localStorage.setItem('saboteur_user', JSON.stringify(result.user));
+      }
+      
+      alert('Inscription réussie ! 🎉\n\nUn email de vérification vous a été envoyé.\nVérifiez votre boîte de réception (et vos spams).');
+      
+      closeLoginModal();
+      
+      // Rediriger vers la page Mon Compte
+      window.location.href = '/account.html';
     } else {
       alert('Erreur: ' + (result.error || 'Inscription impossible'));
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'S\'Inscrire';
+      }
     }
   } catch (error) {
     console.error('Erreur d\'inscription:', error);
     alert('Erreur de connexion au serveur');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'S\'Inscrire';
+    }
   }
 }
 
