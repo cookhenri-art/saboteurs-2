@@ -6655,7 +6655,7 @@ app.post('/api/admin/cleanup-orphan-avatars', verifyAdmin, async (req, res) => {
   try {
     // 1. Récupérer tous les avatars orphelins
     const orphanAvatars = dbAll(`
-      SELECT id, avatar_url, created_at 
+      SELECT id, image_url, created_at 
       FROM avatars 
       WHERE user_id IS NULL
     `);
@@ -6671,8 +6671,8 @@ app.post('/api/admin/cleanup-orphan-avatars', verifyAdmin, async (req, res) => {
     // 2. Supprimer les fichiers physiques
     let filesDeleted = 0;
     for (const avatar of orphanAvatars) {
-      if (avatar.avatar_url) {
-        const filePath = path.join(__dirname, 'public', avatar.avatar_url);
+      if (avatar.image_url) {
+        const filePath = path.join(__dirname, 'public', avatar.image_url);
         try {
           await fsPromises.unlink(filePath);
           filesDeleted++;
