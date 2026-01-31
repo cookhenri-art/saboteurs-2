@@ -41,7 +41,7 @@
         <p class="product-tagline">Infiltration • Déduction • Multijoueur</p>
         
         <div class="product-cta">
-          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large">
+          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)">
             🎮 Jouer Maintenant
           </a>
           <button class="btn btn-outline btn-large" onclick="openPacksModal()">
@@ -279,7 +279,7 @@
         <h2>Prêt à Jouer ?</h2>
         <p>Rejoignez des milliers de joueurs dans l'aventure la plus intense !</p>
         <div class="cta-buttons">
-          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large">
+          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)">
             🎮 Jouer Maintenant
           </a>
           <button class="btn btn-outline btn-large" onclick="openPacksModal()">
@@ -815,7 +815,19 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
-\n\n<!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
+<!-- 🎮 Script pour passer le token vers l'app -->
+<script>
+function goToGameWithToken(event) {
+  const token = localStorage.getItem('token') || localStorage.getItem('saboteur_token');
+  if (token) {
+    event.preventDefault();
+    const url = 'https://saboteurs-2.onrender.com?auth_token=' + encodeURIComponent(token);
+    window.open(url, '_blank');
+  }
+}
+</script>
+
+<!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
 <script src="/js/auth-check.js"></script>
 
 </body>

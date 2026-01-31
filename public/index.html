@@ -138,6 +138,21 @@
       letter-spacing: 2px;
     }
 
+    .roronoa-link {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: #888;
+      text-decoration: none;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+    }
+    
+    .roronoa-link:hover {
+      color: #fff;
+      text-shadow: 0 0 10px rgba(107, 157, 58, 0.5);
+    }
+
     /* Carte auth */
     .auth-card {
       background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.9) 100%);
@@ -851,6 +866,21 @@
   <link rel="stylesheet" href="workflow-notifications.css">
 </head>
 <body>
+  <!-- 🔐 Script pour récupérer le token depuis l'URL (connexion partagée) -->
+  <script>
+    (function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authToken = urlParams.get('auth_token');
+      if (authToken) {
+        localStorage.setItem('saboteur_token', authToken);
+        console.log('✅ Token récupéré depuis URL');
+        // Nettoyer l'URL pour ne pas exposer le token
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    })();
+  </script>
+  
   <div class="particles" id="particles"></div>
 
   <!-- Sélecteur de thème amélioré -->
@@ -1186,6 +1216,7 @@
     <div class="header">
       <h1 class="logo-title" data-i18n="index.title">LES SABOTEURS</h1>
       <p class="subtitle">⚡ <span data-i18n="index.subtitle">JEU DE DÉDUCTION SOCIALE</span> ⚡</p>
+      <a href="https://roronoa-games.com" target="_blank" class="roronoa-link">un jeu <span style="color: #6B9D3A;">RORONOA</span> <span style="color: #ff6b35;">GAMES</span></a>
     </div>
 
     <div class="auth-card">

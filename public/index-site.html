@@ -174,7 +174,7 @@
           
           <div class="game-buttons">
             <a href="products.html" class="btn btn-primary">En Savoir Plus</a>
-            <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-outline">Jouer Maintenant</a>
+            <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-outline" onclick="goToGameWithToken(event)">Jouer Maintenant</a>
           </div>
         </div>
         
@@ -774,7 +774,18 @@ document.addEventListener('keydown', function(e) {
 });
 </script>
 
-
+<!-- 🎮 Script pour passer le token vers l'app -->
+<script>
+function goToGameWithToken(event) {
+  const token = localStorage.getItem('token') || localStorage.getItem('saboteur_token');
+  if (token) {
+    event.preventDefault();
+    const url = 'https://saboteurs-2.onrender.com?auth_token=' + encodeURIComponent(token);
+    window.open(url, '_blank');
+  }
+  // Si pas de token, le lien fonctionne normalement
+}
+</script>
 
 <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
 <script src="/js/auth-check.js"></script>
