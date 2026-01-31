@@ -615,6 +615,13 @@ async function initAuthDatabase() {
   `);
 
   // Insérer les promotions par défaut si la table est vide
+  // ============================================================================
+  // PROMOTIONS & RÉCOMPENSES PAR DÉFAUT - DÉSACTIVÉ
+  // L'admin peut créer ses propres promotions/récompenses via l'interface
+  // ============================================================================
+  
+  /*
+  // Insérer les promotions par défaut si la table est vide
   const existingPromos = dbGet('SELECT COUNT(*) as count FROM promotions');
   if (!existingPromos || existingPromos.count === 0) {
     console.log('📊 Création des promotions par défaut...');
@@ -665,6 +672,7 @@ async function initAuthDatabase() {
     
     console.log('✅ Récompenses créées');
   }
+  */
 
   console.log('✅ Tables Stripe Admin initialisées');
 
