@@ -614,6 +614,20 @@ async function initAuthDatabase() {
     )
   `);
 
+  // Table pour les messages de contact du site vitrine
+  authDb.run(`
+    CREATE TABLE IF NOT EXISTS contact_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      subject TEXT,
+      message TEXT NOT NULL,
+      read INTEGER DEFAULT 0,
+      replied INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL
+    )
+  `);
+
   // Insérer les promotions par défaut si la table est vide
   const existingPromos = dbGet('SELECT COUNT(*) as count FROM promotions');
   if (!existingPromos || existingPromos.count === 0) {
@@ -3997,7 +4011,7 @@ app.get('/api/family/my-pack', (req, res) => {
   try {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_dev_key');
-    const user = dbGet('SELECT * FROM users WHERE id = ?', [decoded.id]);
+    const user = dbGet('SELECT * FROM users WHERE id = ?', [decoded.userId]);
     
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur non trouvé' });
@@ -4049,7 +4063,7 @@ app.post('/api/family/change-member', async (req, res) => {
   try {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_dev_key');
-    const user = dbGet('SELECT * FROM users WHERE id = ?', [decoded.id]);
+    const user = dbGet('SELECT * FROM users WHERE id = ?', [decoded.userId]);
     
     if (!user || !user.family_pack_id) {
       return res.status(404).json({ error: 'Pack Famille non trouvé' });
@@ -5549,7 +5563,7 @@ app.post("/api/rooms/join-random", (req, res) => {
         userAccountType = decoded.accountType || 'free';
         
         // Vérifier crédits vidéo
-        const userId = decoded.id || decoded.id;
+        const userId = decoded.id || decoded.userId;
         const user = dbGet("SELECT video_credits FROM users WHERE id = ?", [userId]);
         if (user) {
           const credits = user.video_credits;
@@ -6703,7 +6717,7 @@ function verifyToken(req, res, next) {
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.id; // Corrigé: JWT contient id pas userId
+    req.userId = decoded.userId;
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token invalide' });
@@ -7568,7 +7582,7 @@ io.on("connection", (socket) => {
         try {
           const decoded = jwt.verify(authToken, JWT_SECRET);
           // Note: Le JWT utilise 'id' et non 'userId'
-          const userId = decoded.id || decoded.id;
+          const userId = decoded.id || decoded.userId;
           const user = dbGet("SELECT account_type, email_verified FROM users WHERE id = ?", [userId]);
           if (user) {
             creatorAccountType = user.account_type || 'free';
