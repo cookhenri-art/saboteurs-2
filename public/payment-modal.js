@@ -590,7 +590,195 @@ async function manageSubscription() {
 document.addEventListener('DOMContentLoaded', () => {
   // Afficher le bandeau si nécessaire (avec délai pour laisser le temps au DOM)
   setTimeout(showUpgradeBannerIfNeeded, 1000);
+  
+  // Vérifier les notifications et offres disponibles
+  setTimeout(checkUserNotifications, 2000);
+  setTimeout(checkAvailableOffers, 3000);
 });
+
+// Récupérer et afficher les notifications non lues
+async function checkUserNotifications() {
+  const token = localStorage.getItem('saboteur_token');
+  if (!token) return;
+  
+  try {
+    const response = await fetch('/api/notifications', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) return;
+    
+    const notifications = await response.json();
+    
+    if (notifications && notifications.length > 0) {
+      notifications.forEach(notif => {
+        showNotificationPopup(notif.message, notif.type || 'info');
+      });
+    }
+  } catch (error) {
+    console.log('[Notifications] Erreur:', error);
+  }
+}
+
+// Vérifier les offres automatiques disponibles
+async function checkAvailableOffers() {
+  const token = localStorage.getItem('saboteur_token');
+  const user = JSON.parse(localStorage.getItem('saboteur_user') || '{}');
+  
+  if (!token || !user.id) return;
+  
+  // Ne pas afficher si déjà vu récemment
+  const lastOfferCheck = localStorage.getItem('last_offer_check');
+  const now = Date.now();
+  if (lastOfferCheck && now - parseInt(lastOfferCheck) < 24 * 60 * 60 * 1000) {
+    return; // Déjà affiché dans les 24h
+  }
+  
+  try {
+    const response = await fetch('/api/stripe/auto-discounts', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) return;
+    
+    const data = await response.json();
+    
+    if (data.discounts && data.discounts.length > 0) {
+      // Afficher la première offre disponible
+      const offer = data.discounts[0];
+      const discount = offer.percent_off ? `-${offer.percent_off}%` : `-${(offer.amount_off / 100).toFixed(2)}€`;
+      
+      showOfferPopup(
+        `🎉 Offre spéciale disponible !`,
+        `Tu as droit à <strong>${discount}</strong> sur ton prochain achat !`,
+        offer.name
+      );
+      
+      localStorage.setItem('last_offer_check', now.toString());
+    }
+  } catch (error) {
+    console.log('[Offers] Erreur:', error);
+  }
+}
+
+// Afficher un pop-up de notification
+function showNotificationPopup(message, type = 'info') {
+  const colors = {
+    info: { bg: 'rgba(0, 255, 255, 0.15)', border: '#00ffff' },
+    success: { bg: 'rgba(0, 255, 136, 0.15)', border: '#00ff88' },
+    reward: { bg: 'rgba(255, 215, 0, 0.15)', border: '#ffd700' },
+    welcome_offers: { bg: 'rgba(0, 255, 136, 0.15)', border: '#00ff88' }
+  };
+  
+  const style = colors[type] || colors.info;
+  
+  const popup = document.createElement('div');
+  popup.className = 'notification-popup';
+  popup.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: ${style.bg};
+      border: 2px solid ${style.border};
+      border-radius: 12px;
+      padding: 15px 20px;
+      max-width: 350px;
+      z-index: 10001;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      animation: slideInRight 0.3s ease;
+    ">
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        position: absolute;
+        top: 5px;
+        right: 10px;
+        background: none;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        font-size: 18px;
+      ">✕</button>
+      <p style="color: #fff; margin: 0; padding-right: 20px;">${message}</p>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Auto-fermeture après 8 secondes
+  setTimeout(() => popup.remove(), 8000);
+}
+
+// Afficher un pop-up d'offre spéciale
+function showOfferPopup(title, message, offerName) {
+  const popup = document.createElement('div');
+  popup.className = 'offer-popup';
+  popup.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border: 2px solid #00ff88;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      z-index: 10002;
+      box-shadow: 0 0 50px rgba(0,255,136,0.3);
+      text-align: center;
+      animation: scaleIn 0.3s ease;
+    ">
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        background: none;
+        border: none;
+        color: #888;
+        cursor: pointer;
+        font-size: 24px;
+      ">✕</button>
+      
+      <div style="font-size: 50px; margin-bottom: 15px;">🎁</div>
+      <h3 style="color: #00ff88; margin-bottom: 10px;">${title}</h3>
+      <p style="color: #fff; margin-bottom: 5px;">${message}</p>
+      <p style="color: #aaa; font-size: 0.85em; margin-bottom: 20px;">${offerName}</p>
+      
+      <button onclick="showPaymentModal(); this.parentElement.parentElement.remove();" style="
+        padding: 12px 30px;
+        background: linear-gradient(90deg, #00ff88, #00cc6a);
+        color: #000;
+        border: none;
+        border-radius: 10px;
+        font-weight: bold;
+        cursor: pointer;
+        font-size: 16px;
+      ">Voir les offres →</button>
+    </div>
+  `;
+  
+  // Overlay
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10001;';
+  overlay.onclick = () => { popup.remove(); overlay.remove(); };
+  
+  document.body.appendChild(overlay);
+  document.body.appendChild(popup);
+}
+
+// CSS animations
+const notifStyles = document.createElement('style');
+notifStyles.textContent = `
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes scaleIn {
+    from { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+    to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+`;
+document.head.appendChild(notifStyles);
 
 console.log('[Payment] Module de paiement chargé');
 

@@ -459,11 +459,10 @@
       <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('subscribers')">👥 Abonnés</button>
       <button class="tab-btn" onclick="switchTab('payments')">💰 Paiements</button>
-      <button class="tab-btn" onclick="switchTab('promotions')">🎁 Promotions</button>
       <button class="tab-btn" onclick="switchTab('coupons')">💎 Codes Promo</button>
       <button class="tab-btn" onclick="switchTab('workflows')">⚡ Workflows</button>
       <button class="tab-btn" onclick="switchTab('messages')">📧 Messages</button>
-      <button class="tab-btn" onclick="switchTab('rewards')">🏆 Récompenses</button>
+      <button class="tab-btn" onclick="switchTab('rewards')">🎁 Récompenses</button>
       <button class="tab-btn" onclick="switchTab('config')">⚙️ Configuration</button>
     </div>
     
@@ -551,17 +550,6 @@
       </div>
     </div>
     
-    <!-- Tab: Promotions -->
-    <div id="tab-promotions" class="tab-content">
-      <div class="section">
-        <h3>
-          <span>🎁 Promotions Automatiques</span>
-          <button class="btn btn-sm btn-primary" onclick="openCreatePromoModal()">+ Créer Promotion</button>
-        </h3>
-        <div id="promotions-list" class="loading">Chargement</div>
-      </div>
-    </div>
-    
     <!-- Tab: Coupons -->
     <div id="tab-coupons" class="tab-content">
       <div class="section">
@@ -573,13 +561,27 @@
       </div>
     </div>
     
-    <!-- Tab: Rewards -->
+    <!-- Tab: Rewards (fusionné avec Promotions) -->
     <div id="tab-rewards" class="tab-content">
       <div class="section">
         <h3>
-          <span>🏆 Système de Récompenses</span>
+          <span>🎁 Récompenses & Promotions Internes</span>
           <button class="btn btn-sm btn-primary" onclick="openCreateRewardModal()">+ Créer Récompense</button>
         </h3>
+        <p style="color: #888; margin-bottom: 15px; font-size: 0.9em;">
+          Gère les bonus internes (avatars, crédits, badges) déclenchés par des événements utilisateur.
+          <br><em>Note: Pour les réductions Stripe automatiques, utilise l'onglet Workflows.</em>
+        </p>
+        
+        <!-- Promotions d'inscription (fusion) -->
+        <div style="margin-bottom: 20px; padding: 15px; background: rgba(0,255,136,0.1); border-radius: 8px; border: 1px solid rgba(0,255,136,0.3);">
+          <h4 style="color: #00ff88; margin-bottom: 10px;">🎉 Bonus d'Inscription</h4>
+          <div id="promotions-list" style="margin-bottom: 10px;">Chargement...</div>
+          <button class="btn btn-sm btn-secondary" onclick="openCreatePromoModal()">+ Ajouter Bonus Inscription</button>
+        </div>
+        
+        <!-- Récompenses fidélité -->
+        <h4 style="color: #00ffff; margin-bottom: 10px;">🏆 Récompenses Fidélité</h4>
         <div id="rewards-list" class="loading">Chargement</div>
       </div>
     </div>
@@ -936,14 +938,18 @@
         case 'payments':
           loadPayments();
           break;
-        case 'promotions':
-          loadPromotions();
-          break;
         case 'coupons':
           loadCoupons();
           break;
         case 'rewards':
-          loadRewards();
+          loadPromotions(); // Charger les bonus d'inscription
+          loadRewards();    // Charger les récompenses fidélité
+          break;
+        case 'workflows':
+          loadWorkflows();
+          break;
+        case 'messages':
+          loadMessages();
           break;
       }
     }
@@ -1368,9 +1374,10 @@
       container.innerHTML = '<div class="loading">Chargement</div>';
       
       try {
-        const coupons = await apiCall('/api/admin/stripe/coupons');
+        const data = await apiCall('/api/admin/stripe/coupons');
+        const coupons = data.promoCodes || data; // Compatibilité avec ancien et nouveau format
         
-        if (coupons.length === 0) {
+        if (!coupons || coupons.length === 0) {
           container.innerHTML = '<div class="empty-state"><div class="icon">💎</div><p>Aucun code promo</p></div>';
           return;
         }
@@ -1775,6 +1782,26 @@
       <span>⚡ Workflows Automatisés</span>
       <button class="btn btn-sm btn-primary" onclick="openCreateWorkflowModal()">+ Créer Workflow</button>
     </h3>
+    
+    <div style="background: rgba(0,255,255,0.1); border: 1px solid rgba(0,255,255,0.3); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+      <h4 style="color: #00ffff; margin-bottom: 10px;">💡 Comment ça marche ?</h4>
+      <p style="color: #ccc; font-size: 0.9em; margin-bottom: 10px;">
+        Les workflows se déclenchent automatiquement lors d'événements (inscription, achat, etc.) et peuvent :
+      </p>
+      <ul style="color: #aaa; font-size: 0.85em; margin-left: 20px;">
+        <li>🎁 <strong>Donner des bonus</strong> : avatars, crédits vidéo, badges</li>
+        <li>💰 <strong>Appliquer une réduction Stripe AUTO</strong> : sélectionne un coupon Stripe existant → appliqué au checkout sans code à taper</li>
+        <li>📧 <strong>Envoyer des notifications</strong> : pop-up + email automatiques</li>
+        <li>🚫 <strong>Anti-fraude</strong> : chaque workflow ne s'applique qu'une fois par utilisateur</li>
+      </ul>
+    </div>
+    
+    <!-- Liste des coupons Stripe disponibles (pour référence) -->
+    <div style="background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+      <strong style="color: #ffd700;">💎 Coupons Stripe disponibles :</strong>
+      <span id="available-coupons-preview" style="color: #aaa; margin-left: 10px;">Chargement...</span>
+    </div>
+    
     <div id="workflows-list" class="loading">Chargement...</div>
   </div>
 </div>
@@ -1806,15 +1833,28 @@
         <label>Événement déclencheur *</label>
         <select id="workflow-trigger" name="trigger_type" required>
           <option value="">-- Sélectionne un événement --</option>
-          <option value="payment_succeeded">💰 Paiement Réussi</option>
-          <option value="subscription_created">📝 Abonnement Créé</option>
-          <option value="subscription_canceled">❌ Abonnement Annulé</option>
-          <option value="pack_family_activated">👨‍👩‍👧‍👦 Pack Famille Activé</option>
-          <option value="avatar_created">🎨 Avatar Créé</option>
-          <option value="game_played">🎮 Partie Jouée</option>
-          <option value="email_verified">✅ Email Vérifié</option>
-          <option value="client_site">🌐 Nouveau Client Site</option>
-          <option value="user_reactivation">🔄 Réactivation</option>
+          <optgroup label="💰 Achats & Paiements">
+            <option value="before_checkout">🛒 Avant Checkout (réduction auto)</option>
+            <option value="first_purchase">🎉 Premier Achat</option>
+            <option value="payment_succeeded">💰 Paiement Réussi</option>
+            <option value="subscription_created">📝 Abonnement Créé</option>
+            <option value="subscription_canceled">❌ Abonnement Annulé</option>
+            <option value="pack_purchased">📦 Pack Acheté</option>
+            <option value="pack_family_activated">👨‍👩‍👧‍👦 Pack Famille Activé</option>
+          </optgroup>
+          <optgroup label="👤 Compte & Inscription">
+            <option value="first_signup">🆕 Première Inscription</option>
+            <option value="email_verified">✅ Email Vérifié</option>
+            <option value="user_reactivation">🔄 Réactivation</option>
+          </optgroup>
+          <optgroup label="🎮 Activité">
+            <option value="avatar_created">🎨 Avatar Créé</option>
+            <option value="game_played">🎮 Partie Jouée</option>
+            <option value="referral_completed">🤝 Parrainage Réussi</option>
+          </optgroup>
+          <optgroup label="🌐 Autres">
+            <option value="client_site">🌐 Nouveau Client Site</option>
+          </optgroup>
         </select>
       </div>
 
@@ -1998,6 +2038,9 @@ async function loadWorkflows() {
     const response = await fetch('/api/admin/workflows');
     const workflows = await response.json();
     
+    // Charger aussi les coupons Stripe disponibles
+    loadAvailableCouponsPreview();
+    
     const container = document.getElementById('workflows-list');
     if (!workflows || workflows.length === 0) {
       container.innerHTML = '<div class="empty-state"><div class="icon">⚡</div><p>Aucun workflow créé</p></div>';
@@ -2031,9 +2074,17 @@ async function loadWorkflows() {
       if (communication.email) commIcons.push('📧');
       if (communication.social) commIcons.push('📱');
       
+      // Détecter si le workflow utilise un coupon Stripe
+      const hasCoupon = actions.some(a => a.type === 'apply_stripe_coupon');
+      const couponBadge = hasCoupon ? '<span class="badge" style="background: #ffd700; color: #000;">💎 Réduction Auto</span>' : '';
+      
       html += `
         <tr>
-          <td><strong>${w.name}</strong><br><small style="color: #666;">${w.description || ''}</small></td>
+          <td>
+            <strong>${w.name}</strong>
+            ${couponBadge}
+            <br><small style="color: #666;">${w.description || ''}</small>
+          </td>
           <td><span class="badge">${getTriggerName(w.trigger_type)}</span></td>
           <td>${conditions.length || 'Aucune'}</td>
           <td>${actions.length}</td>
@@ -2063,6 +2114,31 @@ async function loadWorkflows() {
   } catch (error) {
     console.error('Erreur chargement workflows:', error);
     showAlert('❌ Erreur chargement workflows', 'error');
+  }
+}
+
+// Charger les coupons Stripe disponibles pour le preview
+async function loadAvailableCouponsPreview() {
+  try {
+    const response = await fetch('/api/admin/stripe/coupons', {
+      headers: { 'Authorization': `Bearer ${secretCode}` }
+    });
+    const data = await response.json();
+    
+    const preview = document.getElementById('available-coupons-preview');
+    if (!preview) return;
+    
+    if (data.coupons && data.coupons.length > 0) {
+      const couponsList = data.coupons.map(c => {
+        const discount = c.percent_off ? `-${c.percent_off}%` : `-${(c.amount_off / 100).toFixed(2)}€`;
+        return `<span style="background: rgba(255,215,0,0.3); padding: 2px 8px; border-radius: 4px; margin-right: 5px;">${c.name || c.id} (${discount})</span>`;
+      }).join('');
+      preview.innerHTML = couponsList;
+    } else {
+      preview.innerHTML = '<em>Aucun coupon - Crée-en un dans l\'onglet Codes Promo ou sur Stripe Dashboard</em>';
+    }
+  } catch (error) {
+    console.error('Erreur chargement coupons preview:', error);
   }
 }
 
@@ -2102,6 +2178,15 @@ async function saveWorkflow(e) {
       params.account_type = actDiv.querySelector('[name^="action_account_type"]').value;
     } else if (type === 'log_event') {
       params.event_type = actDiv.querySelector('[name^="action_event_type"]').value;
+    } else if (type === 'apply_stripe_coupon') {
+      params.coupon_id = actDiv.querySelector('[name^="action_coupon_id"]').value;
+    } else if (type === 'grant_badge') {
+      params.badge_name = actDiv.querySelector('[name^="action_badge_name"]').value;
+    } else if (type === 'upgrade_tier') {
+      params.tier = actDiv.querySelector('[name^="action_tier"]').value;
+      params.duration_days = parseInt(actDiv.querySelector('[name^="action_duration_days"]').value);
+    } else if (type === 'send_notification') {
+      params.message = actDiv.querySelector('[name^="action_message"]').value;
     }
     
     actions.push({ type, params });
@@ -2239,13 +2324,28 @@ function addCondition() {
     
     <label>Type de condition</label>
     <select name="condition_type_${index}">
-      <option value="customer_count">Nombre de clients payants</option>
-      <option value="user_avatars_created">Avatars créés par l'user</option>
-      <option value="user_games_played">Parties jouées par l'user</option>
-      <option value="user_inactive_days">Jours d'inactivité</option>
-      <option value="user_account_type">Type de compte</option>
-      <option value="user_total_spent">Montant total dépensé</option>
-      <option value="user_signup_days_ago">Jours depuis inscription</option>
+      <optgroup label="📊 Limites Globales">
+        <option value="customer_count">Nombre de clients payants (ex: 500 premiers)</option>
+        <option value="total_users_limit">Nombre total d'utilisateurs</option>
+        <option value="promo_usage_limit">Limite d'utilisations du workflow</option>
+      </optgroup>
+      <optgroup label="👤 Utilisateur - Activité">
+        <option value="user_avatars_created">Avatars créés par l'user</option>
+        <option value="user_games_played">Parties jouées par l'user</option>
+        <option value="user_referral_count">Nombre de parrainages réussis</option>
+      </optgroup>
+      <optgroup label="👤 Utilisateur - Compte">
+        <option value="user_account_type">Type de compte (free, subscriber...)</option>
+        <option value="user_tier">Tier actuel (free, premium, family)</option>
+        <option value="user_total_spent">Montant total dépensé (€)</option>
+        <option value="user_signup_days_ago">Jours depuis inscription</option>
+        <option value="user_inactive_days">Jours d'inactivité</option>
+        <option value="user_email_verified">Email vérifié (oui/non)</option>
+      </optgroup>
+      <optgroup label="🚫 Anti-Fraude">
+        <option value="user_never_used_workflow">N'a jamais utilisé ce workflow</option>
+        <option value="user_first_purchase">Premier achat (jamais acheté)</option>
+      </optgroup>
     </select>
     
     <div style="display: flex; gap: 10px; margin-top: 10px;">
@@ -2262,9 +2362,12 @@ function addCondition() {
       </div>
       <div style="flex: 1;">
         <label>Valeur</label>
-        <input type="text" name="condition_value_${index}" required />
+        <input type="text" name="condition_value_${index}" placeholder="Ex: 500, free, premium..." required />
       </div>
     </div>
+    <p class="help-text" style="margin-top: 5px; font-size: 0.8em;">
+      💡 Pour "500 premiers clients", utilise: Limite d'utilisations ≤ 500
+    </p>
   `;
   
   container.appendChild(div);
@@ -2288,18 +2391,30 @@ function addAction() {
     
     <label>Type d'action</label>
     <select name="action_type_${index}" onchange="updateActionFields(${index}, this.value)">
-      <option value="add_bonus_avatars">🎨 Ajouter Avatars Bonus</option>
-      <option value="add_video_credits">📹 Ajouter Crédits Vidéo</option>
-      <option value="double_avatars">✨ Doubler les Avatars</option>
-      <option value="upgrade_account">⬆️ Upgrade Compte</option>
-      <option value="log_event">📝 Logger Événement</option>
+      <optgroup label="💰 Réductions Stripe">
+        <option value="apply_stripe_coupon">💎 Appliquer Coupon Stripe AUTO</option>
+      </optgroup>
+      <optgroup label="🎁 Bonus Compte">
+        <option value="add_bonus_avatars">🎨 Ajouter Avatars Bonus</option>
+        <option value="add_video_credits">📹 Ajouter Crédits Vidéo</option>
+        <option value="double_avatars">✨ Doubler les Avatars</option>
+        <option value="grant_badge">🏅 Donner un Badge</option>
+      </optgroup>
+      <optgroup label="⬆️ Upgrade">
+        <option value="upgrade_account">⬆️ Upgrade Compte</option>
+        <option value="upgrade_tier">👑 Upgrade Tier Temporaire</option>
+      </optgroup>
+      <optgroup label="📝 Autres">
+        <option value="send_notification">🔔 Notification Personnalisée</option>
+        <option value="log_event">📝 Logger Événement</option>
+      </optgroup>
     </select>
     
     <div id="action-fields-${index}"></div>
   `;
   
   container.appendChild(div);
-  updateActionFields(index, 'add_bonus_avatars');
+  updateActionFields(index, 'apply_stripe_coupon');
 }
 
 // Mettre à jour les champs d'une action
@@ -2309,6 +2424,20 @@ function updateActionFields(index, type) {
   let html = '';
   
   switch(type) {
+    case 'apply_stripe_coupon':
+      html = `
+        <div style="background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); border-radius: 6px; padding: 10px; margin-top: 10px;">
+          <label>Coupon Stripe à appliquer *</label>
+          <select name="action_coupon_id_${index}" id="coupon-select-${index}" required>
+            <option value="">-- Chargement des coupons... --</option>
+          </select>
+          <p class="help-text" style="margin-top: 5px;">Le coupon sera appliqué AUTO au checkout, sans code à taper !</p>
+        </div>
+      `;
+      // Charger les coupons Stripe
+      setTimeout(() => loadStripeCouponsForSelect(index), 100);
+      break;
+      
     case 'add_bonus_avatars':
       html = `
         <label style="margin-top: 10px;">Nombre d'avatars à ajouter</label>
@@ -2327,6 +2456,20 @@ function updateActionFields(index, type) {
       html = `<p class="help-text" style="margin-top: 10px;">Double les avatars de base de l'utilisateur</p>`;
       break;
       
+    case 'grant_badge':
+      html = `
+        <label style="margin-top: 10px;">Nom du badge</label>
+        <select name="action_badge_name_${index}">
+          <option value="supporter">🌟 Supporter</option>
+          <option value="early_adopter">🚀 Early Adopter</option>
+          <option value="premium">👑 Premium</option>
+          <option value="ambassador">🎖️ Ambassadeur</option>
+          <option value="top_player">🏆 Top Player</option>
+          <option value="social_butterfly">🦋 Social Butterfly</option>
+        </select>
+      `;
+      break;
+      
     case 'upgrade_account':
       html = `
         <label style="margin-top: 10px;">Nouveau type de compte</label>
@@ -2335,6 +2478,25 @@ function updateActionFields(index, type) {
           <option value="pack">Pack 50+50</option>
           <option value="family">Pack Famille</option>
         </select>
+      `;
+      break;
+      
+    case 'upgrade_tier':
+      html = `
+        <label style="margin-top: 10px;">Nouveau tier</label>
+        <select name="action_tier_${index}">
+          <option value="premium">Premium</option>
+          <option value="family">Family</option>
+        </select>
+        <label style="margin-top: 10px;">Durée (jours)</label>
+        <input type="number" name="action_duration_days_${index}" value="30" min="1" />
+      `;
+      break;
+      
+    case 'send_notification':
+      html = `
+        <label style="margin-top: 10px;">Message de la notification</label>
+        <textarea name="action_message_${index}" rows="2" placeholder="🎉 Félicitations ! Tu as reçu une récompense !"></textarea>
       `;
       break;
       
@@ -2347,6 +2509,34 @@ function updateActionFields(index, type) {
   }
   
   fieldsDiv.innerHTML = html;
+}
+
+// Charger les coupons Stripe pour un select
+async function loadStripeCouponsForSelect(index) {
+  try {
+    const response = await fetch('/api/admin/stripe/coupons', {
+      headers: { 'Authorization': `Bearer ${secretCode}` }
+    });
+    const data = await response.json();
+    
+    const select = document.getElementById(`coupon-select-${index}`);
+    if (!select) return;
+    
+    if (data.coupons && data.coupons.length > 0) {
+      let optionsHtml = '<option value="">-- Sélectionne un coupon --</option>';
+      data.coupons.forEach(coupon => {
+        const discount = coupon.percent_off ? `-${coupon.percent_off}%` : `-${(coupon.amount_off / 100).toFixed(2)}€`;
+        optionsHtml += `<option value="${coupon.id}">${coupon.name || coupon.id} (${discount})</option>`;
+      });
+      select.innerHTML = optionsHtml;
+    } else {
+      select.innerHTML = '<option value="">❌ Aucun coupon trouvé - Crée-en un sur Stripe</option>';
+    }
+  } catch (error) {
+    console.error('Erreur chargement coupons:', error);
+    const select = document.getElementById(`coupon-select-${index}`);
+    if (select) select.innerHTML = '<option value="">❌ Erreur chargement</option>';
+  }
 }
 
 // Supprimer une action
@@ -2426,11 +2616,17 @@ function getTriggerName(code) {
     'subscription_created': '📝 Abonnement Créé',
     'subscription_canceled': '❌ Abonnement Annulé',
     'pack_family_activated': '👨‍👩‍👧‍👦 Pack Famille Activé',
+    'pack_purchased': '📦 Pack Acheté',
     'avatar_created': '🎨 Avatar Créé',
     'game_played': '🎮 Partie Jouée',
     'email_verified': '✅ Email Vérifié',
     'client_site': '🌐 Nouveau Client Site',
-    'user_reactivation': '🔄 Réactivation'
+    'user_reactivation': '🔄 Réactivation',
+    // Nouveaux triggers
+    'before_checkout': '🛒 Avant Checkout',
+    'first_purchase': '🎉 Premier Achat',
+    'first_signup': '🆕 Première Inscription',
+    'referral_completed': '🤝 Parrainage Réussi'
   };
   return triggers[code] || code;
 }
