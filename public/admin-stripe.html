@@ -584,6 +584,14 @@
       </div>
     </div>
     
+    <!-- Tab: Messages -->
+    <div id="tab-messages" class="tab-content">
+      <div class="section">
+        <h3>📧 Messages de Contact</h3>
+        <div id="messages-list" class="loading">Chargement...</div>
+      </div>
+    </div>
+    
     <!-- Tab: Configuration -->
     <div id="tab-config" class="tab-content">
       <div class="section">
@@ -2475,29 +2483,30 @@ if (typeof loadWorkflows === 'function') {
   // Fonction pour charger les messages
   async function loadMessages() {
     try {
-      const response = await fetch('/api/admin/contact-messages', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-      });
+      const response = await fetch('/api/admin/contact-messages?secretCode=' + encodeURIComponent(secretCode));
       
       if (!response.ok) throw new Error('Erreur chargement');
       
       const messages = await response.json();
       
-      // Mettre à jour les stats
-      document.getElementById('stats-total-messages').textContent = messages.length;
-      document.getElementById('stats-unread-messages').textContent = 
-        messages.filter(m => !m.read).length;
+      // Mettre à jour les stats si les éléments existent
+      const totalEl = document.getElementById('stats-total-messages');
+      const unreadEl = document.getElementById('stats-unread-messages');
+      const todayEl = document.getElementById('stats-today-messages');
+      
+      if (totalEl) totalEl.textContent = messages.length;
+      if (unreadEl) unreadEl.textContent = messages.filter(m => !m.read).length;
       
       const today = new Date().toDateString();
-      document.getElementById('stats-today-messages').textContent = 
-        messages.filter(m => new Date(m.created_at).toDateString() === today).length;
+      if (todayEl) todayEl.textContent = messages.filter(m => new Date(m.created_at).toDateString() === today).length;
       
       // Afficher la liste
       displayMessages(messages);
       
     } catch (error) {
       console.error('Erreur:', error);
-      alert('Erreur lors du chargement des messages');
+      const container = document.getElementById('messages-list');
+      if (container) container.innerHTML = '<p style="color: #f44;">Erreur lors du chargement des messages</p>';
     }
   }
   
@@ -2538,9 +2547,7 @@ if (typeof loadWorkflows === 'function') {
   
   function viewMessage(id) {
     // Trouver le message
-    fetch(`/api/admin/contact-messages/${id}`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
-    })
+    fetch(`/api/admin/contact-messages/${id}?secretCode=${encodeURIComponent(secretCode)}`)
     .then(r => r.json())
     .then(msg => {
       const modal = `
@@ -2569,9 +2576,8 @@ if (typeof loadWorkflows === 'function') {
   
   async function markAsRead(id) {
     try {
-      await fetch(`/api/admin/contact-messages/${id}/read`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      await fetch(`/api/admin/contact-messages/${id}/read?secretCode=${encodeURIComponent(secretCode)}`, {
+        method: 'POST'
       });
       loadMessages();
     } catch (error) {
@@ -2583,9 +2589,8 @@ if (typeof loadWorkflows === 'function') {
     if (!confirm('Marquer tous les messages comme lus ?')) return;
     
     try {
-      await fetch('/api/admin/contact-messages/mark-all-read', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      await fetch(`/api/admin/contact-messages/mark-all-read?secretCode=${encodeURIComponent(secretCode)}`, {
+        method: 'POST'
       });
       loadMessages();
     } catch (error) {
@@ -2597,9 +2602,8 @@ if (typeof loadWorkflows === 'function') {
     if (!confirm('Supprimer ce message ?')) return;
     
     try {
-      await fetch(`/api/admin/contact-messages/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_token')}` }
+      await fetch(`/api/admin/contact-messages/${id}?secretCode=${encodeURIComponent(secretCode)}`, {
+        method: 'DELETE'
       });
       loadMessages();
     } catch (error) {
@@ -2613,10 +2617,10 @@ if (typeof loadWorkflows === 'function') {
   }
   
   // Charger les messages quand on affiche la section
-  const originalShowSection = showSection;
-  showSection = function(section) {
-    originalShowSection(section);
-    if (section === 'messages') {
+  const originalSwitchTab = switchTab;
+  switchTab = function(tabName) {
+    originalSwitchTab(tabName);
+    if (tabName === 'messages') {
       loadMessages();
     }
   };

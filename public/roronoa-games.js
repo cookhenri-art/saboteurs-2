@@ -36,11 +36,11 @@ function openForgotPasswordModal() {
   
   // Demander confirmation
   if (confirm(`Un email de réinitialisation sera envoyé à :\n${email}\n\nContinuer ?`)) {
-    // Envoyer la demande de réinitialisation
+    // Envoyer la demande de réinitialisation avec source: vitrine
     fetch('/api/auth/forgot-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ email, source: 'vitrine' })
     })
     .then(response => response.json())
     .then(data => {
