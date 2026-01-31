@@ -197,6 +197,54 @@ const PAYMENT_TRANSLATIONS = {
     de: 'Premium werden →',
     it: 'Passa a Premium →',
     pt: 'Seja Premium →'
+  },
+  promoCodeLabel: {
+    fr: '🎁 Tu as un code promo ?',
+    en: '🎁 Got a promo code?',
+    es: '🎁 ¿Tienes un código promocional?',
+    de: '🎁 Hast du einen Promo-Code?',
+    it: '🎁 Hai un codice promozionale?',
+    pt: '🎁 Tem um código promocional?'
+  },
+  promoCodePlaceholder: {
+    fr: 'Entre ton code',
+    en: 'Enter your code',
+    es: 'Ingresa tu código',
+    de: 'Gib deinen Code ein',
+    it: 'Inserisci il tuo codice',
+    pt: 'Digite seu código'
+  },
+  promoCodeValidate: {
+    fr: 'Valider',
+    en: 'Validate',
+    es: 'Validar',
+    de: 'Bestätigen',
+    it: 'Convalida',
+    pt: 'Validar'
+  },
+  promoCodeValid: {
+    fr: '✅ Code valide ! Réduction :',
+    en: '✅ Valid code! Discount:',
+    es: '✅ ¡Código válido! Descuento:',
+    de: '✅ Gültiger Code! Rabatt:',
+    it: '✅ Codice valido! Sconto:',
+    pt: '✅ Código válido! Desconto:'
+  },
+  promoCodeInvalid: {
+    fr: '❌ Code invalide ou expiré',
+    en: '❌ Invalid or expired code',
+    es: '❌ Código inválido o expirado',
+    de: '❌ Ungültiger oder abgelaufener Code',
+    it: '❌ Codice non valido o scaduto',
+    pt: '❌ Código inválido ou expirado'
+  },
+  promoCodeChecking: {
+    fr: '🔄 Vérification...',
+    en: '🔄 Checking...',
+    es: '🔄 Verificando...',
+    de: '🔄 Überprüfen...',
+    it: '🔄 Verifica...',
+    pt: '🔄 Verificando...'
   }
 };
 
@@ -261,6 +309,16 @@ function showPaymentModal() {
           
         </div>
         
+        <!-- Champ Code Promo -->
+        <div class="promo-code-section" style="margin-top: 25px; padding: 15px 20px; background: rgba(0, 255, 136, 0.1); border: 1px dashed rgba(0, 255, 136, 0.5); border-radius: 10px; text-align: center;">
+          <label style="color: #00ff88; font-weight: bold; display: block; margin-bottom: 10px; font-size: 0.95em;">${getPaymentText('promoCodeLabel', lang)}</label>
+          <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="payment-promo-code" placeholder="${getPaymentText('promoCodePlaceholder', lang)}" style="padding: 10px 15px; border: 2px solid #333; border-radius: 8px; background: rgba(0,0,0,0.3); color: #fff; font-size: 14px; text-transform: uppercase; width: 160px;" />
+            <button onclick="validatePaymentPromoCode()" style="padding: 10px 18px; background: #00ff88; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px;">${getPaymentText('promoCodeValidate', lang)}</button>
+          </div>
+          <p id="payment-promo-status" style="margin-top: 8px; font-size: 12px; color: #aaa; min-height: 18px;"></p>
+        </div>
+        
         ${!isLoggedIn ? `
         <div class="payment-login-notice">
           ${getPaymentText('loginNotice', lang)}
@@ -291,6 +349,40 @@ function closePaymentModal() {
   }
 }
 
+// Valider un code promo dans le modal de paiement
+async function validatePaymentPromoCode() {
+  const input = document.getElementById('payment-promo-code');
+  const status = document.getElementById('payment-promo-status');
+  const lang = window.getCurrentLanguage ? window.getCurrentLanguage() : 'fr';
+  
+  if (!input || !status) return;
+  
+  const code = input.value.trim().toUpperCase();
+  
+  if (!code) {
+    status.innerHTML = `<span style="color: #ff6b6b;">${getPaymentText('promoCodeInvalid', lang)}</span>`;
+    return;
+  }
+  
+  status.innerHTML = `<span style="color: #aaa;">${getPaymentText('promoCodeChecking', lang)}</span>`;
+  
+  try {
+    const response = await fetch('/api/stripe/validate-promo?code=' + encodeURIComponent(code));
+    const data = await response.json();
+    
+    if (data.valid) {
+      const discount = data.percent_off ? `-${data.percent_off}%` : `-${(data.amount_off / 100).toFixed(2)}€`;
+      status.innerHTML = `<span style="color: #00ff88;">${getPaymentText('promoCodeValid', lang)} <strong>${discount}</strong></span>`;
+      input.style.borderColor = '#00ff88';
+    } else {
+      status.innerHTML = `<span style="color: #ff6b6b;">${getPaymentText('promoCodeInvalid', lang)}</span>`;
+      input.style.borderColor = '#ff6b6b';
+    }
+  } catch (error) {
+    status.innerHTML = `<span style="color: #ff6b6b;">${getPaymentText('promoCodeInvalid', lang)}</span>`;
+  }
+}
+
 // Lancer le checkout Stripe
 async function startCheckout(priceType) {
   const user = JSON.parse(localStorage.getItem('saboteur_user') || '{}');
@@ -302,6 +394,10 @@ async function startCheckout(priceType) {
     return;
   }
   
+  // Récupérer le code promo s'il y en a un
+  const promoInput = document.getElementById('payment-promo-code');
+  const promoCode = promoInput ? promoInput.value.trim().toUpperCase() : '';
+  
   // Trouver le bouton cliqué et le désactiver
   const buttons = document.querySelectorAll('.payment-btn');
   buttons.forEach(btn => {
@@ -312,14 +408,27 @@ async function startCheckout(priceType) {
   clickedBtn.textContent = getPaymentText('loading', lang);
   
   try {
-    const response = await fetch('/api/stripe/create-checkout-session', {
+    // Construire l'URL avec le code promo si présent
+    let checkoutUrl = '/api/stripe/create-checkout-session?';
+    if (priceType === 'subscription') {
+      checkoutUrl += 'subscription=premium';
+    } else if (priceType === 'pack') {
+      checkoutUrl += 'pack=50';
+    } else {
+      checkoutUrl += 'subscription=' + priceType;
+    }
+    
+    if (promoCode) {
+      checkoutUrl += '&promoCode=' + encodeURIComponent(promoCode);
+    }
+    
+    const token = localStorage.getItem('saboteur_token');
+    const response = await fetch(checkoutUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        priceType: priceType,
-        userId: user.id,
-        userEmail: user.email
-      })
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
     });
     
     const data = await response.json();

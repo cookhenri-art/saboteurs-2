@@ -1120,6 +1120,17 @@
           Idéal pour compléter votre abonnement ou offrir en cadeau !
         </p>
         <div class="subscription-price" style="margin-bottom: 1rem;">4,99€ <span>unique</span></div>
+        
+        <!-- Champ Code Promo -->
+        <div style="margin-bottom: 1rem; padding: 12px; background: rgba(107, 157, 58, 0.1); border: 1px dashed var(--green-main); border-radius: 8px;">
+          <label style="color: var(--green-bright); font-weight: bold; display: block; margin-bottom: 8px; font-size: 0.9em;">🎁 Code promo ?</label>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="pack-promo-code" placeholder="Entre ton code" style="padding: 8px 12px; border: 2px solid #333; border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; font-size: 13px; text-transform: uppercase; width: 140px;" />
+            <button onclick="validatePackPromoCode()" style="padding: 8px 14px; background: var(--green-main); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">Valider</button>
+          </div>
+          <p id="pack-promo-status" style="margin-top: 6px; font-size: 12px; color: #aaa; min-height: 16px;"></p>
+        </div>
+        
         <button class="btn btn-gold" onclick="buyPack()">🛒 Acheter le Pack</button>
       </div>
     </div>
@@ -1499,28 +1510,77 @@
     // ==========================================
     
     async function buyPack() {
-      await startCheckout('pack');
+      const promoInput = document.getElementById('pack-promo-code');
+      const promoCode = promoInput ? promoInput.value.trim().toUpperCase() : '';
+      await startCheckout('pack', promoCode);
+    }
+    
+    // Valider un code promo pour le pack
+    async function validatePackPromoCode() {
+      const input = document.getElementById('pack-promo-code');
+      const status = document.getElementById('pack-promo-status');
+      
+      if (!input || !status) return;
+      
+      const code = input.value.trim().toUpperCase();
+      
+      if (!code) {
+        status.innerHTML = '<span style="color: #ff6b6b;">❌ Code invalide</span>';
+        return;
+      }
+      
+      status.innerHTML = '<span style="color: #aaa;">🔄 Vérification...</span>';
+      
+      try {
+        const response = await fetch('/api/stripe/validate-promo?code=' + encodeURIComponent(code));
+        const data = await response.json();
+        
+        if (data.valid) {
+          const discount = data.percent_off ? `-${data.percent_off}%` : `-${(data.amount_off / 100).toFixed(2)}€`;
+          status.innerHTML = `<span style="color: var(--green-bright);">✅ Code valide ! Réduction : <strong>${discount}</strong></span>`;
+          input.style.borderColor = 'var(--green-bright)';
+        } else {
+          status.innerHTML = '<span style="color: #ff6b6b;">❌ Code invalide ou expiré</span>';
+          input.style.borderColor = '#ff6b6b';
+        }
+      } catch (error) {
+        status.innerHTML = '<span style="color: #ff6b6b;">❌ Erreur de vérification</span>';
+      }
     }
     
     /**
      * Démarrer un checkout Stripe (même logique que index.html)
      * @param {string} priceType - 'subscription', 'family', ou 'pack'
+     * @param {string} promoCode - Code promo optionnel
      */
-    async function startCheckout(priceType) {
+    async function startCheckout(priceType, promoCode = '') {
       if (!currentUser) {
         alert('Erreur: Utilisateur non chargé. Rechargez la page.');
         return;
       }
       
       try {
-        const response = await fetch('/api/stripe/create-checkout-session', {
+        // Construire l'URL avec les paramètres
+        let checkoutUrl = '/api/stripe/create-checkout-session?';
+        if (priceType === 'subscription') {
+          checkoutUrl += 'subscription=premium';
+        } else if (priceType === 'family') {
+          checkoutUrl += 'subscription=family';
+        } else if (priceType === 'pack') {
+          checkoutUrl += 'pack=50';
+        }
+        
+        if (promoCode) {
+          checkoutUrl += '&promoCode=' + encodeURIComponent(promoCode);
+        }
+        
+        const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('token');
+        const response = await fetch(checkoutUrl, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            priceType: priceType,
-            userId: currentUser.id,
-            userEmail: currentUser.email
-          })
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
         });
         
         const data = await response.json();
