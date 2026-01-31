@@ -662,6 +662,91 @@
     }
     
     /* ========================================
+       GALERIE AVATARS
+       ======================================== */
+    
+    .avatars-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 1rem;
+    }
+    
+    .avatar-item {
+      position: relative;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid rgba(107, 157, 58, 0.3);
+      transition: all 0.3s ease;
+    }
+    
+    .avatar-item:hover {
+      transform: translateY(-5px);
+      border-color: var(--accent);
+      box-shadow: 0 10px 30px rgba(107, 157, 58, 0.3);
+    }
+    
+    .avatar-item img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+    }
+    
+    .avatar-actions {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 0.5rem;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .avatar-item:hover .avatar-actions {
+      opacity: 1;
+    }
+    
+    .avatar-btn {
+      padding: 0.4rem 0.8rem;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .avatar-btn-download {
+      background: var(--accent);
+      color: #fff;
+    }
+    
+    .avatar-btn-download:hover {
+      background: #5a8a2f;
+    }
+    
+    .avatar-date {
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      color: #aaa;
+    }
+    
+    .loading-spinner {
+      text-align: center;
+      padding: 2rem;
+      color: #888;
+    }
+    
+    /* ========================================
        RESPONSIVE
        ======================================== */
     
@@ -673,6 +758,99 @@
       .page-title {
         font-size: 1.8rem;
       }
+      
+      .page-subtitle {
+        font-size: 1rem;
+      }
+      
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        justify-content: center;
+      }
+      
+      .tab {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.8rem;
+        flex: 1 1 auto;
+        min-width: fit-content;
+      }
+      
+      .subscription-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      
+      .header-content {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      
+      .btn-header {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.85rem;
+      }
+      
+      .card {
+        padding: 1.5rem;
+      }
+      
+      .form-group input {
+        padding: 0.8rem;
+      }
+      
+      .avatars-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 0.5rem;
+      }
+      
+      .avatar-actions {
+        opacity: 1;
+        padding: 0.3rem;
+      }
+      
+      .avatar-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+      }
+      
+      .subscription-card {
+        padding: 1.5rem;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .page-title {
+        font-size: 1.5rem;
+      }
+      
+      .tabs {
+        gap: 0.2rem;
+      }
+      
+      .tab {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.75rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .avatars-gallery {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
       
       .tabs {
         gap: 0.25rem;
@@ -722,9 +900,10 @@
     
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab active" onclick="showSection('profile', this)">👤 Mon Profil</button>
+      <button class="tab active" onclick="showSection('profile', this)">👤 Profil</button>
+      <button class="tab" onclick="showSection('avatars', this)">🎨 Avatars</button>
       <button class="tab" onclick="showSection('subscriptions', this)">💎 Abonnements</button>
-      <button class="tab" onclick="showSection('credits', this)">🎨 Crédits & Packs</button>
+      <button class="tab" onclick="showSection('credits', this)">📦 Crédits</button>
       <button class="tab" onclick="showSection('history', this)">📜 Historique</button>
     </div>
     
@@ -795,6 +974,34 @@
           
           <button type="submit" class="btn">🔐 Modifier le mot de passe</button>
         </form>
+      </div>
+    </div>
+    
+    <!-- ==========================================
+         SECTION: MES AVATARS
+         ========================================== -->
+    <div id="section-avatars" class="section">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🎨 Mes Avatars IA</h2>
+          <span class="credits-badge" id="avatar-count-badge">0 avatars</span>
+        </div>
+        
+        <p style="color: #aaa; margin-bottom: 1.5rem;">
+          Vos avatars générés par IA sont disponibles ici. Vous pouvez les télécharger pour les utiliser dans d'autres jeux ou applications.
+        </p>
+        
+        <div id="avatars-gallery" class="avatars-gallery">
+          <div class="loading-spinner">Chargement...</div>
+        </div>
+        
+        <div id="no-avatars" style="display: none; text-align: center; padding: 3rem; color: #888;">
+          <div style="font-size: 4rem; margin-bottom: 1rem;">🎨</div>
+          <p>Vous n'avez pas encore d'avatar.</p>
+          <p style="margin-top: 0.5rem;">
+            <a href="/index.html" target="_blank" style="color: #6B9D3A;">Créez votre premier avatar dans le jeu →</a>
+          </p>
+        </div>
       </div>
     </div>
     
@@ -1121,6 +1328,8 @@
       // Charger les données spécifiques
       if (sectionName === 'history') {
         loadHistory();
+      } else if (sectionName === 'avatars') {
+        loadAvatars();
       }
     }
     
@@ -1411,6 +1620,90 @@
           </div>
         `;
       }
+    }
+    
+    // ==========================================
+    // AVATARS
+    // ==========================================
+    
+    let avatarsLoaded = false;
+    
+    async function loadAvatars() {
+      // Éviter de recharger si déjà chargé
+      if (avatarsLoaded) return;
+      
+      const gallery = document.getElementById('avatars-gallery');
+      const noAvatars = document.getElementById('no-avatars');
+      const countBadge = document.getElementById('avatar-count-badge');
+      const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('token');
+      
+      try {
+        const response = await fetch('/api/avatars/my-avatars', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (!response.ok) throw new Error('Erreur chargement avatars');
+        
+        const data = await response.json();
+        
+        if (!data.avatars || data.avatars.length === 0) {
+          gallery.style.display = 'none';
+          noAvatars.style.display = 'block';
+          countBadge.textContent = '0 avatars';
+          avatarsLoaded = true;
+          return;
+        }
+        
+        // Mettre à jour le compteur
+        countBadge.textContent = `${data.avatars.length} avatar${data.avatars.length > 1 ? 's' : ''}`;
+        
+        // Générer la galerie
+        let html = '';
+        data.avatars.forEach(avatar => {
+          const date = new Date(avatar.created_at).toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: 'short'
+          });
+          
+          html += `
+            <div class="avatar-item">
+              <span class="avatar-date">${date}</span>
+              <img src="${avatar.url}" alt="Avatar" loading="lazy" onerror="this.src='/assets/default-avatar.png'">
+              <div class="avatar-actions">
+                <button class="avatar-btn avatar-btn-download" onclick="downloadAvatar('${avatar.url}', '${avatar.id}')" title="Télécharger">
+                  ⬇️ Télécharger
+                </button>
+              </div>
+            </div>
+          `;
+        });
+        
+        gallery.innerHTML = html;
+        noAvatars.style.display = 'none';
+        avatarsLoaded = true;
+        
+      } catch (error) {
+        console.error('Erreur avatars:', error);
+        gallery.innerHTML = `
+          <div style="text-align: center; padding: 2rem; color: #f44;">
+            <p>Erreur de chargement des avatars</p>
+            <button class="btn btn-secondary btn-small" style="margin-top: 1rem;" onclick="avatarsLoaded = false; loadAvatars();">🔄 Réessayer</button>
+          </div>
+        `;
+      }
+    }
+    
+    function downloadAvatar(url, id) {
+      // Créer un lien de téléchargement
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `avatar-roronoa-${id || Date.now()}.png`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
     
     // ==========================================
