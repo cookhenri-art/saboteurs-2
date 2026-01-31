@@ -465,6 +465,16 @@
       
     </div>
     
+    <!-- Champ Code Promo -->
+    <div class="promo-code-section" style="margin-top: 30px; padding: 20px; background: rgba(107, 157, 58, 0.1); border: 1px dashed var(--green-main); border-radius: 10px; text-align: center;">
+      <label style="color: var(--green-bright); font-weight: bold; display: block; margin-bottom: 10px;">🎁 Tu as un code promo ?</label>
+      <div style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
+        <input type="text" id="promo-code-input" placeholder="Entre ton code ici" style="padding: 12px 20px; border: 2px solid #333; border-radius: 8px; background: #1a1a2e; color: #fff; font-size: 14px; text-transform: uppercase; width: 200px;" />
+        <button onclick="validatePromoCode()" style="padding: 12px 20px; background: var(--green-main); color: #fff; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">Valider</button>
+      </div>
+      <p id="promo-code-status" style="margin-top: 10px; font-size: 13px; color: #aaa;"></p>
+    </div>
+    
     <div class="modal-footer" style="margin-top: 40px; padding: 25px 20px; border-top: 1px solid #333; text-align: center; color: #aaa;">
       <p style="margin: 0; font-size: 16px;">
         💡 <strong>Compte vérifié requis</strong> pour accéder aux packs. 
@@ -705,6 +715,36 @@ function closePacksModal() {
   document.body.style.overflow = 'auto'; // Réactiver scroll
 }
 
+// Fonction pour valider un code promo
+async function validatePromoCode() {
+  const input = document.getElementById('promo-code-input');
+  const status = document.getElementById('promo-code-status');
+  const code = input.value.trim().toUpperCase();
+  
+  if (!code) {
+    status.innerHTML = '<span style="color: #ff6b6b;">⚠️ Entre un code promo</span>';
+    return;
+  }
+  
+  status.innerHTML = '<span style="color: #aaa;">🔄 Vérification...</span>';
+  
+  try {
+    const response = await fetch('/api/stripe/validate-promo?code=' + encodeURIComponent(code));
+    const data = await response.json();
+    
+    if (data.valid) {
+      const discount = data.percent_off ? `-${data.percent_off}%` : `-${(data.amount_off / 100).toFixed(2)}€`;
+      status.innerHTML = `<span style="color: var(--green-bright);">✅ Code valide ! Réduction : <strong>${discount}</strong></span>`;
+      input.style.borderColor = 'var(--green-bright)';
+    } else {
+      status.innerHTML = '<span style="color: #ff6b6b;">❌ Code invalide ou expiré</span>';
+      input.style.borderColor = '#ff6b6b';
+    }
+  } catch (error) {
+    status.innerHTML = '<span style="color: #ff6b6b;">❌ Erreur de vérification</span>';
+  }
+}
+
 // Fonction d'achat de pack
 async function buyPack(packType) {
   // Vérifier si l'utilisateur est connecté
@@ -746,6 +786,10 @@ async function buyPack(packType) {
     button.innerHTML = '⏳ Chargement...';
     button.disabled = true;
     
+    // Récupérer le code promo s'il y en a un
+    const promoCodeInput = document.getElementById('promo-code-input');
+    const promoCode = promoCodeInput ? promoCodeInput.value.trim().toUpperCase() : '';
+    
     // Rediriger vers Stripe selon le type de pack
     let checkoutUrl;
     
@@ -764,6 +808,11 @@ async function buyPack(packType) {
         button.disabled = false;
         alert('Pack inconnu');
         return;
+    }
+    
+    // Ajouter le code promo à l'URL si présent
+    if (promoCode) {
+      checkoutUrl += '&promoCode=' + encodeURIComponent(promoCode);
     }
     
     // Créer la session Stripe
