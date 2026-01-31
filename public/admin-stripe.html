@@ -883,8 +883,8 @@
   // ========================================
   const originalFetch = window.fetch;
   window.fetch = function(url, options = {}) {
-    // Si l'URL est relative et commence par /api/admin/
-    if (typeof url === 'string' && url.startsWith('/api/admin/')) {
+    // Si l'URL est relative et commence par /api/admin/ ET ne contient pas déjà secretCode
+    if (typeof url === 'string' && url.startsWith('/api/admin/') && !url.includes('secretCode=')) {
       const separator = url.includes('?') ? '&' : '?';
       url = `${url}${separator}secretCode=${encodeURIComponent(secretCode)}`;
     }
