@@ -1061,7 +1061,7 @@ function getEmailText(section, key, lang = 'fr') {
   return translations[key][lang] || translations[key]['fr'] || key;
 }
 
-async function sendVerificationEmail(email, username, token, lang = 'fr') {
+async function sendVerificationEmail(email, username, token, lang = 'fr', source = 'app') {
   if (!resend) {
     console.log(`📧 [DEV] Lien vérification: ${APP_URL}/verify-email.html?token=${token}`);
     return { success: true, simulated: true };
@@ -1070,7 +1070,17 @@ async function sendVerificationEmail(email, username, token, lang = 'fr') {
     const verifyUrl = `${APP_URL}/verify-email.html?token=${token}`;
     const t = (key) => getEmailText('verification', key, lang);
     
-    // Template HTML avec design gradient multilingue
+    // Déterminer l'expéditeur selon la source (vitrine ou app)
+    const isVitrine = source === 'vitrine' || source === 'client_site';
+    const fromEmail = isVitrine 
+      ? process.env.IONOS_VITRINE_EMAIL || 'contact@roronoa-games.com'
+      : process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com';
+    const fromName = isVitrine ? 'RORONOA GAMES' : 'Saboteur Game';
+    
+    // Template HTML avec design adapté
+    const brandColor = isVitrine ? '#6B9D3A' : '#00d4ff'; // Vert Roronoa ou Cyan Saboteur
+    const brandName = isVitrine ? 'RORONOA GAMES' : 'Saboteur';
+    
     const htmlTemplate = `
 <!DOCTYPE html>
 <html>
@@ -1078,33 +1088,34 @@ async function sendVerificationEmail(email, username, token, lang = 'fr') {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a2e;">
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: ${isVitrine ? '#0a0a0a' : '#1a1a2e'};">
   <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-    <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+    <div style="background: linear-gradient(135deg, ${isVitrine ? '#0a0a0a 0%, #1a1a1a 50%, #2D5016 100%' : '#1a1a2e 0%, #16213e 50%, #0f3460 100%'}); border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); ${isVitrine ? 'border: 1px solid #4A7C28;' : ''}">
       
       <!-- Logo/Titre -->
       <div style="margin-bottom: 30px;">
-        <span style="font-size: 48px;">🎮</span>
-        <h1 style="color: #00d4ff; margin: 10px 0; font-size: 28px; text-shadow: 0 0 20px rgba(0,212,255,0.5);">
-          ${t('title')}
+        <span style="font-size: 48px;">${isVitrine ? '⚔️' : '🎮'}</span>
+        <h1 style="color: ${brandColor}; margin: 10px 0; font-size: 28px; text-shadow: 0 0 20px ${isVitrine ? 'rgba(107,157,58,0.5)' : 'rgba(0,212,255,0.5)'};">
+          ${brandName}
         </h1>
+        <p style="color: #888; margin: 0; font-size: 14px;">${t('title')}</p>
       </div>
       
       <!-- Message -->
       <p style="color: #e0e0e0; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
-        ${t('hello')} <strong style="color: #00d4ff;">${username}</strong> ! 👋<br><br>
-        ${t('message')} <strong style="color: #4ade80;">${t('freeGames')}</strong> !
+        ${t('hello')} <strong style="color: ${brandColor};">${username}</strong> ! 👋<br><br>
+        ${t('message')} <strong style="color: ${isVitrine ? '#6B9D3A' : '#4ade80'};">${t('freeGames')}</strong> !
       </p>
       
       <!-- Bouton -->
-      <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: #000; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(74,222,128,0.4); transition: transform 0.2s;">
+      <a href="${verifyUrl}" style="display: inline-block; background: linear-gradient(135deg, ${isVitrine ? '#4A7C28 0%, #6B9D3A 100%' : '#4ade80 0%, #22c55e 100%'}); color: ${isVitrine ? '#fff' : '#000'}; text-decoration: none; padding: 15px 40px; border-radius: 30px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px ${isVitrine ? 'rgba(74,124,40,0.4)' : 'rgba(74,222,128,0.4)'}; transition: transform 0.2s;">
         ${t('button')}
       </a>
       
       <!-- Lien alternatif -->
       <p style="color: #888; font-size: 12px; margin-top: 30px; word-break: break-all;">
         ${t('copyLink')}<br>
-        <a href="${verifyUrl}" style="color: #00d4ff;">${verifyUrl}</a>
+        <a href="${verifyUrl}" style="color: ${brandColor};">${verifyUrl}</a>
       </p>
       
       <!-- Footer -->
@@ -1122,12 +1133,12 @@ async function sendVerificationEmail(email, username, token, lang = 'fr') {
 
     // Envoyer via IONOS SMTP
     await sendEmailIONOS({
-      from: `Saboteur Game <${process.env.IONOS_APP_EMAIL || 'contact@saboteurs.roronoa-games.com'}>`,
+      from: `${fromName} <${fromEmail}>`,
       to: email,
-      subject: t('subject'),
+      subject: `${brandName} - ${t('subject')}`,
       html: htmlTemplate
     });
-    console.log(`📧 Email de vérification envoyé à ${email} (${lang})`);
+    console.log(`📧 Email de vérification envoyé à ${email} (${lang}) via ${fromName}`);
     return { success: true };
   } catch (e) {
     console.error("❌ Erreur email:", e);
@@ -4412,7 +4423,7 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     dbInsert("INSERT INTO account_creation_log (ip_address, email) VALUES (?, ?)", [ip, email.toLowerCase()]);
-    const emailResult = await sendVerificationEmail(email, username, verificationToken, userLang);
+    const emailResult = await sendVerificationEmail(email, username, verificationToken, userLang, accountType);
 
     const token = jwt.sign({ id: newUserId, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
 
@@ -4650,7 +4661,7 @@ app.post("/api/auth/resend-verification", async (req, res) => {
     const verificationToken = generateVerificationToken();
     dbRun("UPDATE users SET verification_token = ?, verification_expires = ? WHERE id = ?",
       [verificationToken, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), user.id]);
-    await sendVerificationEmail(user.email, user.username, verificationToken, userLang);
+    await sendVerificationEmail(user.email, user.username, verificationToken, userLang, user.account_type);
 
     res.json({ success: true, message: "Email renvoyé" });
   } catch (error) {
