@@ -7173,6 +7173,18 @@ app.post('/api/admin/contact-messages/mark-all-read', verifyAdmin, (req, res) =>
   }
 });
 
+// Supprimer tous les messages (admin)
+app.delete('/api/admin/contact-messages/delete-all', verifyAdmin, (req, res) => {
+  try {
+    dbRun('DELETE FROM contact_messages');
+    logger.info('admin_delete_all_messages', { timestamp: new Date().toISOString() });
+    res.json({ success: true, message: 'Tous les messages ont été supprimés' });
+  } catch (error) {
+    console.error('[Admin] Erreur suppression messages:', error);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+});
+
 // Supprimer un message (admin)
 app.delete('/api/admin/contact-messages/:id', verifyAdmin, (req, res) => {
   try {
