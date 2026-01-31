@@ -4403,6 +4403,29 @@ app.post("/api/auth/register", async (req, res) => {
     const token = jwt.sign({ id: newUserId, email: email.toLowerCase(), username, accountType }, JWT_SECRET, { expiresIn: "30d" });
 
     const limits = getUserLimits({ account_type: accountType });
+    
+    // 🆕 TRIGGER: Première inscription - envoyer les offres disponibles
+    try {
+      await executeWorkflows('first_signup', { user_id: newUserId });
+      
+      // Créer la notification des offres disponibles
+      const eligibleWorkflows = await getEligibleWorkflowsForCheckout(newUserId);
+      if (eligibleWorkflows && eligibleWorkflows.length > 0) {
+        const discountInfo = eligibleWorkflows.map(w => {
+          const discount = w.percent_off ? `-${w.percent_off}%` : `-${(w.amount_off / 100).toFixed(2)}€`;
+          return `${w.name}: ${discount}`;
+        }).join(', ');
+        
+        dbRun(`
+          INSERT INTO user_notifications (user_id, type, message, read, created_at)
+          VALUES (?, 'welcome_offers', ?, 0, ?)
+        `, [newUserId, `🎉 Bienvenue ! Tu as droit à des offres exclusives : ${discountInfo}`, Date.now()]);
+        
+        console.log(`🎁 [Register] Offres notifiées à user ${newUserId}: ${discountInfo}`);
+      }
+    } catch (triggerError) {
+      console.error('[Register] Erreur trigger first_signup:', triggerError);
+    }
 
     res.json({
       success: true, token,
@@ -6404,7 +6427,17 @@ app.get('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
     const coupons = await stripe.coupons.list({ limit: 100 });
     const promoCodes = await stripe.promotionCodes.list({ limit: 100 });
     
-    // Combiner coupons et codes promo
+    // Coupons bruts (pour les workflows - application auto sans code)
+    const rawCoupons = coupons.data.filter(c => c.valid).map(c => ({
+      id: c.id,
+      name: c.name || c.id,
+      percent_off: c.percent_off,
+      amount_off: c.amount_off,
+      duration: c.duration,
+      valid: c.valid
+    }));
+    
+    // Combiner coupons et codes promo (pour affichage avec codes)
     const formatted = promoCodes.data.map(pc => {
       const coupon = coupons.data.find(c => c.id === pc.coupon.id) || pc.coupon;
       
@@ -6421,7 +6454,11 @@ app.get('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
       };
     });
     
-    res.json(formatted);
+    // Retourner les deux formats
+    res.json({
+      coupons: rawCoupons,      // Pour les workflows (application auto)
+      promoCodes: formatted     // Pour l'affichage des codes promo
+    });
     
   } catch (error) {
     console.error('[Admin] Erreur coupons:', error);
@@ -7021,6 +7058,136 @@ app.get('/api/stripe/validate-promo', async (req, res) => {
   }
 });
 
+// Route pour récupérer les offres automatiques éligibles pour l'utilisateur
+app.get('/api/stripe/auto-discounts', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.json({ discounts: [] });
+    }
+    
+    const token = authHeader.substring(7);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      return res.json({ discounts: [] });
+    }
+    
+    const userId = decoded.id;
+    
+    // 1. Récupérer les coupons en attente non utilisés
+    const pendingDiscounts = dbAll(`
+      SELECT * FROM user_pending_discounts 
+      WHERE user_id = ? AND applied = 0 AND (expires_at IS NULL OR expires_at > ?)
+      ORDER BY created_at ASC
+    `, [userId, Date.now()]);
+    
+    // 2. Vérifier les workflows éligibles pour cet utilisateur
+    const eligibleWorkflows = await getEligibleWorkflowsForCheckout(userId);
+    
+    const discounts = [];
+    
+    // Ajouter les coupons en attente
+    for (const discount of pendingDiscounts || []) {
+      try {
+        if (stripe && discount.stripe_coupon_id) {
+          const coupon = await stripe.coupons.retrieve(discount.stripe_coupon_id);
+          if (coupon && coupon.valid) {
+            discounts.push({
+              type: 'pending',
+              coupon_id: discount.stripe_coupon_id,
+              workflow_id: discount.workflow_id,
+              percent_off: coupon.percent_off,
+              amount_off: coupon.amount_off,
+              name: coupon.name || 'Réduction automatique'
+            });
+          }
+        }
+      } catch (e) {
+        console.log(`[Auto-Discounts] Coupon ${discount.stripe_coupon_id} non trouvé sur Stripe`);
+      }
+    }
+    
+    // Ajouter les workflows éligibles
+    for (const workflow of eligibleWorkflows || []) {
+      if (workflow.coupon_id && !discounts.find(d => d.coupon_id === workflow.coupon_id)) {
+        discounts.push({
+          type: 'workflow',
+          coupon_id: workflow.coupon_id,
+          workflow_id: workflow.id,
+          percent_off: workflow.percent_off,
+          amount_off: workflow.amount_off,
+          name: workflow.name
+        });
+      }
+    }
+    
+    res.json({ discounts });
+    
+  } catch (error) {
+    console.error('[Auto-Discounts] Erreur:', error);
+    res.json({ discounts: [] });
+  }
+});
+
+// Fonction pour vérifier les workflows éligibles au checkout
+async function getEligibleWorkflowsForCheckout(userId) {
+  try {
+    // Récupérer les workflows actifs avec trigger "before_checkout" ou "first_purchase"
+    const workflows = dbAll(`
+      SELECT w.*, 
+             (SELECT COUNT(*) FROM workflow_user_tracking WHERE user_id = ? AND workflow_id = w.id) as already_used
+      FROM workflows w
+      WHERE w.enabled = 1 
+        AND w.trigger_type IN ('before_checkout', 'first_purchase', 'subscription_created', 'pack_purchased')
+    `, [userId]);
+    
+    const eligible = [];
+    
+    for (const workflow of workflows || []) {
+      // Si déjà utilisé, skip
+      if (workflow.already_used > 0) continue;
+      
+      // Vérifier les conditions
+      const conditions = JSON.parse(workflow.conditions || '[]');
+      const triggerData = { user_id: userId, workflow_id: workflow.id };
+      
+      const conditionsMet = await evaluateConditions(conditions, triggerData);
+      
+      if (conditionsMet) {
+        // Parser les actions pour trouver apply_stripe_coupon
+        const actions = JSON.parse(workflow.actions || '[]');
+        const couponAction = actions.find(a => a.type === 'apply_stripe_coupon');
+        
+        if (couponAction && couponAction.params?.coupon_id) {
+          try {
+            if (stripe) {
+              const coupon = await stripe.coupons.retrieve(couponAction.params.coupon_id);
+              if (coupon && coupon.valid) {
+                eligible.push({
+                  id: workflow.id,
+                  name: workflow.name,
+                  coupon_id: couponAction.params.coupon_id,
+                  percent_off: coupon.percent_off,
+                  amount_off: coupon.amount_off
+                });
+              }
+            }
+          } catch (e) {
+            console.log(`[Workflows] Coupon ${couponAction.params.coupon_id} non trouvé`);
+          }
+        }
+      }
+    }
+    
+    return eligible;
+  } catch (error) {
+    console.error('[Workflows] Erreur getEligibleWorkflowsForCheckout:', error);
+    return [];
+  }
+}
+
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   if (!stripe) {
     return res.status(500).json({ error: 'Stripe non configuré' });
@@ -7100,7 +7267,10 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       locale: 'fr',
     };
     
-    // Si un code promo est fourni, l'appliquer
+    let appliedDiscount = null;
+    let appliedWorkflowId = null;
+    
+    // Si un code promo manuel est fourni, il a priorité
     if (promoCode) {
       try {
         const promoCodes = await stripe.promotionCodes.list({ 
@@ -7111,25 +7281,98 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
         
         if (promoCodes.data.length > 0) {
           sessionOptions.discounts = [{ promotion_code: promoCodes.data[0].id }];
-          console.log(`[Stripe] Code promo ${promoCode} appliqué`);
+          appliedDiscount = promoCode;
+          console.log(`[Stripe] Code promo manuel ${promoCode} appliqué`);
         } else {
-          // Code invalide, on permet quand même le paiement mais sans réduction
-          sessionOptions.allow_promotion_codes = true;
-          console.log(`[Stripe] Code promo ${promoCode} invalide, checkout normal`);
+          console.log(`[Stripe] Code promo ${promoCode} invalide`);
         }
       } catch (promoError) {
         console.error('[Stripe] Erreur code promo:', promoError);
-        sessionOptions.allow_promotion_codes = true;
       }
-    } else {
-      // Permettre la saisie manuelle du code sur Stripe
+    }
+    
+    // Si pas de code manuel appliqué, chercher les réductions automatiques
+    if (!appliedDiscount) {
+      try {
+        // 1. Vérifier les coupons en attente
+        const pendingDiscount = dbGet(`
+          SELECT * FROM user_pending_discounts 
+          WHERE user_id = ? AND applied = 0 AND (expires_at IS NULL OR expires_at > ?)
+          ORDER BY created_at ASC LIMIT 1
+        `, [userId, Date.now()]);
+        
+        if (pendingDiscount && pendingDiscount.stripe_coupon_id) {
+          try {
+            const coupon = await stripe.coupons.retrieve(pendingDiscount.stripe_coupon_id);
+            if (coupon && coupon.valid) {
+              sessionOptions.discounts = [{ coupon: pendingDiscount.stripe_coupon_id }];
+              appliedDiscount = pendingDiscount.stripe_coupon_id;
+              appliedWorkflowId = pendingDiscount.workflow_id;
+              
+              // Marquer comme appliqué
+              dbRun(`
+                UPDATE user_pending_discounts SET applied = 1, applied_at = ? WHERE id = ?
+              `, [Date.now(), pendingDiscount.id]);
+              
+              console.log(`[Stripe] Coupon AUTO ${pendingDiscount.stripe_coupon_id} appliqué pour user ${userId}`);
+            }
+          } catch (e) {
+            console.log(`[Stripe] Coupon en attente non valide: ${e.message}`);
+          }
+        }
+        
+        // 2. Si toujours rien, vérifier les workflows éligibles
+        if (!appliedDiscount) {
+          const eligibleWorkflows = await getEligibleWorkflowsForCheckout(userId);
+          
+          if (eligibleWorkflows && eligibleWorkflows.length > 0) {
+            const workflow = eligibleWorkflows[0];
+            sessionOptions.discounts = [{ coupon: workflow.coupon_id }];
+            appliedDiscount = workflow.coupon_id;
+            appliedWorkflowId = workflow.id;
+            
+            // Enregistrer le tracking
+            try {
+              dbRun(`
+                INSERT OR IGNORE INTO workflow_user_tracking (user_id, workflow_id, stripe_coupon_applied, applied_at)
+                VALUES (?, ?, ?, datetime('now'))
+              `, [userId, workflow.id, workflow.coupon_id]);
+            } catch (e) {
+              console.log(`[Stripe] Erreur tracking workflow: ${e.message}`);
+            }
+            
+            console.log(`[Stripe] Workflow AUTO "${workflow.name}" appliqué pour user ${userId}`);
+          }
+        }
+      } catch (autoError) {
+        console.error('[Stripe] Erreur réductions auto:', autoError);
+      }
+    }
+    
+    // Si aucune réduction appliquée, permettre la saisie manuelle sur Stripe
+    if (!sessionOptions.discounts) {
       sessionOptions.allow_promotion_codes = true;
+    }
+    
+    // Stocker l'info du workflow dans les metadata pour le webhook
+    if (appliedWorkflowId) {
+      sessionOptions.metadata.workflowId = appliedWorkflowId;
+    }
+    if (appliedDiscount) {
+      sessionOptions.metadata.appliedDiscount = appliedDiscount;
     }
     
     const session = await stripe.checkout.sessions.create(sessionOptions);
     
-    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId} (${priceType})${promoCode ? ' avec code ' + promoCode : ''}`);
-    res.json({ url: session.url, sessionId: session.id });
+    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId} (${priceType})${appliedDiscount ? ' avec réduction ' + appliedDiscount : ''}`);
+    
+    // Réponse avec info sur la réduction appliquée
+    res.json({ 
+      url: session.url, 
+      sessionId: session.id,
+      discountApplied: appliedDiscount ? true : false,
+      discountInfo: appliedDiscount
+    });
     
   } catch (error) {
     console.error('[Stripe] Erreur création session:', error);
@@ -8552,6 +8795,49 @@ async function initWorkflowsDatabase() {
     -- Index pour les notifications
     CREATE INDEX IF NOT EXISTS idx_user_notifications_user ON user_notifications(user_id);
     CREATE INDEX IF NOT EXISTS idx_user_notifications_read ON user_notifications(read);
+    
+    -- Table de tracking workflow par utilisateur (pour éviter doublons)
+    CREATE TABLE IF NOT EXISTS workflow_user_tracking (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      workflow_id INTEGER NOT NULL,
+      stripe_coupon_applied TEXT,
+      bonus_avatars_given INTEGER DEFAULT 0,
+      bonus_credits_given INTEGER DEFAULT 0,
+      applied_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, workflow_id),
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (workflow_id) REFERENCES workflows(id)
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_workflow_user_tracking ON workflow_user_tracking(user_id, workflow_id);
+    
+    -- Table des coupons Stripe en attente d'application
+    CREATE TABLE IF NOT EXISTS user_pending_discounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      workflow_id INTEGER,
+      stripe_coupon_id TEXT NOT NULL,
+      applied INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER,
+      applied_at INTEGER,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_user_pending_discounts ON user_pending_discounts(user_id, applied);
+    
+    -- Table des badges utilisateurs
+    CREATE TABLE IF NOT EXISTS user_badges (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      badge_name TEXT NOT NULL,
+      granted_at INTEGER NOT NULL,
+      UNIQUE(user_id, badge_name),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    );
+    
+    CREATE INDEX IF NOT EXISTS idx_user_badges ON user_badges(user_id);
   `;
   
   authDb.exec(workflowsSchema);
@@ -8887,15 +9173,15 @@ async function evaluateSingleCondition(condition, triggerData) {
         const userId = triggerData.user_id;
         if (!userId) return false;
         const result = dbGet('SELECT COUNT(*) as count FROM avatars WHERE user_id = ?', [userId]);
-        return compareValues(result.count, operator, value);
+        return compareValues(result.count || 0, operator, value);
       }
       
       case 'user_games_played': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        // Assumer qu'il y a une table games ou parties_played
-        const result = dbGet('SELECT COUNT(*) as count FROM games WHERE user_id = ?', [userId]);
-        return compareValues(result.count || 0, operator, value);
+        // Utiliser le champ games_played dans users ou compter les parties
+        const user = dbGet('SELECT games_played FROM users WHERE id = ?', [userId]);
+        return compareValues(user?.games_played || 0, operator, value);
       }
       
       case 'user_inactive_days': {
@@ -8919,8 +9205,6 @@ async function evaluateSingleCondition(condition, triggerData) {
       case 'user_total_spent': {
         const userId = triggerData.user_id;
         if (!userId) return false;
-        // Calculer le total dépensé (invoices Stripe)
-        // Pour simplifier, on suppose qu'on a un champ total_spent
         const user = dbGet('SELECT total_spent FROM users WHERE id = ?', [userId]);
         const totalSpent = user?.total_spent || 0;
         return compareValues(totalSpent, operator, value);
@@ -8934,6 +9218,79 @@ async function evaluateSingleCondition(condition, triggerData) {
         
         const daysSince = Math.floor((Date.now() - new Date(user.created_at).getTime()) / (1000 * 60 * 60 * 24));
         return compareValues(daysSince, operator, value);
+      }
+      
+      // ====== NOUVELLES CONDITIONS ======
+      
+      // Nombre de parrainages réussis
+      case 'user_referral_count': {
+        const userId = triggerData.user_id;
+        if (!userId) return false;
+        const result = dbGet(`
+          SELECT COUNT(*) as count FROM referrals 
+          WHERE referrer_id = ? AND status = 'completed'
+        `, [userId]);
+        return compareValues(result?.count || 0, operator, value);
+      }
+      
+      // Limite "X premiers" utilisateurs à avoir utilisé une promo/workflow
+      case 'promo_usage_limit': {
+        const workflowId = condition.workflow_id || triggerData.workflow_id;
+        if (!workflowId) return false;
+        const result = dbGet(`
+          SELECT execution_count FROM workflows WHERE id = ?
+        `, [workflowId]);
+        // Si execution_count < value, alors on peut encore utiliser
+        return compareValues(result?.execution_count || 0, '<', value);
+      }
+      
+      // Total d'utilisateurs ayant bénéficié (pour limiter à X premiers inscrits)
+      case 'total_users_limit': {
+        const result = dbGet('SELECT COUNT(*) as count FROM users', []);
+        return compareValues(result?.count || 0, operator, value);
+      }
+      
+      // Premier achat de l'utilisateur
+      case 'user_first_purchase': {
+        const userId = triggerData.user_id;
+        if (!userId) return false;
+        const result = dbGet(`
+          SELECT COUNT(*) as count FROM user_promotions 
+          WHERE user_id = ? AND promotion_id IN (
+            SELECT id FROM promotions WHERE type = 'discount'
+          )
+        `, [userId]);
+        // Si count = 0, c'est le premier achat avec promo possible
+        return (result?.count || 0) === 0;
+      }
+      
+      // Vérifier si l'utilisateur n'a jamais utilisé ce workflow
+      case 'user_never_used_workflow': {
+        const userId = triggerData.user_id;
+        const workflowId = condition.workflow_id || triggerData.workflow_id;
+        if (!userId || !workflowId) return false;
+        const result = dbGet(`
+          SELECT COUNT(*) as count FROM workflow_user_tracking 
+          WHERE user_id = ? AND workflow_id = ?
+        `, [userId, workflowId]);
+        return (result?.count || 0) === 0;
+      }
+      
+      // Vérifier le tier de l'utilisateur
+      case 'user_tier': {
+        const userId = triggerData.user_id;
+        if (!userId) return false;
+        const user = dbGet('SELECT tier FROM users WHERE id = ?', [userId]);
+        if (!user) return false;
+        return compareValues(user.tier, operator, value);
+      }
+      
+      // Vérifier si l'email est vérifié
+      case 'user_email_verified': {
+        const userId = triggerData.user_id;
+        if (!userId) return false;
+        const user = dbGet('SELECT email_verified FROM users WHERE id = ?', [userId]);
+        return user?.email_verified === 1;
       }
       
       case 'custom_sql': {
@@ -9073,6 +9430,93 @@ async function executeSingleAction(action, triggerData) {
       ]);
       
       return { event_logged: params.event_type };
+    }
+    
+    // ====== NOUVELLES ACTIONS ======
+    
+    // Stocker un coupon Stripe à appliquer au prochain checkout
+    case 'apply_stripe_coupon': {
+      const userId = triggerData.user_id;
+      const couponId = params.coupon_id;
+      const workflowId = triggerData.workflow_id;
+      
+      if (!couponId) {
+        return { error: 'coupon_id required' };
+      }
+      
+      // Stocker le coupon pour l'utilisateur
+      try {
+        dbRun(`
+          INSERT OR REPLACE INTO user_pending_discounts (user_id, workflow_id, stripe_coupon_id, created_at, expires_at)
+          VALUES (?, ?, ?, ?, ?)
+        `, [userId, workflowId, couponId, Date.now(), Date.now() + (30 * 24 * 60 * 60 * 1000)]); // Expire dans 30 jours
+        
+        console.log(`💰 [Workflows] Coupon ${couponId} stocké pour user ${userId}`);
+        return { userId, coupon_stored: couponId };
+      } catch (error) {
+        console.error('[Workflows] Erreur stockage coupon:', error);
+        return { error: error.message };
+      }
+    }
+    
+    // Donner un badge à l'utilisateur
+    case 'grant_badge': {
+      const userId = triggerData.user_id;
+      const badgeName = params.badge_name;
+      
+      if (!badgeName) {
+        return { error: 'badge_name required' };
+      }
+      
+      try {
+        dbRun(`
+          INSERT OR IGNORE INTO user_badges (user_id, badge_name, granted_at)
+          VALUES (?, ?, ?)
+        `, [userId, badgeName, Date.now()]);
+        
+        console.log(`🏅 [Workflows] Badge "${badgeName}" accordé à user ${userId}`);
+        return { userId, badge_granted: badgeName };
+      } catch (error) {
+        console.error('[Workflows] Erreur badge:', error);
+        return { error: error.message };
+      }
+    }
+    
+    // Upgrade le tier de l'utilisateur
+    case 'upgrade_tier': {
+      const userId = triggerData.user_id;
+      const newTier = params.tier || 'premium';
+      const durationDays = params.duration_days || 30;
+      
+      const expiresAt = Date.now() + (durationDays * 24 * 60 * 60 * 1000);
+      
+      dbRun(`
+        UPDATE users 
+        SET tier = ?, tier_expires_at = ?
+        WHERE id = ?
+      `, [newTier, expiresAt, userId]);
+      
+      console.log(`⬆️ [Workflows] User ${userId} upgradé vers ${newTier} pour ${durationDays} jours`);
+      return { userId, upgraded_to: newTier, expires_at: expiresAt };
+    }
+    
+    // Envoyer une notification push immédiate (stockée pour affichage)
+    case 'send_notification': {
+      const userId = triggerData.user_id;
+      const message = params.message;
+      const notifType = params.type || 'reward';
+      
+      if (!message) {
+        return { error: 'message required' };
+      }
+      
+      dbRun(`
+        INSERT INTO user_notifications (user_id, type, message, read, created_at)
+        VALUES (?, ?, ?, 0, ?)
+      `, [userId, notifType, message, Date.now()]);
+      
+      console.log(`🔔 [Workflows] Notification envoyée à user ${userId}`);
+      return { userId, notification_sent: true };
     }
     
     default:
