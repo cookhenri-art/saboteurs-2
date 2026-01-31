@@ -1763,27 +1763,13 @@
 
 <!-- ONGLET WORKFLOWS -->
 <div class="tab-content" id="tab-workflows">
-  <div class="section-header">
-    <h1>⚡ Workflows Automatisés</h1>
-    <button class="btn-create" onclick="openCreateWorkflowModal()">+ Créer Workflow</button>
+  <div class="section">
+    <h3>
+      <span>⚡ Workflows Automatisés</span>
+      <button class="btn btn-sm btn-primary" onclick="openCreateWorkflowModal()">+ Créer Workflow</button>
+    </h3>
+    <div id="workflows-list" class="loading">Chargement...</div>
   </div>
-
-  <!-- Liste des workflows -->
-  <table id="workflowsTable">
-    <thead>
-      <tr>
-        <th>Nom</th>
-        <th>Trigger</th>
-        <th>Conditions</th>
-        <th>Actions</th>
-        <th>Communication</th>
-        <th>Exécutions</th>
-        <th>Statut</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody id="workflowsList"></tbody>
-  </table>
 </div>
 
 <!-- Modal création/édition workflow -->
@@ -2005,13 +1991,30 @@ async function loadWorkflows() {
     const response = await fetch('/api/admin/workflows');
     const workflows = await response.json();
     
-    const tbody = document.getElementById('workflowsList');
+    const container = document.getElementById('workflows-list');
     if (!workflows || workflows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #666;">Aucun workflow créé</td></tr>';
+      container.innerHTML = '<div class="empty-state"><div class="icon">⚡</div><p>Aucun workflow créé</p></div>';
       return;
     }
     
-    tbody.innerHTML = workflows.map(w => {
+    let html = `
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Nom</th>
+            <th>Trigger</th>
+            <th>Conditions</th>
+            <th>Actions</th>
+            <th>Communication</th>
+            <th>Exécutions</th>
+            <th>Statut</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+    
+    workflows.forEach(w => {
       const conditions = JSON.parse(w.conditions || '[]');
       const actions = JSON.parse(w.actions || '[]');
       const communication = JSON.parse(w.communication || '{}');
@@ -2021,7 +2024,7 @@ async function loadWorkflows() {
       if (communication.email) commIcons.push('📧');
       if (communication.social) commIcons.push('📱');
       
-      return `
+      html += `
         <tr>
           <td><strong>${w.name}</strong><br><small style="color: #666;">${w.description || ''}</small></td>
           <td><span class="badge">${getTriggerName(w.trigger_type)}</span></td>
@@ -2033,21 +2036,22 @@ async function loadWorkflows() {
             ${w.last_executed_at ? `<br><small>${formatDate(w.last_executed_at)}</small>` : ''}
           </td>
           <td>
-            <span class="badge ${w.enabled ? 'active' : 'inactive'}">
+            <span class="status-badge ${w.enabled ? 'active' : 'inactive'}">
               ${w.enabled ? 'Actif' : 'Inactif'}
             </span>
           </td>
           <td>
-            <button onclick="viewWorkflowHistory(${w.id})" title="Historique">📊</button>
-            <button onclick="toggleWorkflow(${w.id})" title="Toggle">
-              ${w.enabled ? '🔒' : '🔓'}
-            </button>
-            <button onclick="editWorkflow(${w.id})" title="Modifier">✏️</button>
-            <button onclick="deleteWorkflow(${w.id})" title="Supprimer">🗑️</button>
+            <button class="btn btn-sm" onclick="viewWorkflowHistory(${w.id})" title="Historique">📊</button>
+            <button class="btn btn-sm" onclick="toggleWorkflow(${w.id})" title="Toggle">${w.enabled ? '🔒' : '🔓'}</button>
+            <button class="btn btn-sm" onclick="editWorkflow(${w.id})" title="Modifier">✏️</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteWorkflow(${w.id})" title="Supprimer">🗑️</button>
           </td>
         </tr>
       `;
-    }).join('');
+    });
+    
+    html += '</tbody></table>';
+    container.innerHTML = html;
     
   } catch (error) {
     console.error('Erreur chargement workflows:', error);
@@ -2482,6 +2486,7 @@ if (typeof loadWorkflows === 'function') {
     <div class="section-actions">
       <button onclick="loadMessages()" class="btn-refresh">🔄 Actualiser</button>
       <button onclick="markAllAsRead()" class="btn-secondary">✅ Tout marquer comme lu</button>
+      <button onclick="deleteAllMessages()" class="btn-danger">🗑️ Tout supprimer</button>
     </div>
     
     <div id="messages-list" class="data-table-container">
@@ -2604,6 +2609,17 @@ if (typeof loadWorkflows === 'function') {
     
     try {
       await apiCall(`/api/admin/contact-messages/${id}`, 'DELETE');
+      loadMessages();
+    } catch (error) {
+      console.error('Erreur:', error);
+    }
+  }
+  
+  async function deleteAllMessages() {
+    if (!confirm('⚠️ Supprimer TOUS les messages ?\n\nCette action est irréversible !')) return;
+    
+    try {
+      await apiCall(`/api/admin/contact-messages/delete-all`, 'DELETE');
       loadMessages();
     } catch (error) {
       console.error('Erreur:', error);
