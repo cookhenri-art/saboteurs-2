@@ -6975,41 +6975,113 @@ function generateFamilyCode() {
 }
 
 // Créer une session de paiement Stripe Checkout
+// Valider un code promo
+app.get('/api/stripe/validate-promo', async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: 'Stripe non configuré' });
+  }
+  
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.json({ valid: false });
+    }
+    
+    // Chercher le code promo dans Stripe
+    const promoCodes = await stripe.promotionCodes.list({ 
+      code: code.toUpperCase(),
+      active: true,
+      limit: 1 
+    });
+    
+    if (promoCodes.data.length === 0) {
+      return res.json({ valid: false });
+    }
+    
+    const promoCode = promoCodes.data[0];
+    const coupon = promoCode.coupon;
+    
+    // Vérifier si le coupon est valide
+    if (!coupon.valid) {
+      return res.json({ valid: false });
+    }
+    
+    res.json({
+      valid: true,
+      code: promoCode.code,
+      percent_off: coupon.percent_off,
+      amount_off: coupon.amount_off,
+      duration: coupon.duration
+    });
+    
+  } catch (error) {
+    console.error('[Stripe] Erreur validation promo:', error);
+    res.json({ valid: false });
+  }
+});
+
 app.post('/api/stripe/create-checkout-session', async (req, res) => {
   if (!stripe) {
     return res.status(500).json({ error: 'Stripe non configuré' });
   }
   
   try {
-    const { priceType, userId, userEmail } = req.body;
+    // Lire les paramètres depuis query OU body
+    const pack = req.query.pack || req.body.pack;
+    const subscription = req.query.subscription || req.body.subscription;
+    const promoCode = req.query.promoCode || req.body.promoCode;
     
-    if (!userId || !userEmail) {
-      return res.status(400).json({ error: 'userId et userEmail requis' });
+    // Récupérer l'utilisateur depuis le token
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Token manquant' });
     }
     
-    // V35: Vérifier que l'email est vérifié avant achat
-    const user = dbGet('SELECT email_verified FROM users WHERE id = ?', [userId]);
-    if (!user || user.email_verified !== 1) {
+    const token = authHeader.substring(7);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (e) {
+      return res.status(401).json({ error: 'Token invalide' });
+    }
+    
+    const userId = decoded.id;
+    const user = dbGet('SELECT * FROM users WHERE id = ?', [userId]);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+    }
+    
+    if (user.email_verified !== 1) {
       return res.status(403).json({ error: 'Vérifie ton email avant de faire un achat' });
     }
     
-    // V35: Support Pack Famille
-    let priceId;
-    if (priceType === 'subscription') {
+    // Déterminer le prix et le mode
+    let priceId, priceType, mode;
+    
+    if (subscription === 'premium') {
       priceId = process.env.STRIPE_PRICE_SUBSCRIPTION;
-    } else if (priceType === 'family') {
+      priceType = 'subscription';
+      mode = 'subscription';
+    } else if (subscription === 'family') {
       priceId = process.env.STRIPE_PRICE_FAMILY;
-    } else {
+      priceType = 'family';
+      mode = 'subscription';
+    } else if (pack === '50') {
       priceId = process.env.STRIPE_PRICE_PACK;
+      priceType = 'pack';
+      mode = 'payment';
+    } else {
+      return res.status(400).json({ error: 'Type de produit invalide' });
     }
     
     if (!priceId) {
       return res.status(500).json({ error: 'Price ID non configuré' });
     }
     
-    const mode = (priceType === 'subscription' || priceType === 'family') ? 'subscription' : 'payment';
-    
-    const session = await stripe.checkout.sessions.create({
+    // Construire les options de la session
+    const sessionOptions = {
       mode: mode,
       payment_method_types: ['card'],
       line_items: [
@@ -7018,7 +7090,7 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
           quantity: 1,
         },
       ],
-      customer_email: userEmail,
+      customer_email: user.email,
       metadata: {
         userId: userId,
         priceType: priceType
@@ -7026,10 +7098,37 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
       success_url: `${APP_URL}/payment-success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${APP_URL}/payment-cancel.html`,
       locale: 'fr',
-      allow_promotion_codes: true,
-    });
+    };
     
-    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId} (${priceType})`);
+    // Si un code promo est fourni, l'appliquer
+    if (promoCode) {
+      try {
+        const promoCodes = await stripe.promotionCodes.list({ 
+          code: promoCode.toUpperCase(),
+          active: true,
+          limit: 1 
+        });
+        
+        if (promoCodes.data.length > 0) {
+          sessionOptions.discounts = [{ promotion_code: promoCodes.data[0].id }];
+          console.log(`[Stripe] Code promo ${promoCode} appliqué`);
+        } else {
+          // Code invalide, on permet quand même le paiement mais sans réduction
+          sessionOptions.allow_promotion_codes = true;
+          console.log(`[Stripe] Code promo ${promoCode} invalide, checkout normal`);
+        }
+      } catch (promoError) {
+        console.error('[Stripe] Erreur code promo:', promoError);
+        sessionOptions.allow_promotion_codes = true;
+      }
+    } else {
+      // Permettre la saisie manuelle du code sur Stripe
+      sessionOptions.allow_promotion_codes = true;
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionOptions);
+    
+    console.log(`[Stripe] Session créée: ${session.id} pour user ${userId} (${priceType})${promoCode ? ' avec code ' + promoCode : ''}`);
     res.json({ url: session.url, sessionId: session.id });
     
   } catch (error) {
