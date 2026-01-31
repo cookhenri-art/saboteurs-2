@@ -868,15 +868,31 @@
 <body>
   <!-- 🔐 Script pour récupérer le token depuis l'URL (connexion partagée) -->
   <script>
-    (function() {
+    (async function() {
       const urlParams = new URLSearchParams(window.location.search);
       const authToken = urlParams.get('auth_token');
       if (authToken) {
-        localStorage.setItem('saboteur_token', authToken);
         console.log('✅ Token récupéré depuis URL');
         // Nettoyer l'URL pour ne pas exposer le token
         const cleanUrl = window.location.origin + window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Vérifier le token et récupérer les infos user
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('saboteur_token', authToken);
+            localStorage.setItem('saboteur_user', JSON.stringify(data.user));
+            console.log('✅ Connexion automatique réussie:', data.user.username);
+          } else {
+            console.log('❌ Token invalide');
+          }
+        } catch (e) {
+          console.log('❌ Erreur vérification token:', e);
+        }
       }
     })();
   </script>
@@ -1216,7 +1232,7 @@
     <div class="header">
       <h1 class="logo-title" data-i18n="index.title">LES SABOTEURS</h1>
       <p class="subtitle">⚡ <span data-i18n="index.subtitle">JEU DE DÉDUCTION SOCIALE</span> ⚡</p>
-      <a href="https://roronoa-games.com" target="_blank" class="roronoa-link">un jeu <span style="color: #6B9D3A;">RORONOA</span> <span style="color: #ff6b35;">GAMES</span></a>
+      <a href="https://roronoa-games.com" target="_blank" class="roronoa-link" onclick="goToSiteWithToken(event)">un jeu <span style="color: #6B9D3A;">RORONOA</span> <span style="color: #ff6b35;">GAMES</span></a>
     </div>
 
     <div class="auth-card">
@@ -2681,6 +2697,16 @@
       // Check après délai au cas où déjà connecté
       setTimeout(initMatchmakingIfReady, 1500);
     });
+    
+    // Fonction pour aller vers le site vitrine avec le token
+    function goToSiteWithToken(event) {
+      const token = localStorage.getItem('saboteur_token');
+      if (token) {
+        event.preventDefault();
+        const url = 'https://roronoa-games.com?auth_token=' + encodeURIComponent(token);
+        window.open(url, '_blank');
+      }
+    }
   </script>
   <script src="workflow-notifications.js"></script>
 </body>

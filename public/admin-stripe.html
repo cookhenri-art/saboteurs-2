@@ -587,7 +587,14 @@
     <!-- Tab: Messages -->
     <div id="tab-messages" class="tab-content">
       <div class="section">
-        <h3>📧 Messages de Contact</h3>
+        <h3>
+          <span>📧 Messages de Contact</span>
+          <div style="display: inline-flex; gap: 10px; margin-left: 20px;">
+            <button class="btn btn-sm btn-primary" onclick="loadMessages()">🔄 Actualiser</button>
+            <button class="btn btn-sm btn-secondary" onclick="markAllAsRead()">✅ Tout lu</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteAllMessages()">🗑️ Tout supprimer</button>
+          </div>
+        </h3>
         <div id="messages-list" class="loading">Chargement...</div>
       </div>
     </div>

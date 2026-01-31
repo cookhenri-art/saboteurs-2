@@ -10,6 +10,40 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- 🔐 Script pour récupérer le token depuis l'URL (connexion partagée) -->
+  <script>
+    (async function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const authToken = urlParams.get('auth_token');
+      if (authToken) {
+        console.log('✅ Token récupéré depuis URL');
+        // Nettoyer l'URL pour ne pas exposer le token
+        const cleanUrl = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+        
+        // Vérifier le token et récupérer les infos user
+        try {
+          const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            localStorage.setItem('token', authToken);
+            localStorage.setItem('saboteur_token', authToken);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            console.log('✅ Connexion automatique réussie:', data.user.username);
+            // Recharger pour mettre à jour l'interface
+            window.location.reload();
+          } else {
+            console.log('❌ Token invalide');
+          }
+        } catch (e) {
+          console.log('❌ Erreur vérification token:', e);
+        }
+      }
+    })();
+  </script>
+  
   <!-- Navigation -->
   <nav class="navbar">
     <div class="container">
