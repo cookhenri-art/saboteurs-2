@@ -6732,7 +6732,9 @@ function verifyToken(req, res, next) {
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.userId = decoded.userId;
+    // Le JWT stocke 'id', pas 'userId'
+    req.userId = decoded.id;
+    req.user = decoded; // Ajouter l'objet user complet aussi
     next();
   } catch (error) {
     return res.status(401).json({ error: 'Token invalide' });
@@ -6772,8 +6774,8 @@ app.get('/api/account/profile', verifyToken, (req, res) => {
       user.family_code = familyPack?.code || null;
     }
     
-    // Masquer les infos sensibles
-    delete user.stripeCustomerId;
+    // Masquer uniquement les infos vraiment sensibles
+    // Note: stripeCustomerId est gardé car nécessaire pour le billing portal
     delete user.stripeSubscriptionId;
     
     res.json(user);
