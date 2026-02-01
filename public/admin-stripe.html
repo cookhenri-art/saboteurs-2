@@ -544,7 +544,16 @@
       <div class="section">
         <h3>
           <span>💰 Historique des Paiements</span>
-          <button class="btn btn-sm btn-primary" onclick="loadPayments()">🔄 Actualiser</button>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <select id="payments-period" onchange="loadPayments()" style="padding: 8px; border-radius: 5px; background: #1a1a3e; color: #fff; border: 1px solid #333;">
+              <option value="week">Cette semaine</option>
+              <option value="today">Aujourd'hui</option>
+              <option value="month">Ce mois</option>
+              <option value="year">Cette année</option>
+              <option value="all">Tous</option>
+            </select>
+            <button class="btn btn-sm btn-primary" onclick="loadPayments()">🔄 Actualiser</button>
+          </div>
         </h3>
         <div id="payments-list" class="loading">Chargement</div>
       </div>
@@ -1151,37 +1160,57 @@
     
     async function loadPayments() {
       const container = document.getElementById('payments-list');
-      container.innerHTML = '<div class="loading">Chargement</div>';
+      container.innerHTML = '<div class="loading">Chargement...</div>';
       
       try {
-        const payments = await apiCall('/api/admin/stripe/payments');
+        const period = document.getElementById('payments-period')?.value || 'week';
+        const payments = await apiCall(`/api/admin/stripe/payments?period=${period}`);
         
-        if (payments.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>Aucun paiement</p></div>';
+        if (!payments || payments.length === 0) {
+          container.innerHTML = '<div class="empty-state"><div class="icon">💰</div><p>Aucun paiement pour cette période</p></div>';
           return;
         }
         
+        // Calculer le total
+        const total = payments.reduce((sum, p) => sum + (p.amount || 0), 0) / 100;
+        
         const html = `
+          <div style="margin-bottom: 15px; padding: 15px; background: rgba(0,255,136,0.1); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span><strong>${payments.length}</strong> paiement(s)</span>
+            <span style="font-size: 1.2em; color: #00ff88;"><strong>${total.toFixed(2)}€</strong> total</span>
+          </div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>Type</th>
+                <th>Date</th>
+                <th>Client</th>
+                <th>Description</th>
                 <th>Montant</th>
                 <th>Statut</th>
-                <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               ${payments.map(p => `
                 <tr>
-                  <td>${p.event_type}</td>
-                  <td>${p.amount}€</td>
+                  <td>${formatDate(p.created_at)}</td>
+                  <td>
+                    <div style="font-weight: bold;">${escapeHtml(p.customer_name)}</div>
+                    <div style="font-size: 0.85em; color: #888;">${escapeHtml(p.customer_email)}</div>
+                  </td>
+                  <td>${escapeHtml(p.description || 'Paiement')}</td>
+                  <td style="font-weight: bold; color: #00ff88;">
+                    ${(p.amount / 100).toFixed(2)}€
+                    ${p.refunded ? '<span style="color: #f44; font-size: 0.8em;">(remboursé)</span>' : ''}
+                  </td>
                   <td>
                     <span class="badge ${p.status === 'succeeded' ? 'badge-active' : 'badge-inactive'}">
-                      ${p.status}
+                      ${p.status === 'succeeded' ? '✅ Réussi' : p.status}
                     </span>
                   </td>
-                  <td>${formatDate(p.created_at)}</td>
+                  <td>
+                    ${p.receipt_url ? `<a href="${p.receipt_url}" target="_blank" class="btn btn-sm">🧾 Reçu</a>` : ''}
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1192,7 +1221,7 @@
         
       } catch (error) {
         console.error('Erreur chargement paiements:', error);
-        container.innerHTML = '<div class="alert alert-error">Erreur de chargement</div>';
+        container.innerHTML = '<div class="alert alert-error">Erreur de chargement des paiements Stripe</div>';
       }
     }
     

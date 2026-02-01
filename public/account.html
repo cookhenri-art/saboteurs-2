@@ -680,6 +680,23 @@
       transition: all 0.3s ease;
     }
     
+    .avatar-item.avatar-unavailable {
+      border-color: rgba(255, 68, 68, 0.5);
+    }
+    
+    .avatar-item.avatar-unavailable::after {
+      content: "⚠️ Image expirée";
+      position: absolute;
+      bottom: 40px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      background: rgba(255, 68, 68, 0.8);
+      color: white;
+      padding: 5px;
+      font-size: 0.75rem;
+    }
+    
     .avatar-item:hover {
       transform: translateY(-5px);
       border-color: var(--accent);
@@ -1751,17 +1768,25 @@
             month: 'short'
           });
           
+          // Utiliser url ou image_url
+          const avatarUrl = avatar.url || avatar.image_url || '';
+          
           html += `
             <div class="avatar-item">
               <span class="avatar-date">${date}</span>
-              <img src="${avatar.url}" alt="Avatar" loading="lazy" onerror="this.src='/assets/default-avatar.png'">
+              <img src="${avatarUrl}" 
+                   alt="Avatar" 
+                   loading="lazy" 
+                   onerror="this.onerror=null; this.src='/assets/default-avatar.png'; this.parentElement.classList.add('avatar-unavailable');"
+                   style="background: #1a1a2e;">
               <div class="avatar-actions">
-                <button class="avatar-btn avatar-btn-download" onclick="downloadAvatar('${avatar.url}', '${avatar.id}')" title="Télécharger">
+                <button class="avatar-btn avatar-btn-download" onclick="downloadAvatar('${avatarUrl}', '${avatar.id}')" title="Télécharger">
                   ⬇️ Télécharger
                 </button>
               </div>
             </div>
           `;
+        });
         });
         
         gallery.innerHTML = html;
@@ -1780,45 +1805,32 @@
     }
     
     async function downloadAvatar(url, id) {
-      const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('token');
-      
       try {
-        // Essayer d'abord via le proxy serveur (évite les problèmes CORS)
-        const response = await fetch(`/api/avatars/download/${id}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        // Télécharger directement depuis l'URL (la même qui affiche l'image)
+        const response = await fetch(url);
         
-        if (response.ok) {
-          // Télécharger via le blob
-          const blob = await response.blob();
-          const downloadUrl = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = downloadUrl;
-          link.download = `avatar-roronoa-${id || Date.now()}.png`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(downloadUrl);
-          return;
+        if (!response.ok) {
+          throw new Error('Image non disponible');
         }
-      } catch (proxyError) {
-        console.log('Proxy download failed, trying direct:', proxyError);
-      }
-      
-      // Fallback: téléchargement direct
-      try {
+        
+        // Convertir en blob et télécharger
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = url;
-        link.download = `avatar-roronoa-${id || Date.now()}.png`;
-        link.target = '_blank';
+        link.href = downloadUrl;
+        
+        // Déterminer l'extension
+        const ext = url.includes('.webp') ? 'webp' : url.includes('.jpg') ? 'jpg' : 'png';
+        link.download = `avatar-roronoa-${id || Date.now()}.${ext}`;
+        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+        
       } catch (error) {
         console.error('Erreur téléchargement:', error);
-        alert('❌ Impossible de télécharger cet avatar. Essayez de faire un clic droit sur l\'image > Enregistrer l\'image sous.');
+        alert('❌ Impossible de télécharger cet avatar.\n\nEssayez : clic droit sur l\'image > Enregistrer l\'image sous...');
       }
     }
     
