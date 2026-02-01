@@ -5263,8 +5263,14 @@ app.get("/api/avatars/my-avatars", authenticateToken, (req, res) => {
     const limits = getUserLimits(user);
     const bonusAvatars = user?.bonus_avatars || 0;
 
+    // Mapper les avatars pour avoir un champ url uniforme
+    const formattedAvatars = (avatars || []).map(a => ({
+      ...a,
+      url: a.url || a.image_url  // Utiliser url ou image_url
+    }));
+
     res.json({
-      avatars: avatars || [],
+      avatars: formattedAvatars,
       avatarsUsed: user?.avatars_used || 0,
       bonusAvatars: bonusAvatars,
       avatarsLimit: limits.avatars + bonusAvatars,
@@ -5311,7 +5317,25 @@ app.get("/api/avatars/download/:avatarId", authenticateToken, async (req, res) =
       return res.status(404).json({ error: "URL de l'avatar non disponible" });
     }
     
-    // Si c'est une URL base64, la décoder directement
+    // CAS 1: Fichier local (commence par /avatars/)
+    if (avatarUrl.startsWith('/avatars/')) {
+      const filename = avatarUrl.replace('/avatars/', '');
+      const localPath = path.join(AVATARS_DIR, filename);
+      
+      if (fs.existsSync(localPath)) {
+        const ext = path.extname(filename).toLowerCase();
+        const contentType = ext === '.webp' ? 'image/webp' : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+        
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="avatar-roronoa-${avatarId}${ext}"`);
+        return res.sendFile(localPath);
+      } else {
+        console.error(`❌ Fichier avatar introuvable: ${localPath}`);
+        return res.status(404).json({ error: "Fichier avatar introuvable sur le serveur" });
+      }
+    }
+    
+    // CAS 2: URL base64
     if (avatarUrl.startsWith('data:image')) {
       const matches = avatarUrl.match(/^data:image\/(\w+);base64,(.+)$/);
       if (matches) {
@@ -5324,14 +5348,15 @@ app.get("/api/avatars/download/:avatarId", authenticateToken, async (req, res) =
       }
     }
     
-    // Sinon, télécharger l'image depuis l'URL externe
+    // CAS 3: URL externe (Replicate ou autre)
     const https = require('https');
     const http = require('http');
     const protocol = avatarUrl.startsWith('https') ? https : http;
     
     protocol.get(avatarUrl, (imageResponse) => {
       if (imageResponse.statusCode !== 200) {
-        return res.status(404).json({ error: "Image non disponible" });
+        console.error(`❌ URL externe non disponible: ${avatarUrl} (status: ${imageResponse.statusCode})`);
+        return res.status(404).json({ error: "Image expirée ou non disponible. Les URLs Replicate expirent après quelques heures." });
       }
       
       const contentType = imageResponse.headers['content-type'] || 'image/png';
@@ -5342,7 +5367,7 @@ app.get("/api/avatars/download/:avatarId", authenticateToken, async (req, res) =
       
       imageResponse.pipe(res);
     }).on('error', (err) => {
-      console.error("❌ Erreur téléchargement image:", err);
+      console.error("❌ Erreur téléchargement image externe:", err);
       res.status(500).json({ error: "Erreur de téléchargement" });
     });
     
@@ -6376,33 +6401,65 @@ app.get('/api/admin/stripe/subscribers', verifyAdmin, async (req, res) => {
 // Historique des paiements
 app.get('/api/admin/stripe/payments', verifyAdmin, async (req, res) => {
   try {
-    const payments = dbAll(`
-      SELECT * FROM business_events
-      WHERE event_type LIKE '%payment%'
-         OR event_type LIKE '%subscription%'
-      ORDER BY created_at DESC
-      LIMIT 50
-    `);
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe non configuré' });
+    }
     
-    // Parser les données JSON
-    const formattedPayments = (payments || []).map(p => {
-      let parsedData = {};
-      try {
-        parsedData = JSON.parse(p.data || '{}');
-      } catch (e) {}
+    // Récupérer les paramètres de filtre
+    const { period } = req.query; // 'today', 'week', 'month', 'year', 'all'
+    
+    // Calculer la date de début selon la période
+    let created = {};
+    const now = new Date();
+    
+    if (period === 'today') {
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      created = { gte: Math.floor(startOfDay.getTime() / 1000) };
+    } else if (period === 'week') {
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - 7);
+      created = { gte: Math.floor(startOfWeek.getTime() / 1000) };
+    } else if (period === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      created = { gte: Math.floor(startOfMonth.getTime() / 1000) };
+    } else if (period === 'year') {
+      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      created = { gte: Math.floor(startOfYear.getTime() / 1000) };
+    }
+    // 'all' = pas de filtre created
+    
+    // Récupérer les paiements réussis depuis Stripe
+    const charges = await stripe.charges.list({
+      limit: 100,
+      ...(Object.keys(created).length > 0 ? { created } : {})
+    });
+    
+    // Formater les paiements
+    const formattedPayments = charges.data.map(charge => {
+      // Trouver l'utilisateur correspondant
+      const user = charge.metadata?.userId 
+        ? dbGet('SELECT email, username FROM users WHERE id = ?', [charge.metadata.userId])
+        : null;
       
       return {
-        event_type: p.event_type,
-        amount: parsedData.amount || 0,
-        status: parsedData.status || 'unknown',
-        created_at: p.created_at
+        id: charge.id,
+        amount: charge.amount,
+        currency: charge.currency,
+        status: charge.status,
+        description: charge.description || 'Paiement',
+        customer_email: charge.billing_details?.email || charge.receipt_email || user?.email || 'N/A',
+        customer_name: charge.billing_details?.name || user?.username || 'N/A',
+        created_at: new Date(charge.created * 1000).toISOString(),
+        receipt_url: charge.receipt_url,
+        refunded: charge.refunded,
+        metadata: charge.metadata
       };
     });
     
     res.json(formattedPayments);
     
   } catch (error) {
-    console.error('[Admin] Erreur paiements:', error);
+    console.error('[Admin] Erreur paiements Stripe:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -6836,6 +6893,99 @@ app.post('/api/admin/stripe/cleanup-orphans', verifyAdmin, async (req, res) => {
     
   } catch (error) {
     console.error('[Admin] Erreur cleanup:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Diagnostiquer les avatars d'un utilisateur
+app.get('/api/admin/avatars/diagnose/:userId', verifyAdmin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const avatars = dbAll('SELECT * FROM avatars WHERE user_id = ? ORDER BY created_at DESC', [userId]);
+    
+    const results = [];
+    for (const avatar of avatars || []) {
+      const url = avatar.url || avatar.image_url;
+      let status = 'unknown';
+      let fileExists = false;
+      
+      if (url) {
+        if (url.startsWith('/avatars/')) {
+          // Fichier local
+          const filename = url.replace('/avatars/', '');
+          const localPath = path.join(AVATARS_DIR, filename);
+          fileExists = fs.existsSync(localPath);
+          status = fileExists ? 'local_ok' : 'local_missing';
+        } else if (url.startsWith('data:image')) {
+          status = 'base64';
+          fileExists = true;
+        } else if (url.includes('replicate.delivery') || url.includes('pbxt.replicate')) {
+          status = 'replicate_url_may_expire';
+        } else {
+          status = 'external_url';
+        }
+      } else {
+        status = 'no_url';
+      }
+      
+      results.push({
+        id: avatar.id,
+        url: url ? (url.length > 100 ? url.substring(0, 100) + '...' : url) : null,
+        status,
+        fileExists,
+        created_at: avatar.created_at
+      });
+    }
+    
+    // Stats
+    const stats = {
+      total: results.length,
+      local_ok: results.filter(r => r.status === 'local_ok').length,
+      local_missing: results.filter(r => r.status === 'local_missing').length,
+      replicate_expired: results.filter(r => r.status === 'replicate_url_may_expire').length,
+      base64: results.filter(r => r.status === 'base64').length
+    };
+    
+    res.json({ userId, stats, avatars: results });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur diagnose avatars:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Supprimer les avatars avec URLs Replicate expirées
+app.post('/api/admin/avatars/cleanup-expired', verifyAdmin, async (req, res) => {
+  try {
+    // Trouver les avatars avec URLs Replicate (qui expirent)
+    const expiredAvatars = dbAll(`
+      SELECT * FROM avatars 
+      WHERE image_url LIKE '%replicate.delivery%' 
+         OR image_url LIKE '%pbxt.replicate%'
+    `);
+    
+    if (!expiredAvatars || expiredAvatars.length === 0) {
+      return res.json({ success: true, count: 0, message: 'Aucun avatar avec URL Replicate trouvé' });
+    }
+    
+    // Supprimer de la DB
+    dbRun(`
+      DELETE FROM avatars 
+      WHERE image_url LIKE '%replicate.delivery%' 
+         OR image_url LIKE '%pbxt.replicate%'
+    `);
+    
+    console.log(`[Admin] ${expiredAvatars.length} avatars avec URLs Replicate expirées supprimés`);
+    
+    res.json({
+      success: true,
+      count: expiredAvatars.length,
+      message: `${expiredAvatars.length} avatars avec URLs expirées supprimés`
+    });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur cleanup expired:', error);
     res.status(500).json({ error: error.message });
   }
 });
