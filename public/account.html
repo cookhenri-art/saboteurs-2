@@ -878,6 +878,30 @@
         justify-content: center;
       }
     }
+    /* Language Selector */
+    .lang-selector-wrap {
+      display: inline-block;
+      margin-left: 10px;
+    }
+    .language-selector {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--green-main);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .language-selector:hover {
+      background: rgba(107, 157, 58, 0.3);
+      border-color: var(--green-bright);
+    }
+    .language-selector option {
+      background: #1a1a2e;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -886,24 +910,24 @@
     <div class="header-content">
       <a href="/" class="logo">RORONOA <span class="logo-accent">GAMES</span></a>
       <div class="header-actions">
-        <a href="/" class="btn-header">⚔️ Accueil</a>
-        <button class="btn-header btn-logout" onclick="logout()">🚪 Déconnexion</button>
+        <a href="/" class="btn-header" data-i18n-site="nav.home">⚔️ Accueil</a>
+        <button class="btn-header btn-logout" onclick="logout()" data-i18n-site="nav.logout">🚪 Déconnexion</button>
       </div>
     </div>
   </header>
 
   <!-- Main Container -->
   <div class="container">
-    <h1 class="page-title">⚔️ Mon Compte</h1>
+    <h1 class="page-title" data-i18n-site="account.page_title_h1">⚔️ Mon Compte</h1>
     <p class="page-subtitle">Bienvenue, <strong id="user-name">Chargement...</strong></p>
     
     <!-- Tabs -->
     <div class="tabs">
-      <button class="tab active" onclick="showSection('profile', this)">👤 Profil</button>
-      <button class="tab" onclick="showSection('avatars', this)">🎨 Avatars</button>
-      <button class="tab" onclick="showSection('subscriptions', this)">💎 Abonnements</button>
-      <button class="tab" onclick="showSection('credits', this)">📦 Crédits</button>
-      <button class="tab" onclick="showSection('history', this)">📜 Historique</button>
+      <button class="tab active" onclick="showSection('profile', this)" data-i18n-site="account.tab_profile">👤 Profil</button>
+      <button class="tab" onclick="showSection('avatars', this)" data-i18n-site="account.tab_avatars">🎨 Avatars</button>
+      <button class="tab" onclick="showSection('subscriptions', this)" data-i18n-site="account.tab_subscriptions">💎 Abonnements</button>
+      <button class="tab" onclick="showSection('credits', this)" data-i18n-site="account.tab_credits">📦 Crédits</button>
+      <button class="tab" onclick="showSection('history', this)" data-i18n-site="account.tab_history">📜 Historique</button>
     </div>
     
     <!-- ==========================================
@@ -913,42 +937,42 @@
       <!-- Infos utilisateur -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">👤 Informations personnelles</h2>
+          <h2 class="card-title" data-i18n-site="account.personal_info">👤 Informations personnelles</h2>
         </div>
         
         <div id="alert-profile"></div>
         
         <form onsubmit="updateProfile(event)">
           <div class="form-group">
-            <label>Email</label>
+            <label data-i18n-site="account.label_email">Email</label>
             <input type="email" id="profile-email" disabled>
           </div>
           
           <div class="form-group">
-            <label>Pseudo</label>
+            <label data-i18n-site="account.label_username">Pseudo</label>
             <input type="text" id="profile-username" required>
           </div>
           
           <div class="form-group">
-            <label>Type de compte</label>
+            <label data-i18n-site="account.label_account_type">Type de compte</label>
             <input type="text" id="profile-type" disabled>
           </div>
           
-          <button type="submit" class="btn">💾 Sauvegarder</button>
+          <button type="submit" class="btn" data-i18n-site="account.btn_save">💾 Sauvegarder</button>
         </form>
       </div>
       
       <!-- Changer mot de passe -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🔒 Changer le mot de passe</h2>
+          <h2 class="card-title" data-i18n-site="account.change_password_title">🔒 Changer le mot de passe</h2>
         </div>
         
         <div id="alert-password"></div>
         
         <form id="form-password" onsubmit="updatePassword(event)">
           <div class="form-group">
-            <label>Mot de passe actuel</label>
+            <label data-i18n-site="account.label_current_password">Mot de passe actuel</label>
             <div class="input-wrapper">
               <input type="password" id="current-password" required>
               <button type="button" class="toggle-password" onclick="togglePassword('current-password', this)">👁️</button>
@@ -956,7 +980,7 @@
           </div>
           
           <div class="form-group">
-            <label>Nouveau mot de passe</label>
+            <label data-i18n-site="account.label_new_password">Nouveau mot de passe</label>
             <div class="input-wrapper">
               <input type="password" id="new-password" required minlength="6">
               <button type="button" class="toggle-password" onclick="togglePassword('new-password', this)">👁️</button>
@@ -964,14 +988,14 @@
           </div>
           
           <div class="form-group">
-            <label>Confirmer le nouveau mot de passe</label>
+            <label data-i18n-site="account.label_confirm_password">Confirmer le nouveau mot de passe</label>
             <div class="input-wrapper">
               <input type="password" id="confirm-password" required minlength="6">
               <button type="button" class="toggle-password" onclick="togglePassword('confirm-password', this)">👁️</button>
             </div>
           </div>
           
-          <button type="submit" class="btn">🔐 Modifier le mot de passe</button>
+          <button type="submit" class="btn" data-i18n-site="account.btn_change_password">🔐 Modifier le mot de passe</button>
         </form>
       </div>
     </div>
@@ -982,7 +1006,7 @@
     <div id="section-avatars" class="section">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🎨 Mes Avatars IA</h2>
+          <h2 class="card-title" data-i18n-site="account.my_avatars_title">🎨 Mes Avatars IA</h2>
           <span class="credits-badge" id="avatar-count-badge">0 avatars</span>
         </div>
         
@@ -1013,14 +1037,14 @@
         <div class="subscription-card" id="card-premium">
           <span class="subscription-badge inactive" id="premium-badge">Non actif</span>
           <div class="subscription-icon">⚔️</div>
-          <h3 class="subscription-name">Pack Premium</h3>
+          <h3 class="subscription-name" data-i18n-site="account.pack_premium">Pack Premium</h3>
           <div class="subscription-price">1,49€ <span>/mois</span></div>
           <ul class="subscription-features">
-            <li>Vidéo illimitée</li>
-            <li>30 avatars IA / mois</li>
-            <li>Tous les thèmes</li>
-            <li>Badge Premium</li>
-            <li>Support prioritaire</li>
+            <li data-i18n-site="account.feat_unlimited_video">Vidéo illimitée</li>
+            <li data-i18n-site="account.feat_30_avatars">30 avatars IA / mois</li>
+            <li data-i18n-site="account.feat_all_themes">Tous les thèmes</li>
+            <li data-i18n-site="account.feat_premium_badge">Badge Premium</li>
+            <li data-i18n-site="account.feat_priority_support">Support prioritaire</li>
           </ul>
           
           <div class="subscription-dates" id="premium-dates" style="display: none;">
@@ -1030,8 +1054,8 @@
           </div>
           
           <div class="subscription-actions">
-            <button class="btn" id="btn-premium" onclick="managePremium()">S'abonner</button>
-            <button class="btn btn-danger btn-small" id="btn-cancel-premium" style="display: none;" onclick="cancelSubscription('premium')">❌ Résilier l'abonnement</button>
+            <button class="btn" id="btn-premium" onclick="managePremium()" data-i18n-site="account.btn_subscribe">S'abonner</button>
+            <button class="btn btn-danger btn-small" id="btn-cancel-premium" data-i18n-site="account.btn_cancel" style="display: none;" onclick="cancelSubscription('premium')">❌ Résilier l'abonnement</button>
           </div>
         </div>
         
@@ -1039,14 +1063,14 @@
         <div class="subscription-card" id="card-family">
           <span class="subscription-badge inactive" id="family-badge">Non actif</span>
           <div class="subscription-icon">👨‍👩‍👧‍👦</div>
-          <h3 class="subscription-name">Pack Famille</h3>
+          <h3 class="subscription-name" data-i18n-site="account.pack_family">Pack Famille</h3>
           <div class="subscription-price">9,99€ <span>/mois</span></div>
           <ul class="subscription-features">
-            <li>Jusqu'à 8 comptes</li>
-            <li>Vidéo illimitée pour tous</li>
-            <li>30 avatars IA / mois chacun</li>
-            <li>Tous les thèmes</li>
-            <li>Gestion des membres</li>
+            <li data-i18n-site="account.feat_8_accounts">Jusqu'à 8 comptes</li>
+            <li data-i18n-site="account.feat_video_all">Vidéo illimitée pour tous</li>
+            <li data-i18n-site="account.feat_30_avatars_each">30 avatars IA / mois chacun</li>
+            <li data-i18n-site="account.feat_all_themes">Tous les thèmes</li>
+            <li data-i18n-site="account.feat_member_management">Gestion des membres</li>
           </ul>
           
           <div class="subscription-dates" id="family-dates" style="display: none;">
@@ -1057,14 +1081,14 @@
           
           <div id="family-code-section" style="display: none;">
             <div class="family-code-box">
-              <p class="family-code-label">Code famille à partager :</p>
+              <p class="family-code-label" data-i18n-site="account.family_code_share">Code famille à partager :</p>
               <p class="family-code-value" id="family-code">-</p>
             </div>
           </div>
           
           <div class="subscription-actions" style="margin-top: 1rem;">
-            <button class="btn btn-gold" id="btn-family" onclick="manageFamily()">S'abonner</button>
-            <button class="btn btn-danger btn-small" id="btn-cancel-family" style="display: none;" onclick="cancelSubscription('family')">❌ Résilier l'abonnement</button>
+            <button class="btn btn-gold" id="btn-family" onclick="manageFamily()" data-i18n-site="account.btn_subscribe">S'abonner</button>
+            <button class="btn btn-danger btn-small" id="btn-cancel-family" data-i18n-site="account.btn_cancel" style="display: none;" onclick="cancelSubscription('family')">❌ Résilier l'abonnement</button>
           </div>
         </div>
       </div>
@@ -1072,12 +1096,12 @@
       <!-- Portail de paiement -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">📋 Gérer mes paiements</h2>
+          <h2 class="card-title" data-i18n-site="account.manage_payments">📋 Gérer mes paiements</h2>
         </div>
         <p style="color: var(--light-gray); margin-bottom: 1rem;">
           Accédez au portail Stripe pour modifier votre moyen de paiement, télécharger vos factures ou gérer votre abonnement.
         </p>
-        <button class="btn btn-secondary" onclick="openBillingPortal()">🔗 Accéder au portail de paiement</button>
+        <button class="btn btn-secondary" onclick="openBillingPortal()" data-i18n-site="account.btn_billing_portal">🔗 Accéder au portail de paiement</button>
       </div>
     </div>
     
@@ -1089,19 +1113,19 @@
         <div class="stat-card">
           <div class="stat-icon">🎬</div>
           <div class="stat-value" id="video-credits">0</div>
-          <div class="stat-label">Crédits Vidéo</div>
+          <div class="stat-label" data-i18n-site="account.video_credits">Crédits Vidéo</div>
         </div>
         
         <div class="stat-card">
           <div class="stat-icon">🎨</div>
           <div class="stat-value" id="bonus-avatars">0</div>
-          <div class="stat-label">Avatars Bonus</div>
+          <div class="stat-label" data-i18n-site="account.bonus_avatars">Avatars Bonus</div>
         </div>
         
         <div class="stat-card">
           <div class="stat-icon">📊</div>
           <div class="stat-value" id="monthly-avatars">0/2</div>
-          <div class="stat-label">Avatars ce mois</div>
+          <div class="stat-label" data-i18n-site="account.monthly_avatars">Avatars ce mois</div>
           <div class="progress-bar">
             <div class="progress-fill" id="progress-avatars" style="width: 0%"></div>
           </div>
@@ -1111,7 +1135,7 @@
       <!-- Pack 50+50 -->
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🎁 Pack 50+50</h2>
+          <h2 class="card-title" data-i18n-site="account.pack_5050_title">🎁 Pack 50+50</h2>
         </div>
         <p style="color: var(--light-gray); margin-bottom: 1rem;">
           Achat unique : <strong style="color: var(--green-bright);">50 crédits vidéo</strong> + <strong style="color: var(--green-bright);">50 avatars bonus</strong>
@@ -1131,7 +1155,7 @@
           <p id="pack-promo-status" style="margin-top: 6px; font-size: 12px; color: #aaa; min-height: 16px;"></p>
         </div>
         
-        <button class="btn btn-gold" onclick="buyPack()">🛒 Acheter le Pack</button>
+        <button class="btn btn-gold" onclick="buyPack()" data-i18n-site="account.btn_buy_pack">🛒 Acheter le Pack</button>
       </div>
     </div>
     
@@ -1141,7 +1165,7 @@
     <div id="section-history" class="section">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">📜 Historique des achats</h2>
+          <h2 class="card-title" data-i18n-site="account.purchase_history">📜 Historique des achats</h2>
         </div>
         <div id="history-content">
           <div class="loader">
@@ -1933,5 +1957,13 @@ if (!document.getElementById('notif-styles-auto')) {
 }
 </script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
 </html>

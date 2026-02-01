@@ -1,155 +1,93 @@
 <!DOCTYPE html>
-<html lang="fr" data-theme="default">
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vérification Email - Saboteur</title>
-  <link rel="stylesheet" href="auth-themes.css">
-  
+  <title data-i18n-site="email_verification.title">Vérification Email - RORONOA GAMES</title>
+  <link rel="stylesheet" href="roronoa-games.css">
   <style>
-    .main-container {
+    body {
       min-height: 100vh;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
-      padding: 20px;
-    }
-
-    .verify-card {
-      background: linear-gradient(135deg, rgba(10, 14, 26, 0.95) 0%, rgba(26, 31, 53, 0.9) 100%);
-      border: 2px solid var(--metal-grey);
-      border-radius: calc(var(--border-radius) + 10px);
-      padding: 50px 40px;
-      max-width: 450px;
-      width: 100%;
+      align-items: center;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      font-family: 'Rajdhani', sans-serif;
+      color: #fff;
       text-align: center;
-      box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+      padding: 2rem;
     }
-
-    .icon {
-      font-size: 5rem;
-      margin-bottom: 25px;
-      display: block;
-    }
-
-    .title {
-      font-family: var(--font-title);
-      font-size: 1.8rem;
-      color: var(--neon-main);
-      margin-bottom: 20px;
-      letter-spacing: 2px;
-    }
-
-    .title.success { color: var(--neon-green); }
-    .title.error { color: var(--neon-red); }
-
-    .message {
-      font-size: 1.1rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-      margin-bottom: 30px;
-    }
-
-    .message strong {
-      color: var(--neon-main);
-    }
-
-    .btn-play {
-      display: inline-block;
-      background: var(--btn-gradient);
-      color: var(--btn-text);
-      padding: 16px 40px;
-      border-radius: var(--border-radius);
-      text-decoration: none;
-      font-family: var(--font-title);
-      font-weight: 700;
-      font-size: 1.1rem;
-      letter-spacing: 1px;
-      transition: all 0.3s;
-    }
-
-    .btn-play:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 30px rgba(0, 0, 0, 0.4);
-    }
-
-    .loading {
-      opacity: 0.7;
-    }
-
-    /* Animation */
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    .icon.animate {
-      animation: bounce 1s ease-in-out infinite;
-    }
+    .verify-icon { font-size: 5rem; margin-bottom: 1rem; }
+    .verify-title { font-family: 'Orbitron', sans-serif; font-size: 2rem; color: #6B9D3A; margin-bottom: 1rem; }
+    .verify-message { font-size: 1.2rem; color: #aaa; margin-bottom: 2rem; max-width: 500px; }
+    .verify-message.success { color: #27ae60; }
+    .verify-message.error { color: #e74c3c; }
+    .btn { background: #6B9D3A; color: #fff; padding: 1rem 2rem; border: none; border-radius: 8px; font-size: 1.1rem; cursor: pointer; text-decoration: none; display: inline-block; transition: all 0.3s; }
+    .btn:hover { background: #5a8a2f; transform: translateY(-2px); }
+    .loader { width: 50px; height: 50px; border: 3px solid #333; border-top-color: #6B9D3A; border-radius: 50%; animation: spin 1s linear infinite; margin: 2rem auto; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .lang-selector-wrap { position: absolute; top: 1rem; right: 1rem; }
+    .language-selector { background: rgba(0,0,0,0.4); border: 1px solid #6B9D3A; border-radius: 6px; padding: 6px 10px; color: #fff; font-size: 13px; cursor: pointer; }
+    .language-selector option { background: #1a1a2e; color: #fff; }
   </style>
 </head>
 <body>
-  <div class="main-container">
-    <div class="verify-card">
-      <span class="icon animate" id="icon">⏳</span>
-      <h1 class="title" id="title">Vérification en cours...</h1>
-      <p class="message" id="message">Patiente quelques secondes...</p>
-      <a href="/" class="btn-play" id="btn" style="display: none;">🎮 Jouer maintenant</a>
-    </div>
+  <div class="lang-selector-wrap" id="lang-selector-wrap"></div>
+  
+  <div id="content">
+    <div class="verify-icon">📧</div>
+    <h1 class="verify-title" data-i18n-site="email_verification.title">Vérification de l'email</h1>
+    <p class="verify-message" id="verify-message" data-i18n-site="email_verification.verifying">Vérification en cours...</p>
+    <div class="loader" id="loader"></div>
+    <a href="/" class="btn" id="btn-home" style="display: none;" data-i18n-site="payment.back_to_home">🏠 Retour à l'accueil</a>
   </div>
 
+  <script src="site-translations.js"></script>
   <script>
-    // Apply saved theme
-    const savedTheme = localStorage.getItem('saboteur_theme') || 'default';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-
-    async function verifyEmail() {
+    document.addEventListener("DOMContentLoaded", function() {
+      var wrap = document.getElementById("lang-selector-wrap");
+      if (wrap) wrap.innerHTML = createLanguageSelector();
+      
+      // Vérification email
       const params = new URLSearchParams(window.location.search);
       const token = params.get('token');
-
-      if (!token) {
-        showError('Lien invalide', 'Aucun token de vérification trouvé.');
-        return;
+      
+      if (token) {
+        fetch('/api/auth/verify-email?token=' + token)
+          .then(res => res.json())
+          .then(data => {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('btn-home').style.display = 'inline-block';
+            const msg = document.getElementById('verify-message');
+            if (data.success) {
+              document.querySelector('.verify-icon').textContent = '✅';
+              msg.className = 'verify-message success';
+              msg.setAttribute('data-i18n-site', 'email_verification.success');
+              applySiteTranslations();
+            } else {
+              document.querySelector('.verify-icon').textContent = '❌';
+              msg.className = 'verify-message error';
+              msg.setAttribute('data-i18n-site', 'email_verification.error');
+              applySiteTranslations();
+            }
+          })
+          .catch(err => {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('btn-home').style.display = 'inline-block';
+            const msg = document.getElementById('verify-message');
+            document.querySelector('.verify-icon').textContent = '❌';
+            msg.className = 'verify-message error';
+            msg.textContent = 'Erreur de connexion au serveur.';
+          });
+      } else {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('btn-home').style.display = 'inline-block';
+        const msg = document.getElementById('verify-message');
+        msg.className = 'verify-message error';
+        msg.textContent = 'Token manquant.';
       }
-
-      try {
-        const response = await fetch(`/api/auth/verify-email?token=${token}`);
-        const data = await response.json();
-
-        if (data.success) {
-          showSuccess(data.username);
-        } else {
-          showError('Erreur', data.error || 'Token invalide ou expiré');
-        }
-      } catch (error) {
-        showError('Erreur', 'Impossible de contacter le serveur');
-      }
-    }
-
-    function showSuccess(username) {
-      document.getElementById('icon').textContent = '✅';
-      document.getElementById('icon').classList.remove('animate');
-      document.getElementById('title').textContent = 'Email vérifié !';
-      document.getElementById('title').className = 'title success';
-      document.getElementById('message').innerHTML = `
-        Bravo <strong>${username}</strong> ! 🎉<br><br>
-        Tu as maintenant accès à <strong>2 parties vidéo gratuites</strong>.<br>
-        Connecte-toi et profite du jeu !
-      `;
-      document.getElementById('btn').style.display = 'inline-block';
-    }
-
-    function showError(title, message) {
-      document.getElementById('icon').textContent = '❌';
-      document.getElementById('icon').classList.remove('animate');
-      document.getElementById('title').textContent = title;
-      document.getElementById('title').className = 'title error';
-      document.getElementById('message').textContent = message;
-      document.getElementById('btn').textContent = '🏠 Retour à l\'accueil';
-      document.getElementById('btn').style.display = 'inline-block';
-    }
-
-    verifyEmail();
+    });
   </script>
 </body>
 </html>
