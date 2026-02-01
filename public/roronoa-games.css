@@ -1219,3 +1219,53 @@ section {
     width: 100%;
   }
 }
+
+/* ============================================================================
+   🌍 LANGUAGE SELECTOR
+   ============================================================================ */
+.lang-selector-wrap {
+  display: inline-block;
+  margin-left: 15px;
+}
+
+.language-selector {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--green-main, #6B9D3A);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 14px;
+  font-family: 'Rajdhani', sans-serif;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.language-selector:hover {
+  background: rgba(107, 157, 58, 0.3);
+  border-color: var(--green-bright, #8BC34A);
+}
+
+.language-selector:focus {
+  border-color: var(--green-bright, #8BC34A);
+  box-shadow: 0 0 10px rgba(107, 157, 58, 0.4);
+}
+
+.language-selector option {
+  background: #1a1a2e;
+  color: #fff;
+  padding: 10px;
+}
+
+@media (max-width: 768px) {
+  .lang-selector-wrap {
+    margin: 15px 0;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .language-selector {
+    width: 80%;
+    max-width: 200px;
+  }
+}

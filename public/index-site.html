@@ -52,11 +52,11 @@
         <div class="logo-subtitle">三刀流 • Santōryū Style</div>
       </div>
       <div class="nav-links">
-        <a href="#accueil">Accueil</a>
-        <a href="#a-propos">À Propos</a>
-        <a href="products.html">Produits</a>
-        <a href="#contact">Contact</a>
-        <button class="btn-login" onclick="openLoginModal()">Se Connecter</button>
+        <a href="#accueil" data-i18n-site="nav.home">Accueil</a>
+        <a href="#a-propos" data-i18n-site="nav.about">À Propos</a>
+        <a href="products.html" data-i18n-site="nav.products">Produits</a>
+        <a href="#contact" data-i18n-site="nav.contact">Contact</a>
+        <button class="btn-login" onclick="openLoginModal()" data-i18n-site="nav.login">Se Connecter</button>
       </div>
       <div class="nav-mobile-toggle" onclick="toggleMobileMenu()">
         <span></span>
@@ -75,7 +75,7 @@
     </div>
     <div class="container">
       <div class="hero-content">
-        <div class="hero-badge">Studio de Création Vidéoludique</div>
+        <div class="hero-badge" data-i18n-site="home.hero_badge">Studio de Création Vidéoludique</div>
         <h1 class="hero-title">
           L'Art du Combat<br>
           Rencontre le Jeu
@@ -84,20 +84,20 @@
           Créateur d'expériences vidéoludiques uniques • Applications Web & Mobile • Jeux de Société Nouvelle Génération
         </p>
         <div class="hero-buttons">
-          <a href="products.html" class="btn btn-primary">Découvrir nos Jeux</a>
+          <a href="products.html" class="btn btn-primary" data-i18n-site="home.hero_cta">Découvrir nos Jeux</a>
         </div>
         <div class="hero-stats">
           <div class="stat">
             <div class="stat-number">1</div>
-            <div class="stat-label">Jeu Phare</div>
+            <div class="stat-label" data-i18n-site="home.stat_game">Jeu Phare</div>
           </div>
           <div class="stat">
             <div class="stat-number">4</div>
-            <div class="stat-label">Univers</div>
+            <div class="stat-label" data-i18n-site="home.stat_universes">Univers</div>
           </div>
           <div class="stat">
             <div class="stat-number">∞</div>
-            <div class="stat-label">Possibilités</div>
+            <div class="stat-label" data-i18n-site="home.stat_possibilities">Possibilités</div>
           </div>
         </div>
       </div>
@@ -108,26 +108,26 @@
   <section id="a-propos" class="about">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">Notre Mission</div>
-        <h2 class="section-title">Créateur de Contenu Vidéoludique</h2>
+        <div class="section-badge" data-i18n-site="home.about_badge">Notre Mission</div>
+        <h2 class="section-title" data-i18n-site="home.about_title">Créateur de Contenu Vidéoludique</h2>
       </div>
       
       <div class="about-grid">
         <div class="about-card">
           <div class="card-icon">🎮</div>
-          <h3>Applications Web & Mobile</h3>
+          <h3 data-i18n-site="home.about_card1_title">Applications Web & Mobile</h3>
           <p>Des expériences de jeu accessibles partout, sur tous vos appareils. Technologies modernes pour une fluidité optimale.</p>
         </div>
         
         <div class="about-card">
           <div class="card-icon">🎲</div>
-          <h3>Jeux de Société Digitaux</h3>
+          <h3 data-i18n-site="home.about_card2_title">Jeux de Société Digitaux</h3>
           <p>L'esprit convivial des jeux de société combiné à la puissance du digital. Jouez avec vos amis où que vous soyez.</p>
         </div>
         
         <div class="about-card">
           <div class="card-icon">⚔️</div>
-          <h3>Univers Immersifs</h3>
+          <h3 data-i18n-site="home.about_card3_title">Univers Immersifs</h3>
           <p>4 thèmes riches avec <strong>visio intégrée</strong> : Spatial, Loup-Garou, Académie des Sorciers, Royaumes Mythiques. 
           Rejoignez des <strong>salles publiques</strong> ou créez des <strong>parties privées</strong> avec vos amis !</p>
         </div>
@@ -135,7 +135,7 @@
 
       <div class="about-philosophy">
         <div class="philosophy-text">
-          <h3>Notre Philosophie</h3>
+          <h3 data-i18n-site="home.philosophy_title">Notre Philosophie</h3>
           <p>
             Comme un guerrier qui perfectionne son art à travers trois sabres, nous créons des expériences à travers trois piliers : 
             <strong>Innovation</strong>, <strong>Qualité</strong>, et <strong>Communauté</strong>.
@@ -160,8 +160,8 @@
   <section class="featured-game">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">Jeu Phare</div>
-        <h2 class="section-title">Saboteurs : Le Jeu Social Ultime</h2>
+        <div class="section-badge" data-i18n-site="home.featured_badge">Jeu Phare</div>
+        <h2 class="section-title" data-i18n-site="home.featured_title">Saboteurs : Le Jeu Social Ultime</h2>
       </div>
       
       <div class="game-showcase">
@@ -280,8 +280,8 @@
         
         <div class="contact-form">
           <form id="contactForm" onsubmit="sendContact(event)">
-            <input type="text" name="name" placeholder="Votre nom" required>
-            <input type="email" name="email" placeholder="Votre email" required>
+            <input type="text" name="name" placeholder="Votre nom" data-i18n-site="contact.name_placeholder" required>
+            <input type="email" name="email" placeholder="Votre email" data-i18n-site="contact.email_placeholder" required>
             <select name="subject" required>
               <option value="">Sujet du message</option>
               <option value="support">Support technique</option>
@@ -289,8 +289,8 @@
               <option value="partnership">Partenariat</option>
               <option value="other">Autre</option>
             </select>
-            <textarea name="message" placeholder="Votre message" rows="5" required></textarea>
-            <button type="submit" class="btn btn-primary">Envoyer</button>
+            <textarea name="message" placeholder="Votre message" data-i18n-site="contact.message_placeholder" rows="5" required></textarea>
+            <button type="submit" class="btn btn-primary" data-i18n-site="contact.send_btn">Envoyer</button>
           </form>
         </div>
       </div>
@@ -307,17 +307,17 @@
         </div>
         <div class="footer-links">
           <div class="footer-column">
-            <h4>Navigation</h4>
-            <a href="#accueil">Accueil</a>
-            <a href="#a-propos">À Propos</a>
-            <a href="products.html">Produits</a>
-            <a href="#contact">Contact</a>
+            <h4 data-i18n-site="footer.quick_links">Navigation</h4>
+            <a href="#accueil" data-i18n-site="nav.home">Accueil</a>
+            <a href="#a-propos" data-i18n-site="nav.about">À Propos</a>
+            <a href="products.html" data-i18n-site="nav.products">Produits</a>
+            <a href="#contact" data-i18n-site="nav.contact">Contact</a>
           </div>
           <div class="footer-column">
-            <h4>Légal</h4>
-            <a href="/mentions-legales.html">Mentions Légales</a>
-            <a href="/cgu.html">CGU</a>
-            <a href="/politique-confidentialite.html">Confidentialité</a>
+            <h4 data-i18n-site="footer.legal">Légal</h4>
+            <a href="/mentions-legales.html" data-i18n-site="footer.legal_notice">Mentions Légales</a>
+            <a href="/cgu.html" data-i18n-site="footer.terms_of_service">CGU</a>
+            <a href="/politique-confidentialite.html" data-i18n-site="footer.privacy_policy">Confidentialité</a>
           </div>
         </div>
       </div>
@@ -334,8 +334,8 @@
       <button class="modal-close" onclick="closeLoginModal()">×</button>
       
       <div class="modal-header">
-        <h2>Connexion</h2>
-        <p>Accédez à votre compte RORONOA GAMES</p>
+        <h2 data-i18n-site="auth.login_title">Connexion</h2>
+        <p data-i18n-site="auth.login_subtitle">Accédez à votre compte RORONOA GAMES</p>
       </div>
       
       <div class="auth-tabs">
@@ -345,12 +345,12 @@
       
       <!-- Formulaire Connexion -->
       <form id="login-form" class="auth-form active" style="display: block;" onsubmit="handleLogin(event)">
-        <input type="email" name="email" placeholder="Email" required>
+        <input type="email" name="email" placeholder="Email" data-i18n-site="auth.email_placeholder" required>
         <div class="input-wrapper">
-          <input type="password" name="password" id="login-password" placeholder="Mot de passe" required>
+          <input type="password" name="password" id="login-password" placeholder="Mot de passe" data-i18n-site="auth.password_placeholder" required>
           <button type="button" class="toggle-password" onclick="togglePasswordVisibility('login-password', this)">👁️</button>
         </div>
-        <button type="submit" class="btn btn-primary">Se Connecter</button>
+        <button type="submit" class="btn btn-primary" data-i18n-site="auth.login_btn">Se Connecter</button>
         <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem;">
           <a href="#" onclick="openForgotPasswordModal(); return false;" style="color: var(--green-bright);">Mot de passe oublié ?</a>
         </p>
@@ -358,21 +358,21 @@
       
       <!-- Formulaire Inscription -->
       <form id="register-form" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
-        <input type="text" name="username" placeholder="Pseudo" required>
-        <input type="email" name="email" placeholder="Email" required>
+        <input type="text" name="username" placeholder="Pseudo" data-i18n-site="auth.username_placeholder" required>
+        <input type="email" name="email" placeholder="Email" data-i18n-site="auth.email_placeholder" required>
         <div class="input-wrapper">
-          <input type="password" name="password" id="register-password" placeholder="Mot de passe" required>
+          <input type="password" name="password" id="register-password" placeholder="Mot de passe" data-i18n-site="auth.password_placeholder" required>
           <button type="button" class="toggle-password" onclick="togglePasswordVisibility('register-password', this)">👁️</button>
         </div>
         <div class="input-wrapper">
-          <input type="password" name="confirm_password" id="register-confirm" placeholder="Confirmer mot de passe" required>
+          <input type="password" name="confirm_password" id="register-confirm" placeholder="Confirmer mot de passe" data-i18n-site="auth.confirm_password_placeholder" required>
           <button type="button" class="toggle-password" onclick="togglePasswordVisibility('register-confirm', this)">👁️</button>
         </div>
-        <button type="submit" class="btn btn-primary">S'Inscrire</button>
+        <button type="submit" class="btn btn-primary" data-i18n-site="auth.register_btn">S'Inscrire</button>
       </form>
       
       <div class="auth-footer">
-        <p>Compte créé pour accéder aux produits</p>
+        <p data-i18n-site="auth.account_created_info">Compte créé pour accéder aux produits</p>
       </div>
     </div>
   </div>
@@ -384,6 +384,14 @@
    MODAL PACKS - À AJOUTER DANS index-site.html AVANT <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
 <script src="/js/auth-check.js"></script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
    ============================================================================ -->
 
@@ -391,6 +399,14 @@
    MODAL PACKS V2 - CORRIGÉ - À AJOUTER DANS index-site.html AVANT <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
 <script src="/js/auth-check.js"></script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
    ============================================================================ -->
 
@@ -969,5 +985,13 @@ if (!document.getElementById('notif-styles-auto')) {
 }
 </script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
 </html>

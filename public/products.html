@@ -18,11 +18,12 @@
         <div class="logo-subtitle">三刀流 • Santōryū Style</div>
       </div>
       <div class="nav-links">
-        <a href="index-site.html#accueil">Accueil</a>
-        <a href="index-site.html#a-propos">À Propos</a>
-        <a href="products.html" class="active">Produits</a>
-        <a href="index-site.html#contact">Contact</a>
-        <button class="btn-login" onclick="openLoginModal()">Se Connecter</button>
+        <a href="index-site.html#accueil" data-i18n-site="nav.home">Accueil</a>
+        <a href="index-site.html#a-propos" data-i18n-site="nav.about">À Propos</a>
+        <a href="products.html" class="active" data-i18n-site="nav.products">Produits</a>
+        <a href="index-site.html#contact" data-i18n-site="nav.contact">Contact</a>
+        <button class="btn-login" onclick="openLoginModal()" data-i18n-site="nav.login">Se Connecter</button>
+        <div class="lang-selector-wrap" id="lang-selector-wrap"></div>
       </div>
       <div class="nav-mobile-toggle" onclick="toggleMobileMenu()">
         <span></span>
@@ -36,9 +37,9 @@
   <section class="product-hero">
     <div class="container">
       <div class="product-hero-content">
-        <div class="product-badge">Notre Jeu Phare</div>
-        <h1 class="product-title">LES SABOTEURS</h1>
-        <p class="product-tagline">Infiltration • Déduction • Multijoueur</p>
+        <div class="product-badge" data-i18n-site="products.hero_badge">Notre Jeu Phare</div>
+        <h1 class="product-title" data-i18n-site="products.hero_title">LES SABOTEURS</h1>
+        <p class="product-tagline" data-i18n-site="products.hero_tagline">Infiltration • Déduction • Multijoueur</p>
         
         <div class="product-cta">
           <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)">
@@ -56,7 +57,7 @@
   <section class="game-desc">
     <div class="container">
       <div class="desc-content">
-        <h2>Le Jeu</h2>
+        <h2 data-i18n-site="products.the_game">Le Jeu</h2>
         <p>
           <strong>Les Saboteurs</strong> est un jeu de déduction sociale multijoueur qui plonge 
           les joueurs dans une station spatiale en perdition. Certains sont des astronautes 
@@ -71,31 +72,31 @@
         <div class="desc-features">
           <div class="feature-box">
             <div class="feature-icon">👥</div>
-            <h3>6-12 Joueurs</h3>
+            <h3 data-i18n-site="products.feature_players">6-12 Joueurs</h3>
             <p>6-9 sur mobile / 6-12 sur PC</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">🎭</div>
-            <h3>Thèmes & Rôles</h3>
+            <h3 data-i18n-site="products.feature_themes">Thèmes & Rôles</h3>
             <p>4 univers, rôles variés et spéciaux</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">📹</div>
-            <h3>Visio Intégrée</h3>
+            <h3 data-i18n-site="products.feature_video">Visio Intégrée</h3>
             <p>Sans téléchargement, mobile & PC</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">⏱️</div>
-            <h3>15-45 Minutes</h3>
+            <h3 data-i18n-site="products.feature_duration">15-45 Minutes</h3>
             <p>Parties rapides et dynamiques</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">🌍</div>
-            <h3>7 Langues</h3>
+            <h3 data-i18n-site="products.feature_languages">7 Langues</h3>
             <p>FR, EN, ES, IT, DE, PT, JA</p>
           </div>
         </div>
@@ -107,15 +108,15 @@
   <section class="themes">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">Univers</div>
-        <h2 class="section-title">4 Thèmes Immersifs</h2>
+        <div class="section-badge" data-i18n-site="products.themes_badge">Univers</div>
+        <h2 class="section-title" data-i18n-site="products.themes_title">4 Thèmes Immersifs</h2>
       </div>
       
       <div class="themes-grid">
         <!-- Spatial -->
         <div class="theme-card">
           <div class="theme-icon">🚀</div>
-          <h3>Infiltration Spatiale</h3>
+          <h3 data-i18n-site="products.theme_space_title">Infiltration Spatiale</h3>
           <p>
             L'univers classique : une station spatiale, des astronautes, des saboteurs.
             Réparez la station avant qu'il ne soit trop tard !
@@ -130,7 +131,7 @@
         <!-- Loup-Garou -->
         <div class="theme-card">
           <div class="theme-icon">🐺</div>
-          <h3>Loup-Garou</h3>
+          <h3 data-i18n-site="products.theme_werewolf_title">Loup-Garou</h3>
           <p>
             Un village médiéval hanté par les loups-garous. Villageois contre créatures 
             de la nuit dans une bataille épique pour la survie.
@@ -145,7 +146,7 @@
         <!-- Sorciers -->
         <div class="theme-card">
           <div class="theme-icon">🧙</div>
-          <h3>Académie des Sorciers</h3>
+          <h3 data-i18n-site="products.theme_wizard_title">Académie des Sorciers</h3>
           <p>
             Une école de magie infiltrée par des sorciers noirs. Maîtrisez la magie 
             et démasquez les traîtres avant qu'ils ne corrompent l'académie.
@@ -160,7 +161,7 @@
         <!-- Mythique -->
         <div class="theme-card">
           <div class="theme-icon">⚔️</div>
-          <h3>Royaumes Mythiques</h3>
+          <h3 data-i18n-site="products.theme_mythic_title">Royaumes Mythiques</h3>
           <p>
             Un royaume fantasy menacé par des créatures corrompues. Chevaliers, 
             mages et traîtres s'affrontent pour le contrôle du royaume.
@@ -300,17 +301,17 @@
         </div>
         <div class="footer-links">
           <div class="footer-column">
-            <h4>Navigation</h4>
-            <a href="index-site.html#accueil">Accueil</a>
-            <a href="index-site.html#a-propos">À Propos</a>
+            <h4 data-i18n-site="footer.quick_links">Navigation</h4>
+            <a href="index-site.html#accueil" data-i18n-site="nav.home">Accueil</a>
+            <a href="index-site.html#a-propos" data-i18n-site="nav.about">À Propos</a>
             <a href="products.html">Produits</a>
-            <a href="index-site.html#contact">Contact</a>
+            <a href="index-site.html#contact" data-i18n-site="nav.contact">Contact</a>
           </div>
           <div class="footer-column">
-            <h4>Légal</h4>
-            <a href="/mentions-legales.html">Mentions Légales</a>
-            <a href="/cgu.html">CGU</a>
-            <a href="/politique-confidentialite.html">Confidentialité</a>
+            <h4 data-i18n-site="footer.legal">Légal</h4>
+            <a href="/mentions-legales.html" data-i18n-site="footer.legal_notice">Mentions Légales</a>
+            <a href="/cgu.html" data-i18n-site="footer.terms_of_service">CGU</a>
+            <a href="/politique-confidentialite.html" data-i18n-site="footer.privacy_policy">Confidentialité</a>
           </div>
         </div>
       </div>
@@ -327,8 +328,8 @@
       <button class="modal-close" onclick="closeLoginModal()">×</button>
       
       <div class="modal-header">
-        <h2>Connexion</h2>
-        <p>Accédez à votre compte RORONOA GAMES</p>
+        <h2 data-i18n-site="auth.login_title">Connexion</h2>
+        <p data-i18n-site="auth.login_subtitle">Accédez à votre compte RORONOA GAMES</p>
       </div>
       
       <div class="auth-tabs">
@@ -337,16 +338,16 @@
       </div>
       
       <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Mot de passe" required>
+        <input type="email" name="email" placeholder="Email" data-i18n-site="auth.email_placeholder" required>
+        <input type="password" name="password" placeholder="Mot de passe" data-i18n-site="auth.password_placeholder" required>
         <button type="submit" class="btn btn-primary">Se Connecter</button>
       </form>
       
       <form id="register-form" class="auth-form" style="display: none;" onsubmit="handleRegister(event)">
-        <input type="text" name="username" placeholder="Pseudo" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Mot de passe" required>
-        <input type="password" name="confirm_password" placeholder="Confirmer mot de passe" required>
+        <input type="text" name="username" placeholder="Pseudo" data-i18n-site="auth.username_placeholder" required>
+        <input type="email" name="email" placeholder="Email" data-i18n-site="auth.email_placeholder" required>
+        <input type="password" name="password" placeholder="Mot de passe" data-i18n-site="auth.password_placeholder" required>
+        <input type="password" name="confirm_password" placeholder="Confirmer mot de passe" data-i18n-site="auth.confirm_password_placeholder" required>
         <button type="submit" class="btn btn-primary">S'Inscrire</button>
       </form>
     </div>
@@ -357,6 +358,14 @@
    MODAL PACKS - À AJOUTER DANS index-site.html AVANT <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
 <script src="/js/auth-check.js"></script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
    ============================================================================ -->
 
@@ -364,6 +373,14 @@
    MODAL PACKS V2 - CORRIGÉ - À AJOUTER DANS index-site.html AVANT <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
 <script src="/js/auth-check.js"></script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
    ============================================================================ -->
 
@@ -975,5 +992,13 @@ if (!document.getElementById('notif-styles-auto')) {
 }
 </script>
 
+<!-- 🌍 Site Translations -->
+<script src="site-translations.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    var wrap = document.getElementById("lang-selector-wrap");
+    if (wrap) wrap.innerHTML = createLanguageSelector();
+  });
+</script>
 </body>
 </html>
