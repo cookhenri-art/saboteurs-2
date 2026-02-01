@@ -1779,15 +1779,47 @@
       }
     }
     
-    function downloadAvatar(url, id) {
-      // Créer un lien de téléchargement
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `avatar-roronoa-${id || Date.now()}.png`;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    async function downloadAvatar(url, id) {
+      const token = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('token');
+      
+      try {
+        // Essayer d'abord via le proxy serveur (évite les problèmes CORS)
+        const response = await fetch(`/api/avatars/download/${id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          // Télécharger via le blob
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `avatar-roronoa-${id || Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+          return;
+        }
+      } catch (proxyError) {
+        console.log('Proxy download failed, trying direct:', proxyError);
+      }
+      
+      // Fallback: téléchargement direct
+      try {
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `avatar-roronoa-${id || Date.now()}.png`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error('Erreur téléchargement:', error);
+        alert('❌ Impossible de télécharger cet avatar. Essayez de faire un clic droit sur l\'image > Enregistrer l\'image sous.');
+      }
     }
     
     // ==========================================

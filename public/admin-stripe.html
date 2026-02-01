@@ -886,6 +886,14 @@
     const API_BASE = window.location.origin;
     const urlParams = new URLSearchParams(window.location.search);
     const secretCode = urlParams.get('secretCode');
+    
+    // 🆕 Mettre à jour le lien Retour Admin avec le secretCode
+    document.addEventListener('DOMContentLoaded', function() {
+      const backBtn = document.querySelector('.back-btn');
+      if (backBtn && secretCode) {
+        backBtn.href = `admin-x8k2m9z.html?secretCode=${encodeURIComponent(secretCode)}`;
+      }
+    });
 
   // ========================================
   // FONCTION UTILITAIRE - escapeHtml
@@ -1369,20 +1377,41 @@
     // COUPONS
     // ========================================
     
+    // Variable pour montrer/masquer les codes inactifs
+    let showInactiveCoupons = false;
+    
     async function loadCoupons() {
       const container = document.getElementById('coupons-list');
       container.innerHTML = '<div class="loading">Chargement</div>';
       
       try {
         const data = await apiCall('/api/admin/stripe/coupons');
-        const coupons = data.promoCodes || data; // Compatibilité avec ancien et nouveau format
+        let coupons = data.promoCodes || data; // Compatibilité avec ancien et nouveau format
+        
+        // Filtrer les codes inactifs si l'option est désactivée
+        if (!showInactiveCoupons) {
+          coupons = coupons.filter(c => c.valid);
+        }
         
         if (!coupons || coupons.length === 0) {
-          container.innerHTML = '<div class="empty-state"><div class="icon">💎</div><p>Aucun code promo</p></div>';
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="icon">💎</div>
+              <p>Aucun code promo ${showInactiveCoupons ? '' : 'actif'}</p>
+              ${!showInactiveCoupons ? '<button class="btn btn-sm" onclick="toggleShowInactive()" style="margin-top: 10px;">Voir les codes inactifs</button>' : ''}
+            </div>
+          `;
           return;
         }
         
         const html = `
+          <div style="margin-bottom: 15px; display: flex; gap: 15px; align-items: center;">
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" ${showInactiveCoupons ? 'checked' : ''} onchange="toggleShowInactive()">
+              Afficher les codes inactifs/supprimés
+            </label>
+            <button class="btn btn-sm" onclick="loadCoupons()" title="Synchroniser avec Stripe">🔄 Actualiser</button>
+          </div>
           <table class="data-table">
             <thead>
               <tr>
@@ -1397,7 +1426,7 @@
             </thead>
             <tbody>
               ${coupons.map(c => `
-                <tr>
+                <tr style="${c.valid ? '' : 'opacity: 0.6;'}">
                   <td><strong>${c.code}</strong></td>
                   <td>${c.name}</td>
                   <td>
@@ -1431,6 +1460,11 @@
         console.error('Erreur chargement coupons:', error);
         container.innerHTML = '<div class="alert alert-error">Erreur de chargement</div>';
       }
+    }
+    
+    function toggleShowInactive() {
+      showInactiveCoupons = !showInactiveCoupons;
+      loadCoupons();
     }
     
     // Supprimer un code promo Stripe
