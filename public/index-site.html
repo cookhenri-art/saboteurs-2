@@ -57,6 +57,7 @@
         <a href="products.html" data-i18n-site="nav.products">Produits</a>
         <a href="#contact" data-i18n-site="nav.contact">Contact</a>
         <button class="btn-login" onclick="openLoginModal()" data-i18n-site="nav.login">Se Connecter</button>
+        <div class="lang-selector-wrap" id="lang-selector-wrap"></div>
       </div>
       <div class="nav-mobile-toggle" onclick="toggleMobileMenu()">
         <span></span>
@@ -380,35 +381,6 @@
   <script src="roronoa-games.js"></script>
 
 
-<!-- ============================================================================
-   MODAL PACKS - À AJOUTER DANS index-site.html AVANT <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
-<script src="/js/auth-check.js"></script>
-
-<!-- 🌍 Site Translations -->
-<script src="site-translations.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    var wrap = document.getElementById("lang-selector-wrap");
-    if (wrap) wrap.innerHTML = createLanguageSelector();
-  });
-</script>
-</body>
-   ============================================================================ -->
-
-<!-- ============================================================================
-   MODAL PACKS V2 - CORRIGÉ - À AJOUTER DANS index-site.html AVANT <!-- 🔐 Auth Check Script - Vérifie connexion avant paiements -->
-<script src="/js/auth-check.js"></script>
-
-<!-- 🌍 Site Translations -->
-<script src="site-translations.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    var wrap = document.getElementById("lang-selector-wrap");
-    if (wrap) wrap.innerHTML = createLanguageSelector();
-  });
-</script>
-</body>
-   ============================================================================ -->
 
 <!-- Modal Packs Premium -->
 <div id="modal-packs" class="modal" style="display: none;">
