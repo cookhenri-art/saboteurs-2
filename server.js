@@ -3419,6 +3419,33 @@ app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async
               `, [session.customer, stripeUserId]);
               console.log(`[Stripe] User ${stripeUserId} (${currentType}) a reçu +50 avatars bonus`);
             }
+            
+            // 🆕 Exécuter les workflows pack_purchased (pour emails/popups)
+            try {
+              await executeWorkflows('pack_purchased', {
+                user_id: parseInt(stripeUserId),
+                customer_id: session.customer,
+                amount: session.amount_total,
+                pack_type: 'pack50'
+              });
+            } catch (wfError) {
+              console.error('[Stripe] Erreur workflows pack:', wfError);
+            }
+          }
+          
+          // 🆕 Enregistrer le tracking du workflow utilisé (après paiement confirmé)
+          const workflowId = session.metadata?.workflowId;
+          const appliedDiscount = session.metadata?.appliedDiscount;
+          if (workflowId && appliedDiscount) {
+            try {
+              dbRun(`
+                INSERT OR IGNORE INTO workflow_user_tracking (user_id, workflow_id, stripe_coupon_applied, applied_at)
+                VALUES (?, ?, ?, datetime('now'))
+              `, [stripeUserId, workflowId, appliedDiscount]);
+              console.log(`[Stripe] Workflow ${workflowId} marqué comme utilisé pour user ${stripeUserId}`);
+            } catch (e) {
+              console.log(`[Stripe] Erreur tracking workflow: ${e.message}`);
+            }
           }
           
         } catch (dbError) {
@@ -5263,6 +5290,65 @@ app.post("/api/avatars/set-current", authenticateToken, (req, res) => {
   } catch (error) {
     console.error("❌ Erreur set avatar:", error);
     res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// Télécharger un avatar via proxy (évite les problèmes CORS)
+app.get("/api/avatars/download/:avatarId", authenticateToken, async (req, res) => {
+  try {
+    const { avatarId } = req.params;
+    
+    // Vérifier que l'avatar appartient à l'utilisateur
+    const avatar = dbGet("SELECT * FROM avatars WHERE id = ? AND user_id = ?", [avatarId, req.user.id]);
+    
+    if (!avatar) {
+      return res.status(404).json({ error: "Avatar non trouvé" });
+    }
+    
+    const avatarUrl = avatar.url || avatar.image_url;
+    
+    if (!avatarUrl) {
+      return res.status(404).json({ error: "URL de l'avatar non disponible" });
+    }
+    
+    // Si c'est une URL base64, la décoder directement
+    if (avatarUrl.startsWith('data:image')) {
+      const matches = avatarUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1];
+        const data = Buffer.from(matches[2], 'base64');
+        
+        res.setHeader('Content-Type', `image/${ext}`);
+        res.setHeader('Content-Disposition', `attachment; filename="avatar-roronoa-${avatarId}.${ext}"`);
+        return res.send(data);
+      }
+    }
+    
+    // Sinon, télécharger l'image depuis l'URL externe
+    const https = require('https');
+    const http = require('http');
+    const protocol = avatarUrl.startsWith('https') ? https : http;
+    
+    protocol.get(avatarUrl, (imageResponse) => {
+      if (imageResponse.statusCode !== 200) {
+        return res.status(404).json({ error: "Image non disponible" });
+      }
+      
+      const contentType = imageResponse.headers['content-type'] || 'image/png';
+      const ext = contentType.includes('jpeg') ? 'jpg' : contentType.includes('webp') ? 'webp' : 'png';
+      
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="avatar-roronoa-${avatarId}.${ext}"`);
+      
+      imageResponse.pipe(res);
+    }).on('error', (err) => {
+      console.error("❌ Erreur téléchargement image:", err);
+      res.status(500).json({ error: "Erreur de téléchargement" });
+    });
+    
+  } catch (error) {
+    console.error("❌ Erreur téléchargement avatar:", error);
+    res.status(500).json({ error: "Erreur de téléchargement" });
   }
 });
 
@@ -7383,15 +7469,8 @@ app.post('/api/stripe/create-checkout-session', async (req, res) => {
             appliedDiscount = workflow.coupon_id;
             appliedWorkflowId = workflow.id;
             
-            // Enregistrer le tracking
-            try {
-              dbRun(`
-                INSERT OR IGNORE INTO workflow_user_tracking (user_id, workflow_id, stripe_coupon_applied, applied_at)
-                VALUES (?, ?, ?, datetime('now'))
-              `, [userId, workflow.id, workflow.coupon_id]);
-            } catch (e) {
-              console.log(`[Stripe] Erreur tracking workflow: ${e.message}`);
-            }
+            // 🆕 Le tracking sera enregistré APRÈS le paiement confirmé (dans le webhook)
+            // Cela permet de réutiliser la promo si l'utilisateur n'a pas payé immédiatement
             
             console.log(`[Stripe] Workflow AUTO "${workflow.name}" appliqué pour user ${userId}`);
           }
@@ -9057,7 +9136,7 @@ app.get('/api/admin/workflows/:id/executions', verifyAdmin, (req, res) => {
       WHERE workflow_id = ?
       ORDER BY executed_at DESC
       LIMIT ?
-    `).all(id, limit);
+    `, [id, limit]);
     
     res.json(executions || []);
   } catch (error) {
