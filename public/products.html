@@ -778,9 +778,10 @@ async function buyPack(packType) {
       throw new Error('Non authentifié');
     }
     
-    const user = await response.json();
+    const data = await response.json();
+    const user = data.user; // L'API renvoie { user: {...}, limits: {...} }
     
-    if (!user.emailVerified) {
+    if (!user || !user.emailVerified) {
       alert('⚠️ Veuillez vérifier votre email avant d\'acheter un pack.\n\nUn email de vérification vous a été envoyé lors de votre inscription.\n\nVérifiez votre boîte de réception et vos spams.');
       return;
     }
