@@ -179,32 +179,36 @@
       table { font-size: 0.85rem; }
       th, td { padding: 0.5rem; }
     }
+      .lang-selector-wrap { position: fixed; top: 1rem; right: 1rem; z-index: 200; }
+    .language-selector { background: rgba(0,0,0,0.8); border: 1px solid #6B9D3A; border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 14px; cursor: pointer; }
+    .language-selector option { background: #1a1a2e; color: #fff; }
   </style>
 </head>
 <body>
+  <div class="lang-selector-wrap" id="lang-selector-wrap"></div>
   <header class="header">
     <div class="header-content">
       <a href="/index-site.html" class="logo">RORONOA <span class="logo-accent">GAMES</span></a>
-      <a href="/index-site.html" class="back-link">← Retour à l'accueil</a>
+      <a href="/index-site.html" class="back-link" data-i18n-site="legal_pages.back_to_home">← Retour à l'accueil</a>
     </div>
   </header>
 
   <div class="container">
-    <h1>🔒 Politique de Confidentialité</h1>
+    <h1 data-i18n-site="legal_pages.privacy.title">🔒 Politique de Confidentialité</h1>
 
     <div class="guarantee-box">
-      <h3>🛡️ Notre engagement</h3>
+      <h3 data-i18n-site="legal_pages.privacy.commitment_title">🛡️ Notre engagement</h3>
       <p><strong>Vos données ne sont jamais vendues, jamais partagées à des fins commerciales, jamais utilisées pour de la publicité ciblée.</strong></p>
     </div>
 
-    <h2>1. Responsable du traitement</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section1_title">1. Responsable du traitement</h2>
     <p>Le responsable du traitement des données personnelles est :</p>
     <div class="privacy-box">
       <p><strong>RORONOA GAMES</strong></p>
       <p>Email : contact@roronoa-games.com</p>
     </div>
 
-    <h2>2. Données collectées</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section2_title">2. Données collectées</h2>
     <p>Nous collectons uniquement les données strictement nécessaires au fonctionnement de nos services :</p>
 
     <table>
@@ -245,7 +249,7 @@
       </tr>
     </table>
 
-    <h2>3. Base légale du traitement</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section3_title">3. Base légale du traitement</h2>
     <p>Nous traitons vos données sur les bases légales suivantes :</p>
     <ul>
       <li><strong>Exécution du contrat :</strong> fourniture des services de jeu et des fonctionnalités payantes</li>
@@ -254,7 +258,7 @@
       <li><strong>Obligation légale :</strong> conservation des données de facturation</li>
     </ul>
 
-    <h2>4. Ce que nous ne faisons PAS avec vos données</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section4_title">4. Ce que nous ne faisons PAS avec vos données</h2>
     <div class="guarantee-box">
       <p>❌ Pas de vente de données à des tiers</p>
       <p>❌ Pas de partage avec des annonceurs</p>
@@ -263,7 +267,7 @@
       <p>❌ Pas de transfert hors UE sans garanties</p>
     </div>
 
-    <h2>5. Partage des données</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section5_title">5. Partage des données</h2>
     <p>Vos données sont partagées uniquement avec :</p>
     <ul>
       <li><strong>Stripe :</strong> pour le traitement sécurisé des paiements (certifié PCI-DSS)</li>
@@ -272,7 +276,7 @@
     </ul>
     <p>Ces prestataires sont soumis à des obligations de confidentialité et de sécurité strictes.</p>
 
-    <h2>6. Sécurité des données</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section6_title">6. Sécurité des données</h2>
     <p>Nous mettons en œuvre des mesures de sécurité appropriées :</p>
     <ul>
       <li>Chiffrement HTTPS pour toutes les communications</li>
@@ -282,7 +286,7 @@
       <li>Surveillance et journalisation des accès</li>
     </ul>
 
-    <h2>7. Vos droits (RGPD)</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section7_title">7. Vos droits (RGPD)</h2>
     <p>Conformément au Règlement Général sur la Protection des Données (RGPD), vous disposez des droits suivants :</p>
     
     <h3>7.1 Droit d'accès</h3>
@@ -307,7 +311,7 @@
       <p><strong>Pour exercer vos droits :</strong> Envoyez un email à <strong>contact@roronoa-games.com</strong> avec l'objet "Demande RGPD" et précisez votre demande. Nous vous répondrons sous 30 jours maximum.</p>
     </div>
 
-    <h2>8. Cookies</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section8_title">8. Cookies</h2>
     <p>Nous utilisons uniquement des cookies techniques essentiels :</p>
     <ul>
       <li><strong>Cookie de session :</strong> maintien de votre connexion</li>
@@ -315,7 +319,7 @@
     </ul>
     <p>Nous n'utilisons pas de cookies publicitaires ni de trackers tiers.</p>
 
-    <h2>9. Conservation des données</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section9_title">9. Conservation des données</h2>
     <ul>
       <li><strong>Données de compte :</strong> conservées pendant la durée de vie du compte + 1 an après suppression</li>
       <li><strong>Données de facturation :</strong> 10 ans (obligation légale comptable)</li>
@@ -323,17 +327,17 @@
       <li><strong>Avatars IA :</strong> conservés tant que le compte existe, supprimés avec le compte</li>
     </ul>
 
-    <h2>10. Transferts internationaux</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section10_title">10. Transferts internationaux</h2>
     <p>Certains de nos prestataires techniques (Stripe, Render, Daily.co) peuvent traiter des données aux États-Unis. Ces transferts sont encadrés par :</p>
     <ul>
       <li>Le Data Privacy Framework EU-US</li>
       <li>Des clauses contractuelles types de la Commission européenne</li>
     </ul>
 
-    <h2>11. Protection des mineurs</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section11_title">11. Protection des mineurs</h2>
     <p>Nos services sont destinés aux personnes de 13 ans et plus. Nous ne collectons pas sciemment de données de mineurs de moins de 13 ans. Si vous êtes parent et pensez que votre enfant nous a fourni des données, contactez-nous pour les supprimer.</p>
 
-    <h2>12. Réclamation</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section12_title">12. Réclamation</h2>
     <p>Si vous estimez que vos droits ne sont pas respectés, vous pouvez introduire une réclamation auprès de la CNIL :</p>
     <div class="privacy-box">
       <p><strong>Commission Nationale de l'Informatique et des Libertés (CNIL)</strong></p>
@@ -342,15 +346,15 @@
       <p>Site : <a href="https://www.cnil.fr" target="_blank">www.cnil.fr</a></p>
     </div>
 
-    <h2>13. Modifications</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section13_title">13. Modifications</h2>
     <p>Cette politique peut être mise à jour. En cas de modification substantielle, nous vous en informerons par email ou notification sur le site.</p>
 
-    <h2>14. Contact</h2>
+    <h2 data-i18n-site="legal_pages.privacy.section14_title">14. Contact</h2>
     <p>Pour toute question relative à cette politique de confidentialité :</p>
     <p><strong>Email :</strong> contact@roronoa-games.com</p>
     <p><strong>Objet :</strong> "Question confidentialité" ou "Demande RGPD"</p>
 
-    <p class="last-update">Dernière mise à jour : Janvier 2025</p>
+    <p class="last-update" data-i18n-site="legal_pages.last_updated">Dernière mise à jour : Janvier 2025</p>
 
     <div class="footer-links">
       <a href="/mentions-legales.html">Mentions Légales</a>
@@ -358,5 +362,12 @@
       <a href="/index-site.html">Accueil</a>
     </div>
   </div>
+  <script src="site-translations.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var wrap = document.getElementById("lang-selector-wrap");
+      if (wrap) wrap.innerHTML = createLanguageSelector();
+    });
+  </script>
 </body>
 </html>

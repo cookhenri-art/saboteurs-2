@@ -150,20 +150,24 @@
       h2 { font-size: 1.3rem; }
       .header-content { flex-direction: column; gap: 1rem; }
     }
+      .lang-selector-wrap { position: fixed; top: 1rem; right: 1rem; z-index: 200; }
+    .language-selector { background: rgba(0,0,0,0.8); border: 1px solid #6B9D3A; border-radius: 6px; padding: 8px 12px; color: #fff; font-size: 14px; cursor: pointer; }
+    .language-selector option { background: #1a1a2e; color: #fff; }
   </style>
 </head>
 <body>
+  <div class="lang-selector-wrap" id="lang-selector-wrap"></div>
   <header class="header">
     <div class="header-content">
       <a href="/index-site.html" class="logo">RORONOA <span class="logo-accent">GAMES</span></a>
-      <a href="/index-site.html" class="back-link">← Retour à l'accueil</a>
+      <a href="/index-site.html" class="back-link" data-i18n-site="legal_pages.back_to_home">← Retour à l'accueil</a>
     </div>
   </header>
 
   <div class="container">
-    <h1>📜 Conditions Générales d'Utilisation</h1>
+    <h1 data-i18n-site="legal_pages.terms.title">📜 Conditions Générales d'Utilisation</h1>
 
-    <h2>Article 1 - Objet</h2>
+    <h2 data-i18n-site="legal_pages.terms.section1_title">Article 1 - Objet</h2>
     <p>Les présentes Conditions Générales d'Utilisation (CGU) ont pour objet de définir les modalités et conditions d'utilisation des services proposés par RORONOA GAMES sur son site internet et ses applications, notamment le jeu "Les Saboteurs".</p>
     <p>En accédant aux services de RORONOA GAMES, vous acceptez sans réserve les présentes CGU.</p>
 
@@ -175,7 +179,7 @@
       <li><strong>Crédits :</strong> unités permettant d'accéder à certaines fonctionnalités (avatars IA, parties vidéo)</li>
     </ul>
 
-    <h2>Article 3 - Inscription et compte utilisateur</h2>
+    <h2 data-i18n-site="legal_pages.terms.section3_title">Article 3 - Inscription et compte</h2>
     
     <h3>3.1 Création de compte</h3>
     <p>L'accès à certaines fonctionnalités nécessite la création d'un compte. L'Utilisateur s'engage à fournir des informations exactes et à les maintenir à jour.</p>
@@ -186,7 +190,7 @@
     <h3>3.3 Sécurité du compte</h3>
     <p>L'Utilisateur est responsable de la confidentialité de ses identifiants de connexion. Toute activité effectuée depuis son compte est présumée être de son fait.</p>
 
-    <h2>Article 4 - Services gratuits et payants</h2>
+    <h2 data-i18n-site="legal_pages.terms.section4_title">Article 4 - Services gratuits</h2>
     
     <h3>4.1 Offre gratuite</h3>
     <p>L'offre gratuite comprend :</p>
@@ -210,7 +214,7 @@
       <p>En cas de résiliation, l'abonnement reste actif <strong>jusqu'à la fin du mois en cours</strong>. Aucun remboursement au prorata n'est effectué pour le mois entamé.</p>
     </div>
 
-    <h2>Article 5 - Paiement et facturation</h2>
+    <h2 data-i18n-site="legal_pages.terms.section5_title">Article 5 - Services payants</h2>
     
     <h3>5.1 Moyens de paiement</h3>
     <p>Les paiements sont sécurisés via Stripe. Nous acceptons les cartes bancaires (Visa, Mastercard, American Express).</p>
@@ -221,7 +225,7 @@
     <h3>5.3 Résiliation</h3>
     <p>La résiliation peut être effectuée à tout moment depuis l'espace compte ("Gérer mon abonnement"). L'abonnement reste actif jusqu'à la fin de la période payée.</p>
 
-    <h2>Article 6 - Règles de conduite</h2>
+    <h2 data-i18n-site="legal_pages.terms.section6_title">Article 6 - Règles de conduite</h2>
     <p>L'Utilisateur s'engage à :</p>
     <ul>
       <li>Respecter les autres joueurs et adopter un comportement fair-play</li>
@@ -247,13 +251,13 @@
       <li>Violant les droits de propriété intellectuelle de tiers</li>
     </ul>
 
-    <h2>Article 8 - Propriété intellectuelle</h2>
+    <h2 data-i18n-site="legal_pages.terms.section7_title">Article 8 - Propriété intellectuelle</h2>
     <p>Tous les éléments du site et des jeux (code, graphismes, sons, textes) sont la propriété exclusive de RORONOA GAMES ou de ses partenaires. Toute reproduction non autorisée est interdite.</p>
 
     <h2>Article 9 - Données personnelles</h2>
     <p>Le traitement des données personnelles est détaillé dans notre <a href="/politique-confidentialite.html">Politique de Confidentialité</a>.</p>
 
-    <h2>Article 10 - Responsabilité</h2>
+    <h2 data-i18n-site="legal_pages.terms.section8_title">Article 10 - Responsabilité</h2>
     
     <h3>10.1 Disponibilité du service</h3>
     <p>RORONOA GAMES s'efforce d'assurer la disponibilité des services 24h/24, mais ne peut garantir une disponibilité permanente. Des interruptions peuvent survenir pour maintenance ou mises à jour.</p>
@@ -261,20 +265,20 @@
     <h3>10.2 Limitation de responsabilité</h3>
     <p>RORONOA GAMES ne saurait être tenu responsable des dommages indirects résultant de l'utilisation ou de l'impossibilité d'utiliser les services.</p>
 
-    <h2>Article 11 - Modification des CGU</h2>
+    <h2 data-i18n-site="legal_pages.terms.section10_title">Article 11 - Modifications des CGU</h2>
     <p>RORONOA GAMES se réserve le droit de modifier les présentes CGU à tout moment. Les utilisateurs seront informés des modifications par email ou notification sur le site. La poursuite de l'utilisation des services vaut acceptation des nouvelles CGU.</p>
 
     <h2>Article 12 - Droit de rétractation</h2>
     <p>Conformément à l'article L221-28 du Code de la consommation, le droit de rétractation ne s'applique pas aux contenus numériques fournis sur un support immatériel dont l'exécution a commencé avec l'accord du consommateur.</p>
     <p>En achetant un pack ou un abonnement et en l'utilisant immédiatement, vous acceptez expressément que le service commence avant la fin du délai de rétractation et renoncez à votre droit de rétractation.</p>
 
-    <h2>Article 13 - Droit applicable et litiges</h2>
+    <h2 data-i18n-site="legal_pages.terms.section11_title">Article 13 - Droit applicable</h2>
     <p>Les présentes CGU sont soumises au droit français. En cas de litige, une solution amiable sera recherchée avant tout recours judiciaire. À défaut, les tribunaux français seront seuls compétents.</p>
 
-    <h2>Article 14 - Contact</h2>
+    <h2 data-i18n-site="legal_pages.terms.section12_title">Article 14 - Contact</h2>
     <p>Pour toute question concernant ces CGU : <strong>contact@roronoa-games.com</strong></p>
 
-    <p class="last-update">Dernière mise à jour : Janvier 2025</p>
+    <p class="last-update" data-i18n-site="legal_pages.last_updated">Dernière mise à jour : Janvier 2025</p>
 
     <div class="footer-links">
       <a href="/mentions-legales.html">Mentions Légales</a>
@@ -282,5 +286,12 @@
       <a href="/index-site.html">Accueil</a>
     </div>
   </div>
+  <script src="site-translations.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var wrap = document.getElementById("lang-selector-wrap");
+      if (wrap) wrap.innerHTML = createLanguageSelector();
+    });
+  </script>
 </body>
 </html>

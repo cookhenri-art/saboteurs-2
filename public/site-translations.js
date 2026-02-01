@@ -717,3 +717,123 @@ SITE_TRANSLATIONS.account = {
   // Family code
   family_code_share: { fr: "Code famille à partager :", en: "Family code to share:", es: "Código familiar para compartir:", de: "Familiencode zum Teilen:", it: "Codice famiglia da condividere:", pt: "Código família para compartilhar:", nl: "Familiecode om te delen:" }
 };
+
+// ============================================================================
+// LEGAL PAGES - COMPLETE TRANSLATIONS
+// ============================================================================
+
+SITE_TRANSLATIONS.legal_pages = {
+  // Common
+  back_to_home: {
+    fr: "← Retour à l'accueil",
+    en: "← Back to Home",
+    es: "← Volver al Inicio",
+    de: "← Zurück zur Startseite",
+    it: "← Torna alla Home",
+    pt: "← Voltar ao Início",
+    nl: "← Terug naar Home"
+  },
+  last_updated: {
+    fr: "Dernière mise à jour : Janvier 2025",
+    en: "Last updated: January 2025",
+    es: "Última actualización: Enero 2025",
+    de: "Zuletzt aktualisiert: Januar 2025",
+    it: "Ultimo aggiornamento: Gennaio 2025",
+    pt: "Última atualização: Janeiro 2025",
+    nl: "Laatst bijgewerkt: Januari 2025"
+  },
+
+  // PRIVACY POLICY
+  privacy: {
+    title: {
+      fr: "🔒 Politique de Confidentialité",
+      en: "🔒 Privacy Policy",
+      es: "🔒 Política de Privacidad",
+      de: "🔒 Datenschutzrichtlinie",
+      it: "🔒 Informativa sulla Privacy",
+      pt: "🔒 Política de Privacidade",
+      nl: "🔒 Privacybeleid"
+    },
+    commitment_title: {
+      fr: "🛡️ Notre engagement",
+      en: "🛡️ Our Commitment",
+      es: "🛡️ Nuestro Compromiso",
+      de: "🛡️ Unsere Verpflichtung",
+      it: "🛡️ Il Nostro Impegno",
+      pt: "🛡️ Nosso Compromisso",
+      nl: "🛡️ Onze Toezegging"
+    },
+    commitment_text: {
+      fr: "Vos données ne sont jamais vendues, jamais partagées à des fins commerciales, jamais utilisées pour de la publicité ciblée.",
+      en: "Your data is never sold, never shared for commercial purposes, never used for targeted advertising.",
+      es: "Sus datos nunca se venden, nunca se comparten con fines comerciales, nunca se utilizan para publicidad dirigida.",
+      de: "Ihre Daten werden niemals verkauft, niemals für kommerzielle Zwecke weitergegeben, niemals für gezielte Werbung verwendet.",
+      it: "I tuoi dati non vengono mai venduti, mai condivisi per scopi commerciali, mai utilizzati per pubblicità mirata.",
+      pt: "Seus dados nunca são vendidos, nunca compartilhados para fins comerciais, nunca usados para publicidade direcionada.",
+      nl: "Uw gegevens worden nooit verkocht, nooit gedeeld voor commerciële doeleinden, nooit gebruikt voor gerichte advertenties."
+    },
+    section1_title: { fr: "1. Responsable du traitement", en: "1. Data Controller", es: "1. Responsable del Tratamiento", de: "1. Verantwortlicher", it: "1. Titolare del Trattamento", pt: "1. Responsável pelo Tratamento", nl: "1. Verwerkingsverantwoordelijke" },
+    section1_text: { fr: "Le responsable du traitement des données personnelles est :", en: "The data controller is:", es: "El responsable del tratamiento de datos personales es:", de: "Der Verantwortliche für die Verarbeitung personenbezogener Daten ist:", it: "Il titolare del trattamento dei dati personali è:", pt: "O responsável pelo tratamento de dados pessoais é:", nl: "De verwerkingsverantwoordelijke is:" },
+    section2_title: { fr: "2. Données collectées", en: "2. Data Collected", es: "2. Datos Recopilados", de: "2. Erfasste Daten", it: "2. Dati Raccolti", pt: "2. Dados Coletados", nl: "2. Verzamelde Gegevens" },
+    section2_text: { fr: "Nous collectons uniquement les données strictement nécessaires au fonctionnement de nos services :", en: "We only collect data strictly necessary for the operation of our services:", es: "Recopilamos únicamente los datos estrictamente necesarios para el funcionamiento de nuestros servicios:", de: "Wir erfassen nur die für den Betrieb unserer Dienste unbedingt erforderlichen Daten:", it: "Raccogliamo solo i dati strettamente necessari per il funzionamento dei nostri servizi:", pt: "Coletamos apenas os dados estritamente necessários para o funcionamento dos nossos serviços:", nl: "We verzamelen alleen gegevens die strikt noodzakelijk zijn voor de werking van onze diensten:" },
+    table_data: { fr: "Donnée", en: "Data", es: "Dato", de: "Daten", it: "Dato", pt: "Dado", nl: "Gegeven" },
+    table_purpose: { fr: "Finalité", en: "Purpose", es: "Finalidad", de: "Zweck", it: "Finalità", pt: "Finalidade", nl: "Doel" },
+    table_retention: { fr: "Conservation", en: "Retention", es: "Conservación", de: "Aufbewahrung", it: "Conservazione", pt: "Retenção", nl: "Bewaartermijn" },
+    section3_title: { fr: "3. Base légale du traitement", en: "3. Legal Basis", es: "3. Base Legal", de: "3. Rechtsgrundlage", it: "3. Base Giuridica", pt: "3. Base Legal", nl: "3. Rechtsgrondslag" },
+    section4_title: { fr: "4. Ce que nous ne faisons PAS", en: "4. What We Do NOT Do", es: "4. Lo que NO Hacemos", de: "4. Was wir NICHT tun", it: "4. Cosa NON Facciamo", pt: "4. O que NÃO Fazemos", nl: "4. Wat We NIET Doen" },
+    section5_title: { fr: "5. Partage des données", en: "5. Data Sharing", es: "5. Compartir Datos", de: "5. Datenweitergabe", it: "5. Condivisione Dati", pt: "5. Compartilhamento de Dados", nl: "5. Gegevens Delen" },
+    section6_title: { fr: "6. Sécurité des données", en: "6. Data Security", es: "6. Seguridad de Datos", de: "6. Datensicherheit", it: "6. Sicurezza dei Dati", pt: "6. Segurança de Dados", nl: "6. Gegevensbeveiliging" },
+    section7_title: { fr: "7. Vos droits (RGPD)", en: "7. Your Rights (GDPR)", es: "7. Sus Derechos (RGPD)", de: "7. Ihre Rechte (DSGVO)", it: "7. I Tuoi Diritti (GDPR)", pt: "7. Seus Direitos (RGPD)", nl: "7. Uw Rechten (AVG)" },
+    section8_title: { fr: "8. Cookies", en: "8. Cookies", es: "8. Cookies", de: "8. Cookies", it: "8. Cookie", pt: "8. Cookies", nl: "8. Cookies" },
+    section9_title: { fr: "9. Conservation des données", en: "9. Data Retention", es: "9. Conservación de Datos", de: "9. Datenaufbewahrung", it: "9. Conservazione dei Dati", pt: "9. Retenção de Dados", nl: "9. Gegevensbewaring" },
+    section10_title: { fr: "10. Transferts internationaux", en: "10. International Transfers", es: "10. Transferencias Internacionales", de: "10. Internationale Übermittlungen", it: "10. Trasferimenti Internazionali", pt: "10. Transferências Internacionais", nl: "10. Internationale Overdrachten" },
+    section11_title: { fr: "11. Protection des mineurs", en: "11. Protection of Minors", es: "11. Protección de Menores", de: "11. Schutz von Minderjährigen", it: "11. Protezione dei Minori", pt: "11. Proteção de Menores", nl: "11. Bescherming van Minderjarigen" },
+    section12_title: { fr: "12. Réclamation", en: "12. Complaints", es: "12. Reclamación", de: "12. Beschwerde", it: "12. Reclamo", pt: "12. Reclamação", nl: "12. Klachten" },
+    section13_title: { fr: "13. Modifications", en: "13. Changes", es: "13. Modificaciones", de: "13. Änderungen", it: "13. Modifiche", pt: "13. Modificações", nl: "13. Wijzigingen" },
+    section14_title: { fr: "14. Contact", en: "14. Contact", es: "14. Contacto", de: "14. Kontakt", it: "14. Contatto", pt: "14. Contato", nl: "14. Contact" }
+  },
+
+  // LEGAL NOTICE
+  legal_notice: {
+    title: {
+      fr: "📋 Mentions Légales",
+      en: "📋 Legal Notice",
+      es: "📋 Aviso Legal",
+      de: "📋 Impressum",
+      it: "📋 Note Legali",
+      pt: "📋 Aviso Legal",
+      nl: "📋 Juridische Kennisgeving"
+    },
+    section1_title: { fr: "1. Éditeur du site", en: "1. Website Publisher", es: "1. Editor del Sitio", de: "1. Herausgeber", it: "1. Editore del Sito", pt: "1. Editor do Site", nl: "1. Website Uitgever" },
+    section2_title: { fr: "2. Hébergeur", en: "2. Host", es: "2. Alojamiento", de: "2. Hosting", it: "2. Hosting", pt: "2. Hospedagem", nl: "2. Hosting" },
+    section3_title: { fr: "3. Propriété intellectuelle", en: "3. Intellectual Property", es: "3. Propiedad Intelectual", de: "3. Geistiges Eigentum", it: "3. Proprietà Intellettuale", pt: "3. Propriedade Intelectual", nl: "3. Intellectueel Eigendom" },
+    section4_title: { fr: "4. Responsabilité", en: "4. Liability", es: "4. Responsabilidad", de: "4. Haftung", it: "4. Responsabilità", pt: "4. Responsabilidade", nl: "4. Aansprakelijkheid" },
+    section5_title: { fr: "5. Droit applicable", en: "5. Applicable Law", es: "5. Ley Aplicable", de: "5. Anwendbares Recht", it: "5. Legge Applicabile", pt: "5. Lei Aplicável", nl: "5. Toepasselijk Recht" },
+    section6_title: { fr: "6. Contact", en: "6. Contact", es: "6. Contacto", de: "6. Kontakt", it: "6. Contatto", pt: "6. Contato", nl: "6. Contact" }
+  },
+
+  // TERMS OF SERVICE
+  terms: {
+    title: {
+      fr: "📜 Conditions Générales d'Utilisation",
+      en: "📜 Terms of Service",
+      es: "📜 Términos de Servicio",
+      de: "📜 Nutzungsbedingungen",
+      it: "📜 Termini di Servizio",
+      pt: "📜 Termos de Serviço",
+      nl: "📜 Servicevoorwaarden"
+    },
+    section1_title: { fr: "1. Objet", en: "1. Purpose", es: "1. Objeto", de: "1. Gegenstand", it: "1. Oggetto", pt: "1. Objeto", nl: "1. Doel" },
+    section2_title: { fr: "2. Accès aux services", en: "2. Access to Services", es: "2. Acceso a los Servicios", de: "2. Zugang zu den Diensten", it: "2. Accesso ai Servizi", pt: "2. Acesso aos Serviços", nl: "2. Toegang tot Diensten" },
+    section3_title: { fr: "3. Inscription et compte", en: "3. Registration and Account", es: "3. Registro y Cuenta", de: "3. Registrierung und Konto", it: "3. Registrazione e Account", pt: "3. Registro e Conta", nl: "3. Registratie en Account" },
+    section4_title: { fr: "4. Services gratuits", en: "4. Free Services", es: "4. Servicios Gratuitos", de: "4. Kostenlose Dienste", it: "4. Servizi Gratuiti", pt: "4. Serviços Gratuitos", nl: "4. Gratis Diensten" },
+    section5_title: { fr: "5. Services payants", en: "5. Paid Services", es: "5. Servicios de Pago", de: "5. Kostenpflichtige Dienste", it: "5. Servizi a Pagamento", pt: "5. Serviços Pagos", nl: "5. Betaalde Diensten" },
+    section6_title: { fr: "6. Règles de conduite", en: "6. Code of Conduct", es: "6. Reglas de Conducta", de: "6. Verhaltensregeln", it: "6. Regole di Condotta", pt: "6. Regras de Conduta", nl: "6. Gedragsregels" },
+    section7_title: { fr: "7. Propriété intellectuelle", en: "7. Intellectual Property", es: "7. Propiedad Intelectual", de: "7. Geistiges Eigentum", it: "7. Proprietà Intellettuale", pt: "7. Propriedade Intelectual", nl: "7. Intellectueel Eigendom" },
+    section8_title: { fr: "8. Limitation de responsabilité", en: "8. Limitation of Liability", es: "8. Limitación de Responsabilidad", de: "8. Haftungsbeschränkung", it: "8. Limitazione di Responsabilità", pt: "8. Limitação de Responsabilidade", nl: "8. Beperking van Aansprakelijkheid" },
+    section9_title: { fr: "9. Suspension et résiliation", en: "9. Suspension and Termination", es: "9. Suspensión y Terminación", de: "9. Aussetzung und Kündigung", it: "9. Sospensione e Risoluzione", pt: "9. Suspensão e Rescisão", nl: "9. Schorsing en Beëindiging" },
+    section10_title: { fr: "10. Modifications des CGU", en: "10. Changes to Terms", es: "10. Cambios en los Términos", de: "10. Änderungen der AGB", it: "10. Modifiche ai Termini", pt: "10. Alterações nos Termos", nl: "10. Wijzigingen in Voorwaarden" },
+    section11_title: { fr: "11. Droit applicable", en: "11. Applicable Law", es: "11. Ley Aplicable", de: "11. Anwendbares Recht", it: "11. Legge Applicabile", pt: "11. Lei Aplicável", nl: "11. Toepasselijk Recht" },
+    section12_title: { fr: "12. Contact", en: "12. Contact", es: "12. Contacto", de: "12. Kontakt", it: "12. Contatto", pt: "12. Contato", nl: "12. Contact" }
+  }
+};
