@@ -6450,6 +6450,8 @@ app.get('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
       const coupon = coupons.data.find(c => c.id === pc.coupon.id) || pc.coupon;
       
       return {
+        promo_code_id: pc.id,        // ID du code promo (pour supprimer/toggle)
+        coupon_id: pc.coupon.id,     // ID du coupon Stripe
         code: pc.code,
         name: coupon?.name || 'Sans nom',
         percent_off: coupon?.percent_off || null,
@@ -6470,6 +6472,48 @@ app.get('/api/admin/stripe/coupons', verifyAdmin, async (req, res) => {
     
   } catch (error) {
     console.error('[Admin] Erreur coupons:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Supprimer un code promo Stripe
+app.delete('/api/admin/stripe/coupons/:promoCodeId', verifyAdmin, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe non configuré' });
+    }
+    
+    const { promoCodeId } = req.params;
+    
+    // Désactiver le code promo (Stripe ne permet pas de supprimer, seulement désactiver)
+    await stripe.promotionCodes.update(promoCodeId, { active: false });
+    
+    console.log(`[Admin] Code promo ${promoCodeId} désactivé/supprimé`);
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur suppression coupon:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Activer/Désactiver un code promo Stripe
+app.patch('/api/admin/stripe/coupons/:promoCodeId/toggle', verifyAdmin, async (req, res) => {
+  try {
+    if (!stripe) {
+      return res.status(400).json({ error: 'Stripe non configuré' });
+    }
+    
+    const { promoCodeId } = req.params;
+    const { active } = req.body;
+    
+    await stripe.promotionCodes.update(promoCodeId, { active: active });
+    
+    console.log(`[Admin] Code promo ${promoCodeId} ${active ? 'activé' : 'désactivé'}`);
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('[Admin] Erreur toggle coupon:', error);
     res.status(500).json({ error: error.message });
   }
 });
