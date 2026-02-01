@@ -42,10 +42,10 @@
         <p class="product-tagline" data-i18n-site="products.hero_tagline">Infiltration • Déduction • Multijoueur</p>
         
         <div class="product-cta">
-          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)">
+          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)" data-i18n-site="products.play_now">
             🎮 Jouer Maintenant
           </a>
-          <button class="btn btn-outline btn-large" onclick="openPacksModal()">
+          <button class="btn btn-outline btn-large" onclick="openPacksModal()" data-i18n-site="products.discover_packs">
             💎 Découvrir les Packs
           </button>
         </div>
@@ -73,25 +73,25 @@
           <div class="feature-box">
             <div class="feature-icon">👥</div>
             <h3 data-i18n-site="products.feature_players">6-12 Joueurs</h3>
-            <p>6-9 sur mobile / 6-12 sur PC</p>
+            <p data-i18n-site="products.feature_players_desc">6-9 sur mobile / 6-12 sur PC</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">🎭</div>
             <h3 data-i18n-site="products.feature_themes">Thèmes & Rôles</h3>
-            <p>4 univers, rôles variés et spéciaux</p>
+            <p data-i18n-site="products.feature_themes_desc">4 univers, rôles variés et spéciaux</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">📹</div>
             <h3 data-i18n-site="products.feature_video">Visio Intégrée</h3>
-            <p>Sans téléchargement, mobile & PC</p>
+            <p data-i18n-site="products.feature_video_desc">Sans téléchargement, mobile & PC</p>
           </div>
           
           <div class="feature-box">
             <div class="feature-icon">⏱️</div>
             <h3 data-i18n-site="products.feature_duration">15-45 Minutes</h3>
-            <p>Parties rapides et dynamiques</p>
+            <p data-i18n-site="products.feature_duration_desc">Parties rapides et dynamiques</p>
           </div>
           
           <div class="feature-box">
@@ -117,7 +117,7 @@
         <div class="theme-card">
           <div class="theme-icon">🚀</div>
           <h3 data-i18n-site="products.theme_space_title">Infiltration Spatiale</h3>
-          <p>
+          <p data-i18n-site="products.theme_space_desc">
             L'univers classique : une station spatiale, des astronautes, des saboteurs.
             Réparez la station avant qu'il ne soit trop tard !
           </p>
@@ -132,7 +132,7 @@
         <div class="theme-card">
           <div class="theme-icon">🐺</div>
           <h3 data-i18n-site="products.theme_werewolf_title">Loup-Garou</h3>
-          <p>
+          <p data-i18n-site="products.theme_werewolf_desc">
             Un village médiéval hanté par les loups-garous. Villageois contre créatures 
             de la nuit dans une bataille épique pour la survie.
           </p>
@@ -147,7 +147,7 @@
         <div class="theme-card">
           <div class="theme-icon">🧙</div>
           <h3 data-i18n-site="products.theme_wizard_title">Académie des Sorciers</h3>
-          <p>
+          <p data-i18n-site="products.theme_wizard_desc">
             Une école de magie infiltrée par des sorciers noirs. Maîtrisez la magie 
             et démasquez les traîtres avant qu'ils ne corrompent l'académie.
           </p>
@@ -162,7 +162,7 @@
         <div class="theme-card">
           <div class="theme-icon">⚔️</div>
           <h3 data-i18n-site="products.theme_mythic_title">Royaumes Mythiques</h3>
-          <p>
+          <p data-i18n-site="products.theme_mythic_desc">
             Un royaume fantasy menacé par des créatures corrompues. Chevaliers, 
             mages et traîtres s'affrontent pour le contrôle du royaume.
           </p>
@@ -180,28 +180,28 @@
   <section class="pricing">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">Nos Offres</div>
-        <h2 class="section-title">Plans Tarifaires</h2>
+        <div class="section-badge" data-i18n-site="products.pricing_badge">Nos Offres</div>
+        <h2 class="section-title" data-i18n-site="products.pricing_title">Plans Tarifaires</h2>
       </div>
       
       <div class="pricing-grid">
         <!-- Free -->
         <div class="pricing-card">
           <div class="pricing-header">
-            <h3>Gratuit</h3>
+            <h3 data-i18n-site="products.plan_free_name">Gratuit</h3>
             <div class="price">
-              <span class="currency">0€</span>
-              <span class="period">/mois</span>
+              <span class="currency" data-i18n-site="products.plan_free_price">0€</span>
+              <span class="period" data-i18n-site="products.plan_free_period">/mois</span>
             </div>
           </div>
           <ul class="pricing-features">
-            <li>✅ Parties illimitées</li>
-            <li>✅ 2 avatars IA/mois</li>
-            <li>✅ 2 parties vidéo/mois</li>
-            <li>✅ Tous les thèmes</li>
-            <li>✅ Mode hors ligne</li>
+            <li data-i18n-site="products.plan_free_feat1">✅ Parties illimitées</li>
+            <li data-i18n-site="products.plan_free_feat2">✅ 2 avatars IA/mois</li>
+            <li data-i18n-site="products.plan_free_feat3">✅ 2 parties vidéo/mois</li>
+            <li data-i18n-site="products.plan_free_feat4">✅ Tous les thèmes</li>
+            <li data-i18n-site="products.plan_free_feat5">✅ Mode hors ligne</li>
           </ul>
-          <a href="/index.html" target="_blank" class="btn btn-outline">
+          <a href="/index.html" target="_blank" class="btn btn-outline" data-i18n-site="products.plan_free_cta">
             Commencer Gratuitement
           </a>
         </div>
@@ -209,42 +209,42 @@
         <!-- Pack -->
         <div class="pricing-card">
           <div class="pricing-header">
-            <h3>Pack 50+50</h3>
+            <h3 data-i18n-site="products.plan_pack_name">Pack 50+50</h3>
             <div class="price">
-              <span class="currency">4,99€</span>
-              <span class="period">unique</span>
+              <span class="currency" data-i18n-site="products.plan_pack_price">4,99€</span>
+              <span class="period" data-i18n-site="products.plan_pack_period">unique</span>
             </div>
           </div>
           <ul class="pricing-features">
-            <li>✅ 50 avatars IA</li>
-            <li>✅ 50 crédits vidéo</li>
-            <li>✅ Valables 12 mois</li>
-            <li>✅ Tous les avantages Free</li>
-            <li>✅ Support prioritaire</li>
+            <li data-i18n-site="products.plan_pack_feat1">✅ 50 avatars IA</li>
+            <li data-i18n-site="products.plan_pack_feat2">✅ 50 crédits vidéo</li>
+            <li data-i18n-site="products.plan_pack_feat3">✅ Valables 12 mois</li>
+            <li data-i18n-site="products.plan_pack_feat4">✅ Tous les avantages Free</li>
+            <li data-i18n-site="products.plan_pack_feat5">✅ Support prioritaire</li>
           </ul>
-          <button class="btn btn-secondary" onclick="openLoginModal()">
+          <button class="btn btn-secondary" onclick="openLoginModal()" data-i18n-site="products.plan_pack_cta">
             Acheter le Pack
           </button>
         </div>
         
         <!-- Premium -->
         <div class="pricing-card featured">
-          <div class="pricing-badge">Le Plus Populaire</div>
+          <div class="pricing-badge" data-i18n-site="products.plan_premium_badge">Le Plus Populaire</div>
           <div class="pricing-header">
-            <h3>Premium</h3>
+            <h3 data-i18n-site="products.plan_premium_name">Premium</h3>
             <div class="price">
-              <span class="currency">1,49€</span>
-              <span class="period">/mois</span>
+              <span class="currency" data-i18n-site="products.plan_premium_price">1,49€</span>
+              <span class="period" data-i18n-site="packs.premium_period">/mois</span>
             </div>
           </div>
           <ul class="pricing-features">
-            <li>✅ Avatars IA illimités</li>
-            <li>✅ Parties vidéo illimitées</li>
-            <li>✅ Badge exclusif</li>
-            <li>✅ Accès anticipé nouveautés</li>
-            <li>✅ Support VIP 24/7</li>
+            <li data-i18n-site="products.plan_premium_feat1">✅ Avatars IA illimités</li>
+            <li data-i18n-site="products.plan_premium_feat2">✅ Parties vidéo illimitées</li>
+            <li data-i18n-site="products.plan_premium_feat3">✅ Badge exclusif</li>
+            <li data-i18n-site="products.plan_premium_feat4">✅ Accès anticipé nouveautés</li>
+            <li data-i18n-site="products.plan_premium_feat5">✅ Support VIP 24/7</li>
           </ul>
-          <button class="btn btn-primary" onclick="openLoginModal()">
+          <button class="btn btn-primary" onclick="openLoginModal()" data-i18n-site="products.plan_premium_cta">
             Devenir Premium
           </button>
         </div>
@@ -252,20 +252,20 @@
         <!-- Family -->
         <div class="pricing-card">
           <div class="pricing-header">
-            <h3>Pack Famille</h3>
+            <h3 data-i18n-site="products.plan_family_name">Pack Famille</h3>
             <div class="price">
-              <span class="currency">9,99€</span>
-              <span class="period">/mois</span>
+              <span class="currency" data-i18n-site="products.plan_family_price">9,99€</span>
+              <span class="period" data-i18n-site="packs.premium_period">/mois</span>
             </div>
           </div>
           <ul class="pricing-features">
-            <li>✅ Jusqu'à 9 comptes</li>
-            <li>✅ Avantages Premium pour tous</li>
-            <li>✅ Gestion centralisée</li>
-            <li>✅ Économie de 60%</li>
-            <li>✅ Support prioritaire</li>
+            <li data-i18n-site="products.plan_family_feat1">✅ Jusqu'à 9 comptes</li>
+            <li data-i18n-site="products.plan_family_feat2">✅ Avantages Premium pour tous</li>
+            <li data-i18n-site="products.plan_family_feat3">✅ Gestion centralisée</li>
+            <li data-i18n-site="products.plan_family_feat4">✅ Économie de 60%</li>
+            <li data-i18n-site="products.plan_family_feat5">✅ Support prioritaire</li>
           </ul>
-          <button class="btn btn-outline" onclick="openLoginModal()">
+          <button class="btn btn-outline" onclick="openLoginModal()" data-i18n-site="products.plan_family_cta">
             Pack Famille
           </button>
         </div>
@@ -277,13 +277,13 @@
   <section class="cta">
     <div class="container">
       <div class="cta-content">
-        <h2>Prêt à Jouer ?</h2>
-        <p>Rejoignez des milliers de joueurs dans l'aventure la plus intense !</p>
+        <h2 data-i18n-site="products.cta_title">Prêt à Jouer ?</h2>
+        <p data-i18n-site="products.cta_subtitle">Rejoignez des milliers de joueurs dans l'aventure la plus intense !</p>
         <div class="cta-buttons">
-          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)">
+          <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-primary btn-large" onclick="goToGameWithToken(event)" data-i18n-site="products.play_now">
             🎮 Jouer Maintenant
           </a>
-          <button class="btn btn-outline btn-large" onclick="openPacksModal()">
+          <button class="btn btn-outline btn-large" onclick="openPacksModal()" data-i18n-site="products.cta_offers">
             💎 Voir les Offres Premium
           </button>
         </div>
@@ -297,14 +297,14 @@
       <div class="footer-content">
         <div class="footer-brand">
           <h3>RORONOA <span>GAMES</span></h3>
-          <p>Créateur d'expériences vidéoludiques</p>
+          <p data-i18n-site="products.footer_creator">Créateur d'expériences vidéoludiques</p>
         </div>
         <div class="footer-links">
           <div class="footer-column">
             <h4 data-i18n-site="footer.quick_links">Navigation</h4>
             <a href="index-site.html#accueil" data-i18n-site="nav.home">Accueil</a>
             <a href="index-site.html#a-propos" data-i18n-site="nav.about">À Propos</a>
-            <a href="products.html">Produits</a>
+            <a href="products.html" data-i18n-site="nav.products">Produits</a>
             <a href="index-site.html#contact" data-i18n-site="nav.contact">Contact</a>
           </div>
           <div class="footer-column">
@@ -316,7 +316,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 RORONOA GAMES. Tous droits réservés.</p>
+        <p data-i18n-site="footer.copyright">&copy; 2026 RORONOA GAMES. Tous droits réservés.</p>
       </div>
     </div>
   </footer>

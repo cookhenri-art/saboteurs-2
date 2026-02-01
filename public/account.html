@@ -1011,19 +1011,19 @@
           <span class="credits-badge" id="avatar-count-badge">0 avatars</span>
         </div>
         
-        <p style="color: #aaa; margin-bottom: 1.5rem;">
+        <p style="color: #aaa; margin-bottom: 1.5rem;" data-i18n-site="account.avatars_description">
           Vos avatars générés par IA sont disponibles ici. Vous pouvez les télécharger pour les utiliser dans d'autres jeux ou applications.
         </p>
         
         <div id="avatars-gallery" class="avatars-gallery">
-          <div class="loading-spinner">Chargement...</div>
+          <div class="loading-spinner" data-i18n-site="account.loading">Chargement...</div>
         </div>
         
         <div id="no-avatars" style="display: none; text-align: center; padding: 3rem; color: #888;">
           <div style="font-size: 4rem; margin-bottom: 1rem;">🎨</div>
-          <p>Vous n'avez pas encore d'avatar.</p>
+          <p data-i18n-site="account.no_avatars">Vous n'avez pas encore d'avatar.</p>
           <p style="margin-top: 0.5rem;">
-            <a href="https://saboteurs-2.onrender.com" target="_blank" style="color: #6B9D3A;" onclick="addTokenToLink(event)">Créez votre premier avatar dans le jeu →</a>
+            <a href="https://saboteurs-2.onrender.com" target="_blank" style="color: #6B9D3A;" onclick="addTokenToLink(event)" data-i18n-site="account.create_first_avatar">Créez votre premier avatar dans le jeu →</a>
           </p>
         </div>
       </div>
@@ -1099,7 +1099,7 @@
         <div class="card-header">
           <h2 class="card-title" data-i18n-site="account.manage_payments">📋 Gérer mes paiements</h2>
         </div>
-        <p style="color: var(--light-gray); margin-bottom: 1rem;">
+        <p style="color: var(--light-gray); margin-bottom: 1rem;" data-i18n-site="account.billing_portal_desc">
           Accédez au portail Stripe pour modifier votre moyen de paiement, télécharger vos factures ou gérer votre abonnement.
         </p>
         <button class="btn btn-secondary" onclick="openBillingPortal()" data-i18n-site="account.btn_billing_portal">🔗 Accéder au portail de paiement</button>
@@ -1138,20 +1138,20 @@
         <div class="card-header">
           <h2 class="card-title" data-i18n-site="account.pack_5050_title">🎁 Pack 50+50</h2>
         </div>
-        <p style="color: var(--light-gray); margin-bottom: 1rem;">
+        <p style="color: var(--light-gray); margin-bottom: 1rem;" data-i18n-site="account.pack_5050_desc">
           Achat unique : <strong style="color: var(--green-bright);">50 crédits vidéo</strong> + <strong style="color: var(--green-bright);">50 avatars bonus</strong>
         </p>
-        <p style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--off-white);">
+        <p style="margin-bottom: 1rem; font-size: 0.95rem; color: var(--off-white);" data-i18n-site="account.pack_5050_ideal">
           Idéal pour compléter votre abonnement ou offrir en cadeau !
         </p>
         <div class="subscription-price" style="margin-bottom: 1rem;">4,99€ <span>unique</span></div>
         
         <!-- Champ Code Promo -->
         <div style="margin-bottom: 1rem; padding: 12px; background: rgba(107, 157, 58, 0.1); border: 1px dashed var(--green-main); border-radius: 8px;">
-          <label style="color: var(--green-bright); font-weight: bold; display: block; margin-bottom: 8px; font-size: 0.9em;">🎁 Code promo ?</label>
+          <label style="color: var(--green-bright); font-weight: bold; display: block; margin-bottom: 8px; font-size: 0.9em;" data-i18n-site="account.promo_label">🎁 Code promo ?</label>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <input type="text" id="pack-promo-code" placeholder="Entre ton code" style="padding: 8px 12px; border: 2px solid #333; border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; font-size: 13px; text-transform: uppercase; width: 140px;" />
-            <button onclick="validatePackPromoCode()" style="padding: 8px 14px; background: var(--green-main); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">Valider</button>
+            <input type="text" id="pack-promo-code" data-i18n-site="account.promo_placeholder" placeholder="Entre ton code" style="padding: 8px 12px; border: 2px solid #333; border-radius: 6px; background: rgba(0,0,0,0.3); color: #fff; font-size: 13px; text-transform: uppercase; width: 140px;" />
+            <button onclick="validatePackPromoCode()" style="padding: 8px 14px; background: var(--green-main); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;" data-i18n-site="account.promo_validate">Valider</button>
           </div>
           <p id="pack-promo-status" style="margin-top: 6px; font-size: 12px; color: #aaa; min-height: 16px;"></p>
         </div>

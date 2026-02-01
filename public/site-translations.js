@@ -342,7 +342,62 @@ const SITE_TRANSLATIONS = {
       it: "L'Olimpo è minacciato dai Titani. Dei ed eroi devono identificare i traditori.",
       pt: "O Olimpo está ameaçado pelos Titãs. Deuses e heróis devem identificar os traidores.",
       nl: "De Olympus wordt bedreigd door de Titanen. Goden en helden moeten de verraders identificeren."
-    }
+    },
+    
+    // Pricing Section
+    pricing_badge: { fr: "Nos Offres", en: "Our Offers", es: "Nuestras Ofertas", de: "Unsere Angebote", it: "Le Nostre Offerte", pt: "Nossas Ofertas", nl: "Onze Aanbiedingen" },
+    pricing_title: { fr: "Plans Tarifaires", en: "Pricing Plans", es: "Planes de Precios", de: "Preispläne", it: "Piani Tariffari", pt: "Planos de Preços", nl: "Prijsplannen" },
+    
+    // Free Plan
+    plan_free_name: { fr: "Gratuit", en: "Free", es: "Gratis", de: "Kostenlos", it: "Gratuito", pt: "Grátis", nl: "Gratis" },
+    plan_free_price: { fr: "0€", en: "€0", es: "0€", de: "0€", it: "0€", pt: "0€", nl: "€0" },
+    plan_free_period: { fr: "/mois", en: "/month", es: "/mes", de: "/Monat", it: "/mese", pt: "/mês", nl: "/maand" },
+    plan_free_feat1: { fr: "✅ Parties illimitées", en: "✅ Unlimited games", es: "✅ Partidas ilimitadas", de: "✅ Unbegrenzte Spiele", it: "✅ Partite illimitate", pt: "✅ Partidas ilimitadas", nl: "✅ Onbeperkte spellen" },
+    plan_free_feat2: { fr: "✅ 2 avatars IA/mois", en: "✅ 2 AI avatars/month", es: "✅ 2 avatares IA/mes", de: "✅ 2 KI-Avatare/Monat", it: "✅ 2 avatar IA/mese", pt: "✅ 2 avatares IA/mês", nl: "✅ 2 AI-avatars/maand" },
+    plan_free_feat3: { fr: "✅ 2 parties vidéo/mois", en: "✅ 2 video games/month", es: "✅ 2 partidas video/mes", de: "✅ 2 Video-Spiele/Monat", it: "✅ 2 partite video/mese", pt: "✅ 2 partidas vídeo/mês", nl: "✅ 2 videospellen/maand" },
+    plan_free_feat4: { fr: "✅ Tous les thèmes", en: "✅ All themes", es: "✅ Todos los temas", de: "✅ Alle Themen", it: "✅ Tutti i temi", pt: "✅ Todos os temas", nl: "✅ Alle thema's" },
+    plan_free_feat5: { fr: "✅ Mode hors ligne", en: "✅ Offline mode", es: "✅ Modo sin conexión", de: "✅ Offline-Modus", it: "✅ Modalità offline", pt: "✅ Modo offline", nl: "✅ Offline modus" },
+    plan_free_cta: { fr: "Commencer Gratuitement", en: "Start Free", es: "Empezar Gratis", de: "Kostenlos Starten", it: "Inizia Gratis", pt: "Começar Grátis", nl: "Gratis Starten" },
+    
+    // Pack 50+50 Plan
+    plan_pack_name: { fr: "Pack 50+50", en: "Pack 50+50", es: "Pack 50+50", de: "Pack 50+50", it: "Pack 50+50", pt: "Pack 50+50", nl: "Pack 50+50" },
+    plan_pack_price: { fr: "4,99€", en: "€4.99", es: "4,99€", de: "4,99€", it: "4,99€", pt: "4,99€", nl: "€4,99" },
+    plan_pack_period: { fr: "unique", en: "one-time", es: "único", de: "einmalig", it: "una tantum", pt: "único", nl: "eenmalig" },
+    plan_pack_feat1: { fr: "✅ 50 avatars IA", en: "✅ 50 AI avatars", es: "✅ 50 avatares IA", de: "✅ 50 KI-Avatare", it: "✅ 50 avatar IA", pt: "✅ 50 avatares IA", nl: "✅ 50 AI-avatars" },
+    plan_pack_feat2: { fr: "✅ 50 crédits vidéo", en: "✅ 50 video credits", es: "✅ 50 créditos video", de: "✅ 50 Video-Credits", it: "✅ 50 crediti video", pt: "✅ 50 créditos vídeo", nl: "✅ 50 video credits" },
+    plan_pack_feat3: { fr: "✅ Valables 12 mois", en: "✅ Valid 12 months", es: "✅ Válidos 12 meses", de: "✅ 12 Monate gültig", it: "✅ Validi 12 mesi", pt: "✅ Válidos 12 meses", nl: "✅ 12 maanden geldig" },
+    plan_pack_feat4: { fr: "✅ Tous les avantages Free", en: "✅ All Free benefits", es: "✅ Todos los beneficios Free", de: "✅ Alle Free-Vorteile", it: "✅ Tutti i vantaggi Free", pt: "✅ Todos os benefícios Free", nl: "✅ Alle Free-voordelen" },
+    plan_pack_feat5: { fr: "✅ Support prioritaire", en: "✅ Priority support", es: "✅ Soporte prioritario", de: "✅ Prioritäts-Support", it: "✅ Supporto prioritario", pt: "✅ Suporte prioritário", nl: "✅ Prioriteitsondersteuning" },
+    plan_pack_cta: { fr: "Acheter le Pack", en: "Buy Pack", es: "Comprar Pack", de: "Pack Kaufen", it: "Acquista Pack", pt: "Comprar Pack", nl: "Pack Kopen" },
+    
+    // Premium Plan
+    plan_premium_badge: { fr: "Le Plus Populaire", en: "Most Popular", es: "El Más Popular", de: "Am Beliebtesten", it: "Il Più Popolare", pt: "Mais Popular", nl: "Meest Populair" },
+    plan_premium_name: { fr: "Premium", en: "Premium", es: "Premium", de: "Premium", it: "Premium", pt: "Premium", nl: "Premium" },
+    plan_premium_price: { fr: "1,49€", en: "€1.49", es: "1,49€", de: "1,49€", it: "1,49€", pt: "1,49€", nl: "€1,49" },
+    plan_premium_feat1: { fr: "✅ Avatars IA illimités", en: "✅ Unlimited AI avatars", es: "✅ Avatares IA ilimitados", de: "✅ Unbegrenzte KI-Avatare", it: "✅ Avatar IA illimitati", pt: "✅ Avatares IA ilimitados", nl: "✅ Onbeperkte AI-avatars" },
+    plan_premium_feat2: { fr: "✅ Parties vidéo illimitées", en: "✅ Unlimited video games", es: "✅ Partidas video ilimitadas", de: "✅ Unbegrenzte Video-Spiele", it: "✅ Partite video illimitate", pt: "✅ Partidas vídeo ilimitadas", nl: "✅ Onbeperkte videospellen" },
+    plan_premium_feat3: { fr: "✅ Badge exclusif", en: "✅ Exclusive badge", es: "✅ Insignia exclusiva", de: "✅ Exklusives Abzeichen", it: "✅ Badge esclusivo", pt: "✅ Distintivo exclusivo", nl: "✅ Exclusieve badge" },
+    plan_premium_feat4: { fr: "✅ Accès anticipé nouveautés", en: "✅ Early access to new features", es: "✅ Acceso anticipado novedades", de: "✅ Früher Zugang zu Neuheiten", it: "✅ Accesso anticipato novità", pt: "✅ Acesso antecipado novidades", nl: "✅ Vroege toegang tot nieuws" },
+    plan_premium_feat5: { fr: "✅ Support VIP 24/7", en: "✅ VIP support 24/7", es: "✅ Soporte VIP 24/7", de: "✅ VIP-Support 24/7", it: "✅ Supporto VIP 24/7", pt: "✅ Suporte VIP 24/7", nl: "✅ VIP-ondersteuning 24/7" },
+    plan_premium_cta: { fr: "Devenir Premium", en: "Go Premium", es: "Ser Premium", de: "Premium Werden", it: "Diventa Premium", pt: "Tornar-se Premium", nl: "Premium Worden" },
+    
+    // Family Plan
+    plan_family_name: { fr: "Pack Famille", en: "Family Pack", es: "Pack Familia", de: "Familienpaket", it: "Pack Famiglia", pt: "Pack Família", nl: "Familiepakket" },
+    plan_family_price: { fr: "9,99€", en: "€9.99", es: "9,99€", de: "9,99€", it: "9,99€", pt: "9,99€", nl: "€9,99" },
+    plan_family_feat1: { fr: "✅ Jusqu'à 9 comptes", en: "✅ Up to 9 accounts", es: "✅ Hasta 9 cuentas", de: "✅ Bis zu 9 Konten", it: "✅ Fino a 9 account", pt: "✅ Até 9 contas", nl: "✅ Tot 9 accounts" },
+    plan_family_feat2: { fr: "✅ Avantages Premium pour tous", en: "✅ Premium benefits for all", es: "✅ Beneficios Premium para todos", de: "✅ Premium-Vorteile für alle", it: "✅ Vantaggi Premium per tutti", pt: "✅ Benefícios Premium para todos", nl: "✅ Premium-voordelen voor iedereen" },
+    plan_family_feat3: { fr: "✅ Gestion centralisée", en: "✅ Centralized management", es: "✅ Gestión centralizada", de: "✅ Zentrale Verwaltung", it: "✅ Gestione centralizzata", pt: "✅ Gestão centralizada", nl: "✅ Gecentraliseerd beheer" },
+    plan_family_feat4: { fr: "✅ Économie de 60%", en: "✅ 60% savings", es: "✅ Ahorro del 60%", de: "✅ 60% Ersparnis", it: "✅ Risparmio del 60%", pt: "✅ Economia de 60%", nl: "✅ 60% besparing" },
+    plan_family_feat5: { fr: "✅ Support prioritaire", en: "✅ Priority support", es: "✅ Soporte prioritario", de: "✅ Prioritäts-Support", it: "✅ Supporto prioritario", pt: "✅ Suporte prioritário", nl: "✅ Prioriteitsondersteuning" },
+    plan_family_cta: { fr: "Pack Famille", en: "Family Pack", es: "Pack Familia", de: "Familienpaket", it: "Pack Famiglia", pt: "Pack Família", nl: "Familiepakket" },
+    
+    // CTA Section
+    cta_title: { fr: "Prêt à Jouer ?", en: "Ready to Play?", es: "¿Listo para Jugar?", de: "Bereit zu Spielen?", it: "Pronto a Giocare?", pt: "Pronto para Jogar?", nl: "Klaar om te Spelen?" },
+    cta_subtitle: { fr: "Rejoignez des milliers de joueurs dans l'aventure la plus intense !", en: "Join thousands of players in the most intense adventure!", es: "¡Únete a miles de jugadores en la aventura más intensa!", de: "Schließen Sie sich Tausenden von Spielern im intensivsten Abenteuer an!", it: "Unisciti a migliaia di giocatori nell'avventura più intensa!", pt: "Junte-se a milhares de jogadores na aventura mais intensa!", nl: "Sluit je aan bij duizenden spelers in het meest intense avontuur!" },
+    cta_offers: { fr: "💎 Voir les Offres Premium", en: "💎 View Premium Offers", es: "💎 Ver Ofertas Premium", de: "💎 Premium-Angebote Ansehen", it: "💎 Vedi Offerte Premium", pt: "💎 Ver Ofertas Premium", nl: "💎 Premium-aanbiedingen Bekijken" },
+    
+    // Footer Products
+    footer_creator: { fr: "Créateur d'expériences vidéoludiques", en: "Creator of video game experiences", es: "Creador de experiencias de videojuegos", de: "Schöpfer von Videospielerlebnissen", it: "Creatore di esperienze videoludiche", pt: "Criador de experiências de videogames", nl: "Maker van videogame-ervaringen" }
   },
 
   // ============================================================================
@@ -520,7 +575,106 @@ const SITE_TRANSLATIONS = {
     email_not_verified: { fr: "Email non vérifié", en: "Email not verified", es: "Email no verificado", de: "E-Mail nicht verifiziert", it: "Email non verificata", pt: "E-mail não verificado", nl: "E-mail niet geverifieerd" },
     resend_verification: { fr: "Renvoyer l'email de vérification", en: "Resend verification email", es: "Reenviar email de verificación", de: "Bestätigungs-E-Mail erneut senden", it: "Rinvia email di verifica", pt: "Reenviar e-mail de verificação", nl: "Verificatie-e-mail opnieuw verzenden" },
     change_password: { fr: "Changer le mot de passe", en: "Change password", es: "Cambiar contraseña", de: "Passwort ändern", it: "Cambia password", pt: "Alterar senha", nl: "Wachtwoord wijzigen" },
-    delete_account: { fr: "Supprimer mon compte", en: "Delete my account", es: "Eliminar mi cuenta", de: "Mein Konto löschen", it: "Elimina il mio account", pt: "Excluir minha conta", nl: "Mijn account verwijderen" }
+    delete_account: { fr: "Supprimer mon compte", en: "Delete my account", es: "Eliminar mi cuenta", de: "Mein Konto löschen", it: "Elimina il mio account", pt: "Excluir minha conta", nl: "Mijn account verwijderen" },
+    
+    // Tabs
+    tab_profile: { fr: "👤 Profil", en: "👤 Profile", es: "👤 Perfil", de: "👤 Profil", it: "👤 Profilo", pt: "👤 Perfil", nl: "👤 Profiel" },
+    tab_subscriptions: { fr: "💎 Abonnements", en: "💎 Subscriptions", es: "💎 Suscripciones", de: "💎 Abonnements", it: "💎 Abbonamenti", pt: "💎 Assinaturas", nl: "💎 Abonnementen" },
+    tab_credits: { fr: "🎬 Crédits & Packs", en: "🎬 Credits & Packs", es: "🎬 Créditos y Packs", de: "🎬 Credits & Packs", it: "🎬 Crediti e Pack", pt: "🎬 Créditos e Packs", nl: "🎬 Credits & Packs" },
+    tab_avatars: { fr: "🎨 Avatars", en: "🎨 Avatars", es: "🎨 Avatares", de: "🎨 Avatare", it: "🎨 Avatar", pt: "🎨 Avatares", nl: "🎨 Avatars" },
+    tab_history: { fr: "📜 Historique", en: "📜 History", es: "📜 Historial", de: "📜 Verlauf", it: "📜 Cronologia", pt: "📜 Histórico", nl: "📜 Geschiedenis" },
+    
+    // Avatars IA Section
+    my_avatars_title: { fr: "🎨 Mes Avatars IA", en: "🎨 My AI Avatars", es: "🎨 Mis Avatares IA", de: "🎨 Meine KI-Avatare", it: "🎨 I Miei Avatar IA", pt: "🎨 Meus Avatares IA", nl: "🎨 Mijn AI-Avatars" },
+    avatars_description: {
+      fr: "Vos avatars générés par IA sont disponibles ici. Vous pouvez les télécharger pour les utiliser dans d'autres jeux ou applications.",
+      en: "Your AI-generated avatars are available here. You can download them for use in other games or applications.",
+      es: "Tus avatares generados por IA están disponibles aquí. Puedes descargarlos para usarlos en otros juegos o aplicaciones.",
+      de: "Ihre KI-generierten Avatare sind hier verfügbar. Sie können sie für andere Spiele oder Anwendungen herunterladen.",
+      it: "I tuoi avatar generati dall'IA sono disponibili qui. Puoi scaricarli per usarli in altri giochi o applicazioni.",
+      pt: "Seus avatares gerados por IA estão disponíveis aqui. Você pode baixá-los para usar em outros jogos ou aplicativos.",
+      nl: "Je AI-gegenereerde avatars zijn hier beschikbaar. Je kunt ze downloaden voor gebruik in andere spellen of applicaties."
+    },
+    loading: { fr: "Chargement...", en: "Loading...", es: "Cargando...", de: "Laden...", it: "Caricamento...", pt: "Carregando...", nl: "Laden..." },
+    no_avatars: { fr: "Vous n'avez pas encore d'avatar.", en: "You don't have any avatars yet.", es: "Aún no tienes avatares.", de: "Sie haben noch keine Avatare.", it: "Non hai ancora avatar.", pt: "Você ainda não tem avatares.", nl: "Je hebt nog geen avatars." },
+    create_first_avatar: { fr: "Créez votre premier avatar dans le jeu →", en: "Create your first avatar in the game →", es: "Crea tu primer avatar en el juego →", de: "Erstellen Sie Ihren ersten Avatar im Spiel →", it: "Crea il tuo primo avatar nel gioco →", pt: "Crie seu primeiro avatar no jogo →", nl: "Maak je eerste avatar in het spel →" },
+    
+    // Subscriptions Section
+    pack_premium: { fr: "Pack Premium", en: "Premium Pack", es: "Pack Premium", de: "Premium-Paket", it: "Pack Premium", pt: "Pack Premium", nl: "Premium Pack" },
+    pack_family: { fr: "Pack Famille", en: "Family Pack", es: "Pack Familia", de: "Familienpaket", it: "Pack Famiglia", pt: "Pack Família", nl: "Familiepakket" },
+    not_active: { fr: "Non actif", en: "Not active", es: "No activo", de: "Nicht aktiv", it: "Non attivo", pt: "Não ativo", nl: "Niet actief" },
+    active: { fr: "Actif", en: "Active", es: "Activo", de: "Aktiv", it: "Attivo", pt: "Ativo", nl: "Actief" },
+    feat_unlimited_video: { fr: "Vidéo illimitée", en: "Unlimited video", es: "Video ilimitado", de: "Unbegrenztes Video", it: "Video illimitato", pt: "Vídeo ilimitado", nl: "Onbeperkte video" },
+    feat_30_avatars: { fr: "30 avatars IA / mois", en: "30 AI avatars / month", es: "30 avatares IA / mes", de: "30 KI-Avatare / Monat", it: "30 avatar IA / mese", pt: "30 avatares IA / mês", nl: "30 AI-avatars / maand" },
+    feat_all_themes: { fr: "Tous les thèmes", en: "All themes", es: "Todos los temas", de: "Alle Themen", it: "Tutti i temi", pt: "Todos os temas", nl: "Alle thema's" },
+    feat_premium_badge: { fr: "Badge Premium", en: "Premium Badge", es: "Insignia Premium", de: "Premium-Abzeichen", it: "Badge Premium", pt: "Distintivo Premium", nl: "Premium Badge" },
+    feat_priority_support: { fr: "Support prioritaire", en: "Priority support", es: "Soporte prioritario", de: "Prioritäts-Support", it: "Supporto prioritario", pt: "Suporte prioritário", nl: "Prioriteitsondersteuning" },
+    feat_8_accounts: { fr: "Jusqu'à 8 comptes", en: "Up to 8 accounts", es: "Hasta 8 cuentas", de: "Bis zu 8 Konten", it: "Fino a 8 account", pt: "Até 8 contas", nl: "Tot 8 accounts" },
+    feat_video_all: { fr: "Vidéo illimitée pour tous", en: "Unlimited video for all", es: "Video ilimitado para todos", de: "Unbegrenztes Video für alle", it: "Video illimitato per tutti", pt: "Vídeo ilimitado para todos", nl: "Onbeperkte video voor iedereen" },
+    feat_30_avatars_each: { fr: "30 avatars IA / mois chacun", en: "30 AI avatars / month each", es: "30 avatares IA / mes cada uno", de: "30 KI-Avatare / Monat pro Person", it: "30 avatar IA / mese ciascuno", pt: "30 avatares IA / mês cada", nl: "30 AI-avatars / maand per persoon" },
+    feat_member_management: { fr: "Gestion des membres", en: "Member management", es: "Gestión de miembros", de: "Mitgliederverwaltung", it: "Gestione dei membri", pt: "Gestão de membros", nl: "Ledenbeheer" },
+    family_code_share: { fr: "Code famille à partager :", en: "Family code to share:", es: "Código familiar para compartir:", de: "Familiencode zum Teilen:", it: "Codice famiglia da condividere:", pt: "Código familiar para compartilhar:", nl: "Familiecode om te delen:" },
+    btn_subscribe: { fr: "S'abonner", en: "Subscribe", es: "Suscribirse", de: "Abonnieren", it: "Abbonati", pt: "Assinar", nl: "Abonneren" },
+    btn_cancel: { fr: "❌ Résilier l'abonnement", en: "❌ Cancel subscription", es: "❌ Cancelar suscripción", de: "❌ Abo kündigen", it: "❌ Annulla abbonamento", pt: "❌ Cancelar assinatura", nl: "❌ Abonnement opzeggen" },
+    
+    // Manage Payments
+    manage_payments: { fr: "📋 Gérer mes paiements", en: "📋 Manage my payments", es: "📋 Gestionar mis pagos", de: "📋 Meine Zahlungen verwalten", it: "📋 Gestisci i miei pagamenti", pt: "📋 Gerenciar meus pagamentos", nl: "📋 Mijn betalingen beheren" },
+    billing_portal_desc: {
+      fr: "Accédez au portail Stripe pour modifier votre moyen de paiement, télécharger vos factures ou gérer votre abonnement.",
+      en: "Access the Stripe portal to modify your payment method, download invoices, or manage your subscription.",
+      es: "Accede al portal de Stripe para modificar tu método de pago, descargar facturas o gestionar tu suscripción.",
+      de: "Greifen Sie auf das Stripe-Portal zu, um Ihre Zahlungsmethode zu ändern, Rechnungen herunterzuladen oder Ihr Abonnement zu verwalten.",
+      it: "Accedi al portale Stripe per modificare il metodo di pagamento, scaricare fatture o gestire l'abbonamento.",
+      pt: "Acesse o portal Stripe para modificar seu método de pagamento, baixar faturas ou gerenciar sua assinatura.",
+      nl: "Toegang tot het Stripe-portaal om je betaalmethode te wijzigen, facturen te downloaden of je abonnement te beheren."
+    },
+    btn_billing_portal: { fr: "🔗 Accéder au portail de paiement", en: "🔗 Access payment portal", es: "🔗 Acceder al portal de pago", de: "🔗 Zum Zahlungsportal", it: "🔗 Accedi al portale pagamenti", pt: "🔗 Acessar portal de pagamento", nl: "🔗 Naar betalingsportaal" },
+    
+    // Credits & Pack 50+50 Section
+    bonus_avatars: { fr: "Avatars Bonus", en: "Bonus Avatars", es: "Avatares Bonus", de: "Bonus-Avatare", it: "Avatar Bonus", pt: "Avatares Bônus", nl: "Bonus Avatars" },
+    monthly_avatars: { fr: "Avatars ce mois", en: "Avatars this month", es: "Avatares este mes", de: "Avatare diesen Monat", it: "Avatar questo mese", pt: "Avatares este mês", nl: "Avatars deze maand" },
+    pack_5050_title: { fr: "🎁 Pack 50+50", en: "🎁 Pack 50+50", es: "🎁 Pack 50+50", de: "🎁 Pack 50+50", it: "🎁 Pack 50+50", pt: "🎁 Pack 50+50", nl: "🎁 Pack 50+50" },
+    pack_5050_desc: {
+      fr: "Achat unique : <strong>50 crédits vidéo</strong> + <strong>50 avatars bonus</strong>",
+      en: "One-time purchase: <strong>50 video credits</strong> + <strong>50 bonus avatars</strong>",
+      es: "Compra única: <strong>50 créditos de video</strong> + <strong>50 avatares bonus</strong>",
+      de: "Einmaliger Kauf: <strong>50 Video-Credits</strong> + <strong>50 Bonus-Avatare</strong>",
+      it: "Acquisto unico: <strong>50 crediti video</strong> + <strong>50 avatar bonus</strong>",
+      pt: "Compra única: <strong>50 créditos de vídeo</strong> + <strong>50 avatares bônus</strong>",
+      nl: "Eenmalige aankoop: <strong>50 video credits</strong> + <strong>50 bonus avatars</strong>"
+    },
+    pack_5050_ideal: {
+      fr: "Idéal pour compléter votre abonnement ou offrir en cadeau !",
+      en: "Ideal to complement your subscription or give as a gift!",
+      es: "¡Ideal para complementar tu suscripción o regalar!",
+      de: "Ideal zur Ergänzung Ihres Abonnements oder als Geschenk!",
+      it: "Ideale per integrare il tuo abbonamento o da regalare!",
+      pt: "Ideal para complementar sua assinatura ou dar de presente!",
+      nl: "Ideaal als aanvulling op je abonnement of als cadeau!"
+    },
+    promo_label: { fr: "🎁 Code promo ?", en: "🎁 Promo code?", es: "🎁 ¿Código promocional?", de: "🎁 Promo-Code?", it: "🎁 Codice promo?", pt: "🎁 Código promocional?", nl: "🎁 Promotiecode?" },
+    promo_placeholder: { fr: "Entre ton code", en: "Enter your code", es: "Ingresa tu código", de: "Gib deinen Code ein", it: "Inserisci il tuo codice", pt: "Digite seu código", nl: "Voer je code in" },
+    promo_validate: { fr: "Valider", en: "Validate", es: "Validar", de: "Bestätigen", it: "Convalida", pt: "Validar", nl: "Valideren" },
+    btn_buy_pack: { fr: "🛒 Acheter le Pack", en: "🛒 Buy the Pack", es: "🛒 Comprar el Pack", de: "🛒 Pack kaufen", it: "🛒 Acquista il Pack", pt: "🛒 Comprar o Pack", nl: "🛒 Pack kopen" },
+    
+    // Purchase History
+    purchase_history: { fr: "📜 Historique des achats", en: "📜 Purchase History", es: "📜 Historial de compras", de: "📜 Kaufverlauf", it: "📜 Cronologia acquisti", pt: "📜 Histórico de compras", nl: "📜 Aankoopgeschiedenis" },
+    no_purchases: { fr: "Aucun achat pour le moment.", en: "No purchases yet.", es: "Sin compras por el momento.", de: "Noch keine Käufe.", it: "Nessun acquisto al momento.", pt: "Nenhuma compra ainda.", nl: "Nog geen aankopen." },
+    
+    // Profile Section
+    page_title_h1: { fr: "⚔️ Mon Compte", en: "⚔️ My Account", es: "⚔️ Mi Cuenta", de: "⚔️ Mein Konto", it: "⚔️ Il Mio Account", pt: "⚔️ Minha Conta", nl: "⚔️ Mijn Account" },
+    personal_info: { fr: "👤 Informations personnelles", en: "👤 Personal Information", es: "👤 Información personal", de: "👤 Persönliche Informationen", it: "👤 Informazioni personali", pt: "👤 Informações pessoais", nl: "👤 Persoonlijke Informatie" },
+    label_email: { fr: "Email", en: "Email", es: "Correo electrónico", de: "E-Mail", it: "Email", pt: "E-mail", nl: "E-mail" },
+    label_username: { fr: "Pseudo", en: "Username", es: "Nombre de usuario", de: "Benutzername", it: "Nome utente", pt: "Nome de usuário", nl: "Gebruikersnaam" },
+    label_account_type: { fr: "Type de compte", en: "Account type", es: "Tipo de cuenta", de: "Kontotyp", it: "Tipo di account", pt: "Tipo de conta", nl: "Accounttype" },
+    btn_save: { fr: "💾 Sauvegarder", en: "💾 Save", es: "💾 Guardar", de: "💾 Speichern", it: "💾 Salva", pt: "💾 Salvar", nl: "💾 Opslaan" },
+    
+    // Change Password Section
+    change_password_title: { fr: "🔒 Changer le mot de passe", en: "🔒 Change Password", es: "🔒 Cambiar contraseña", de: "🔒 Passwort ändern", it: "🔒 Cambia password", pt: "🔒 Alterar senha", nl: "🔒 Wachtwoord wijzigen" },
+    label_current_password: { fr: "Mot de passe actuel", en: "Current password", es: "Contraseña actual", de: "Aktuelles Passwort", it: "Password attuale", pt: "Senha atual", nl: "Huidig wachtwoord" },
+    label_new_password: { fr: "Nouveau mot de passe", en: "New password", es: "Nueva contraseña", de: "Neues Passwort", it: "Nuova password", pt: "Nova senha", nl: "Nieuw wachtwoord" },
+    label_confirm_password: { fr: "Confirmer le nouveau mot de passe", en: "Confirm new password", es: "Confirmar nueva contraseña", de: "Neues Passwort bestätigen", it: "Conferma nuova password", pt: "Confirmar nova senha", nl: "Nieuw wachtwoord bevestigen" },
+    btn_change_password: { fr: "🔐 Modifier le mot de passe", en: "🔐 Change password", es: "🔐 Modificar contraseña", de: "🔐 Passwort ändern", it: "🔐 Modifica password", pt: "🔐 Modificar senha", nl: "🔐 Wachtwoord wijzigen" }
   },
 
   // ============================================================================
