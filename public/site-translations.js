@@ -80,6 +80,15 @@ const SITE_TRANSLATIONS = {
       pt: "Encontra o Jogo",
       nl: "Ontmoet het Spel"
     },
+    hero_title_full: {
+      fr: "L'Art du Combat<br>Rencontre le Jeu",
+      en: "The Art of Combat<br>Meets Gaming",
+      es: "El Arte del Combate<br>Encuentra el Juego",
+      de: "Die Kunst des Kampfes<br>Trifft das Spiel",
+      it: "L'Arte del Combattimento<br>Incontra il Gioco",
+      pt: "A Arte do Combate<br>Encontra o Jogo",
+      nl: "De Kunst van de Strijd<br>Ontmoet Gaming"
+    },
     hero_description: {
       fr: "Créateur d'expériences vidéoludiques uniques • Applications Web & Mobile • Jeux de Société Nouvelle Génération",
       en: "Creator of unique gaming experiences • Web & Mobile Apps • Next Generation Board Games",
@@ -149,25 +158,25 @@ const SITE_TRANSLATIONS = {
       fr: "Univers Immersifs", en: "Immersive Universes", es: "Universos Inmersivos", de: "Immersive Universen", it: "Universi Immersivi", pt: "Universos Imersivos", nl: "Meeslepende Universums"
     },
     about_card3_desc: {
-      fr: "4 thèmes riches avec visio intégrée : Spatial, Loup-Garou, Académie des Sorciers, Royaumes Mythiques.",
-      en: "4 rich themes with integrated video: Space, Werewolf, Wizard Academy, Mythic Realms.",
-      es: "4 temas ricos con video integrado: Espacial, Hombre Lobo, Academia de Magos, Reinos Míticos.",
-      de: "4 reichhaltige Themen mit integriertem Video: Weltraum, Werwolf, Zaubererakademie, Mythische Reiche.",
-      it: "4 temi ricchi con video integrato: Spaziale, Lupo Mannaro, Accademia dei Maghi, Regni Mitici.",
-      pt: "4 temas ricos com vídeo integrado: Espacial, Lobisomem, Academia de Bruxos, Reinos Míticos.",
-      nl: "4 rijke thema's met geïntegreerde video: Ruimte, Weerwolf, Tovenaarsacademie, Mythische Rijken."
+      fr: "4 thèmes riches avec <strong>visio intégrée</strong> : Spatial, Loup-Garou, Académie des Sorciers, Royaumes Mythiques. Rejoignez des <strong>salles publiques</strong> ou créez des <strong>parties privées</strong> avec vos amis !",
+      en: "4 rich themes with <strong>integrated video</strong>: Space, Werewolf, Wizard Academy, Mythic Realms. Join <strong>public rooms</strong> or create <strong>private games</strong> with your friends!",
+      es: "4 temas ricos con <strong>video integrado</strong>: Espacial, Hombre Lobo, Academia de Magos, Reinos Míticos. ¡Únete a <strong>salas públicas</strong> o crea <strong>partidas privadas</strong> con tus amigos!",
+      de: "4 reichhaltige Themen mit <strong>integriertem Video</strong>: Weltraum, Werwolf, Zaubererakademie, Mythische Reiche. Treten Sie <strong>öffentlichen Räumen</strong> bei oder erstellen Sie <strong>private Spiele</strong> mit Ihren Freunden!",
+      it: "4 temi ricchi con <strong>video integrato</strong>: Spaziale, Lupo Mannaro, Accademia dei Maghi, Regni Mitici. Unisciti a <strong>stanze pubbliche</strong> o crea <strong>partite private</strong> con i tuoi amici!",
+      pt: "4 temas ricos com <strong>vídeo integrado</strong>: Espacial, Lobisomem, Academia de Bruxos, Reinos Míticos. Junte-se a <strong>salas públicas</strong> ou crie <strong>jogos privados</strong> com seus amigos!",
+      nl: "4 rijke thema's met <strong>geïntegreerde video</strong>: Ruimte, Weerwolf, Tovenaarsacademie, Mythische Rijken. Sluit je aan bij <strong>openbare kamers</strong> of maak <strong>privéspellen</strong> met je vrienden!"
     },
     philosophy_title: {
       fr: "Notre Philosophie", en: "Our Philosophy", es: "Nuestra Filosofía", de: "Unsere Philosophie", it: "La Nostra Filosofia", pt: "Nossa Filosofia", nl: "Onze Filosofie"
     },
     philosophy_text1: {
-      fr: "Comme un guerrier qui perfectionne son art à travers trois sabres, nous créons des expériences à travers trois piliers : Innovation, Qualité, et Communauté.",
-      en: "Like a warrior who perfects their art through three swords, we create experiences through three pillars: Innovation, Quality, and Community.",
-      es: "Como un guerrero que perfecciona su arte a través de tres espadas, creamos experiencias a través de tres pilares: Innovación, Calidad y Comunidad.",
-      de: "Wie ein Krieger, der seine Kunst durch drei Schwerter perfektioniert, erschaffen wir Erlebnisse durch drei Säulen: Innovation, Qualität und Gemeinschaft.",
-      it: "Come un guerriero che perfeziona la sua arte attraverso tre spade, creiamo esperienze attraverso tre pilastri: Innovazione, Qualità e Comunità.",
-      pt: "Como um guerreiro que aperfeiçoa sua arte através de três espadas, criamos experiências através de três pilares: Inovação, Qualidade e Comunidade.",
-      nl: "Zoals een krijger die zijn kunst perfectioneert door drie zwaarden, creëren wij ervaringen door drie pijlers: Innovatie, Kwaliteit en Gemeenschap."
+      fr: "Comme un guerrier qui perfectionne son art à travers trois sabres, nous créons des expériences à travers trois piliers : <strong>Innovation</strong>, <strong>Qualité</strong>, et <strong>Communauté</strong>.",
+      en: "Like a warrior who perfects their art through three swords, we create experiences through three pillars: <strong>Innovation</strong>, <strong>Quality</strong>, and <strong>Community</strong>.",
+      es: "Como un guerrero que perfecciona su arte a través de tres espadas, creamos experiencias a través de tres pilares: <strong>Innovación</strong>, <strong>Calidad</strong> y <strong>Comunidad</strong>.",
+      de: "Wie ein Krieger, der seine Kunst durch drei Schwerter perfektioniert, erschaffen wir Erlebnisse durch drei Säulen: <strong>Innovation</strong>, <strong>Qualität</strong> und <strong>Gemeinschaft</strong>.",
+      it: "Come un guerriero che perfeziona la sua arte attraverso tre spade, creiamo esperienze attraverso tre pilastri: <strong>Innovazione</strong>, <strong>Qualità</strong> e <strong>Comunità</strong>.",
+      pt: "Como um guerreiro que aperfeiçoa sua arte através de três espadas, criamos experiências através de três pilares: <strong>Inovação</strong>, <strong>Qualidade</strong> e <strong>Comunidade</strong>.",
+      nl: "Zoals een krijger die zijn kunst perfectioneert door drie zwaarden, creëren wij ervaringen door drie pijlers: <strong>Innovatie</strong>, <strong>Kwaliteit</strong> en <strong>Gemeenschap</strong>."
     },
     philosophy_text2: {
       fr: "Chaque jeu est conçu pour rassembler, divertir et créer des moments inoubliables. Notre ambition : devenir le studio de référence pour les jeux sociaux nouvelle génération.",
@@ -202,13 +211,43 @@ const SITE_TRANSLATIONS = {
       nl: "4 Universums • Strategie & Deductie"
     },
     featured_desc: {
-      fr: "Infiltrez-vous dans une équipe, déjouez les saboteurs, et menez votre camp à la victoire. Un jeu de rôle social addictif avec visioconférence intégrée et avatars IA personnalisés.",
-      en: "Infiltrate a team, outsmart the saboteurs, and lead your side to victory. An addictive social role-playing game with integrated video conferencing and personalized AI avatars.",
-      es: "Infiltra un equipo, supera a los saboteadores y lleva a tu bando a la victoria. Un juego de rol social adictivo con videoconferencia integrada y avatares IA personalizados.",
-      de: "Infiltrieren Sie ein Team, überlisten Sie die Saboteure und führen Sie Ihre Seite zum Sieg. Ein süchtig machendes soziales Rollenspiel mit integrierter Videokonferenz und personalisierten KI-Avataren.",
-      it: "Infiltrati in una squadra, supera in astuzia i sabotatori e porta la tua parte alla vittoria. Un gioco di ruolo sociale avvincente con videoconferenza integrata e avatar IA personalizzati.",
-      pt: "Infiltre-se em uma equipe, supere os sabotadores e leve seu lado à vitória. Um jogo de RPG social viciante com videoconferência integrada e avatares de IA personalizados.",
-      nl: "Infiltreer een team, slim de saboteurs af en leid je kant naar de overwinning. Een verslavend sociaal rollenspel met geïntegreerde videoconferentie en gepersonaliseerde AI-avatars."
+      fr: "Infiltrez-vous dans une équipe, déjouez les saboteurs, et menez votre camp à la victoire. Un jeu de rôle social addictif avec <strong>visioconférence intégrée</strong> (aucun logiciel tiers requis) et <strong>avatars IA personnalisés</strong> créés face-to-face pour une immersion totale.",
+      en: "Infiltrate a team, outsmart the saboteurs, and lead your side to victory. An addictive social role-playing game with <strong>integrated video conferencing</strong> (no third-party software required) and <strong>personalized AI avatars</strong> created face-to-face for total immersion.",
+      es: "Infiltra un equipo, supera a los saboteadores y lleva a tu bando a la victoria. Un juego de rol social adictivo con <strong>videoconferencia integrada</strong> (sin software de terceros) y <strong>avatares IA personalizados</strong> creados cara a cara para una inmersión total.",
+      de: "Infiltrieren Sie ein Team, überlisten Sie die Saboteure und führen Sie Ihre Seite zum Sieg. Ein süchtig machendes soziales Rollenspiel mit <strong>integrierter Videokonferenz</strong> (keine Drittanbieter-Software erforderlich) und <strong>personalisierten KI-Avataren</strong>, die von Angesicht zu Angesicht für totale Immersion erstellt werden.",
+      it: "Infiltrati in una squadra, supera in astuzia i sabotatori e porta la tua parte alla vittoria. Un gioco di ruolo sociale avvincente con <strong>videoconferenza integrata</strong> (nessun software di terze parti richiesto) e <strong>avatar IA personalizzati</strong> creati faccia a faccia per un'immersione totale.",
+      pt: "Infiltre-se em uma equipe, supere os sabotadores e leve seu lado à vitória. Um jogo de RPG social viciante com <strong>videoconferência integrada</strong> (sem software de terceiros) e <strong>avatares de IA personalizados</strong> criados cara a cara para imersão total.",
+      nl: "Infiltreer een team, slim de saboteurs af en leid je kant naar de overwinning. Een verslavend sociaal rollenspel met <strong>geïntegreerde videoconferentie</strong> (geen software van derden vereist) en <strong>gepersonaliseerde AI-avatars</strong> die face-to-face zijn gemaakt voor totale onderdompeling."
+    },
+    
+    // Universe Features
+    universe_spatial: {
+      fr: "Univers Spatial", en: "Space Universe", es: "Universo Espacial", de: "Weltraum-Universum", it: "Universo Spaziale", pt: "Universo Espacial", nl: "Ruimte Universum"
+    },
+    universe_werewolf: {
+      fr: "Village Loups-Garous", en: "Werewolf Village", es: "Aldea Hombre Lobo", de: "Werwolf-Dorf", it: "Villaggio Lupi Mannari", pt: "Aldeia Lobisomem", nl: "Weerwolf Dorp"
+    },
+    universe_academy: {
+      fr: "Académie de Magie", en: "Magic Academy", es: "Academia de Magia", de: "Magie-Akademie", it: "Accademia di Magia", pt: "Academia de Magia", nl: "Magie Academie"
+    },
+    universe_mythic: {
+      fr: "Royaumes Mythiques", en: "Mythic Realms", es: "Reinos Míticos", de: "Mythische Reiche", it: "Regni Mitici", pt: "Reinos Míticos", nl: "Mythische Rijken"
+    },
+    
+    // CTA Buttons
+    learn_more_btn: {
+      fr: "En Savoir Plus", en: "Learn More", es: "Saber Más", de: "Mehr Erfahren", it: "Scopri di Più", pt: "Saiba Mais", nl: "Meer Weten"
+    },
+    play_now_btn: {
+      fr: "Jouer Maintenant", en: "Play Now", es: "Jugar Ahora", de: "Jetzt Spielen", it: "Gioca Ora", pt: "Jogar Agora", nl: "Nu Spelen"
+    },
+    
+    // Contact Section
+    contact_badge: {
+      fr: "Nous Contacter", en: "Contact Us", es: "Contáctanos", de: "Kontaktieren Sie uns", it: "Contattaci", pt: "Contate-nos", nl: "Neem Contact Op"
+    },
+    contact_title: {
+      fr: "Rejoignez l'Aventure", en: "Join the Adventure", es: "Únete a la Aventura", de: "Treten Sie dem Abenteuer bei", it: "Unisciti all'Avventura", pt: "Junte-se à Aventura", nl: "Sluit je aan bij het Avontuur"
     }
   },
 
@@ -443,6 +482,9 @@ const SITE_TRANSLATIONS = {
       pt: "Uma pergunta? Uma parceria? Entre em contato!",
       nl: "Een vraag? Een partnerschap? Neem contact met ons op!"
     },
+    address_title: { fr: "Adresse", en: "Address", es: "Dirección", de: "Adresse", it: "Indirizzo", pt: "Endereço", nl: "Adres" },
+    email_title: { fr: "Email", en: "Email", es: "Correo", de: "E-Mail", it: "Email", pt: "E-mail", nl: "E-mail" },
+    social_title: { fr: "Réseaux Sociaux", en: "Social Networks", es: "Redes Sociales", de: "Soziale Netzwerke", it: "Social Network", pt: "Redes Sociais", nl: "Sociale Media" },
     name_placeholder: { fr: "Votre nom", en: "Your name", es: "Tu nombre", de: "Ihr Name", it: "Il tuo nome", pt: "Seu nome", nl: "Je naam" },
     email_placeholder: { fr: "Votre email", en: "Your email", es: "Tu correo", de: "Ihre E-Mail", it: "La tua email", pt: "Seu e-mail", nl: "Je e-mail" },
     subject_placeholder: { fr: "Sujet du message", en: "Message subject", es: "Asunto del mensaje", de: "Betreff", it: "Oggetto del messaggio", pt: "Assunto da mensagem", nl: "Onderwerp" },

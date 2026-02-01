@@ -129,7 +129,7 @@
         <div class="about-card">
           <div class="card-icon">⚔️</div>
           <h3 data-i18n-site="home.about_card3_title">Univers Immersifs</h3>
-          <p>4 thèmes riches avec <strong>visio intégrée</strong> : Spatial, Loup-Garou, Académie des Sorciers, Royaumes Mythiques. 
+          <p data-i18n-site-html="home.about_card3_desc">4 thèmes riches avec <strong>visio intégrée</strong> : Spatial, Loup-Garou, Académie des Sorciers, Royaumes Mythiques. 
           Rejoignez des <strong>salles publiques</strong> ou créez des <strong>parties privées</strong> avec vos amis !</p>
         </div>
       </div>
@@ -137,11 +137,11 @@
       <div class="about-philosophy">
         <div class="philosophy-text">
           <h3 data-i18n-site="home.philosophy_title">Notre Philosophie</h3>
-          <p>
+          <p data-i18n-site-html="home.philosophy_text1">
             Comme un guerrier qui perfectionne son art à travers trois sabres, nous créons des expériences à travers trois piliers : 
             <strong>Innovation</strong>, <strong>Qualité</strong>, et <strong>Communauté</strong>.
           </p>
-          <p>
+          <p data-i18n-site-html="home.philosophy_text2">
             Chaque jeu est conçu pour rassembler, divertir et créer des moments inoubliables. 
             Notre ambition : devenir le studio de référence pour les jeux sociaux nouvelle génération.
           </p>
@@ -167,8 +167,8 @@
       
       <div class="game-showcase">
         <div class="game-info">
-          <h3>4 Univers • Stratégie & Déduction</h3>
-          <p class="game-description">
+          <h3 data-i18n-site="home.featured_subtitle">4 Univers • Stratégie & Déduction</h3>
+          <p class="game-description" data-i18n-site-html="home.featured_desc">
             Infiltrez-vous dans une équipe, déjouez les saboteurs, et menez votre camp à la victoire. 
             Un jeu de rôle social addictif avec <strong>visioconférence intégrée</strong> (aucun logiciel tiers requis) 
             et <strong>avatars IA personnalisés</strong> créés face-to-face pour une immersion totale.
@@ -191,25 +191,25 @@
           <div class="game-features">
             <div class="feature">
               <span class="feature-icon">🌌</span>
-              <span>Univers Spatial</span>
+              <span data-i18n-site="home.universe_spatial">Univers Spatial</span>
             </div>
             <div class="feature">
               <span class="feature-icon">🐺</span>
-              <span>Village Loups-Garous</span>
+              <span data-i18n-site="home.universe_werewolf">Village Loups-Garous</span>
             </div>
             <div class="feature">
               <span class="feature-icon">🧙</span>
-              <span>Académie de Magie</span>
+              <span data-i18n-site="home.universe_academy">Académie de Magie</span>
             </div>
             <div class="feature">
               <span class="feature-icon">⚔️</span>
-              <span>Royaumes Mythiques</span>
+              <span data-i18n-site="home.universe_mythic">Royaumes Mythiques</span>
             </div>
           </div>
           
           <div class="game-buttons">
-            <a href="products.html" class="btn btn-primary">En Savoir Plus</a>
-            <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-outline" onclick="goToGameWithToken(event)">Jouer Maintenant</a>
+            <a href="products.html" class="btn btn-primary" data-i18n-site="home.learn_more_btn">En Savoir Plus</a>
+            <a href="https://saboteurs-2.onrender.com" target="_blank" class="btn btn-outline" onclick="goToGameWithToken(event)" data-i18n-site="home.play_now_btn">Jouer Maintenant</a>
           </div>
         </div>
         
@@ -244,8 +244,8 @@
   <section id="contact" class="contact">
     <div class="container">
       <div class="section-header">
-        <div class="section-badge">Nous Contacter</div>
-        <h2 class="section-title">Rejoignez l'Aventure</h2>
+        <div class="section-badge" data-i18n-site="home.contact_badge">Nous Contacter</div>
+        <h2 class="section-title" data-i18n-site="home.contact_title">Rejoignez l'Aventure</h2>
       </div>
       
       <div class="contact-grid">
@@ -253,7 +253,7 @@
           <div class="info-item">
             <div class="info-icon">📍</div>
             <div class="info-content">
-              <h4>Adresse</h4>
+              <h4 data-i18n-site="contact.address_title">Adresse</h4>
               <p>Saintes, Nouvelle-Aquitaine<br>France</p>
             </div>
           </div>
@@ -261,7 +261,7 @@
           <div class="info-item">
             <div class="info-icon">📧</div>
             <div class="info-content">
-              <h4>Email</h4>
+              <h4 data-i18n-site="contact.email_title">Email</h4>
               <p><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="52313d3c2633312612203d203d3c3d337f35333f37217c3420">[email&#160;protected]</a></p>
             </div>
           </div>
@@ -269,7 +269,7 @@
           <div class="info-item">
             <div class="info-icon">🌐</div>
             <div class="info-content">
-              <h4>Réseaux Sociaux</h4>
+              <h4 data-i18n-site="contact.social_title">Réseaux Sociaux</h4>
               <div class="social-links">
                 <a href="#" class="social-link">Facebook</a>
                 <a href="#" class="social-link">Instagram</a>
@@ -284,11 +284,11 @@
             <input type="text" name="name" placeholder="Votre nom" data-i18n-site="contact.name_placeholder" required>
             <input type="email" name="email" placeholder="Votre email" data-i18n-site="contact.email_placeholder" required>
             <select name="subject" required>
-              <option value="">Sujet du message</option>
-              <option value="support">Support technique</option>
-              <option value="commercial">Question commerciale</option>
-              <option value="partnership">Partenariat</option>
-              <option value="other">Autre</option>
+              <option value="" data-i18n-site="contact.subject_placeholder">Sujet du message</option>
+              <option value="support" data-i18n-site="contact.subject_support">Support technique</option>
+              <option value="commercial" data-i18n-site="contact.subject_commercial">Question commerciale</option>
+              <option value="partnership" data-i18n-site="contact.subject_partnership">Partenariat</option>
+              <option value="other" data-i18n-site="contact.subject_other">Autre</option>
             </select>
             <textarea name="message" placeholder="Votre message" data-i18n-site="contact.message_placeholder" rows="5" required></textarea>
             <button type="submit" class="btn btn-primary" data-i18n-site="contact.send_btn">Envoyer</button>
@@ -304,7 +304,7 @@
       <div class="footer-content">
         <div class="footer-brand">
           <h3>RORONOA <span>GAMES</span></h3>
-          <p>Créateur d'expériences vidéoludiques</p>
+          <p data-i18n-site="footer.description">Studio indépendant de création de jeux sociaux nouvelle génération.</p>
         </div>
         <div class="footer-links">
           <div class="footer-column">
@@ -323,7 +323,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <p>&copy; 2026 RORONOA GAMES. Tous droits réservés.</p>
+        <p data-i18n-site="footer.copyright">&copy; 2026 RORONOA GAMES. Tous droits réservés.</p>
       </div>
     </div>
   </footer>
@@ -340,8 +340,8 @@
       </div>
       
       <div class="auth-tabs">
-        <button class="auth-tab active" onclick="switchAuthTab('login')">Connexion</button>
-        <button class="auth-tab" onclick="switchAuthTab('register')">Inscription</button>
+        <button class="auth-tab active" onclick="switchAuthTab('login')" data-i18n-site="auth.tab_login">Connexion</button>
+        <button class="auth-tab" onclick="switchAuthTab('register')" data-i18n-site="auth.tab_register">Inscription</button>
       </div>
       
       <!-- Formulaire Connexion -->
@@ -353,7 +353,7 @@
         </div>
         <button type="submit" class="btn btn-primary" data-i18n-site="auth.login_btn">Se Connecter</button>
         <p style="text-align: center; margin-top: 1rem; font-size: 0.9rem;">
-          <a href="#" onclick="openForgotPasswordModal(); return false;" style="color: var(--green-bright);">Mot de passe oublié ?</a>
+          <a href="#" onclick="openForgotPasswordModal(); return false;" style="color: var(--green-bright);" data-i18n-site="auth.forgot_password">Mot de passe oublié ?</a>
         </p>
       </form>
       
