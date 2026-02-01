@@ -1392,6 +1392,7 @@
                 <th>Durée</th>
                 <th>Utilisations</th>
                 <th>Statut</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -1410,6 +1411,14 @@
                       ${c.valid ? 'Actif' : 'Inactif'}
                     </span>
                   </td>
+                  <td>
+                    <button class="btn btn-sm ${c.valid ? '' : 'btn-success'}" onclick="toggleCoupon('${c.promo_code_id}', ${c.valid})" title="${c.valid ? 'Désactiver' : 'Activer'}">
+                      ${c.valid ? '🔒' : '🔓'}
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCoupon('${c.promo_code_id}', '${c.code}')" title="Supprimer">
+                      🗑️
+                    </button>
+                  </td>
                 </tr>
               `).join('')}
             </tbody>
@@ -1421,6 +1430,46 @@
       } catch (error) {
         console.error('Erreur chargement coupons:', error);
         container.innerHTML = '<div class="alert alert-error">Erreur de chargement</div>';
+      }
+    }
+    
+    // Supprimer un code promo Stripe
+    async function deleteCoupon(promoCodeId, code) {
+      if (!confirm(`Supprimer le code promo "${code}" ?\n\nCette action est irréversible.`)) {
+        return;
+      }
+      
+      try {
+        const response = await apiCall(`/api/admin/stripe/coupons/${promoCodeId}`, 'DELETE');
+        
+        if (response.success) {
+          showAlert('✅ Code promo supprimé', 'success');
+          loadCoupons();
+        } else {
+          showAlert('❌ Erreur: ' + (response.error || 'Impossible de supprimer'), 'error');
+        }
+      } catch (error) {
+        console.error('Erreur suppression coupon:', error);
+        showAlert('❌ Erreur de suppression', 'error');
+      }
+    }
+    
+    // Activer/Désactiver un code promo Stripe
+    async function toggleCoupon(promoCodeId, isActive) {
+      try {
+        const response = await apiCall(`/api/admin/stripe/coupons/${promoCodeId}/toggle`, 'PATCH', {
+          active: !isActive
+        });
+        
+        if (response.success) {
+          showAlert(isActive ? '🔒 Code désactivé' : '🔓 Code activé', 'success');
+          loadCoupons();
+        } else {
+          showAlert('❌ Erreur: ' + (response.error || 'Impossible de modifier'), 'error');
+        }
+      } catch (error) {
+        console.error('Erreur toggle coupon:', error);
+        showAlert('❌ Erreur', 'error');
       }
     }
     
