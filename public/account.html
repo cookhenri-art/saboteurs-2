@@ -1036,7 +1036,7 @@
       <div class="subscription-grid">
         <!-- Premium -->
         <div class="subscription-card" id="card-premium">
-          <span class="subscription-badge inactive" id="premium-badge">Non actif</span>
+          <span class="subscription-badge inactive" id="premium-badge" data-i18n-site="account.not_active">Non actif</span>
           <div class="subscription-icon">⚔️</div>
           <h3 class="subscription-name" data-i18n-site="account.pack_premium">Pack Premium</h3>
           <div class="subscription-price">1,49€ <span>/mois</span></div>
@@ -1062,7 +1062,7 @@
         
         <!-- Pack Famille -->
         <div class="subscription-card" id="card-family">
-          <span class="subscription-badge inactive" id="family-badge">Non actif</span>
+          <span class="subscription-badge inactive" id="family-badge" data-i18n-site="account.not_active">Non actif</span>
           <div class="subscription-icon">👨‍👩‍👧‍👦</div>
           <h3 class="subscription-name" data-i18n-site="account.pack_family">Pack Famille</h3>
           <div class="subscription-price">9,99€ <span>/mois</span></div>
@@ -1646,8 +1646,8 @@
           historyContent.innerHTML = `
             <div class="empty-state">
               <div class="empty-state-icon">📭</div>
-              <p>Aucun achat pour le moment</p>
-              <p style="margin-top: 0.5rem; font-size: 0.9rem;">Vos futurs achats apparaîtront ici.</p>
+              <p data-i18n-site="account.no_purchases">Aucun achat pour le moment</p>
+              <p style="margin-top: 0.5rem; font-size: 0.9rem;" data-i18n-site="account.future_purchases">Vos futurs achats apparaîtront ici.</p>
             </div>
           `;
           return;

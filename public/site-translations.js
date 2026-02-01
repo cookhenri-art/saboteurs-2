@@ -220,6 +220,17 @@ const SITE_TRANSLATIONS = {
       nl: "Infiltreer een team, slim de saboteurs af en leid je kant naar de overwinning. Een verslavend sociaal rollenspel met <strong>geïntegreerde videoconferentie</strong> (geen software van derden vereist) en <strong>gepersonaliseerde AI-avatars</strong> die face-to-face zijn gemaakt voor totale onderdompeling."
     },
     
+    // Avatar IA
+    create_avatar_ia: {
+      fr: "✨ Créez votre avatar face-to-face avec l'IA",
+      en: "✨ Create your avatar face-to-face with AI",
+      es: "✨ Crea tu avatar cara a cara con IA",
+      de: "✨ Erstellen Sie Ihren Avatar face-to-face mit KI",
+      it: "✨ Crea il tuo avatar faccia a faccia con l'IA",
+      pt: "✨ Crie seu avatar face a face com IA",
+      nl: "✨ Maak je avatar face-to-face met AI"
+    },
+    
     // Universe Features
     universe_spatial: {
       fr: "Univers Spatial", en: "Space Universe", es: "Universo Espacial", de: "Weltraum-Universum", it: "Universo Spaziale", pt: "Universo Espacial", nl: "Ruimte Universum"
@@ -660,6 +671,7 @@ const SITE_TRANSLATIONS = {
     // Purchase History
     purchase_history: { fr: "📜 Historique des achats", en: "📜 Purchase History", es: "📜 Historial de compras", de: "📜 Kaufverlauf", it: "📜 Cronologia acquisti", pt: "📜 Histórico de compras", nl: "📜 Aankoopgeschiedenis" },
     no_purchases: { fr: "Aucun achat pour le moment.", en: "No purchases yet.", es: "Sin compras por el momento.", de: "Noch keine Käufe.", it: "Nessun acquisto al momento.", pt: "Nenhuma compra ainda.", nl: "Nog geen aankopen." },
+    future_purchases: { fr: "Vos futurs achats apparaîtront ici.", en: "Your future purchases will appear here.", es: "Tus futuras compras aparecerán aquí.", de: "Ihre zukünftigen Käufe werden hier angezeigt.", it: "I tuoi futuri acquisti appariranno qui.", pt: "Suas futuras compras aparecerão aqui.", nl: "Je toekomstige aankopen verschijnen hier." },
     
     // Profile Section
     page_title_h1: { fr: "⚔️ Mon Compte", en: "⚔️ My Account", es: "⚔️ Mi Cuenta", de: "⚔️ Mein Konto", it: "⚔️ Il Mio Account", pt: "⚔️ Minha Conta", nl: "⚔️ Mijn Account" },
